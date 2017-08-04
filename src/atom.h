@@ -95,6 +95,11 @@ class Atom : protected Pointers {
   int nspecies_dpd;
   int *ssaAIR; // Shardlow Splitting Algorithm Active Interaction Region number
 
+  // USER-MESO package
+  double **cc, **cc_flux;   // cc represents chemical concentration
+  int cc_species;
+  double *edpd_temp,*edpd_flux;  // edpd_temp for temperature and edpd_flux for heat flux
+  double *edpd_cv;          // edpd_cv for heat capacity 
   // molecular info
 
   int **nspecial;               // 0,1,2 = cumulative # of 1-2,1-3,1-4 neighs
@@ -139,6 +144,7 @@ class Atom : protected Pointers {
   int cs_flag,csforce_flag,vforce_flag,ervelforce_flag,etag_flag;
   int rho_flag,e_flag,cv_flag,vest_flag;
   int dpd_flag;
+  int edpd_flag,tdpd_flag;
 
   // USER-SMD package
 
