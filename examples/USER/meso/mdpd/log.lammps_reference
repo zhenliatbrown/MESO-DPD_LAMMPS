@@ -1,0 +1,131 @@
+LAMMPS (31 Mar 2017)
+########################################################################
+#### 3D droplet oscilation using many-body DPD simulation            ###
+####                                                                 ###
+#### Created  : Zhen Li (zhen_li@brown.edu)                          ###
+####            Division of Applied Mathematics, Brown University.   ###
+####                                                                 ###
+#### mDPD parameters follow the choice of the publication:           ###
+#### Z. Li et al. "Three dimensional flow structures in a moving     ###
+#### droplet on substrate: a dissipative particle dynamics study"    ###
+#### Physics of Fluids, 2013, 25: 072103. DOI: 10.1063/1.4812366     ###
+########################################################################
+units 		        lj
+dimension	        3
+boundary	        p p p
+neighbor	        0.3 bin
+neigh_modify        every 1 delay 0 check yes
+
+atom_style	        mdpd
+
+region     mdpd     block -20 20 -10 10 -10 10 units box
+create_box          1 mdpd
+Created orthogonal box = (-20 -10 -10) to (20 10 10)
+  1 by 1 by 1 MPI processor grid
+
+lattice             fcc 6
+Lattice spacing in x,y,z = 0.87358 0.87358 0.87358
+region     film     block -15 15 -5.0 5.0 -2.0 2.0 units box
+create_atoms        1 region film
+Created 7141 atoms
+
+pair_style          hybrid/overlay mdpd/rhosum mdpd 1.0 1.0 9872598
+pair_coeff          1 1 mdpd/rhosum  0.75
+pair_coeff          1 1 mdpd         -40 25 18.0 1.0 0.75
+mass                1 1.0
+
+compute             mythermo all temp
+thermo              100
+thermo_modify       temp mythermo
+thermo_modify       flush yes
+
+velocity            all create 1.0 38497 loop local dist gaussian
+
+fix         mvv     all mvv/dpd 0.5
+
+dump        mydump  all atom 100 atom.lammpstrj
+
+timestep            0.01
+run                 3000
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.3
+  ghost atom cutoff = 1.3
+  binsize = 0.65, bins = 62 31 31
+  2 neighbor lists, perpetual/occasional/extra = 2 0 0
+  (1) pair mdpd/rhosum, perpetual
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+  (2) pair mdpd, perpetual, half/full from (1)
+      attributes: half, newton on
+      pair build: halffull/newton
+      stencil: none
+      bin: none
+Per MPI rank memory allocation (min/avg/max) = 7.593 | 7.593 | 7.593 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0            1   -13.205163            0   -11.705373    -4.326656 
+     100    1.0296328   -6.9911672            0   -5.4469343  -0.25270471 
+     200     1.044439   -6.7990762            0   -5.2326371 -0.0078443828 
+     300    1.0437278   -6.9155257            0   -5.3501533 -0.092343182 
+     400    1.0382376   -6.8226898            0   -5.2655515 -0.075101491 
+     500    1.0352641   -6.8132865            0   -5.2606078 -0.058924277 
+     600    1.0283991   -6.7294032            0   -5.1870206 -0.063289987 
+     700    1.0459627   -6.7465569            0   -5.1778325  0.033481881 
+     800     1.035793   -6.7741023            0   -5.2206304 -0.081688366 
+     900    1.0368792   -6.7206903            0   -5.1655893 -0.011874606 
+    1000    1.0479552   -6.7673077            0    -5.195595 -0.010971496 
+    1100    1.0511194   -6.7309192            0    -5.154461  0.096174413 
+    1200    1.0542566      -6.7815            0   -5.2003366 -0.011180772 
+    1300    1.0578476   -6.8583568            0   -5.2718077  -0.10211308 
+    1400    1.0654963   -6.9118218            0   -5.3138012 -0.036664852 
+    1500    1.0553925   -6.7865795            0   -5.2037125 -0.079887647 
+    1600    1.0700336   -6.8511637            0   -5.2463381 -0.013744485 
+    1700    1.0688412    -6.902916            0   -5.2998788  0.056830614 
+    1800    1.0436719   -6.8357579            0   -5.2704692 -0.082900574 
+    1900     1.032001   -6.8416983            0   -5.2939136  0.023358966 
+    2000    1.0352129    -6.881975            0    -5.329373 -0.050869686 
+    2100     1.025138   -6.8866053            0   -5.3491137  0.072287204 
+    2200    1.0109368   -6.8778332            0   -5.3616403    -0.138589 
+    2300    1.0169958   -6.8912894            0   -5.3660093 -0.079725711 
+    2400    1.0172164   -6.8292145            0   -5.3036036 -0.071616946 
+    2500    1.0307037   -6.9018518            0   -5.3560128 -0.032519812 
+    2600     1.001731   -6.8858625            0   -5.3834763  0.026709542 
+    2700    1.0164116   -6.8764433            0   -5.3520394  -0.10970531 
+    2800   0.99713019   -6.8750165            0   -5.3795307 -0.008739571 
+    2900    1.0099141   -6.7962587            0   -5.2815996   0.14381652 
+    3000    1.0103359   -6.7867821            0   -5.2714904 -0.073945655 
+Loop time of 41.6332 on 1 procs for 3000 steps with 7141 atoms
+
+Performance: 62257.952 tau/day, 72.058 timesteps/s
+100.1% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 27.768     | 27.768     | 27.768     |   0.0 | 66.70
+Neigh   | 13.219     | 13.219     | 13.219     |   0.0 | 31.75
+Comm    | 0.061831   | 0.061831   | 0.061831   |   0.0 |  0.15
+Output  | 0.16344    | 0.16344    | 0.16344    |   0.0 |  0.39
+Modify  | 0.2654     | 0.2654     | 0.2654     |   0.0 |  0.64
+Other   |            | 0.1559     |            |       |  0.37
+
+Nlocal:    7141 ave 7141 max 7141 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    195252 ave 195252 max 195252 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:  390504 ave 390504 max 390504 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 390504
+Ave neighs/atom = 54.6848
+Neighbor list builds = 767
+Dangerous builds = 0
+
+Please see the log.cite file for references relevant to this simulation
+
+Total wall time: 0:00:41

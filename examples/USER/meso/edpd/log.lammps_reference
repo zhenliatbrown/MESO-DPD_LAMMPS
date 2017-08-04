@@ -1,0 +1,141 @@
+LAMMPS (31 Mar 2017)
+########################################################################
+### Heat conduction analog of periodic Poiseuille flow problem       ###
+### using energy-conserving DPD (eDPD) simulation                    ###
+###                                                                  ###
+### Created  : Zhen Li (zhen_li@brown.edu)                           ###
+###            Division of Applied Mathematics, Brown University.    ###
+###                                                                  ###
+### mDPD system setup follows Fig.12 in the publication:             ###
+### Z. Li, Y.-H. Tang, H. Lei, B. Caswell and G.E. Karniadakis.      ###
+### "Energy-conserving dissipative particle dynamics with            ###
+### temperature-dependent properties". J. Comput. Phys.,             ###
+### 2014, 265: 113-127. DOI: 10.1016/j.jcp.2014.02.003               ###
+########################################################################
+units 		        lj
+dimension	        3
+boundary	        p p p
+neighbor	        0.2 bin
+neigh_modify        every 1 delay 0 check yes
+
+atom_style	        edpd
+
+region     edpd     block -10 10 -10 10 -5 5 units box
+create_box          1 edpd
+Created orthogonal box = (-10 -10 -5) to (10 10 5)
+  1 by 1 by 1 MPI processor grid
+create_atoms        1 random 16000 276438 NULL
+Created 16000 atoms
+mass                1 1.0
+set                 atom * edpd/temp 1.0
+  16000 settings made for edpd/temp
+set                 atom * edpd/cv 1.0E5
+  16000 settings made for edpd/cv
+
+pair_style          edpd 1.58 9872598
+pair_coeff          1 1 18.75 4.5 0.41 1.58 1.45E-5 2.0 1.58
+
+compute             mythermo all temp
+thermo              100
+thermo_modify       temp mythermo
+thermo_modify       flush yes
+
+velocity            all create 1.0 432982 loop local dist gaussian
+
+fix         mvv     all mvv/edpd 0.5
+fix         upper   all edpd/source cuboid 0.0  5.0 0.0 20.0 10.0 10.0  0.01
+fix         lower   all edpd/source cuboid 0.0 -5.0 0.0 20.0 10.0 10.0 -0.01
+
+timestep            0.01
+run                 500
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.78
+  ghost atom cutoff = 1.78
+  binsize = 0.89, bins = 23 23 12
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair edpd, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 11.53 | 11.53 | 11.53 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0            1    48.948932            0    50.448838    201.73366 
+     100    1.0057245    43.749048            0    45.257541    199.64941 
+     200   0.99592931    43.712191            0    45.205991    196.87141 
+     300   0.99379394    43.698035            0    45.188633    194.96937 
+     400   0.99876228    43.693511            0    45.191561    195.85615 
+     500    1.0005436    43.675747            0    45.176468    193.50111 
+Loop time of 65.9159 on 1 procs for 500 steps with 16000 atoms
+
+Performance: 6553.806 tau/day, 7.585 timesteps/s
+100.1% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 60.583     | 60.583     | 60.583     |   0.0 | 91.91
+Neigh   | 4.7538     | 4.7538     | 4.7538     |   0.0 |  7.21
+Comm    | 0.25727    | 0.25727    | 0.25727    |   0.0 |  0.39
+Output  | 0.00053191 | 0.00053191 | 0.00053191 |   0.0 |  0.00
+Modify  | 0.23851    | 0.23851    | 0.23851    |   0.0 |  0.36
+Other   |            | 0.0824     |            |       |  0.13
+
+Nlocal:    16000 ave 16000 max 16000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    14134 ave 14134 max 14134 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    749167 ave 749167 max 749167 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 749167
+Ave neighs/atom = 46.8229
+Neighbor list builds = 181
+Dangerous builds = 0
+reset_timestep      0
+
+compute     temp    all edpd/temp/atom
+compute     ccT     all chunk/atom bin/1d y 0.0 1.0
+fix         stat    all ave/chunk 1 500 500 ccT c_temp density/number norm sample file temp.profile
+
+run                 500
+Per MPI rank memory allocation (min/avg/max) = 12.03 | 12.03 | 12.03 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0    1.0005436    43.675687            0    45.176409     196.0441 
+     100   0.99718825    43.670394            0    45.166083    196.67953 
+     200   0.98936412    43.654055            0    45.138008    198.02703 
+     300    1.0077075    43.655483            0     45.16695    199.22544 
+     400   0.99119124    43.632427            0    45.119121    196.62516 
+     500   0.99382352    43.618717            0    45.109359    196.30884 
+Loop time of 66.59 on 1 procs for 500 steps with 16000 atoms
+
+Performance: 6487.457 tau/day, 7.509 timesteps/s
+100.1% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 61.138     | 61.138     | 61.138     |   0.0 | 91.81
+Neigh   | 4.7719     | 4.7719     | 4.7719     |   0.0 |  7.17
+Comm    | 0.25537    | 0.25537    | 0.25537    |   0.0 |  0.38
+Output  | 0.00080562 | 0.00080562 | 0.00080562 |   0.0 |  0.00
+Modify  | 0.34218    | 0.34218    | 0.34218    |   0.0 |  0.51
+Other   |            | 0.08189    |            |       |  0.12
+
+Nlocal:    16000 ave 16000 max 16000 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    14150 ave 14150 max 14150 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    749851 ave 749851 max 749851 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 749851
+Ave neighs/atom = 46.8657
+Neighbor list builds = 182
+Dangerous builds = 0
+
+Please see the log.cite file for references relevant to this simulation
+
+Total wall time: 0:02:12
