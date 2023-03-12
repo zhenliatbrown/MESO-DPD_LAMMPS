@@ -14,8 +14,8 @@
 #ifdef COMPUTE_CLASS
 // clang-format off
 ComputeStyle(sna/grid/kk,ComputeSNAGridKokkos<LMPDeviceType>);
-ComputeStyle(sna/grid/kk/device,ComputeSNAGridKokkos<LMPDeviceType>);
-ComputeStyle(sna/grid/kk/host,ComputeSNAGridKokkos<LMPHostType>);
+//ComputeStyle(sna/grid/kk/device,ComputeSNAGridKokkos<LMPDeviceType>);
+//ComputeStyle(sna/grid/kk/host,ComputeSNAGridKokkos<LMPHostType>);
 // clang-format on
 #else
 
@@ -25,27 +25,42 @@ ComputeStyle(sna/grid/kk/host,ComputeSNAGridKokkos<LMPHostType>);
 
 #include "compute_sna_grid.h"
 #include "kokkos_type.h"
+#include "sna_kokkos.h"
 
 namespace LAMMPS_NS {
 
 //template<int CSTYLE, int NCOL>
 //struct TagComputeCoordAtom{};
 
-template<class DeviceType>
+// copying pair_snap_kokkos, template args are real_type and vector_length
+template<class DeviceType, typename real_type_, int vector_length_>
 class ComputeSNAGridKokkos : public ComputeSNAGrid {
  public:
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
+  static constexpr int vector_length = vector_length_;
+  using real_type = real_type_;
+
   ComputeSNAGridKokkos(class LAMMPS *, int, char **);
   ~ComputeSNAGridKokkos() override;
-  //void init() override;
+  void init() override;
   //void compute_peratom() override;
   //enum {NONE,CUTOFF,ORIENT};
 
   //template<int CSTYLE, int NCOL>
   //KOKKOS_INLINE_FUNCTION
   //void operator()(TagComputeCoordAtom<CSTYLE,NCOL>, const int&) const;
+  
+ protected:
+
+  // these are used by pair_snap_kokkos
+  // neighflag gets set in init()
+  // what about host_flag?
+  // dunno... commented these out for now
+  int host_flag, neighflag;
+
+  SNAKokkos<DeviceType, real_type, vector_length> snaKK;
 
  private:
 
