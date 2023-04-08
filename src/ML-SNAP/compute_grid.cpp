@@ -57,6 +57,8 @@ ComputeGrid::ComputeGrid(LAMMPS *lmp, int narg, char **arg) :
 
 ComputeGrid::~ComputeGrid()
 {
+  printf("^^^ begin ComputeGrid destructor\n");
+  if (copymode) return;
   deallocate();
 }
 
@@ -111,7 +113,7 @@ void ComputeGrid::assign_coords_all()
 void ComputeGrid::allocate()
 {
   // allocate arrays
-
+  printf("^^^^^^^^^^^^^^^ ComputeGrid::allocate()\n");
   memory->create(grid, size_array_rows, size_array_cols, "grid:grid");
   memory->create(gridall, size_array_rows, size_array_cols, "grid:gridall");
   if (nxlo <= nxhi && nylo <= nyhi && nzlo <= nzhi) {
