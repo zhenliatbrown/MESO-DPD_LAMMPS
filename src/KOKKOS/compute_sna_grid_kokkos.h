@@ -242,9 +242,13 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   //DAT::tdual_float_4d k_gridlocal;
   //typedef Kokkos::DualView<real_type****, Kokkos::LayoutLeft, DeviceType> t_gridlocal_4d;
   //typedef Kokkos::View<real_type****, DeviceType> t_4d;
-  typedef Kokkos::DualView<LMP_FLOAT****, LMPDeviceType> tdual_float_4d;
-  tdual_float_4d k_gridlocal;
-  tdual_float_4d d_gridlocal; 
+  // should we use LMPDeviceType below?
+  //typedef Kokkos::DualView<LMP_FLOAT****, LMPDeviceType> tdual_float_4d;
+  //typedef tdual_float_4d::t_dev tdev_float_4d;
+  //tdual_float_4d k_gridlocal;
+  //tdev_float_4d d_gridlocal; 
+  DAT::tdual_float_4d k_gridlocal;
+  typename AT::t_float_4d d_gridlocal;
 
 
   // Utility routine which wraps computing per-team scratch size requirements for

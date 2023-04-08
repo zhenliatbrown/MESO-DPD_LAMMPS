@@ -198,6 +198,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
                                      nyhi, nxlo, nxhi, "grid:gridlocal");
   }
   array = gridall;
+
+  d_gridlocal = k_gridlocal.template view<DeviceType>();
+  d_grid = k_grid.template view<DeviceType>();
+  d_gridall = k_gridall.template view<DeviceType>();
 }
 
 // Compute
@@ -372,41 +376,21 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   */
 
 
+  // populate the gridlocal array
+  // best to do parallel loop over grid points again
+  // ...
 
-  // let's try a simple parallel for loop
-  // NOTE: We get the compiler error calling host function DeviceType::in_parallel() in this 
-  // function, because this is a host-device function.
-  /*
-  typename Kokkos::RangePolicy<DeviceType,TagComputeSNAGridLoop> policy_loop(0,4);
-  Kokkos::parallel_for("Loop",policy_loop,*this);
-  */
+  // d_grid(0,0) = 1.0; // attempt to access inaccessible memory space
 
+  k_gridlocal.template modify<DeviceType>();
+  k_gridlocal.template sync<LMPHostType>();
 
-  // Simple working loop:
-  /* 
-  Kokkos::parallel_for("Loop1", 4, KOKKOS_LAMBDA (const int& i) {
-    printf("Greeting from iteration %i\n",i);
-  });
-  */
+  k_grid.template modify<DeviceType>();
+  k_grid.template sync<LMPHostType>();
 
-  /*
-  // NOTE: We get the compiler error calling host function DeviceType::in_parallel() in this 
-  // function, because this is a host-device function.
-  const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
-  Snap3DRangePolicy<DeviceType, tile_size_compute_ck, TagCSNAGridComputeCayleyKlein>
-      policy_compute_ck({0,0,0},{vector_length,ntotal,chunk_size_div},{vector_length,tile_size_compute_ck,1});
-  Kokkos::parallel_for("ComputeCayleyKlein",policy_compute_ck,*this);
-  */
-
-  // Simple example of 3D MD range policy.
-  // Begin loop over grid points.
-  /*
-  // NOTE: We don't get the compiler error calling host function DeviceType::in_parallel() in this 
-  // function, but we get it in the above function.
-  int n = 3; // bounds for mdrange policy
-  typename Kokkos::MDRangePolicy<DeviceType, Kokkos::IndexType<int>, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, TagComputeSNAGrid3D> policy_3d({0,0,0},{n,n,n});
-  Kokkos::parallel_for("3D",policy_3d,*this);
-  */
+  k_gridall.template modify<DeviceType>();
+  k_gridall.template sync<LMPHostType>();
+  
 
   printf("^^^ End ComputeSNAGridKokkos compute_array()\n");
 }
@@ -436,6 +420,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // extract loop index
   int ii = team.team_rank() + team.league_rank() * team.team_size();
   if (ii >= chunk_size) return;
+
+  d_gridall(ii,0) = 100.0;
 
   // get a pointer to scratch memory
   // This is used to cache whether or not an atom is within the cutoff.
