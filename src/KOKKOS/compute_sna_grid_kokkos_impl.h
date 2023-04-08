@@ -712,8 +712,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const int ii = iatom_mod + iatom_div * vector_length;
   if (ii >= chunk_size) return;
 
-  const int ninside = ntotal; //d_ninside(ii);
+  const int ninside = d_ninside(ii); // use d_ninside or ntotal?
   if (jnbor >= ninside) return;
+
+  printf("ninside: %d\n", ninside);
 
   my_sna.compute_cayley_klein(iatom_mod,jnbor,iatom_div);
 }
