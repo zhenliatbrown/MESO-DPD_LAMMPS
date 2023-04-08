@@ -70,6 +70,9 @@ struct TagCSNAGridComputeUiLarge{}; // less parallelism, no divergence
 struct TagCSNAGridTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
 struct TagCSNAGridComputeZi{};
 struct TagCSNAGridComputeBi{};
+struct TagCSNAGridTransformBi{}; // re-order blist from AoSoA to AoS
+struct TagCSNAGridLocalFill{}; // fill the gridlocal array
+struct TagCSNAGridLocalFill2{}; // fill the gridlocal array using same kinda loop as ComputeForce
 
 struct TagComputeSNAGridLoop{};
 struct TagComputeSNAGrid3D{};
@@ -179,6 +182,9 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   KOKKOS_INLINE_FUNCTION
   void operator() (TagCSNAGridComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridComputeNeigh>::member_type& team) const;
 
+  // PrintNeigh
+  //void operator() (TagPrintNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagPrintNeigh>::member_type& team) const;
+
   // 3D case - used by parallel_for
   KOKKOS_INLINE_FUNCTION
   void operator()(TagComputeSNAGrid3D, const int& iz, const int& iy, const int& ix) const;
@@ -203,6 +209,15 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagCSNAGridComputeBi,const int iatom_mod, const int idxb, const int iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridTransformBi,const int iatom_mod, const int idxb, const int iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalFill,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridLocalFill>::member_type& team) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalFill2,const int& ii) const;
 
  protected:
 

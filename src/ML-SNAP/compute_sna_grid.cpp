@@ -69,8 +69,10 @@ ComputeSNAGrid::ComputeSNAGrid(LAMMPS *lmp, int narg, char **arg) :
   twojmax = utils::inumeric(FLERR, arg[5], false, lmp);
 
   for (int i = 0; i < ntypes; i++) radelem[i + 1] = utils::numeric(FLERR, arg[6 + i], false, lmp);
-  for (int i = 0; i < ntypes; i++)
+  for (int i = 0; i < ntypes; i++) {
     wjelem[i + 1] = utils::numeric(FLERR, arg[6 + ntypes + i], false, lmp);
+    printf("^^^^^ ComputeSNAGrid wj: %f\n", wjelem[i+1]);
+  }
 
   // construct cutsq
 
