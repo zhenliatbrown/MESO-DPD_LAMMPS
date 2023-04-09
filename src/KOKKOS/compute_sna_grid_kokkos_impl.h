@@ -578,7 +578,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
-  //printf("%f %f %f\n", xtmp, ytmp, ztmp);
+  printf("rtmp: %f %f %f\n", xtmp, ytmp, ztmp);
 
   // currently, all grid points are type 1
   // not clear what a better choice would be
@@ -631,10 +631,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
     //if (rsq >= cutsq_tmp){
-    if (rsq >= rnd_cutsq(itype,jtype)) {
+    if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-10) {
       jtype = -1; // use -1 to signal it's outside the radius
     } else {
-      //printf("jtype rsq rnd_cutsq: %d %f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
+      printf("jtype rsq rnd_cutsq: %d %.11f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
     }
 
     if (j > 340){
@@ -667,6 +667,9 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
         const F_FLOAT dz = x(j,2) - ztmp;
         int jtype = type(j);
         //printf("jtype: %d\n", jtype);
+        if (dx==0 && dy==0 && dz==0){
+          printf("rij: %f %f %f\n", xtmp, ytmp, ztmp);
+        }
         int jelem = 0;
         if (chemflag) jelem = d_map[jtype];
         //d_wjelem[jelem] = 1.0;
