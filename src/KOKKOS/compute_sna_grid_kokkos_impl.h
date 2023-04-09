@@ -578,7 +578,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
-  printf("rtmp: %f %f %f\n", xtmp, ytmp, ztmp);
+  //printf("rtmp: %f %f %f\n", xtmp, ytmp, ztmp);
 
   // currently, all grid points are type 1
   // not clear what a better choice would be
@@ -631,14 +631,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
     //if (rsq >= cutsq_tmp){
+    // don't include atoms that share location with grid point
     if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-10) {
       jtype = -1; // use -1 to signal it's outside the radius
     } else {
-      printf("jtype rsq rnd_cutsq: %d %.11f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
-    }
-
-    if (j > 340){
-      printf("j: %d\n", j);
+      //printf("jtype rsq rnd_cutsq: %d %.11f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
     }
 
     //printf("j: %d\n", j);
@@ -830,6 +827,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
     auto utot_re = my_sna.ulisttot_re_pack(iatom_mod, mapper.idxu_half, ielem, iatom_div);
     auto utot_im = my_sna.ulisttot_im_pack(iatom_mod, mapper.idxu_half, ielem, iatom_div);
+    //printf("^^^ utot: %f %f\n", utot_re, utot_im);
 
     if (mapper.flip_sign == 1){
       utot_im = -utot_im;
