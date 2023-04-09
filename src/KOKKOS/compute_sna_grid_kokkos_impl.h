@@ -76,6 +76,14 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
 
   cutsq_tmp = cutsq[1][1];
 
+  for (int i = 1; i <= atom->ntypes; i++) {
+    for (int j = 1; j <= atom->ntypes; j++){
+      k_cutsq.h_view(i,j) = k_cutsq.h_view(j,i) = cutsq_tmp;
+      k_cutsq.template modify<LMPHostType>();
+    }
+  }
+
+
   //memoryKK->create_kokkos(k_gridlocal,
   //printf("^^^^^ gridlocal: %f\n", gridlocal[0][0][0][0]);
 
@@ -502,10 +510,13 @@ KOKKOS_INLINE_FUNCTION
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType,TagCSNAGridComputeNeigh>::member_type& team) const {
 
   // this function is following the same procedure in ComputeNeigh of PairSNAPKokkos
-  //printf("d_wjelem[1]: %f %f %f %f\n", d_wjelem[1], d_wjelem[0], d_wjelem(1), d_wjelem(0));
+  if (d_wjelem[1] > 0){
+    printf("d_wjelem[1]: %f %f %f %f\n", d_wjelem[1], d_wjelem[0], d_wjelem(1), d_wjelem(0));
+  }
   //artificially set values here since we can't get the deep_copy to work
   //d_wjelem[1] = 1.0;
   //d_radelem[1] = 0.5;
+  //printf("%f\n", rnd_cutsq(1,1)); 
 
 
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
@@ -609,11 +620,12 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     //if (rsq < cutsq[jtype][jtype] && rsq > 1e-20) {
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
-    //if (rsq >= rnd_cutsq(itype,jtype)) {
-    if (rsq >= cutsq_tmp){
+    //if (rsq >= cutsq_tmp){
+    if (rsq >= rnd_cutsq(itype,jtype)) {
       jtype = -1; // use -1 to signal it's outside the radius
+    } else {
+      //printf("jtype rsq rnd_cutsq: %d %f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
     }
-    //printf("jtype rsq rnd_cutsq: %d %f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
 
     if (j > 340){
       printf("j: %d\n", j);
@@ -715,7 +727,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const int ninside = d_ninside(ii); // use d_ninside or ntotal?
   if (jnbor >= ninside) return;
 
-  printf("ninside: %d\n", ninside);
+  //printf("ninside: %d\n", ninside);
 
   my_sna.compute_cayley_klein(iatom_mod,jnbor,iatom_div);
 }

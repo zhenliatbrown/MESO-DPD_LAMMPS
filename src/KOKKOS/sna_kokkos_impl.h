@@ -393,6 +393,9 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_cayley_klein(const
   const real_type z0 = r * cs / sn;
   const real_type dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
 
+  //printf("%f %f %f\n", sn, cs, z0);
+  //printf("%f %f %f %f %f\n", x, y, z, rcut, rmin0);
+
   const real_type wj_local = wj(iatom, jnbor);
   real_type sfac, dsfac;
   compute_s_dsfac(r, rcut, sinner, dinner, sfac, dsfac);
