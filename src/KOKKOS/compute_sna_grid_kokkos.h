@@ -240,6 +240,7 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   Kokkos::View<real_type*, DeviceType> d_dinnerelem;           // element inner cutoff half-width
   Kokkos::View<T_INT*, DeviceType> d_ninside;                // ninside for all atoms in list
   Kokkos::View<T_INT*, DeviceType> d_map;                    // mapping from atom types to elements
+  Kokkos::View<real_type*, DeviceType> d_test;              // test view
 
   typedef Kokkos::DualView<F_FLOAT**, DeviceType> tdual_fparams;
   tdual_fparams k_cutsq;

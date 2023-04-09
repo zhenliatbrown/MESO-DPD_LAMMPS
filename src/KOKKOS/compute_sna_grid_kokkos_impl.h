@@ -96,6 +96,9 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
   //MemKK::realloc_kokkos(d_coeffelem,"pair:coeffelem",nelements,ncoeff);
   MemKK::realloc_kokkos(d_sinnerelem,"ComputeSNAGridKokkos:sinnerelem",nelements);
   MemKK::realloc_kokkos(d_dinnerelem,"ComputeSNAGridKokkos:dinnerelem",nelements);
+  // test
+  MemKK::realloc_kokkos(d_test, "ComputeSNAGridKokkos::test", nelements);
+
   int n = atom->ntypes;
   //printf("^^^ realloc d_map\n");
   printf("^^^ n: %d\n", n);
@@ -108,13 +111,16 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
   auto h_sinnerelem = Kokkos::create_mirror_view(d_sinnerelem);
   auto h_dinnerelem = Kokkos::create_mirror_view(d_dinnerelem);
   auto h_map = Kokkos::create_mirror_view(d_map);
+  // test
+  auto h_test = Kokkos::create_mirror_view(d_test);
+  h_test(0) = 2.0;
 
   printf("^^^ begin loop over elements, nelements = %d\n", nelements);
   // start from index 1 because of how compute sna/grid is
   for (int i = 1; i <= atom->ntypes; i++) {
     printf("^^^^^ i %d\n", i);
-    h_radelem(i) = radelem[i];
-    h_wjelem(i) = wjelem[i];
+    h_radelem(i-1) = radelem[i];
+    h_wjelem(i-1) = wjelem[i];
     printf("^^^^^ radelem wjelem %f %f\n", radelem[i], wjelem[i]);
     printf("host^^^ radelem wjelem %f %f\n", h_radelem(i), h_wjelem(i));
     if (switchinnerflag){
@@ -146,6 +152,8 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
   if (chemflag){
     Kokkos::deep_copy(d_map,h_map);
   }
+  // test
+  Kokkos::deep_copy(d_test,h_test);
 
   double bytes =  MemKK::memory_usage(d_wjelem);
   printf("^^^ bytes: %f\n", bytes);
@@ -510,13 +518,14 @@ KOKKOS_INLINE_FUNCTION
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType,TagCSNAGridComputeNeigh>::member_type& team) const {
 
   // this function is following the same procedure in ComputeNeigh of PairSNAPKokkos
-  if (d_wjelem[1] > 0){
-    printf("d_wjelem[1]: %f %f %f %f\n", d_wjelem[1], d_wjelem[0], d_wjelem(1), d_wjelem(0));
-  }
+  //printf("d_wjelem[1]: %f %f %f %f\n", d_wjelem[1], d_wjelem[0], d_wjelem(1), d_wjelem(0));
   //artificially set values here since we can't get the deep_copy to work
   //d_wjelem[1] = 1.0;
   //d_radelem[1] = 0.5;
-  //printf("%f\n", rnd_cutsq(1,1)); 
+  //printf("%f\n", rnd_cutsq(1,1));
+
+  //Print the test view to see that the deep copy works:
+  //printf("%f\n", d_test(0));
 
 
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
@@ -569,6 +578,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
+  //printf("%f %f %f\n", xtmp, ytmp, ztmp);
 
   // currently, all grid points are type 1
   // not clear what a better choice would be
@@ -665,9 +675,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
         my_sna.rij(ii,offset,1) = static_cast<real_type>(dy);
         my_sna.rij(ii,offset,2) = static_cast<real_type>(dz);
         // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
-        my_sna.wj(ii,offset) = static_cast<real_type>(d_wjelem[jtype]);
+        // actually since the views here have values starting at 0, let's use jelem
+        my_sna.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
         //my_sna.rcutij(ii,offset) = static_cast<real_type>((radi + d_radelem[jtype])*rcutfac);
-        my_sna.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jtype])*rcutfac);
+        my_sna.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
         my_sna.inside(ii,offset) = j;
 
         //printf("%f\n", my_sna.wj(ii,offset));
@@ -741,7 +752,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   if (ii >= chunk_size) return;
 
   int itype = type(ii);
-  int ielem = d_map[itype];
+  //int ielem = d_map[itype];
+  int ielem = 0;
 
   my_sna.pre_ui(iatom_mod, j, ielem, iatom_div);
 }

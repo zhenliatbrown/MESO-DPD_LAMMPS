@@ -393,7 +393,8 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_cayley_klein(const
   const real_type z0 = r * cs / sn;
   const real_type dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
 
-  //printf("%f %f %f\n", sn, cs, z0);
+  //printf("jnbor: %d %f %f %f %f %f\n", jnbor, x,y,z, rfac0, rcut);
+  //printf("%f %f %f %f %f %f %f\n", rscale0, r, rmin0, theta0, sn, cs, z0);
   //printf("%f %f %f %f %f\n", x, y, z, rcut, rmin0);
 
   const real_type wj_local = wj(iatom, jnbor);
@@ -773,6 +774,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
             sumzu -= bzero[j];
           }
         }
+        //printf("%f\n", sumzu);
         blist_pack(iatom_mod, jjb, itriple, iatom_div) = sumzu;
             //} // end loop over j
           //} // end loop over j1, j2
