@@ -47,8 +47,6 @@ namespace LAMMPS_NS {
 template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos(LAMMPS *lmp, int narg, char **arg) : ComputeSNAGrid(lmp, narg, arg)
 {
-  //respa_enable = 0;
-  printf("^^^ Begin ComputeSNAGridKokkos constructor\n");
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
@@ -61,18 +59,7 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
 
   host_flag = (execution_space == Host);
 
-  // ComputeSNAGrid constructor allocates `map` so let's do same here.
-  // actually, let's move this down to init
-  //int n = atom->ntypes;
-  //printf("^^^ realloc d_map\n");
-  //MemKK::realloc_kokkos(d_map,"ComputeSNAGridKokkos::map",n+1);
- 
-
-  printf("^^^ wjelem[0]: %f\n", wjelem[0]);
-  printf("^^^ wjelem[1]: %f\n", wjelem[1]);
-  
-
-  printf("^^^^^ cutsq: %f\n", cutsq[1][1]);
+  // TODO: Extract cutsq in double loop below, no need for cutsq_tmp
 
   cutsq_tmp = cutsq[1][1];
 
@@ -83,31 +70,19 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
     }
   }
 
-
-  //memoryKK->create_kokkos(k_gridlocal,
-  //printf("^^^^^ gridlocal: %f\n", gridlocal[0][0][0][0]);
-
-
    // Set up element lists
-  printf("^^^ Begin kokkos reallocs with nelements = %d\n", nelements);
   MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",nelements);
   MemKK::realloc_kokkos(d_wjelem,"ComputeSNAGridKokkos:wjelem",nelements);
-  // pair snap kokkos uses `ncoeffall` in the following, inherits from original.
-  //MemKK::realloc_kokkos(d_coeffelem,"pair:coeffelem",nelements,ncoeff);
   MemKK::realloc_kokkos(d_sinnerelem,"ComputeSNAGridKokkos:sinnerelem",nelements);
   MemKK::realloc_kokkos(d_dinnerelem,"ComputeSNAGridKokkos:dinnerelem",nelements);
   // test
   MemKK::realloc_kokkos(d_test, "ComputeSNAGridKokkos::test", nelements);
 
   int n = atom->ntypes;
-  //printf("^^^ realloc d_map\n");
-  printf("^^^ n: %d\n", n);
   MemKK::realloc_kokkos(d_map,"ComputeSNAGridKokkos::map",n+1);
 
-  printf("^^^ begin mirrow view creation\n");
   auto h_radelem = Kokkos::create_mirror_view(d_radelem);
   auto h_wjelem = Kokkos::create_mirror_view(d_wjelem);
-  //auto h_coeffelem = Kokkos::create_mirror_view(d_coeffelem);
   auto h_sinnerelem = Kokkos::create_mirror_view(d_sinnerelem);
   auto h_dinnerelem = Kokkos::create_mirror_view(d_dinnerelem);
   auto h_map = Kokkos::create_mirror_view(d_map);
@@ -115,31 +90,20 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
   auto h_test = Kokkos::create_mirror_view(d_test);
   h_test(0) = 2.0;
 
-  printf("^^^ begin loop over elements, nelements = %d\n", nelements);
   // start from index 1 because of how compute sna/grid is
   for (int i = 1; i <= atom->ntypes; i++) {
-    printf("^^^^^ i %d\n", i);
     h_radelem(i-1) = radelem[i];
     h_wjelem(i-1) = wjelem[i];
-    printf("^^^^^ radelem wjelem %f %f\n", radelem[i], wjelem[i]);
-    printf("host^^^ radelem wjelem %f %f\n", h_radelem(i), h_wjelem(i));
     if (switchinnerflag){
       h_sinnerelem(i) = sinnerelem[i];
       h_dinnerelem(i) = dinnerelem[i];
     }
-    // pair snap kokkos uses `ncoeffall` in the following.
-    //for (int jcoeff = 0; jcoeff < ncoeff; jcoeff++) {
-    //  h_coeffelem(ielem,jcoeff) = coeffelem[ielem][jcoeff];
-    //}
   }
 
-  printf("^^^ begin loop over map\n");
-  // NOTE: At this point it's becoming obvious that compute sna grid is not like pair snap, where 
-  // some things like `map` get allocated regardless of chem flag.
+  // In pair snap some things like `map` get allocated regardless of chem flag.
   if (chemflag){ 
     for (int i = 1; i <= atom->ntypes; i++) {
       h_map(i) = map[i];
-      printf("%d\n", map[i]);
     }
   }
 
@@ -152,11 +116,9 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
   if (chemflag){
     Kokkos::deep_copy(d_map,h_map);
   }
-  // test
   Kokkos::deep_copy(d_test,h_test);
 
   double bytes =  MemKK::memory_usage(d_wjelem);
-  printf("^^^ bytes: %f\n", bytes);
 
   snaKK = SNAKokkos<DeviceType, real_type, vector_length>(rfac0,twojmax,
     rmin0,switchflag,bzeroflag,chemflag,bnormflag,wselfallflag,nelements,switchinnerflag);
@@ -171,10 +133,6 @@ template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokkos()
 {
   if (copymode) return;
-
-  //memoryKK->destroy_kokkos(k_eatom,eatom);
-  //memoryKK->destroy_kokkos(k_vatom,vatom);
-  printf("^^^ Finish ComputeSNAGridKokkos destructor\n");
 }
 
 // Init
@@ -182,90 +140,10 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokko
 template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::init()
 {
-  printf("^^^ Begin ComputeSNAGridKokkos init()\n");
-  // The part of pair_snap_kokkos_impl.h that allocates snap params is coeff(), and it 
-  // calls the original coeff function. So let's do that here: 
-
-  ComputeSNAGrid::init();
-
-  /*
-  // Set up element lists
-  printf("^^^ Begin kokkos reallocs\n");
-  MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",nelements);
-  MemKK::realloc_kokkos(d_wjelem,"ComputeSNAGridKokkos:wjelem",nelements);
-  // pair snap kokkos uses `ncoeffall` in the following, inherits from original.
-  //MemKK::realloc_kokkos(d_coeffelem,"pair:coeffelem",nelements,ncoeff);
-  MemKK::realloc_kokkos(d_sinnerelem,"ComputeSNAGridKokkos:sinnerelem",nelements);
-  MemKK::realloc_kokkos(d_dinnerelem,"ComputeSNAGridKokkos:dinnerelem",nelements);
-  int n = atom->ntypes;
-  //printf("^^^ realloc d_map\n");
-  printf("^^^ n: %d\n", n);
-  MemKK::realloc_kokkos(d_map,"ComputeSNAGridKokkos::map",n+1);
-
-  printf("^^^ begin mirrow view creation\n");
-  auto h_radelem = Kokkos::create_mirror_view(d_radelem);
-  auto h_wjelem = Kokkos::create_mirror_view(d_wjelem);
-  //auto h_coeffelem = Kokkos::create_mirror_view(d_coeffelem);
-  auto h_sinnerelem = Kokkos::create_mirror_view(d_sinnerelem);
-  auto h_dinnerelem = Kokkos::create_mirror_view(d_dinnerelem);
-  auto h_map = Kokkos::create_mirror_view(d_map);
-
-  printf("^^^ begin loop over elements, nelements = %d\n", nelements);
-  // start from index 1 because of how compute sna/grid is
-  for (int i = 1; i <= atom->ntypes; i++) {
-    printf("^^^^^ i %d\n", i);
-    h_radelem(i) = radelem[i];
-    h_wjelem(i) = wjelem[i];
-    printf("^^^^^ radelem wjelem %f %f\n", radelem[i], wjelem[i]);
-    printf("host^^^ radelem wjelem %f %f\n", h_radelem(i), h_wjelem(i));
-    if (switchinnerflag){
-      h_sinnerelem(i) = sinnerelem[i];
-      h_dinnerelem(i) = dinnerelem[i];
-    }
-    // pair snap kokkos uses `ncoeffall` in the following.
-    //for (int jcoeff = 0; jcoeff < ncoeff; jcoeff++) {
-    //  h_coeffelem(ielem,jcoeff) = coeffelem[ielem][jcoeff];
-    //}
-  }
-
-  printf("^^^ begin loop over map\n");
-  // NOTE: At this point it's becoming obvious that compute sna grid is not like pair snap, where 
-  // some things like `map` get allocated regardless of chem flag.
-  if (chemflag){ 
-    for (int i = 1; i <= atom->ntypes; i++) {
-      h_map(i) = map[i];
-      printf("%d\n", map[i]);
-    }
-  }
-
-  Kokkos::deep_copy(d_radelem,h_radelem);
-  Kokkos::deep_copy(d_wjelem,h_wjelem);
-  if (switchinnerflag){
-    Kokkos::deep_copy(d_sinnerelem,h_sinnerelem);
-    Kokkos::deep_copy(d_dinnerelem,h_dinnerelem);
-  }
-  if (chemflag){
-    Kokkos::deep_copy(d_map,h_map);
-  }
-
-  snaKK = SNAKokkos<DeviceType, real_type, vector_length>(rfac0,twojmax,
-    rmin0,switchflag,bzeroflag,chemflag,bnormflag,wselfallflag,nelements,switchinnerflag);
-  snaKK.grow_rij(0,0);
-  snaKK.init();
-  */
-
   if (host_flag) {
-
-    // The following lmp->kokkos will compile error with pointer to incomplete class type not allowed.
-    //if (lmp->kokkos->nthreads > 1)
-    //  error->all(FLERR,"Compute style sna/grid/kk can currently only run on a single "
-    //                     "CPU thread");
-
-    //ComputeSNAGrid::init();
     return;
   }
-
-  printf("^^^ Finished ComputeSNAGridKokkos init\n");
+  ComputeSNAGrid::init();
 
 }
 
@@ -274,11 +152,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::init()
 template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
 {
+
   // Do not call ComputeGrid::setup(), we don't wanna allocate the grid array there.
   // Instead, call ComputeGrid::set_grid_global and set_grid_local to set the n indices.
-  //ComputeGrid::setup();
-  printf("^^^^^ SETUP!\n");
-  //printf("^^^^^ gridlocal: %f\n", gridlocal[0][0][0][0]);
+
   ComputeGrid::set_grid_global();
   ComputeGrid::set_grid_local();
   
@@ -303,20 +180,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
 template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
 {
-  printf("^^^ Begin ComputeSNAGridKokkos compute_array()\n");
-
-  if (DeviceType::in_parallel()) {
-    printf("^^^ compute_array() is a host function\n");
-  } else {
-    printf("^^^ compute_array() is not a host function\n");
-  }
-
   if (host_flag) {
-    /*
-    atomKK->sync(Host,X_MASK|F_MASK|TYPE_MASK);
-    PairSNAP::compute(eflag_in,vflag_in);
-    atomKK->modified(Host,F_MASK);
-    */
     return;
   }
 
@@ -325,53 +189,26 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   zlen = nzhi-nzlo+1;
   ylen = nyhi-nylo+1;
   xlen = nxhi-nxlo+1;
-  printf("^^^ nzlo nzhi nylo nyhi nxlo nxhi: %d %d %d %d %d %d\n", nzlo, nzhi, nylo, nyhi, nxlo, nxhi);
   total_range = (nzhi-nzlo+1)*(nyhi-nylo+1)*(nxhi-nxlo+1);
 
   atomKK->sync(execution_space,X_MASK|F_MASK|TYPE_MASK);
   x = atomKK->k_x.view<DeviceType>();
-  // This will error because trying to access host view on the device:
-  //printf("x(0,0): %f\n", x(0,0));
   type = atomKK->k_type.view<DeviceType>();
   k_cutsq.template sync<DeviceType>();
 
-
-  MemKK::realloc_kokkos(d_ninside,"PairSNAPKokkos:ninside",total_range);
-
-  //printf("^^^ nzlo nzhi nylo nyhi nxlo nxhi: %d %d %d %d %d %d\n", nzlo, nzhi, nylo, nyhi, nxlo, nxhi);
-  
   // Pair snap/kk uses grow_ij with some max number of neighs but compute sna/grid uses total 
   // number of atoms.
-  
-  //const int ntotal = atomKK->nlocal + atomKK->nghost;
+
   ntotal = atomKK->nlocal + atomKK->nghost;
-  //printf("^^^ ntotal:  %d\n", ntotal);
+  // Allocate view for number of neighbors per grid point
+  MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridKokkos:ninside",total_range);
 
-  // ensure rij, inside, and typej are of size jnum
-  // snaKK.grow_rij(int, int) requires 2 args where one is a chunksize.
-
-  chunk_size = MIN(chunksize, total_range); // "chunksize" variable is set by user
-  //printf("^^^ chunk_size: %d\n", chunk_size);
+  // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
+  chunk_size = MIN(chunksize, total_range);
   snaKK.grow_rij(chunk_size, ntotal);
 
-  // Launch 3 teams of the maximum number of threads per team
-  //const int team_size_max = team_policy(3, 1).team_size_max(
-  //    TagCSNAGridTeamPolicy, Kokkos::ParallelForTag());
-  //typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridTeamPolicy> team_policy_test(3,1);
-
-  // Using custom policy:
-  /* 
-  CSNAGridTeamPolicy<DeviceType, team_size_compute_neigh ,TagCSNAGridTeam> team_policy(chunk_size,team_size_compute_neigh,vector_length);
-  //team_policy = team_policy.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
-  Kokkos::parallel_for("TeamPolicy",team_policy,*this);
-  */
-
-
-  chunk_size = total_range; 
-  printf("%d %d %d\n", chunk_size, team_size_compute_neigh, vector_length);
-  // team_size_compute_neigh is defined in `pair_snap_kokkos.h`
-
-
+  //chunk_size = total_range;
+ 
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
@@ -443,7 +280,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   }
 
   //Compute bispectrum in AoSoA data layout, transform Bi
-  //if (quadraticflag || eflag) {
 
   //ComputeZi
   const int idxz_max = snaKK.idxz_max;
@@ -465,32 +301,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
       policy_transform_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_transform_bi,1});
   Kokkos::parallel_for("TransformBi",policy_transform_bi,*this);
 
-  //Looks like best way to grab blist is in a parallel_for
-
-  //GridFill
-  /* 
+  // Fill the grid array with bispectrum values
   {
-    int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * ntotal);
-
-    SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridLocalFill> 
-      policy_fill(chunk_size, team_size_compute_neigh, vector_length);
-    policy_fill = policy_fill.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
-    Kokkos::parallel_for("GridLocalFill",policy_fill,*this);
-  }
-  */
-
-  //GridFill2
-  {
-    typename Kokkos::RangePolicy<DeviceType,TagCSNAGridLocalFill2> policy_fill(0,chunk_size);
+    typename Kokkos::RangePolicy<DeviceType,TagCSNAGridLocalFill> policy_fill(0,chunk_size);
     Kokkos::parallel_for(policy_fill, *this);
   }
-
-
-  // populate the gridlocal array
-  // best to do parallel loop over grid points again
-  // ...
-
-  // d_grid(0,0) = 1.0; // attempt to access inaccessible memory space
 
   k_gridlocal.template modify<DeviceType>();
   k_gridlocal.template sync<LMPHostType>();
@@ -500,9 +315,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
 
   k_gridall.template modify<DeviceType>();
   k_gridall.template sync<LMPHostType>();
-  
-
-  printf("^^^ End ComputeSNAGridKokkos compute_array()\n");
 }
 
 /* ----------------------------------------------------------------------
@@ -517,16 +329,8 @@ template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType,TagCSNAGridComputeNeigh>::member_type& team) const {
 
-  // this function is following the same procedure in ComputeNeigh of PairSNAPKokkos
-  //printf("d_wjelem[1]: %f %f %f %f\n", d_wjelem[1], d_wjelem[0], d_wjelem(1), d_wjelem(0));
-  //artificially set values here since we can't get the deep_copy to work
-  //d_wjelem[1] = 1.0;
-  //d_radelem[1] = 0.5;
-  //printf("%f\n", rnd_cutsq(1,1));
-
-  //Print the test view to see that the deep copy works:
-  //printf("%f\n", d_test(0));
-
+  // This function follows similar procedure as ComputeNeigh of PairSNAPKokkos.
+  // Main difference is that we don't use the neighbor class or neighbor variables here.
 
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
 
@@ -534,13 +338,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // team_rank : rank of thread in this team
   // league_rank : rank of team in this league
   // team_size : number of threads in this team
-  //printf("%d %d %d\n", team.team_rank(), team.league_rank(), team.team_size());
 
   // extract loop index
   int ii = team.team_rank() + team.league_rank() * team.team_size();
   if (ii >= chunk_size) return;
-
-  //d_gridall(ii,0) = 100.0;
 
   // get a pointer to scratch memory
   // This is used to cache whether or not an atom is within the cutoff.
@@ -549,10 +350,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const int tile_size = ntotal; // number of elements per thread
   const int team_rank = team.team_rank();
   const int scratch_shift = team_rank * tile_size; // offset into pointer for entire team
-  //printf("ntotal scratch_shift: %d %d\n", ntotal, scratch_shift);
   int* type_cache = (int*)team.team_shmem().get_shmem(team.team_size() * tile_size * sizeof(int), 0) + scratch_shift;
-
-  //printf("ii: %d\n", ii);
 
   // convert to grid indices
 
@@ -565,10 +363,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   ix += nxlo;
 
   double xgrid[3];
-  //int igrid = iz * (nx * ny) + iy * nx + ix;
 
-  // these end up being the same...?
-  //printf("ii igrid: %d %d\n", ii, igrid);
+  // index ii already captures the proper grid point
+  // int igrid = iz * (nx * ny) + iy * nx + ix;
+  // printf("ii igrid: %d %d\n", ii, igrid);
 
   // grid2x converts igrid to ix,iy,iz like we've done before
   //grid2x(igrid, xgrid);
@@ -578,7 +376,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
-  //printf("rtmp: %f %f %f\n", xtmp, ytmp, ztmp);
 
   // currently, all grid points are type 1
   // not clear what a better choice would be
@@ -589,19 +386,14 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const double radi = d_radelem[ielem];
 
   // We need a DomainKokkos::lamda2x parallel for loop here, but let's ignore for now.
+  // The purpose here is to transform for triclinic boxes.
   if (triclinic){
     printf("We are triclinic %f %f %f\n", xtmp, ytmp, ztmp);
-  } else {
-    //printf("We are not triclinic\n");
-  }
-
-  // can check xgrid positions with original
-  //printf("%f %f %f\n", xgrid[0], xgrid[1], xgrid[2]);
+  } 
 
   // Compute the number of neighbors, store rsq
   int ninside = 0;
   // want to loop over ntotal... keep getting seg fault when accessing type_cache[j]?
-  //printf("ntotal: %d\n", ntotal);
   Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
     [&] (const int j, int& count) {
 
@@ -621,24 +413,15 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
     const F_FLOAT dz = x(j,2) - ztmp;
-    //printf("dx: %f\n", dx);
 
-    //const double rsq = delx * delx + dely * dely + delz * delz;
     int jtype = type(j);
-    //printf("jtype: %d\n", jtype);
-    //int jelem = 0;
-    //if (rsq < cutsq[jtype][jtype] && rsq > 1e-20) {
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
-    //if (rsq >= cutsq_tmp){
     // don't include atoms that share location with grid point
-    if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-10) {
+    if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
       jtype = -1; // use -1 to signal it's outside the radius
-    } else {
-      //printf("jtype rsq rnd_cutsq: %d %.11f %f\n", jtype, rsq, rnd_cutsq(itype, jtype));
-    }
+    } 
 
-    //printf("j: %d\n", j);
     type_cache[j] = jtype;
 
     if (jtype >= 0)
@@ -646,12 +429,9 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   }, ninside);
 
-  //printf("ninside: %d\n", ninside);
-
   d_ninside(ii) = ninside; 
-  //printf("%d\n", d_ninside(ii));
 
-  // TODO: Make sure itype is appropriate instead of ielem
+  // TODO: Adjust for multi-element, currently we set jelem = 0 regardless of type.
   Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,ntotal),
     [&] (const int j, int& offset, bool final) {
 
@@ -663,45 +443,16 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
         const F_FLOAT dy = x(j,1) - ytmp;
         const F_FLOAT dz = x(j,2) - ztmp;
         int jtype = type(j);
-        //printf("jtype: %d\n", jtype);
-        if (dx==0 && dy==0 && dz==0){
-          printf("rij: %f %f %f\n", xtmp, ytmp, ztmp);
-        }
         int jelem = 0;
         if (chemflag) jelem = d_map[jtype];
-        //d_wjelem[jelem] = 1.0;
-        //d_radelem[jelem] = 1.0;
         my_sna.rij(ii,offset,0) = static_cast<real_type>(dx);
         my_sna.rij(ii,offset,1) = static_cast<real_type>(dy);
         my_sna.rij(ii,offset,2) = static_cast<real_type>(dz);
         // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
         // actually since the views here have values starting at 0, let's use jelem
         my_sna.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
-        //my_sna.rcutij(ii,offset) = static_cast<real_type>((radi + d_radelem[jtype])*rcutfac);
         my_sna.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
         my_sna.inside(ii,offset) = j;
-
-        //printf("%f\n", my_sna.wj(ii,offset));
-
-        //printf("jelem: %d\n", jelem);
-        //printf("rij: %f %f %f\n", dx, dy, dz);
-        //printf("params: %f %f %f\n", d_wjelem[jtype], d_radelem[jtype], rcutfac);
-        //printf("%f %f %f\n", my_sna.rij(ii,offset,0), my_sna.rij(ii,offset,1), my_sna.rij(offset,2));
-        //printf("%f %f %f\n", my_sna.wj(ii,offset), my_sna.rcutij(ii,offset), my_sna.inside(ii,offset));
-        // we can't use std::cout on device code, maybe make another function for this?
-        //std::cout << my_sna.rij(ii,offset,0) << std::endl;
-        //printf("%f %f %f\n", dx, dy, dz);
-        // apparently isnan is also a host function and not allowed here...
-        /*
-        if (isnan(dx) || isnan(dy) || isnan(dz)){
-          printf("Found a nan!\n");
-        }
-        if (isnan(d_wjelem[jelem]) || isnan(radi) || isnan(d_radelem[jelem]) || isnan(rcutfac) || isnan(j)){
-          printf("Found a nan 2!\n");
-        }
-        */
-        // Our best bet is to make another non-host function for printing
-
         if (switchinnerflag) {
           my_sna.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
           my_sna.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
@@ -722,23 +473,11 @@ KOKKOS_INLINE_FUNCTION
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridComputeCayleyKlein,const int iatom_mod, const int jnbor, const int iatom_div) const {
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
 
-  //printf("^^^ ComputeCayleyKlein\n");
-
-  /*
-  if (DeviceType::in_parallel()) {
-    printf("operator() of TagCSNAGridComputeCayleyKlein is a host function\n");
-  } else {
-    printf("operator() of TagCSNAGridComputeCayleyKlein is not a host function\n");
-  }
-  */
-
   const int ii = iatom_mod + iatom_div * vector_length;
   if (ii >= chunk_size) return;
 
-  const int ninside = d_ninside(ii); // use d_ninside or ntotal?
+  const int ninside = d_ninside(ii);
   if (jnbor >= ninside) return;
-
-  //printf("ninside: %d\n", ninside);
 
   my_sna.compute_cayley_klein(iatom_mod,jnbor,iatom_div);
 }
@@ -752,7 +491,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   if (ii >= chunk_size) return;
 
   int itype = type(ii);
-  //int ielem = d_map[itype];
+  // force ielem to be zero (i.e. type 1) per `compute_sna_grid.cpp`
   int ielem = 0;
 
   my_sna.pre_ui(iatom_mod, j, ielem, iatom_div);
@@ -777,7 +516,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     const int ii = iatom_mod + vector_length * iatom_div;
     if (ii >= chunk_size) return;
 
-    const int ninside = d_ninside(ii); // use ntotal or d_ninside?
+    const int ninside = d_ninside(ii);
     if (jj >= ninside) return;
 
     my_sna.compute_ui_small(team, iatom_mod, jbend, jj, iatom_div);
@@ -827,7 +566,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
     auto utot_re = my_sna.ulisttot_re_pack(iatom_mod, mapper.idxu_half, ielem, iatom_div);
     auto utot_im = my_sna.ulisttot_im_pack(iatom_mod, mapper.idxu_half, ielem, iatom_div);
-    //printf("^^^ utot: %f %f\n", utot_re, utot_im);
 
     if (mapper.flip_sign == 1){
       utot_im = -utot_im;
@@ -893,41 +631,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridLocalFill,const typename Kokkos::TeamPolicy<DeviceType,TagCSNAGridLocalFill>::member_type& team) const {
-
-  // this function is following the same procedure in ComputeNeigh so that we can fill the grid
-
-  SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
-
-  // basic quantities associated with this team:
-  // team_rank : rank of thread in this team
-  // league_rank : rank of team in this league
-  // team_size : number of threads in this team
-  //printf("%d %d %d\n", team.team_rank(), team.league_rank(), team.team_size());
-
-  // extract loop index
-  int ii = team.team_rank() + team.league_rank() * team.team_size();
-  if (ii >= chunk_size) return;
-
-  //d_gridall(ii,0) = 100.0;
-
-  const auto idxb_max = snaKK.idxb_max;
-
-  // linear contributions
-  
-
-
-  for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-    const auto idxb = icoeff % idxb_max;
-    const auto idx_chem = icoeff / idxb_max;
-    d_gridall(ii,icoeff) = my_sna.blist(ii,idx_chem,idxb);
-  }
-
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridLocalFill2, const int& ii) const {
+void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridLocalFill, const int& ii) const {
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
 
   const auto idxb_max = snaKK.idxb_max;
@@ -937,36 +641,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
     const auto idxb = icoeff % idxb_max;
     const auto idx_chem = icoeff / idxb_max;
-    //printf("blist: %f\n", my_sna.blist(ii,idx_chem,idxb));
     d_gridall(ii,icoeff) = my_sna.blist(ii,idx_chem,idxb);
-
-    if (icoeff == 0){
-      //printf("%f\n", my_sna.blist(ii,idx_chem,idxb));
-    }
   }
-
-}
-
-/*
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType,TagCSNAGridComputeNeigh>::member_type& team) const {
-
-
-}
-*/
-
-/* ----------------------------------------------------------------------
-   Begin routines that are unique to the CPU codepath. These do not take
-   advantage of AoSoA data layouts, but that could be a good point of
-   future optimization and unification with the above kernels. It's unlikely
-   that scratch memory optimizations will ever be useful for the CPU due to
-   different arithmetic intensity requirements for the CPU vs GPU.
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagComputeSNAGridLoopCPU,const int& ii) const {
 
 }
 

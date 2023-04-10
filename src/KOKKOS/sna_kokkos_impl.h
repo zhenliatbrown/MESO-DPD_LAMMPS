@@ -393,14 +393,9 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_cayley_klein(const
   const real_type z0 = r * cs / sn;
   const real_type dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
 
-  //printf("jnbor: %d %f %f %f %f %f\n", jnbor, x,y,z, rfac0, rcut);
-  //printf("%f %f %f %f %f %f %f\n", rscale0, r, rmin0, theta0, sn, cs, z0);
-  //printf("%f %f %f %f %f\n", x, y, z, rcut, rmin0);
-
   const real_type wj_local = wj(iatom, jnbor);
   real_type sfac, dsfac;
   compute_s_dsfac(r, rcut, sinner, dinner, sfac, dsfac);
-  //printf("^^^ sfac wj_local: %f %f\n", sfac, wj_local);
   sfac *= wj_local;
   dsfac *= wj_local;
 
@@ -521,8 +516,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_small(const typ
   const complex b = b_pack(iatom_mod, jnbor, iatom_div);
   const real_type sfac = sfac_pack(iatom_mod, jnbor, iatom_div, 0);
 
-  //printf("^^^ %f %f %f %f %f\n", a.re, a.im, b.re, b.im, sfac);
-
   const int jelem = element(iatom_mod + vector_length * iatom_div, jnbor);
 
   // we need to "choose" when to bend
@@ -609,7 +602,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
       ulist_accum.im = -rootpq * (b.re * ulist_prev.im - b.im * ulist_prev.re);
 
     }
-    //printf("^^^ ulist %f %f\n", ulist_accum.re, ulist_accum.im);
 
     ulist_wrapper.set(ma, ulist_accum);
   }
@@ -651,7 +643,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
     }
 
     ulist_wrapper.set(ma, ulist_accum);
-    //printf("^^^ ulist_accum: %f %f\n", ulist_accum.re, ulist_accum.im);
     mb++;
   }
 
@@ -660,15 +651,10 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
 
   for (int ma = 0; ma < j; ma++) {
     const complex ulist_prev = ulist_wrapper.get(ma);
-    //printf("ulist_prev %f %f\n", ulist_prev.re, ulist_prev.im);
 
     // atomic add the previous level here
     Kokkos::atomic_add(&(ulisttot_re_pack(iatom_mod, jjup + ma, jelem, iatom_div)), ulist_prev.re * sfac);
     Kokkos::atomic_add(&(ulisttot_im_pack(iatom_mod, jjup + ma, jelem, iatom_div)), ulist_prev.im * sfac);
-
-    // see if we can see this value
-    //printf("^^^ %f\n", ulisttot_re_pack(iatom_mod, jjup + ma, jelem, iatom_div));
-    //printf("^^^ sfac: %f\n", sfac);
   }
 
 }
@@ -759,7 +745,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
 
             const complex utot = ulisttot_pack(iatom_mod, jju_index, elem3, iatom_div);
             const complex zloc = zlist_pack(iatom_mod, jjz_index, idouble, iatom_div);
-            //printf("^^^ %f %f %f %f\n", utot.re, zloc.re, utot.im, zloc.im); 
             sumzu_temp += utot.re * zloc.re + utot.im * zloc.im;
 
           }
@@ -784,7 +769,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
             sumzu -= bzero[j];
           }
         }
-        //printf("%f\n", sumzu);
         blist_pack(iatom_mod, jjb, itriple, iatom_div) = sumzu;
             //} // end loop over j
           //} // end loop over j1, j2
@@ -885,7 +869,6 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<Devi
   int jju1 = idxu_block[j1] + (j1+1)*mb1min;
   int jju2 = idxu_block[j2] + (j2+1)*mb2max;
   int icgb = mb1min*(j2+1) + mb2max;
-  //printf("^^^ na nb: %d %d\n", na, nb);
   #ifdef LMP_KK_DEVICE_COMPILE
   #pragma unroll
   #endif
@@ -903,7 +886,6 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<Devi
       const complex utot2 = ulisttot_pack(iatom_mod, jju2+ma2, elem2, iatom_div);
       const real_type cgcoeff_a = cgblock[icga];
       const real_type cgcoeff_b = cgblock[icgb];
-      //printf("^^^ utot %f %f %f %f\n", utot1.re, utot1.im, utot2.re, utot2.im);
       ztmp.re += cgcoeff_a * cgcoeff_b * (utot1.re * utot2.re - utot1.im * utot2.im);
       ztmp.im += cgcoeff_a * cgcoeff_b * (utot1.re * utot2.im + utot1.im * utot2.re);
       ma1++;
@@ -921,7 +903,6 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<Devi
     ztmp.re *= scale;
     ztmp.im *= scale;
   }
-  //printf("^^^ ztmp.re ztmp.im: %f %f\n", ztmp.re, ztmp.im);
 
   return ztmp;
 }
@@ -2314,8 +2295,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_s_dsfac(const real
   constexpr real_type one = static_cast<real_type>(1.0);
   constexpr real_type zero = static_cast<real_type>(0.0);
   constexpr real_type onehalf = static_cast<real_type>(0.5);
-
-  //printf("^^^ flags: %d %d\n", switch_flag, switch_inner_flag);
 
   if (switch_flag == 0) { sfac_outer = zero; dsfac_outer = zero; }
   else if (switch_flag == 1) {

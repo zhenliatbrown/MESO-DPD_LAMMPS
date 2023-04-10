@@ -72,7 +72,7 @@ struct TagCSNAGridComputeZi{};
 struct TagCSNAGridComputeBi{};
 struct TagCSNAGridTransformBi{}; // re-order blist from AoSoA to AoS
 struct TagCSNAGridLocalFill{}; // fill the gridlocal array
-struct TagCSNAGridLocalFill2{}; // fill the gridlocal array using same kinda loop as ComputeForce
+//struct TagCSNAGridLocalFill2{}; // fill the gridlocal array using same kinda loop as ComputeForce
 
 struct TagComputeSNAGridLoop{};
 struct TagComputeSNAGrid3D{};
@@ -214,10 +214,7 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   void operator() (TagCSNAGridTransformBi,const int iatom_mod, const int idxb, const int iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalFill,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridLocalFill>::member_type& team) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalFill2,const int& ii) const;
+  void operator() (TagCSNAGridLocalFill,const int& ii) const;
 
  protected:
 

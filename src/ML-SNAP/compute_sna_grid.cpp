@@ -31,7 +31,6 @@ ComputeSNAGrid::ComputeSNAGrid(LAMMPS *lmp, int narg, char **arg) :
   // skip over arguments used by base class
   // so that argument positions are identical to
   // regular per-atom compute
-  printf("^^^ inside compute sna grid constructor\n");
   arg += nargbase;
   narg -= nargbase;
 
@@ -71,7 +70,6 @@ ComputeSNAGrid::ComputeSNAGrid(LAMMPS *lmp, int narg, char **arg) :
   for (int i = 0; i < ntypes; i++) radelem[i + 1] = utils::numeric(FLERR, arg[6 + i], false, lmp);
   for (int i = 0; i < ntypes; i++) {
     wjelem[i + 1] = utils::numeric(FLERR, arg[6 + ntypes + i], false, lmp);
-    printf("^^^^^ ComputeSNAGrid wj: %f\n", wjelem[i+1]);
   }
 
   // construct cutsq
@@ -116,7 +114,6 @@ ComputeSNAGrid::ComputeSNAGrid(LAMMPS *lmp, int narg, char **arg) :
       quadraticflag = utils::inumeric(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "chem") == 0) {
-      printf("^^^ chem flag, creating map\n");
       if (iarg + 2 > narg) error->all(FLERR, "Illegal compute {} command", style);
       chemflag = 1;
       memory->create(map, ntypes + 1, "compute_sna_grid:map");
@@ -188,15 +185,10 @@ ComputeSNAGrid::~ComputeSNAGrid()
 {
   if (copymode) return;
 
-  printf("^^^ begin ComputeSNAGrid destructor\n");
   memory->destroy(radelem);
-  printf("^^^^ CSG 1\n");
   memory->destroy(wjelem);
-  printf("^^^^ CSG 2\n");
   memory->destroy(cutsq);
-  printf("^^^^ CSG 3\n");
   delete snaptr;
-  printf("^^^^ CSG 4\n");
   if (chemflag) memory->destroy(map);
 }
 
@@ -207,15 +199,12 @@ void ComputeSNAGrid::init()
   if ((modify->get_compute_by_style("^sna/grid$").size() > 1) && (comm->me == 0))
     error->warning(FLERR, "More than one instance of compute sna/grid");
   snaptr->init();
-
-  printf("^^^ finished ComputeSNAGrid init()\n");
 }
 
 /* ---------------------------------------------------------------------- */
 
 void ComputeSNAGrid::compute_array()
 {
-  printf("^^^ inside ComputeSNAGrid compute_array()\n");
 
   invoked_array = update->ntimestep;
 
@@ -225,8 +214,6 @@ void ComputeSNAGrid::compute_array()
   const int *const mask = atom->mask;
   int *const type = atom->type;
   const int ntotal = atom->nlocal + atom->nghost;
-
-  printf("^^^ ntotal: %d\n", ntotal);
 
   // ensure rij, inside, and typej are of size jnum
 
