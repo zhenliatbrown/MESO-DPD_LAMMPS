@@ -136,7 +136,7 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokko
 
   printf("^^^ ComputeSNAGridKokkos destructor begin destroy\n");
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
-  memoryKK->destroy_kokkos(k_grid,grid);
+  //memoryKK->destroy_kokkos(k_grid,grid);
   memoryKK->destroy_kokkos(k_gridall, gridall);
   //memoryKK->destroy_kokkos(k_gridlocal, gridlocal);
 }
@@ -166,9 +166,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
   ComputeGrid::set_grid_local();
   
   // allocate arrays
-
-  memoryKK->create_kokkos(k_grid,grid, size_array_rows, size_array_cols, "grid:grid");
+  printf(">>> Allocating gridall.\n");
+  printf(">>> %d %d\n", size_array_rows, size_array_cols);
+  //memoryKK->create_kokkos(k_grid,grid, size_array_rows, size_array_cols, "grid:grid");
   memoryKK->create_kokkos(k_gridall, gridall, size_array_rows, size_array_cols, "grid:gridall");
+  printf(">>> Allocated gridall.\n");
 
   // do not use or allocate gridlocal for now
 
@@ -183,7 +185,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
   array = gridall;
 
   d_gridlocal = k_gridlocal.template view<DeviceType>();
-  d_grid = k_grid.template view<DeviceType>();
+  //d_grid = k_grid.template view<DeviceType>();
   d_gridall = k_gridall.template view<DeviceType>();
 }
 
@@ -218,6 +220,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
   chunk_size = MIN(chunksize, total_range);
   snaKK.grow_rij(chunk_size, ntotal);
+  //snaKK.grow_rij(chunk_size, max_neighs);
 
   //chunk_size = total_range;
  
@@ -322,8 +325,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   k_gridlocal.template modify<DeviceType>();
   k_gridlocal.template sync<LMPHostType>();
 
-  k_grid.template modify<DeviceType>();
-  k_grid.template sync<LMPHostType>();
+  //k_grid.template modify<DeviceType>();
+  //k_grid.template sync<LMPHostType>();
 
   k_gridall.template modify<DeviceType>();
   k_gridall.template sync<LMPHostType>();
@@ -411,23 +414,32 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // Compute the number of neighbors, store rsq
   int ninside = 0;
+  
   // want to loop over ntotal... keep getting seg fault when accessing type_cache[j]?
-  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
-    [&] (const int j, int& count) {
-
-    // From pair snap/kk :
-    /*
-    T_INT j = d_neighbors(i,jj);
+  for (int j = 0; j < ntotal; j++){
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
     const F_FLOAT dz = x(j,2) - ztmp;
-    */
-    // From compute sna/grid/kk :
-    /*
-    const double delx = xtmp - x[j][0];
-    const double dely = ytmp - x[j][1];
-    const double delz = ztmp - x[j][2];
-    */
+
+    int jtype = type(j);
+    const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
+
+    // don't include atoms that share location with grid point
+    if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
+      jtype = -1; // use -1 to signal it's outside the radius
+    } 
+
+    type_cache[j] = jtype;
+
+    if (jtype >= 0)
+      ninside++;
+
+  }
+  
+
+  /*
+  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
+    [&] (const int j, int& count) {
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
     const F_FLOAT dz = x(j,2) - ztmp;
@@ -446,10 +458,45 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
      count++;
 
   }, ninside);
+  */
+  
+
+  //printf("ninside: %d\n", ninside);
 
   d_ninside(ii) = ninside; 
 
   // TODO: Adjust for multi-element, currently we set jelem = 0 regardless of type.
+  int offset = 0;
+  for (int j = 0; j < ntotal; j++){
+    const int jtype = type_cache[j];
+    if (jtype >= 0) {
+      const F_FLOAT dx = x(j,0) - xtmp;
+      const F_FLOAT dy = x(j,1) - ytmp;
+      const F_FLOAT dz = x(j,2) - ztmp;
+      int jtype = type(j);
+      int jelem = 0;
+      if (chemflag) jelem = d_map[jtype];
+      my_sna.rij(ii,offset,0) = static_cast<real_type>(dx);
+      my_sna.rij(ii,offset,1) = static_cast<real_type>(dy);
+      my_sna.rij(ii,offset,2) = static_cast<real_type>(dz);
+      // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
+      // actually since the views here have values starting at 0, let's use jelem
+      my_sna.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
+      my_sna.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
+      my_sna.inside(ii,offset) = j;
+      if (switchinnerflag) {
+        my_sna.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
+        my_sna.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
+      }
+      if (chemflag)
+        my_sna.element(ii,offset) = jelem;
+      else
+        my_sna.element(ii,offset) = 0;
+      offset++;
+    }
+  }
+
+  /*
   Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,ntotal),
     [&] (const int j, int& offset, bool final) {
 
@@ -483,6 +530,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
       offset++;
     }
   });
+  */
 }
 
 
