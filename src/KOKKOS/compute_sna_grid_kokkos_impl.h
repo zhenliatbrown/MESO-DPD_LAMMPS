@@ -166,11 +166,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
   ComputeGrid::set_grid_local();
   
   // allocate arrays
-  printf(">>> Allocating gridall.\n");
-  printf(">>> %d %d\n", size_array_rows, size_array_cols);
+  //printf(">>> Allocating gridall.\n");
+  //printf(">>> %d %d\n", size_array_rows, size_array_cols);
   //memoryKK->create_kokkos(k_grid,grid, size_array_rows, size_array_cols, "grid:grid");
   memoryKK->create_kokkos(k_gridall, gridall, size_array_rows, size_array_cols, "grid:gridall");
-  printf(">>> Allocated gridall.\n");
+  //printf(">>> Allocated gridall.\n");
 
   // do not use or allocate gridlocal for now
 
@@ -209,6 +209,9 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   x = atomKK->k_x.view<DeviceType>();
   type = atomKK->k_type.view<DeviceType>();
   k_cutsq.template sync<DeviceType>();
+  //printf(">>> max neighs\n");
+  // max_neighs is defined here - think of more elaborate methods.
+  max_neighs = 100;
 
   // Pair snap/kk uses grow_ij with some max number of neighs but compute sna/grid uses total 
   // number of atoms.
@@ -216,32 +219,37 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridKokkos:ninside",total_range);
-
+  //printf(">>> chunk_size\n");
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
   chunk_size = MIN(chunksize, total_range);
-  snaKK.grow_rij(chunk_size, ntotal);
-  //snaKK.grow_rij(chunk_size, max_neighs);
+  //snaKK.grow_rij(chunk_size, ntotal);
+  snaKK.grow_rij(chunk_size, max_neighs);
 
   //chunk_size = total_range;
  
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
+  //printf(">>> Begin computeneigh block\n");
   //ComputeNeigh 
   {
-    int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * ntotal);
+    int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * max_neighs); //ntotal);
 
     SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridComputeNeigh> 
       policy_neigh(chunk_size, team_size_compute_neigh, vector_length);
     policy_neigh = policy_neigh.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
+    //printf(">>>> blah\n");
     Kokkos::parallel_for("ComputeNeigh",policy_neigh,*this);
+    //printf(">>>> foo\n");
   }
+
+  //printf(">>>>> Ended compute neigh\n");
 
   //ComputeCayleyKlein
   {
     // tile_size_compute_ck is defined in `compute_sna_grid_kokkos.h`
     Snap3DRangePolicy<DeviceType, tile_size_compute_ck, TagCSNAGridComputeCayleyKlein>
-      policy_compute_ck({0,0,0}, {vector_length, ntotal, chunk_size_div}, {vector_length, tile_size_compute_ck, 1});
+      policy_compute_ck({0,0,0}, {vector_length, max_neighs, chunk_size_div}, {vector_length, tile_size_compute_ck, 1});
     Kokkos::parallel_for("ComputeCayleyKlein", policy_compute_ck, *this);
   }
 
@@ -265,7 +273,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
       // Version with parallelism over j_bend
 
       // total number of teams needed: (natoms / 32) * (ntotal) * ("bend" locations)
-      const int n_teams = chunk_size_div * ntotal * (twojmax + 1);
+      const int n_teams = chunk_size_div * max_neighs * (twojmax + 1);
       const int n_teams_div = (n_teams + team_size_compute_ui - 1) / team_size_compute_ui;
 
       SnapAoSoATeamPolicy<DeviceType, team_size_compute_ui, TagCSNAGridComputeUiSmall>
@@ -276,7 +284,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
       // Version w/out parallelism  over j_bend
 
       // total number of teams needed: (natoms / 32) * (ntotal)
-      const int n_teams = chunk_size_div * ntotal;
+      const int n_teams = chunk_size_div * max_neighs;
       const int n_teams_div = (n_teams + team_size_compute_ui - 1) / team_size_compute_ui;
 
       SnapAoSoATeamPolicy<DeviceType, team_size_compute_ui, TagCSNAGridComputeUiLarge>
@@ -353,7 +361,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   //       natoms = max team size).
 
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
-
+  //printf(">>> Begin computeneigh\n");
   // basic quantities associated with this team:
   // team_rank : rank of thread in this team
   // league_rank : rank of team in this league
@@ -367,11 +375,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // This is used to cache whether or not an atom is within the cutoff.
   // If it is, type_cache is assigned to the atom type.
   // If it's not, it's assigned to -1.
-  const int tile_size = ntotal; // number of elements per thread
+  const int tile_size = ntotal; //max_neighs; // number of elements per thread
   const int team_rank = team.team_rank();
   const int scratch_shift = team_rank * tile_size; // offset into pointer for entire team
   int* type_cache = (int*)team.team_shmem().get_shmem(team.team_size() * tile_size * sizeof(int), 0) + scratch_shift;
-
+  //printf(">>> Convert to grid indices\n");
   // convert to grid indices
 
   int iz = ii/(xlen*ylen);
@@ -415,12 +423,13 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // Compute the number of neighbors, store rsq
   int ninside = 0;
   
-  // want to loop over ntotal... keep getting seg fault when accessing type_cache[j]?
+  //printf(">>> Looping over ntotal\n");
+  // Looping over ntotal for now.
   for (int j = 0; j < ntotal; j++){
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
     const F_FLOAT dz = x(j,2) - ztmp;
-
+    //printf(">>> jtype\n");
     int jtype = type(j);
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
@@ -428,14 +437,17 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
       jtype = -1; // use -1 to signal it's outside the radius
     } 
-
-    type_cache[j] = jtype;
+    //printf(">>> accessing type cache\n");
+    //type_cache[j] = jtype;
 
     if (jtype >= 0)
       ninside++;
 
+    //printf(">>> after type cache\n");
+
   }
-  
+
+  //printf(">>> after first loop\n");  
 
   /*
   Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
@@ -468,8 +480,45 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // TODO: Adjust for multi-element, currently we set jelem = 0 regardless of type.
   int offset = 0;
   for (int j = 0; j < ntotal; j++){
+    //const int jtype = type_cache[j];
+    //if (jtype >= 0) {
+    //printf(">>> offset: %d\n", offset);
+    const F_FLOAT dx = x(j,0) - xtmp;
+    const F_FLOAT dy = x(j,1) - ytmp;
+    const F_FLOAT dz = x(j,2) - ztmp;
+    const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
+    int jtype = type(j);
+    if (rsq < rnd_cutsq(itype,jtype) && rsq > 1e-20) {
+      int jelem = 0;
+      if (chemflag) jelem = d_map[jtype];
+      my_sna.rij(ii,offset,0) = static_cast<real_type>(dx);
+      my_sna.rij(ii,offset,1) = static_cast<real_type>(dy);
+      my_sna.rij(ii,offset,2) = static_cast<real_type>(dz);
+      // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
+      // actually since the views here have values starting at 0, let's use jelem
+      my_sna.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
+      my_sna.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
+      my_sna.inside(ii,offset) = j;
+      if (switchinnerflag) {
+        my_sna.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
+        my_sna.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
+      }
+      if (chemflag)
+        my_sna.element(ii,offset) = jelem;
+      else
+        my_sna.element(ii,offset) = 0;
+      offset++;
+    }
+  }
+
+  //printf(">>> end inside\n");
+
+  /*
+  int offset = 0;
+  for (int j = 0; j < ntotal; j++){
     const int jtype = type_cache[j];
     if (jtype >= 0) {
+      printf(">>> offset: %d\n", offset);
       const F_FLOAT dx = x(j,0) - xtmp;
       const F_FLOAT dy = x(j,1) - ytmp;
       const F_FLOAT dz = x(j,2) - ztmp;
@@ -495,6 +544,9 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
       offset++;
     }
   }
+  */
+
+  //printf(">>> End of computeneigh\n");
 
   /*
   Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,ntotal),
@@ -572,10 +624,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_ui;
 
   // extract neighbor index, iatom_div
-  int iatom_div = flattened_idx / (ntotal * (twojmax + 1)); // removed "const" to work around GCC 7 bug
-  const int jj_jbend = flattened_idx - iatom_div * (ntotal * (twojmax + 1));
-  const int jbend = jj_jbend / ntotal;
-  int jj = jj_jbend - jbend * ntotal; // removed "const" to work around GCC 7 bug
+  int iatom_div = flattened_idx / (max_neighs * (twojmax + 1)); // removed "const" to work around GCC 7 bug
+  const int jj_jbend = flattened_idx - iatom_div * (max_neighs * (twojmax + 1));
+  const int jbend = jj_jbend / max_neighs;
+  int jj = jj_jbend - jbend * max_neighs; // removed "const" to work around GCC 7 bug
 
   Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
     [&] (const int iatom_mod) {
@@ -599,8 +651,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_ui;
 
   // extract neighbor index, iatom_div
-  int iatom_div = flattened_idx / ntotal; // removed "const" to work around GCC 7 bug
-  int jj = flattened_idx - iatom_div * ntotal;
+  int iatom_div = flattened_idx / max_neighs; // removed "const" to work around GCC 7 bug
+  int jj = flattened_idx - iatom_div * max_neighs;
 
   Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
     [&] (const int iatom_mod) {

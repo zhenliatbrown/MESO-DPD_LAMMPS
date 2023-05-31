@@ -232,6 +232,7 @@ void PairMLIAPKokkos<DeviceType>::coeff(int narg, char **arg) {
   // map[i] = which element the Ith atom type is, -1 if not mapped
   // map[0] is not used
 
+  //printf(">>> ntypes: %d\n", atom->ntypes);
   for (int i = 1; i <= atom->ntypes; i++) {
     char* elemname = elemtypes[i-1];
     int jelem;
@@ -239,6 +240,7 @@ void PairMLIAPKokkos<DeviceType>::coeff(int narg, char **arg) {
       if (strcmp(elemname,descriptor->elements[jelem]) == 0)
         break;
 
+    //printf(">>> nelements: %d\n", descriptor->nelements);
     if (jelem < descriptor->nelements)
       map[i] = jelem;
     else if (strcmp(elemname,"NULL") == 0) map[i] = -1;

@@ -220,7 +220,7 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
 
   SNAKokkos<DeviceType, real_type, vector_length> snaKK;
 
-  int chunk_size, chunk_offset;
+  int max_neighs, chunk_size, chunk_offset;
   int host_flag;
   int ntotal;
   int total_range; // total number of loop iterations in grid

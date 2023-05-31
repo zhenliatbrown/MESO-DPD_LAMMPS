@@ -163,6 +163,7 @@ template <typename TYPE, typename HTYPE>
 {
   data = TYPE(std::string(name),n1,n2);
   h_data = Kokkos::create_mirror_view(data);
+  printf(">>> name: %s\n", name);
   return data;
 }
 
@@ -173,6 +174,7 @@ TYPE create_kokkos(TYPE &data, typename TYPE::value_type **&array,
   data = TYPE(std::string(name),n1,n2);
   bigint nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n1;
   array = (typename TYPE::value_type **) smalloc(nbytes,name);
+  printf(">>> name %s nbytes %d\n", name, nbytes);
 
   for (int i = 0; i < n1; i++) {
     if (n2 == 0)
