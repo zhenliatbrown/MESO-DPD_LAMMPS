@@ -134,7 +134,6 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokko
 {
   if (copymode) return;
 
-  printf("^^^ ComputeSNAGridKokkos destructor begin destroy\n");
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
   //memoryKK->destroy_kokkos(k_grid,grid);
   memoryKK->destroy_kokkos(k_gridall, gridall);
@@ -209,7 +208,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   x = atomKK->k_x.view<DeviceType>();
   type = atomKK->k_type.view<DeviceType>();
   k_cutsq.template sync<DeviceType>();
-  //printf(">>> max neighs\n");
+
   // max_neighs is defined here - think of more elaborate methods.
   max_neighs = 100;
 
@@ -219,7 +218,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridKokkos:ninside",total_range);
-  //printf(">>> chunk_size\n");
+
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
   chunk_size = MIN(chunksize, total_range);
   //snaKK.grow_rij(chunk_size, ntotal);
@@ -230,7 +229,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
-  //printf(">>> Begin computeneigh block\n");
   //ComputeNeigh 
   {
     int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * max_neighs); //ntotal);
@@ -238,12 +236,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
     SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridComputeNeigh> 
       policy_neigh(chunk_size, team_size_compute_neigh, vector_length);
     policy_neigh = policy_neigh.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
-    //printf(">>>> blah\n");
     Kokkos::parallel_for("ComputeNeigh",policy_neigh,*this);
-    //printf(">>>> foo\n");
   }
-
-  //printf(">>>>> Ended compute neigh\n");
 
   //ComputeCayleyKlein
   {
@@ -361,7 +355,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   //       natoms = max team size).
 
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
-  //printf(">>> Begin computeneigh\n");
+
   // basic quantities associated with this team:
   // team_rank : rank of thread in this team
   // league_rank : rank of team in this league
@@ -379,7 +373,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const int team_rank = team.team_rank();
   const int scratch_shift = team_rank * tile_size; // offset into pointer for entire team
   int* type_cache = (int*)team.team_shmem().get_shmem(team.team_size() * tile_size * sizeof(int), 0) + scratch_shift;
-  //printf(">>> Convert to grid indices\n");
+
   // convert to grid indices
 
   int iz = ii/(xlen*ylen);
@@ -394,7 +388,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // index ii already captures the proper grid point
   // int igrid = iz * (nx * ny) + iy * nx + ix;
-  // printf("ii igrid: %d %d\n", ii, igrid);
 
   // grid2x converts igrid to ix,iy,iz like we've done before
   // multiply grid integers by grid spacing delx, dely, delz
@@ -423,13 +416,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // Compute the number of neighbors, store rsq
   int ninside = 0;
   
-  //printf(">>> Looping over ntotal\n");
   // Looping over ntotal for now.
   for (int j = 0; j < ntotal; j++){
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
     const F_FLOAT dz = x(j,2) - ztmp;
-    //printf(">>> jtype\n");
     int jtype = type(j);
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
@@ -437,17 +428,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
       jtype = -1; // use -1 to signal it's outside the radius
     } 
-    //printf(">>> accessing type cache\n");
-    //type_cache[j] = jtype;
 
     if (jtype >= 0)
       ninside++;
 
-    //printf(">>> after type cache\n");
-
-  }
-
-  //printf(">>> after first loop\n");  
+  } 
 
   /*
   Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
@@ -471,9 +456,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   }, ninside);
   */
-  
-
-  //printf("ninside: %d\n", ninside);
 
   d_ninside(ii) = ninside; 
 
@@ -482,7 +464,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   for (int j = 0; j < ntotal; j++){
     //const int jtype = type_cache[j];
     //if (jtype >= 0) {
-    //printf(">>> offset: %d\n", offset);
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
     const F_FLOAT dz = x(j,2) - ztmp;
@@ -510,8 +491,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
       offset++;
     }
   }
-
-  //printf(">>> end inside\n");
 
   /*
   int offset = 0;
@@ -545,8 +524,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     }
   }
   */
-
-  //printf(">>> End of computeneigh\n");
 
   /*
   Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,ntotal),
