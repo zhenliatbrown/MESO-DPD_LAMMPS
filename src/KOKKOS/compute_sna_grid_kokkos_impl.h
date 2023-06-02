@@ -220,7 +220,10 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridKokkos:ninside",total_range);
 
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
+  // `total_range` is the number of grid points which may be larger than chunk size.
+  //printf(">>> total_range: %d\n", total_range);
   chunk_size = MIN(chunksize, total_range);
+  chunk_offset = 0;
   //snaKK.grow_rij(chunk_size, ntotal);
   snaKK.grow_rij(chunk_size, max_neighs);
 
@@ -229,100 +232,112 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
-  //ComputeNeigh 
-  {
-    int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * max_neighs); //ntotal);
+  while (chunk_offset < total_range) { // chunk up loop to prevent running out of memory
 
-    SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridComputeNeigh> 
-      policy_neigh(chunk_size, team_size_compute_neigh, vector_length);
-    policy_neigh = policy_neigh.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
-    Kokkos::parallel_for("ComputeNeigh",policy_neigh,*this);
-  }
+    if (chunk_size > total_range - chunk_offset)
+      chunk_size = total_range - chunk_offset;
 
-  //ComputeCayleyKlein
-  {
-    // tile_size_compute_ck is defined in `compute_sna_grid_kokkos.h`
-    Snap3DRangePolicy<DeviceType, tile_size_compute_ck, TagCSNAGridComputeCayleyKlein>
-      policy_compute_ck({0,0,0}, {vector_length, max_neighs, chunk_size_div}, {vector_length, tile_size_compute_ck, 1});
-    Kokkos::parallel_for("ComputeCayleyKlein", policy_compute_ck, *this);
-  }
+    //printf(">>> chunk_offset: %d\n", chunk_offset);
 
-  //PreUi
-  {
-    // tile_size_pre_ui is defined in `compute_sna_grid_kokkos.h`
-    Snap3DRangePolicy<DeviceType, tile_size_pre_ui, TagCSNAGridPreUi>
-      policy_preui({0,0,0},{vector_length,twojmax+1,chunk_size_div},{vector_length,tile_size_pre_ui,1});
-    Kokkos::parallel_for("PreUi",policy_preui,*this);
-  }
-
-  // ComputeUi w/ vector parallelism, shared memory, direct atomicAdd into ulisttot
-  {
-    // team_size_compute_ui is defined in `compute_sna_grid_kokkos.h`
-    // scratch size: 32 atoms * (twojmax+1) cached values, no double buffer
-    const int tile_size = vector_length * (twojmax + 1);
-    const int scratch_size = scratch_size_helper<complex>(team_size_compute_ui * tile_size);
-
-    if (chunk_size < parallel_thresh)
+    //ComputeNeigh 
     {
-      // Version with parallelism over j_bend
+      int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * max_neighs); //ntotal);
 
-      // total number of teams needed: (natoms / 32) * (ntotal) * ("bend" locations)
-      const int n_teams = chunk_size_div * max_neighs * (twojmax + 1);
-      const int n_teams_div = (n_teams + team_size_compute_ui - 1) / team_size_compute_ui;
-
-      SnapAoSoATeamPolicy<DeviceType, team_size_compute_ui, TagCSNAGridComputeUiSmall>
-        policy_ui(n_teams_div, team_size_compute_ui, vector_length);
-      policy_ui = policy_ui.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
-      Kokkos::parallel_for("ComputeUiSmall", policy_ui, *this);
-    } else {
-      // Version w/out parallelism  over j_bend
-
-      // total number of teams needed: (natoms / 32) * (ntotal)
-      const int n_teams = chunk_size_div * max_neighs;
-      const int n_teams_div = (n_teams + team_size_compute_ui - 1) / team_size_compute_ui;
-
-      SnapAoSoATeamPolicy<DeviceType, team_size_compute_ui, TagCSNAGridComputeUiLarge>
-        policy_ui(n_teams_div, team_size_compute_ui, vector_length);
-      policy_ui = policy_ui.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
-      Kokkos::parallel_for("ComputeUiLarge", policy_ui, *this);
+      SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridComputeNeigh> 
+        policy_neigh(chunk_size, team_size_compute_neigh, vector_length);
+      policy_neigh = policy_neigh.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
+      Kokkos::parallel_for("ComputeNeigh",policy_neigh,*this);
     }
-  }
 
-  //TransformUi: un-"fold" ulisttot, zero ylist
-  {
-    // team_size_transform_ui is defined in `pair_snap_kokkos.h`
-    Snap3DRangePolicy<DeviceType, tile_size_transform_ui, TagCSNAGridTransformUi>
-        policy_transform_ui({0,0,0},{vector_length,snaKK.idxu_max,chunk_size_div},{vector_length,tile_size_transform_ui,1});
-    Kokkos::parallel_for("TransformUi",policy_transform_ui,*this);
-  }
+    //ComputeCayleyKlein
+    {
+      // tile_size_compute_ck is defined in `compute_sna_grid_kokkos.h`
+      Snap3DRangePolicy<DeviceType, tile_size_compute_ck, TagCSNAGridComputeCayleyKlein>
+        policy_compute_ck({0,0,0}, {vector_length, max_neighs, chunk_size_div}, {vector_length, tile_size_compute_ck, 1});
+      Kokkos::parallel_for("ComputeCayleyKlein", policy_compute_ck, *this);
+    }
 
-  //Compute bispectrum in AoSoA data layout, transform Bi
+    //PreUi
+    {
+      // tile_size_pre_ui is defined in `compute_sna_grid_kokkos.h`
+      Snap3DRangePolicy<DeviceType, tile_size_pre_ui, TagCSNAGridPreUi>
+        policy_preui({0,0,0},{vector_length,twojmax+1,chunk_size_div},{vector_length,tile_size_pre_ui,1});
+      Kokkos::parallel_for("PreUi",policy_preui,*this);
+    }
 
-  //ComputeZi
-  const int idxz_max = snaKK.idxz_max;
-  Snap3DRangePolicy<DeviceType, tile_size_compute_zi, TagCSNAGridComputeZi>
-      policy_compute_zi({0,0,0},{vector_length,idxz_max,chunk_size_div},{vector_length,tile_size_compute_zi,1});
-  Kokkos::parallel_for("ComputeZi",policy_compute_zi,*this);
+    // ComputeUi w/ vector parallelism, shared memory, direct atomicAdd into ulisttot
+    {
+      // team_size_compute_ui is defined in `compute_sna_grid_kokkos.h`
+      // scratch size: 32 atoms * (twojmax+1) cached values, no double buffer
+      const int tile_size = vector_length * (twojmax + 1);
+      const int scratch_size = scratch_size_helper<complex>(team_size_compute_ui * tile_size);
 
-  //ComputeBi
-  const int idxb_max = snaKK.idxb_max;
-  Snap3DRangePolicy<DeviceType, tile_size_compute_bi, TagCSNAGridComputeBi>
-      policy_compute_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_compute_bi,1});
-  Kokkos::parallel_for("ComputeBi",policy_compute_bi,*this);
+      if (chunk_size < parallel_thresh)
+      {
+        // Version with parallelism over j_bend
 
-  //Transform data layout of blist out of AoSoA
-  //We need this because `blist` gets used in ComputeForce which doesn't
-  //take advantage of AoSoA, which at best would only be beneficial on the margins
-  //NOTE: Do we need this in compute sna/grid/kk?
-  Snap3DRangePolicy<DeviceType, tile_size_transform_bi, TagCSNAGridTransformBi>
-      policy_transform_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_transform_bi,1});
-  Kokkos::parallel_for("TransformBi",policy_transform_bi,*this);
+        // total number of teams needed: (natoms / 32) * (ntotal) * ("bend" locations)
+        const int n_teams = chunk_size_div * max_neighs * (twojmax + 1);
+        const int n_teams_div = (n_teams + team_size_compute_ui - 1) / team_size_compute_ui;
 
-  // Fill the grid array with bispectrum values
-  {
-    typename Kokkos::RangePolicy<DeviceType,TagCSNAGridLocalFill> policy_fill(0,chunk_size);
-    Kokkos::parallel_for(policy_fill, *this);
-  }
+        SnapAoSoATeamPolicy<DeviceType, team_size_compute_ui, TagCSNAGridComputeUiSmall>
+          policy_ui(n_teams_div, team_size_compute_ui, vector_length);
+        policy_ui = policy_ui.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
+        Kokkos::parallel_for("ComputeUiSmall", policy_ui, *this);
+      } else {
+        // Version w/out parallelism  over j_bend
+
+        // total number of teams needed: (natoms / 32) * (ntotal)
+        const int n_teams = chunk_size_div * max_neighs;
+        const int n_teams_div = (n_teams + team_size_compute_ui - 1) / team_size_compute_ui;
+
+        SnapAoSoATeamPolicy<DeviceType, team_size_compute_ui, TagCSNAGridComputeUiLarge>
+          policy_ui(n_teams_div, team_size_compute_ui, vector_length);
+        policy_ui = policy_ui.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
+        Kokkos::parallel_for("ComputeUiLarge", policy_ui, *this);
+      }
+    }
+
+    //TransformUi: un-"fold" ulisttot, zero ylist
+    {
+      // team_size_transform_ui is defined in `pair_snap_kokkos.h`
+      Snap3DRangePolicy<DeviceType, tile_size_transform_ui, TagCSNAGridTransformUi>
+          policy_transform_ui({0,0,0},{vector_length,snaKK.idxu_max,chunk_size_div},{vector_length,tile_size_transform_ui,1});
+      Kokkos::parallel_for("TransformUi",policy_transform_ui,*this);
+    }
+
+    //Compute bispectrum in AoSoA data layout, transform Bi
+
+    //ComputeZi
+    const int idxz_max = snaKK.idxz_max;
+    Snap3DRangePolicy<DeviceType, tile_size_compute_zi, TagCSNAGridComputeZi>
+        policy_compute_zi({0,0,0},{vector_length,idxz_max,chunk_size_div},{vector_length,tile_size_compute_zi,1});
+    Kokkos::parallel_for("ComputeZi",policy_compute_zi,*this);
+
+    //ComputeBi
+    const int idxb_max = snaKK.idxb_max;
+    Snap3DRangePolicy<DeviceType, tile_size_compute_bi, TagCSNAGridComputeBi>
+        policy_compute_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_compute_bi,1});
+    Kokkos::parallel_for("ComputeBi",policy_compute_bi,*this);
+
+    //Transform data layout of blist out of AoSoA
+    //We need this because `blist` gets used in ComputeForce which doesn't
+    //take advantage of AoSoA, which at best would only be beneficial on the margins
+    //NOTE: Do we need this in compute sna/grid/kk?
+    Snap3DRangePolicy<DeviceType, tile_size_transform_bi, TagCSNAGridTransformBi>
+        policy_transform_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_transform_bi,1});
+    Kokkos::parallel_for("TransformBi",policy_transform_bi,*this);
+
+    // Fill the grid array with bispectrum values
+    {
+      typename Kokkos::RangePolicy<DeviceType,TagCSNAGridLocalFill> policy_fill(0,chunk_size);
+      Kokkos::parallel_for(policy_fill, *this);
+    }
+
+    // Proceed to the next chunk.
+    chunk_offset += chunk_size;
+
+  } // end while
 
   k_gridlocal.template modify<DeviceType>();
   k_gridlocal.template sync<LMPHostType>();
@@ -363,7 +378,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // extract loop index
   int ii = team.team_rank() + team.league_rank() * team.team_size();
+
   if (ii >= chunk_size) return;
+
+  // extract grid index
+  int igrid = ii + chunk_offset;
 
   // get a pointer to scratch memory
   // This is used to cache whether or not an atom is within the cutoff.
@@ -376,8 +395,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // convert to grid indices
 
-  int iz = ii/(xlen*ylen);
-  int i2 = ii - (iz*xlen*ylen);
+  int iz = igrid/(xlen*ylen);
+  int i2 = igrid - (iz*xlen*ylen);
   int iy = i2/xlen;
   int ix = i2 % xlen;
   iz += nzlo;
@@ -387,7 +406,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   double xgrid[3];
 
   // index ii already captures the proper grid point
-  // int igrid = iz * (nx * ny) + iy * nx + ix;
+  //int igrid = iz * (nx * ny) + iy * nx + ix;
+  //printf("%d %d\n", ii, igrid);
 
   // grid2x converts igrid to ix,iy,iz like we've done before
   // multiply grid integers by grid spacing delx, dely, delz
@@ -729,10 +749,14 @@ KOKKOS_INLINE_FUNCTION
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (TagCSNAGridLocalFill, const int& ii) const {
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
 
+
+  // extract grid index
+  int igrid = ii + chunk_offset;
+
   // convert to grid indices
 
-  int iz = ii/(xlen*ylen);
-  int i2 = ii - (iz*xlen*ylen);
+  int iz = igrid/(xlen*ylen);
+  int i2 = igrid - (iz*xlen*ylen);
   int iy = i2/xlen;
   int ix = i2 % xlen;
   iz += nzlo;
@@ -753,9 +777,9 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
-  d_gridall(ii,0) = xtmp;
-  d_gridall(ii,1) = ytmp;
-  d_gridall(ii,2) = ztmp;
+  d_gridall(igrid,0) = xtmp;
+  d_gridall(igrid,1) = ytmp;
+  d_gridall(igrid,2) = ztmp;
 
   const auto idxb_max = snaKK.idxb_max;
 
@@ -764,7 +788,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
     const auto idxb = icoeff % idxb_max;
     const auto idx_chem = icoeff / idxb_max;
-    d_gridall(ii,icoeff+3) = my_sna.blist(ii,idx_chem,idxb);
+    d_gridall(igrid,icoeff+3) = my_sna.blist(ii,idx_chem,idxb);
   }
 
 }
