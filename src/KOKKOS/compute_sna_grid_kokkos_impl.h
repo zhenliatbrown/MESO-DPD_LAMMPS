@@ -28,6 +28,8 @@
 #include "neigh_request.h"
 #include "neighbor_kokkos.h"
 //#include "sna_kokkos.h"
+#include "domain.h"
+#include "domain_kokkos.h"
 #include "sna.h"
 #include "update.h"
 
@@ -49,6 +51,7 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
 {
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;
+  domainKK = (DomainKokkos *) domain;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
   datamask_read = EMPTY_MASK;
   datamask_modify = EMPTY_MASK;
@@ -231,6 +234,23 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
  
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
+
+  if (triclinic){
+    /*
+    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+    */
+    h0 = domain->h[0];
+    h1 = domain->h[1];
+    h2 = domain->h[2];
+    h3 = domain->h[3];
+    h4 = domain->h[4];   
+    h5 = domain->h[5];   
+    lo0 = domain->boxlo[0];
+    lo1 = domain->boxlo[1];
+    lo2 = domain->boxlo[2];
+  }
 
   while (chunk_offset < total_range) { // chunk up loop to prevent running out of memory
 
@@ -415,6 +435,26 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   xgrid[0] = ix * delx;
   xgrid[1] = iy * dely;
   xgrid[2] = iz * delz;
+
+  if (triclinic) {
+
+    // Do a conversion on `xgrid` here like we do in the CPU version.
+
+    // Can't do this:
+    // domainKK->lamda2x(xgrid, xgrid);
+    // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
+
+    // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
+    /*
+    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+    */
+    xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
+    xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
+    xgrid[2] = h2*xgrid[2] + lo2;
+  }
+
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
@@ -429,9 +469,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // We need a DomainKokkos::lamda2x parallel for loop here, but let's ignore for now.
   // The purpose here is to transform for triclinic boxes.
+  /*
   if (triclinic){
     printf("We are triclinic %f %f %f\n", xtmp, ytmp, ztmp);
-  } 
+  }
+  */
 
   // Compute the number of neighbors, store rsq
   int ninside = 0;
@@ -774,6 +816,25 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   xgrid[0] = ix * delx;
   xgrid[1] = iy * dely;
   xgrid[2] = iz * delz;
+  if (triclinic) {
+
+    // Do a conversion on `xgrid` here like we do in the CPU version.
+
+    // Can't do this:
+    // domainKK->lamda2x(xgrid, xgrid);
+    // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
+
+    // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
+    /*
+    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+    */
+    xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
+    xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
+    xgrid[2] = h2*xgrid[2] + lo2;
+  }
+
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
