@@ -269,6 +269,17 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   template <typename scratch_type>
   int scratch_size_helper(int values_per_team);
 
+  class DomainKokkos *domainKK;
+
+  // triclinic vars
+  /*
+  xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+  xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+  xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+  */
+  double h0, h1, h2, h3, h4, h5;
+  double lo0, lo1, lo2;
+
 };
 
 // These wrapper classes exist to make the compute style factory happy/avoid having
