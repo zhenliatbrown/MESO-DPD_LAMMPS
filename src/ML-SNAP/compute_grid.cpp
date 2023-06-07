@@ -57,6 +57,7 @@ ComputeGrid::ComputeGrid(LAMMPS *lmp, int narg, char **arg) :
 
 ComputeGrid::~ComputeGrid()
 {
+  if (copymode) return;
   deallocate();
 }
 
@@ -87,6 +88,7 @@ void ComputeGrid::grid2x(int igrid, double *x)
   x[2] = iz * delz;
 
   if (triclinic) domain->lamda2x(x, x);
+  //printf(">>>>> ComputeGrid::grid2x\n");
 }
 
 /* ----------------------------------------------------------------------
@@ -102,6 +104,7 @@ void ComputeGrid::assign_coords_all()
     gridall[igrid][1] = x[1];
     gridall[igrid][2] = x[2];
   }
+  //printf(">>>>> ComputeGrid::assign_coords_all\n");
 }
 
 /* ----------------------------------------------------------------------
@@ -110,8 +113,8 @@ void ComputeGrid::assign_coords_all()
 
 void ComputeGrid::allocate()
 {
+  //printf(">>> ComputeGrid::allocate\n");
   // allocate arrays
-
   memory->create(grid, size_array_rows, size_array_cols, "grid:grid");
   memory->create(gridall, size_array_rows, size_array_cols, "grid:gridall");
   if (nxlo <= nxhi && nylo <= nyhi && nzlo <= nzhi) {

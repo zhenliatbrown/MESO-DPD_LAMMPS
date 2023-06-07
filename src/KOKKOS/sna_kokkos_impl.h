@@ -643,7 +643,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
     }
 
     ulist_wrapper.set(ma, ulist_accum);
-
     mb++;
   }
 
@@ -870,7 +869,6 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<Devi
   int jju1 = idxu_block[j1] + (j1+1)*mb1min;
   int jju2 = idxu_block[j2] + (j2+1)*mb2max;
   int icgb = mb1min*(j2+1) + mb2max;
-
   #ifdef LMP_KK_DEVICE_COMPILE
   #pragma unroll
   #endif
@@ -2298,7 +2296,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_s_dsfac(const real
   constexpr real_type zero = static_cast<real_type>(0.0);
   constexpr real_type onehalf = static_cast<real_type>(0.5);
 
-  if (switch_flag == 0) { sfac_outer = zero; dsfac_outer = zero; }
+  if (switch_flag == 0) { sfac_outer = one; dsfac_outer = zero; }
   else if (switch_flag == 1) {
     if (r <= rmin0) { sfac_outer = one; dsfac_outer = zero; }
     else if (r > rcut) { sfac = zero; dsfac = zero; return; }
