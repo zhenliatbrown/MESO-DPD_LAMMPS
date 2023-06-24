@@ -168,22 +168,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
   ComputeGrid::set_grid_local();
   
   // allocate arrays
-  //printf(">>> Allocating gridall.\n");
-  //printf(">>> %d %d\n", size_array_rows, size_array_cols);
-  //memoryKK->create_kokkos(k_grid,grid, size_array_rows, size_array_cols, "grid:grid");
   memoryKK->create_kokkos(k_gridall, gridall, size_array_rows, size_array_cols, "grid:gridall");
-  //printf(">>> Allocated gridall.\n");
 
   // do not use or allocate gridlocal for now
 
   gridlocal_allocated = 0;
-  /*
-  if (nxlo <= nxhi && nylo <= nyhi && nzlo <= nzhi) {
-    gridlocal_allocated = 1;
-    memoryKK->create4d_offset_kokkos(k_gridlocal, gridlocal, size_array_cols, nzlo, nzhi, nylo, 
-                                     nyhi, nxlo, nxhi, "grid:gridlocal");
-  }
-  */
   array = gridall;
 
   d_gridlocal = k_gridlocal.template view<DeviceType>();
