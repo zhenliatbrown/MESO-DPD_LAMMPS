@@ -193,14 +193,14 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
   // `total_range` is the number of grid points which may be larger than chunk size.
   //printf(">>> total_range: %d\n", total_range);
-  chunksize = 32768;
+  chunksize = 10*32768; // 100*32768
   chunk_size = MIN(chunksize, total_range);
   chunk_offset = 0;
 
   int vector_length_default = 1;
   int team_size_default = 1;
   if (!host_flag)
-    team_size_default = 32;//max_neighs;
+    team_size_default = 1; // cost will increase with increasing team size //32;//max_neighs;
 
   if (triclinic){
     /*
