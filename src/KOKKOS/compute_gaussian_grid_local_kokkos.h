@@ -29,7 +29,7 @@ ComputeStyle(gaussian/grid/local/kk/host,ComputeGaussianGridLocalKokkos<LMPHostT
 namespace LAMMPS_NS {
 
 // clang-format off
-//struct TagComputeGaussianGridLocal {};
+struct TagComputeGaussianGridLocalNeigh{};
 // clang-format on
 
 template <class DeviceType> class ComputeGaussianGridLocalKokkos : public ComputeGaussianGridLocal {
@@ -37,13 +37,25 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
 
+  // Static team/tile sizes for device offload
+
+#ifdef KOKKOS_ENABLE_HIP
+  static constexpr int team_size_compute_neigh = 2;
+#else
+  static constexpr int team_size_compute_neigh = 4;
+#endif
+
   ComputeGaussianGridLocalKokkos(class LAMMPS *, int, char **);
   ~ComputeGaussianGridLocalKokkos() override;
+  void setup() override;
   void init() override;
   void compute_local() override;
 
-  //KOKKOS_INLINE_FUNCTION
-  //void operator()(TagComputeGaussianGridLocal const int &) const;
+  template<class TagStyle>
+  void check_team_size_for(int, int&, int);
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagComputeGaussianGridLocalNeigh, const typename Kokkos::TeamPolicy<DeviceType, TagComputeGaussianGridLocalNeigh>::member_type& team) const;
 
  private:
   //double adof, mvv2e, mv2d, boltz;
@@ -51,6 +63,12 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
   Kokkos::View<double*, DeviceType> d_radelem;              // element radii
   Kokkos::View<int*, DeviceType> d_ninside;                // ninside for all atoms in list
   Kokkos::View<int*, DeviceType> d_map;                    // mapping from atom types to elements
+
+  typedef Kokkos::DualView<F_FLOAT**, DeviceType> tdual_fparams;
+  tdual_fparams k_cutsq;
+  typedef Kokkos::View<const F_FLOAT**, DeviceType,
+      Kokkos::MemoryTraits<Kokkos::RandomAccess> > t_fparams_rnd;
+  t_fparams_rnd rnd_cutsq;
 
   /*
   typename AT::t_x_array x;
@@ -67,6 +85,19 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
 
   //DAT::tdual_float_2d k_result;
   //typename AT::t_float_2d d_result;
+
+  int max_neighs, inum, chunk_size, chunk_offset;
+  int host_flag;
+  int total_range; // total number of loop iterations in grid
+  int xlen, ylen, zlen;
+  int chunksize; 
+  int ntotal; 
+
+  typename AT::t_x_array_randomread x;
+  typename AT::t_int_1d_randomread type;
+
+  DAT::tdual_float_2d k_alocal;
+  typename AT::t_float_2d d_alocal;
 };
 
 }    // namespace LAMMPS_NS

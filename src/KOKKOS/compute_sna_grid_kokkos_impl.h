@@ -135,7 +135,9 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
 template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokkos()
 {
+  //printf(">>> ComputeSNAGridKokkos destruct begin copymode %d\n", copymode);
   if (copymode) return;
+  //printf(">>> After copymode\n");
 
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
   //memoryKK->destroy_kokkos(k_grid,grid);
