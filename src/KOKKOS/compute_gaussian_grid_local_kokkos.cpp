@@ -322,6 +322,14 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
     d_alocal(igrid, icol) = 0.0;
   }
 
+  // Fill grid info columns
+  d_alocal(igrid, 0) = ix;
+  d_alocal(igrid, 1) = iy;
+  d_alocal(igrid, 2) = iz;
+  d_alocal(igrid, 3) = xtmp;
+  d_alocal(igrid, 4) = ytmp;
+  d_alocal(igrid, 5) = ztmp;
+
   // currently, all grid points are type 1
   // not clear what a better choice would be
   
