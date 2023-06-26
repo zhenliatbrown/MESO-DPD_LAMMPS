@@ -66,16 +66,25 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
   }
   //printf(">>> 1\n");
   // Set up element lists
-  MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",nelements);
   int n = atom->ntypes;
+  MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",nelements);
+  MemKK::realloc_kokkos(d_sigmaelem,"ComputeSNAGridKokkos::sigmaelem",n+1);
+  MemKK::realloc_kokkos(d_prefacelem,"ComputeSNAGridKokkos::prefacelem",n+1);
+  MemKK::realloc_kokkos(d_argfacelem,"ComputeSNAGridKokkos::argfacelem",n+1);
   MemKK::realloc_kokkos(d_map,"ComputeSNAGridKokkos::map",n+1);
   //printf(">>> 2\n");
   auto h_radelem = Kokkos::create_mirror_view(d_radelem);
+  auto h_sigmaelem = Kokkos::create_mirror_view(d_sigmaelem);
+  auto h_prefacelem = Kokkos::create_mirror_view(d_prefacelem);
+  auto h_argfacelem = Kokkos::create_mirror_view(d_argfacelem);
   auto h_map = Kokkos::create_mirror_view(d_map);
   //printf(">>> 3\n");
   // start from index 1 because of how compute sna/grid is
   for (int i = 1; i <= atom->ntypes; i++) {
     h_radelem(i-1) = radelem[i];
+    h_sigmaelem(i-1) = sigmaelem[i];
+    h_prefacelem(i-1) = prefacelem[i];
+    h_argfacelem(i-1) = argfacelem[i];
   }
   //printf(">>> 4\n");
   // In pair snap some things like `map` get allocated regardless of chem flag.
@@ -87,6 +96,9 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
   */
   //printf(">>> 5\n");
   Kokkos::deep_copy(d_radelem,h_radelem);
+  Kokkos::deep_copy(d_sigmaelem,h_sigmaelem);
+  Kokkos::deep_copy(d_prefacelem, h_prefacelem);
+  Kokkos::deep_copy(d_argfacelem, h_argfacelem);
   Kokkos::deep_copy(d_map,h_map);
   //printf(">>> 6\n");
 
@@ -126,6 +138,8 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::setup()
 
   //gridlocal_allocated = 1;
   //array = gridall;
+
+  array_local = alocal;
 
   d_alocal = k_alocal.template view<DeviceType>();
   //d_grid = k_grid.template view<DeviceType>();
@@ -188,6 +202,23 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   if (!host_flag)
     team_size_default = 32;//max_neighs;
 
+  if (triclinic){
+    /*
+    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+    */
+    h0 = domain->h[0];
+    h1 = domain->h[1];
+    h2 = domain->h[2];
+    h3 = domain->h[3];
+    h4 = domain->h[4];   
+    h5 = domain->h[5];   
+    lo0 = domain->boxlo[0];
+    lo1 = domain->boxlo[1];
+    lo2 = domain->boxlo[2];
+  }
+
   while (chunk_offset < total_range) { // chunk up loop to prevent running out of memory
 
     if (chunk_size > total_range - chunk_offset)
@@ -198,9 +229,9 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
       int vector_length = vector_length_default;
       int team_size = team_size_default;
       check_team_size_for<TagComputeGaussianGridLocalNeigh>(chunk_size,team_size,vector_length);
-      printf(">>> Check 1 %d %d %d\n", chunk_size, team_size, vector_length);
+      //printf(">>> Check 1 %d %d %d\n", chunk_size, team_size, vector_length);
       typename Kokkos::TeamPolicy<DeviceType, TagComputeGaussianGridLocalNeigh> policy_neigh(chunk_size,team_size,vector_length);
-      printf(">>> Check 2\n");
+      //printf(">>> Check 2\n");
       Kokkos::parallel_for("ComputeGaussianGridLocalNeigh",policy_neigh,*this);
     }
 
@@ -213,6 +244,8 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   k_alocal.template modify<DeviceType>();
   k_alocal.template sync<LMPHostType>();
 
+  printf(">>> k_alocal: %f\n", k_alocal.h_view(0,6));
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -223,6 +256,102 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
 {
   const int ii = team.league_rank();
   //printf("%d\n", ii);
+
+  if (ii >= chunk_size) return;
+
+  // extract grid index
+  int igrid = ii + chunk_offset;
+
+  // get a pointer to scratch memory
+  // This is used to cache whether or not an atom is within the cutoff.
+  // If it is, type_cache is assigned to the atom type.
+  // If it's not, it's assigned to -1.
+  const int tile_size = ntotal; //max_neighs; // number of elements per thread
+  const int team_rank = team.team_rank();
+  const int scratch_shift = team_rank * tile_size; // offset into pointer for entire team
+  int* type_cache = (int*)team.team_shmem().get_shmem(team.team_size() * tile_size * sizeof(int), 0) + scratch_shift;
+
+  // convert to grid indices
+
+  int iz = igrid/(xlen*ylen);
+  int i2 = igrid - (iz*xlen*ylen);
+  int iy = i2/xlen;
+  int ix = i2 % xlen;
+  iz += nzlo;
+  iy += nylo;
+  ix += nxlo;
+
+  double xgrid[3];
+
+  // index ii already captures the proper grid point
+  //int igrid = iz * (nx * ny) + iy * nx + ix;
+  //printf("%d %d\n", ii, igrid);
+
+  // grid2x converts igrid to ix,iy,iz like we've done before
+  // multiply grid integers by grid spacing delx, dely, delz
+  //grid2x(igrid, xgrid);
+  xgrid[0] = ix * delx;
+  xgrid[1] = iy * dely;
+  xgrid[2] = iz * delz;
+
+  if (triclinic) {
+
+    // Do a conversion on `xgrid` here like we do in the CPU version.
+
+    // Can't do this:
+    // domainKK->lamda2x(xgrid, xgrid);
+    // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
+
+    // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
+    /*
+    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+    */
+    xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
+    xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
+    xgrid[2] = h2*xgrid[2] + lo2;
+  }
+
+  const F_FLOAT xtmp = xgrid[0];
+  const F_FLOAT ytmp = xgrid[1];
+  const F_FLOAT ztmp = xgrid[2];
+
+  // Zeroing out the components, which are filled as a sum.
+  for (int icol = size_local_cols_base; icol < size_local_cols; icol++){
+    d_alocal(igrid, icol) = 0.0;
+  }
+
+  // currently, all grid points are type 1
+  // not clear what a better choice would be
+  
+  const int itype = 1;
+  int ielem = 0;
+  ielem = d_map[itype];
+  const double radi = d_radelem[ielem];
+
+  // Compute the number of neighbors, store rsq
+  int ninside = 0;
+  
+
+  // Looping over ntotal for now.
+  
+  for (int j = 0; j < ntotal; j++){
+    const F_FLOAT dx = x(j,0) - xtmp;
+    const F_FLOAT dy = x(j,1) - ytmp;
+    const F_FLOAT dz = x(j,2) - ztmp;
+    int jtype = type(j);
+    const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
+
+    if (rsq < rnd_cutsq(jtype, jtype) ) {
+      //printf("%f %f\n", d_prefacelem(jtype-1), d_argfacelem(jtype-1));
+      int icol = size_local_cols_base + jtype - 1;
+      d_alocal(igrid, icol) += d_prefacelem(jtype-1) * exp(-rsq * d_argfacelem(jtype-1));
+    }
+  }
+
+  //printf("%f\n", d_alocal(igrid, 6));
+  
 }
 
 /* ----------------------------------------------------------------------

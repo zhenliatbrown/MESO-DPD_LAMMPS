@@ -61,6 +61,9 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
   //double adof, mvv2e, mv2d, boltz;
 
   Kokkos::View<double*, DeviceType> d_radelem;              // element radii
+  Kokkos::View<double*, DeviceType> d_sigmaelem;
+  Kokkos::View<double*, DeviceType> d_prefacelem;
+  Kokkos::View<double*, DeviceType> d_argfacelem;
   Kokkos::View<int*, DeviceType> d_ninside;                // ninside for all atoms in list
   Kokkos::View<int*, DeviceType> d_map;                    // mapping from atom types to elements
 
@@ -98,6 +101,15 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
 
   DAT::tdual_float_2d k_alocal;
   typename AT::t_float_2d d_alocal;
+
+  // triclinic vars
+  /*
+  xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
+  xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
+  xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
+  */
+  double h0, h1, h2, h3, h4, h5;
+  double lo0, lo1, lo2;
 };
 
 }    // namespace LAMMPS_NS
