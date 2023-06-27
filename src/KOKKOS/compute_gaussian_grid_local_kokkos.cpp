@@ -109,14 +109,14 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
 template<class DeviceType>
 ComputeGaussianGridLocalKokkos<DeviceType>::~ComputeGaussianGridLocalKokkos()
 {
-  printf(">>> ComputeGaussianGridLocalKokkos destruct begin, copymode %d\n", copymode);
+  //printf(">>> ComputeGaussianGridLocalKokkos destruct begin, copymode %d\n", copymode);
   if (copymode) return;
 
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
   memoryKK->destroy_kokkos(k_alocal,alocal);
   //gridlocal_allocated = 0;
 
-  printf(">>> ComputeGaussianGridLocalKokkos end\n");
+  //printf(">>> ComputeGaussianGridLocalKokkos end\n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -133,7 +133,7 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::setup()
   ComputeGridLocal::setup();
 
   // allocate arrays
-  printf(">>> rows cols kokkos init: %d %d\n", size_local_rows, size_local_cols);
+  //printf(">>> rows cols kokkos init: %d %d\n", size_local_rows, size_local_cols);
   memoryKK->create_kokkos(k_alocal, alocal, size_local_rows, size_local_cols, "grid:alocal");
 
   //gridlocal_allocated = 1;
@@ -160,7 +160,7 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::init()
 template<class DeviceType>
 void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
 {
-  printf(">>> compute_local Kokkos begin\n");
+  //printf(">>> compute_local Kokkos begin\n");
 
   if (host_flag) {
     return;
@@ -193,7 +193,7 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
   // `total_range` is the number of grid points which may be larger than chunk size.
   //printf(">>> total_range: %d\n", total_range);
-  chunksize = 10*32768; // 100*32768
+  chunksize = 32768; // 100*32768
   chunk_size = MIN(chunksize, total_range);
   chunk_offset = 0;
 
@@ -244,7 +244,7 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   k_alocal.template modify<DeviceType>();
   k_alocal.template sync<LMPHostType>();
 
-  printf(">>> k_alocal: %f\n", k_alocal.h_view(0,6));
+  //printf(">>> k_alocal: %f\n", k_alocal.h_view(0,6));
 
 }
 

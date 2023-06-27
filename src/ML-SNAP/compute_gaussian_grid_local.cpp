@@ -113,8 +113,8 @@ void ComputeGaussianGridLocal::init()
 
 void ComputeGaussianGridLocal::compute_local()
 {
-  printf(">>> compute_local CPU\n");
-  printf(">>> size_local_cols_base, size_local_cols: %d %d\n", size_local_cols_base, size_local_cols);
+  //printf(">>> compute_local CPU\n");
+  //printf(">>> size_local_cols_base, size_local_cols: %d %d\n", size_local_cols_base, size_local_cols);
   invoked_local = update->ntimestep;
 
   // compute gaussian for each gridpoint
