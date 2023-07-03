@@ -32,7 +32,7 @@ class ComputeGaussianGridLocal : public ComputeGridLocal {
   void compute_local() override;
   double memory_usage() override;
 
- private:
+ protected:
   int ncoeff;
   double **cutsq;
   double rcutfac;     // global cut-off scale

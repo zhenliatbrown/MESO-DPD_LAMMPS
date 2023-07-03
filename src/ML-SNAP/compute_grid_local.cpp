@@ -61,13 +61,16 @@ ComputeGridLocal::ComputeGridLocal(LAMMPS *lmp, int narg, char **arg) :
 
 ComputeGridLocal::~ComputeGridLocal()
 {
+  //printf(">>> ComputeGridLocal begin destruct\n");
   deallocate();
+  //printf(">>> ComputeGridLocal end destruct\n");
 }
 
 /* ---------------------------------------------------------------------- */
 
 void ComputeGridLocal::setup()
 {
+  //printf(">>> ComputeGridLocal setup\n");
   deallocate();
   set_grid_global();
   set_grid_local();
@@ -106,6 +109,7 @@ void ComputeGridLocal::grid2lamda(int ix, int iy, int iz, double *x)
 
 void ComputeGridLocal::allocate()
 {
+  //printf(">>> ComputeGridLocal::allocate %d %d\n", size_local_rows, size_local_cols);
   if (nxlo <= nxhi && nylo <= nyhi && nzlo <= nzhi) {
     gridlocal_allocated = 1;
     memory->create(alocal, size_local_rows, size_local_cols, "compute/grid/local:alocal");
@@ -119,10 +123,14 @@ void ComputeGridLocal::allocate()
 
 void ComputeGridLocal::deallocate()
 {
+  //printf(">>> ComputeGridLocal::deallocate begin gridlocal_allocated %d copymode %d\n", gridlocal_allocated, copymode);
+  if (copymode) return;
+
   if (gridlocal_allocated) {
     gridlocal_allocated = 0;
     memory->destroy(alocal);
   }
+  //printf(">>> ComputeGridLocal:: deallocate end\n");
   array_local = nullptr;
 }
 
@@ -177,6 +185,8 @@ void ComputeGridLocal::set_grid_local()
   // if 2 procs share a boundary a grid point is exactly on,
   //   the 2 equality if tests ensure a consistent decision
   //   as to which proc owns it
+
+  //printf(">>> ComputeGridLocal set_grid_local\n");
 
   double xfraclo, xfrachi, yfraclo, yfrachi, zfraclo, zfrachi;
 

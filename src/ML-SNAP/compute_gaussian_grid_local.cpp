@@ -41,8 +41,8 @@ ComputeGaussianGridLocal::ComputeGaussianGridLocal(LAMMPS *lmp, int narg, char *
   arg += nargbase;
   narg -= nargbase;
 
-  double rfac0, rmin0;
-  int twojmax, switchflag, bzeroflag, bnormflag, wselfallflag;
+  //double rfac0, rmin0;
+  //int twojmax, switchflag, bzeroflag, bnormflag, wselfallflag;
 
   int ntypes = atom->ntypes;
   int nargmin = 4 + 2 * ntypes;
@@ -91,11 +91,14 @@ ComputeGaussianGridLocal::ComputeGaussianGridLocal(LAMMPS *lmp, int narg, char *
 
 ComputeGaussianGridLocal::~ComputeGaussianGridLocal()
 {
+  //printf(">>> ComputeGaussianGridLocal begin destruct copymode %d\n", copymode);
+  if (copymode) return;
   memory->destroy(radelem);
   memory->destroy(sigmaelem);
   memory->destroy(prefacelem);
   memory->destroy(argfacelem);
   memory->destroy(cutsq);
+  //printf(">>> ComputeGaussianGridLocal end destruct\n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -110,6 +113,8 @@ void ComputeGaussianGridLocal::init()
 
 void ComputeGaussianGridLocal::compute_local()
 {
+  //printf(">>> compute_local CPU\n");
+  //printf(">>> size_local_cols_base, size_local_cols: %d %d\n", size_local_cols_base, size_local_cols);
   invoked_local = update->ntimestep;
 
   // compute gaussian for each gridpoint
@@ -146,7 +151,7 @@ void ComputeGaussianGridLocal::compute_local()
           const double rsq = delx * delx + dely * dely + delz * delz;
           int jtype = type[j];
           if (rsq < cutsq[jtype][jtype]) {
-          int icol = size_local_cols_base + jtype - 1;
+            int icol = size_local_cols_base + jtype - 1;
             alocal[igrid][icol] += prefacelem[jtype] * exp(-rsq * argfacelem[jtype]);
           }
         }
