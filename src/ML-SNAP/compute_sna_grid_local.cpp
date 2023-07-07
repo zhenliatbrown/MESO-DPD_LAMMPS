@@ -37,8 +37,8 @@ ComputeSNAGridLocal::ComputeSNAGridLocal(LAMMPS *lmp, int narg, char **arg) :
 
   // begin code common to all SNAP computes
 
-  double rfac0, rmin0;
-  int twojmax, switchflag, bzeroflag, bnormflag, wselfallflag;
+  //double rfac0, rmin0;
+  //int twojmax, switchflag, bzeroflag, bnormflag, wselfallflag;
 
   int ntypes = atom->ntypes;
   int nargmin = 6 + 2 * ntypes;
@@ -56,6 +56,8 @@ ComputeSNAGridLocal::ComputeSNAGridLocal(LAMMPS *lmp, int narg, char **arg) :
   wselfallflag = 0;
   switchinnerflag = 0;
   nelements = 1;
+  chunksize = 32768;
+  parallel_thresh = 8192;
 
   // process required arguments
 
