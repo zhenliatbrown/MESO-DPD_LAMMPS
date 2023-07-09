@@ -240,6 +240,11 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
 
   typename AT::t_x_array_randomread x;
   typename AT::t_int_1d_randomread type;
+  
+  DAT::tdual_float_2d k_alocal;
+  typename AT::t_float_2d d_alocal;
+
+  /*
   DAT::tdual_float_2d k_grid;
   DAT::tdual_float_2d k_gridall;
   typename AT::t_float_2d d_grid;
@@ -247,6 +252,7 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
 
   DAT::tdual_float_4d k_gridlocal;
   typename AT::t_float_4d d_gridlocal;
+  */
 
 
   // Utility routine which wraps computing per-team scratch size requirements for

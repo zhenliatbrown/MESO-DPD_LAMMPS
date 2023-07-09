@@ -135,11 +135,12 @@ ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridL
 template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridLocalKokkos()
 {
-  //printf(">>> ComputeSNAGridLocalKokkos destruct begin copymode %d\n", copymode);
+  printf(">>> ComputeSNAGridLocalKokkos destruct begin copymode %d\n", copymode);
   if (copymode) return;
   //printf(">>> After copymode\n");
 
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
+  memoryKK->destroy_kokkos(k_alocal,alocal);
   //memoryKK->destroy_kokkos(k_grid,grid);
   //memoryKK->destroy_kokkos(k_gridall, gridall);
   //memoryKK->destroy_kokkos(k_gridlocal, gridlocal);
@@ -169,18 +170,23 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::setup()
   //ComputeGrid::set_grid_global();
   //ComputeGrid::set_grid_local();
   //ComputeSNAGridLocal::setup();
+  ComputeGridLocal::setup();
   
   // allocate arrays
   //memoryKK->create_kokkos(k_gridall, gridall, size_array_rows, size_array_cols, "grid:gridall");
+  memoryKK->create_kokkos(k_alocal, alocal, size_local_rows, size_local_cols, "grid:alocal");
 
   // do not use or allocate gridlocal for now
 
-  gridlocal_allocated = 0;
+  //gridlocal_allocated = 0;
   //array = gridall;
 
-  d_gridlocal = k_gridlocal.template view<DeviceType>();
+  array_local = alocal;
+
+  //d_gridlocal = k_gridlocal.template view<DeviceType>();
   //d_grid = k_grid.template view<DeviceType>();
-  d_gridall = k_gridall.template view<DeviceType>();
+  //d_gridall = k_gridall.template view<DeviceType>();
+  d_alocal = k_alocal.template view<DeviceType>();
 }
 
 // Compute
@@ -191,6 +197,8 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
   if (host_flag) {
     return;
   }
+
+  printf(">>> ComputeSNAGridLocalKokkos::compute_local begin\n");
 
   copymode = 1;
 
@@ -212,6 +220,7 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
 
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
+  printf(">>> total_range: %d\n", total_range);
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridLocalKokkos:ninside",total_range);
 
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
@@ -351,14 +360,10 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
 
   } // end while
 
-  k_gridlocal.template modify<DeviceType>();
-  k_gridlocal.template sync<LMPHostType>();
+  copymode = 0;
 
-  //k_grid.template modify<DeviceType>();
-  //k_grid.template sync<LMPHostType>();
-
-  k_gridall.template modify<DeviceType>();
-  k_gridall.template sync<LMPHostType>();
+  k_alocal.template modify<DeviceType>();
+  k_alocal.template sync<LMPHostType>();
 }
 
 /* ----------------------------------------------------------------------
@@ -830,9 +835,9 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
   const F_FLOAT xtmp = xgrid[0];
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
-  d_gridall(igrid,0) = xtmp;
-  d_gridall(igrid,1) = ytmp;
-  d_gridall(igrid,2) = ztmp;
+  //d_gridall(igrid,0) = xtmp;
+  //d_gridall(igrid,1) = ytmp;
+  //d_gridall(igrid,2) = ztmp;
 
   const auto idxb_max = snaKK.idxb_max;
 
@@ -841,7 +846,7 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
   for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
     const auto idxb = icoeff % idxb_max;
     const auto idx_chem = icoeff / idxb_max;
-    d_gridall(igrid,icoeff+3) = my_sna.blist(ii,idx_chem,idxb);
+    //d_gridall(igrid,icoeff+3) = my_sna.blist(ii,idx_chem,idxb);
   }
 
 }

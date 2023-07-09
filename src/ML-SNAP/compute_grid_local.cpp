@@ -61,21 +61,21 @@ ComputeGridLocal::ComputeGridLocal(LAMMPS *lmp, int narg, char **arg) :
 
 ComputeGridLocal::~ComputeGridLocal()
 {
-  //printf(">>> ComputeGridLocal begin destruct\n");
+  printf(">>> ComputeGridLocal begin destruct\n");
   deallocate();
-  //printf(">>> ComputeGridLocal end destruct\n");
+  printf(">>> ComputeGridLocal end destruct\n");
 }
 
 /* ---------------------------------------------------------------------- */
 
 void ComputeGridLocal::setup()
 {
-  //printf(">>> ComputeGridLocal setup\n");
   deallocate();
   set_grid_global();
   set_grid_local();
   allocate();
   assign_coords();
+  printf(">>> ComputeGridLocal setup nx ny nz %d %d %d %d %d %d\n", nxlo, nxhi, nylo, nyhi, nzlo, nzhi);
 }
 
 /* ----------------------------------------------------------------------

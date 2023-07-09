@@ -182,6 +182,7 @@ ComputeSNAGridLocal::ComputeSNAGridLocal(LAMMPS *lmp, int narg, char **arg) :
 
 ComputeSNAGridLocal::~ComputeSNAGridLocal()
 {
+  if (copymode) return;
   memory->destroy(radelem);
   memory->destroy(wjelem);
   memory->destroy(cutsq);
