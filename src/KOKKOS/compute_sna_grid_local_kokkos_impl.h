@@ -456,6 +456,19 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
   const F_FLOAT ytmp = xgrid[1];
   const F_FLOAT ztmp = xgrid[2];
 
+  // Zeroing out the components, which are filled as a sum.
+  for (int icol = size_local_cols_base; icol < size_local_cols; icol++){
+    d_alocal(igrid, icol) = 0.0;
+  }
+
+  // Fill grid info columns
+  d_alocal(igrid, 0) = ix;
+  d_alocal(igrid, 1) = iy;
+  d_alocal(igrid, 2) = iz;
+  d_alocal(igrid, 3) = xtmp;
+  d_alocal(igrid, 4) = ytmp;
+  d_alocal(igrid, 5) = ztmp;
+
   // currently, all grid points are type 1
   // not clear what a better choice would be
 
@@ -832,9 +845,9 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
     xgrid[2] = h2*xgrid[2] + lo2;
   }
 
-  const F_FLOAT xtmp = xgrid[0];
-  const F_FLOAT ytmp = xgrid[1];
-  const F_FLOAT ztmp = xgrid[2];
+  //const F_FLOAT xtmp = xgrid[0];
+  //const F_FLOAT ytmp = xgrid[1];
+  //const F_FLOAT ztmp = xgrid[2];
   //d_gridall(igrid,0) = xtmp;
   //d_gridall(igrid,1) = ytmp;
   //d_gridall(igrid,2) = ztmp;
@@ -846,7 +859,7 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
   for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
     const auto idxb = icoeff % idxb_max;
     const auto idx_chem = icoeff / idxb_max;
-    //d_gridall(igrid,icoeff+3) = my_sna.blist(ii,idx_chem,idxb);
+    d_alocal(igrid,icoeff+6) = my_sna.blist(ii,idx_chem,idxb);
   }
 
 }
