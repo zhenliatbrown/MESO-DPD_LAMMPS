@@ -135,7 +135,7 @@ ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridL
 template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridLocalKokkos()
 {
-  printf(">>> ComputeSNAGridLocalKokkos destruct begin copymode %d\n", copymode);
+  //printf(">>> ComputeSNAGridLocalKokkos destruct begin copymode %d\n", copymode);
   if (copymode) return;
   //printf(">>> After copymode\n");
 
@@ -198,7 +198,7 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
     return;
   }
 
-  printf(">>> ComputeSNAGridLocalKokkos::compute_local begin\n");
+  //printf(">>> ComputeSNAGridLocalKokkos::compute_local begin\n");
 
   copymode = 1;
 
@@ -220,7 +220,7 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
 
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
-  printf(">>> total_range: %d\n", total_range);
+  //printf(">>> total_range: %d\n", total_range);
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridLocalKokkos:ninside",total_range);
 
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
