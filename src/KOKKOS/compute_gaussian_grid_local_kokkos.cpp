@@ -67,7 +67,7 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
   //printf(">>> 1\n");
   // Set up element lists
   int n = atom->ntypes;
-  MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",nelements);
+  MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",n);
   MemKK::realloc_kokkos(d_sigmaelem,"ComputeSNAGridKokkos::sigmaelem",n+1);
   MemKK::realloc_kokkos(d_prefacelem,"ComputeSNAGridKokkos::prefacelem",n+1);
   MemKK::realloc_kokkos(d_argfacelem,"ComputeSNAGridKokkos::argfacelem",n+1);
