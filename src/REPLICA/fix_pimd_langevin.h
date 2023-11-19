@@ -95,7 +95,7 @@ class FixPIMDLangevin : public Fix {
 
   void comm_init();
   void inter_replica_comm(double **ptr);
-  void spring_force();
+  void virtual spring_force();
 
   /* normal-mode operations */
 
