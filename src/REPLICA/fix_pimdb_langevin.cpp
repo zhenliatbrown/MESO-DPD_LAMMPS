@@ -50,11 +50,8 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     bosonic_exchange(lmp, atom->nlocal, np, universe->me,
                      false)
 {
-
-    // TODO: update, ensure consistency with PIMDB
-
-  if (method == CMD) {
-    error->universe_all(FLERR, "Method cmd not supported in fix pimdb");
+  if (method != PIMD) {
+    error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
   }
 
   nbosons    = atom->nlocal;
