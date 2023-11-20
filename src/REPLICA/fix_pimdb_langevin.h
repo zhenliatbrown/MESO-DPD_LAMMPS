@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(pimdb,FixPIMDB)
+FixStyle(pimdb/langevin,FixPIMDBLangevin);
 
 #else
 
