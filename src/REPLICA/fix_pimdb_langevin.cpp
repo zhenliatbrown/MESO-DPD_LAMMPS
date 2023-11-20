@@ -72,8 +72,9 @@ void FixPIMDBLangevin::spring_force() {
     // TODO: verify these pointers
     int nlocal = atom->nlocal;
     double* me_bead_positions = *(atom->x);
-    double* last_bead_positions = bufsortedall[x_last * nlocal];
-    double* next_bead_positions = bufsortedall[x_next * nlocal];
+    double* last_bead_positions = &bufsortedall[x_last * nlocal][0];
+    double* next_bead_positions = &bufsortedall[x_next * nlocal][0];
+
     bosonic_exchange.prepare_with_coordinates(me_bead_positions,
                                               last_bead_positions, next_bead_positions,
                                               beta, ff);
