@@ -36,6 +36,7 @@ protected:
 private:
   int nbosons;
   BosonicExchange bosonic_exchange;
+  double** f_tag_order;
 };
 
 

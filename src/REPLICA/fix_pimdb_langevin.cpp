@@ -58,18 +58,20 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
   }
 
   nbosons    = atom->nlocal;
+
+  memory->create(f_tag_order, nbosons, 3, "FixPIMDBLangevin:f_tag_order");
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::~FixPIMDBLangevin() {
+    memory->destroy(f_tag_order);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::spring_force() {
     double ff = fbond * atom->mass[atom->type[0]]; // TODO: ensure that all masses are the same
-    // TODO: verify these pointers
     int nlocal = atom->nlocal;
     double* me_bead_positions = *(atom->x);
     double* last_bead_positions = &bufsortedall[x_last * nlocal][0];
@@ -79,14 +81,25 @@ void FixPIMDBLangevin::spring_force() {
                                               last_bead_positions, next_bead_positions,
                                               beta, ff);
 
-    // TODO: translate order back from tag order
+    for (int i = 0; i < nbosons; i++) {
+        f_tag_order[i][0] = 0.0;
+        f_tag_order[i][1] = 0.0;
+        f_tag_order[i][2] = 0.0;
+    }
     // TODO virial
-    double virial = bosonic_exchange.spring_force(atom->f);
+    double virial = bosonic_exchange.spring_force(f_tag_order);
 
-    // TODO spring force
-    // if (universe->me == np - 1) {
-    //     spring_energy = bosonic_exchange.get_potential();
-    // }
+    double** f = atom->f;
+    int* tag = atom->tag;
+    for (int i = 0; i < nbosons; i++) {
+        f[i][0] -= f_tag_order[tag[i] - 1][0];
+        f[i][1] -= f_tag_order[tag[i] - 1][1];
+        f[i][2] -= f_tag_order[tag[i] - 1][2];
+    }
+
+     if (universe->me == np - 1) {
+         spring_energy = bosonic_exchange.get_potential();
+     }
 }
 
 /* ---------------------------------------------------------------------- */
