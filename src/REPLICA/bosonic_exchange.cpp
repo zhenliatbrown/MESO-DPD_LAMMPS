@@ -7,9 +7,9 @@
 
 using namespace LAMMPS_NS;
 
-BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, double beta) :
+BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic) :
         Pointers(lmp),
-        nbosons(nbosons), np(np), bead_num(bead_num), beta(beta) {
+        nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic) {
     memory->create(temp_nbosons_array, nbosons, "BosonicExchange: temp_nbosons_array");
     memory->create(separate_atom_spring, nbosons, "BosonicExchange: separate_atom_spring");
     memory->create(E_kn, (nbosons * (nbosons + 1) / 2), "BosonicExchange: E_kn");
@@ -19,10 +19,11 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
 }
 
 void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
-                                               double spring_constant) {
+                                               double beta, double spring_constant) {
     this->x = x;
     this->x_prev = x_prev;
     this->x_next = x_next;
+    this->beta = beta;
     this->spring_constant = spring_constant;
 
     evaluate_cycle_energies();

@@ -437,7 +437,7 @@ void FixPIMDLangevin::init()
   }
   planck *= sp;
   hbar = planck / (2.0 * MY_PI);
-  double beta = 1.0 / (force->boltz * temp);
+  beta = 1.0 / (force->boltz * temp);
   double _fbond = 1.0 * np * np / (beta * beta * hbar * hbar);
 
   omega_np = np / (hbar * beta) * sqrt(force->mvv2e);

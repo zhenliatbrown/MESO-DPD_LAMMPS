@@ -48,7 +48,7 @@ enum{PIMD,NMPIMD,CMD};
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDLangevin(lmp, narg, arg),
     bosonic_exchange(lmp, atom->nlocal, np, universe->me,
-                     beta)
+                     false)
 {
 
     // TODO: update, ensure consistency with PIMDB
@@ -76,7 +76,7 @@ void FixPIMDBLangevin::spring_force() {
     double* next_bead_positions = bufsortedall[x_next * nlocal];
     bosonic_exchange.prepare_with_coordinates(me_bead_positions,
                                               last_bead_positions, next_bead_positions,
-                                              ff);
+                                              beta, ff);
 
     // TODO: translate order back from tag order
     // TODO virial
