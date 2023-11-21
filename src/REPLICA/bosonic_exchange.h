@@ -30,7 +30,7 @@ namespace LAMMPS_NS {
         double get_Vn(int n) const;
         double get_E_kn_serial_order(int i) const;
 
-        double spring_force(double** f);
+        void spring_force(double** f);
 
     private:
         void evaluate_cycle_energies();
@@ -39,9 +39,9 @@ namespace LAMMPS_NS {
         double get_Enk(int m, int k);
         void set_Enk(int m, int k, double val);
         void evaluate_connection_probabilities();
-        double spring_force_last_bead(double** f);
-        double spring_force_first_bead(double** f);
-        double spring_force_interior_bead(double** f);
+        void spring_force_last_bead(double** f);
+        void spring_force_first_bead(double** f);
+        void spring_force_interior_bead(double** f);
         void Evaluate_VBn();
         void Evaluate_V_backwards();
 

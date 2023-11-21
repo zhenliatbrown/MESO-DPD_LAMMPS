@@ -156,7 +156,7 @@ void BosonicExchange::Evaluate_VBn()
         if (!std::isfinite(V[m])) {
             error->universe_one(
                     FLERR,
-                    fmt::format("Invalid sig_denom {} with Elongest {} in fix pimdb potential",
+                    fmt::format("Invalid sig_denom {} with Elongest {} in bosonic exchange potential",
                                 sig_denom, Elongest));
         }
     }
@@ -186,7 +186,7 @@ void BosonicExchange::Evaluate_V_backwards() {
         if (!std::isfinite(V_backwards[l])) {
             error->universe_one(
                     FLERR,
-                    fmt::format("Invalid sig_denom {} with Elongest {} in fix pimdb potential backwards",
+                    fmt::format("Invalid sig_denom {} with Elongest {} in bosonic exchange potential backwards",
                                 sig_denom, Elongest));
         }
     }
@@ -215,14 +215,14 @@ double BosonicExchange::get_E_kn_serial_order(int i) const {
 
 /* ---------------------------------------------------------------------- */
 
-double BosonicExchange::spring_force(double** f) {
+void BosonicExchange::spring_force(double** f) {
     if (bead_num == np - 1) {
-        return spring_force_last_bead(f);
+        spring_force_last_bead(f);
+    } else if (bead_num == 0) {
+        spring_force_first_bead(f);
+    } else {
+        spring_force_interior_bead(f);
     }
-    if (bead_num == 0) {
-        return spring_force_first_bead(f);
-    }
-    return spring_force_interior_bead(f);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -246,10 +246,8 @@ void BosonicExchange::evaluate_connection_probabilities() {
 
 /* ---------------------------------------------------------------------- */
 
-double BosonicExchange::spring_force_last_bead(double** f)
+void BosonicExchange::spring_force_last_bead(double** f)
 {
-    double virial = 0.0;
-
     const double* x_first_bead = x_next;
     const double* x_last_bead = x;
 
@@ -275,22 +273,16 @@ double BosonicExchange::spring_force_last_bead(double** f)
         sum_y += diff_prev[1];
         sum_z += diff_prev[2];
 
-        virial += -0.5 * (x[3 * l + 0] * f[l][0] + x[3 * l + 1] * f[l][1] + x[3 * l + 2] * f[l][2]);
-
-        f[l][0] -= sum_x * spring_constant;
-        f[l][1] -= sum_y * spring_constant;
-        f[l][2] -= sum_z * spring_constant;
+        f[l][0] += sum_x * spring_constant;
+        f[l][1] += sum_y * spring_constant;
+        f[l][2] += sum_z * spring_constant;
     }
-
-    return virial;
 }
 
 /* ---------------------------------------------------------------------- */
 
-double BosonicExchange::spring_force_first_bead(double** f)
+void BosonicExchange::spring_force_first_bead(double** f)
 {
-    double virial = 0.0;
-
     const double* x_first_bead = x;
     const double* x_last_bead = x_prev;
 
@@ -316,22 +308,16 @@ double BosonicExchange::spring_force_first_bead(double** f)
         sum_y += diff_next[1];
         sum_z += diff_next[2];
 
-        virial += -0.5 * (x[3 * l + 0] * f[l][0] + x[3 * l + 1] * f[l][1] + x[3 * l + 2] * f[l][2]);
-
-        f[l][0] -= sum_x * spring_constant;
-        f[l][1] -= sum_y * spring_constant;
-        f[l][2] -= sum_z * spring_constant;
+        f[l][0] += sum_x * spring_constant;
+        f[l][1] += sum_y * spring_constant;
+        f[l][2] += sum_z * spring_constant;
     }
-
-    return virial;
 }
 
 /* ---------------------------------------------------------------------- */
 
-double BosonicExchange::spring_force_interior_bead(double **f)
+void BosonicExchange::spring_force_interior_bead(double **f)
 {
-    double virial = 0.0;
-
     for (int l = 0; l < nbosons; l++) {
         double sum_x = 0.0;
         double sum_y = 0.0;
@@ -349,14 +335,10 @@ double BosonicExchange::spring_force_interior_bead(double **f)
         sum_y += diff_next[1];
         sum_z += diff_next[2];
 
-        virial += -0.5 * (x[3 * l + 0] * f[l][0] + x[3 * l + 1] * f[l][1] + x[3 * l + 2] * f[l][2]);
-
-        f[l][0] -= sum_x * spring_constant;
-        f[l][1] -= sum_y * spring_constant;
-        f[l][2] -= sum_z * spring_constant;
+        f[l][0] += sum_x * spring_constant;
+        f[l][1] += sum_y * spring_constant;
+        f[l][2] += sum_z * spring_constant;
     }
-
-    return virial;
 }
 
 /* ---------------------------------------------------------------------- */

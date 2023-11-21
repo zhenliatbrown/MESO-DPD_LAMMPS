@@ -83,19 +83,20 @@ void FixPIMDBLangevin::spring_force() {
         f_tag_order[i][1] = 0.0;
         f_tag_order[i][2] = 0.0;
     }
-    // TODO virial
-    double virial = bosonic_exchange.spring_force(f_tag_order);
+    bosonic_exchange.spring_force(f_tag_order);
 
     double** f = atom->f;
-    int* tag = atom->tag;
+    tagint* tag = atom->tag;
     for (int i = 0; i < nbosons; i++) {
-        f[i][0] -= f_tag_order[tag[i] - 1][0];
-        f[i][1] -= f_tag_order[tag[i] - 1][1];
-        f[i][2] -= f_tag_order[tag[i] - 1][2];
+        f[i][0] += f_tag_order[tag[i] - 1][0];
+        f[i][1] += f_tag_order[tag[i] - 1][1];
+        f[i][2] += f_tag_order[tag[i] - 1][2];
     }
 
      if (universe->me == np - 1) {
          spring_energy = bosonic_exchange.get_potential();
+     } else {
+         spring_energy = 0.0;
      }
 }
 
