@@ -80,17 +80,23 @@ void BosonicExchange::evaluate_cycle_energies()
         temp_nbosons_array[i] = distance_squared_two_beads(x, i, x_next, i);
     }
 
-    // TODO: enough to communicate to replicas 0,np-1
-    MPI_Allreduce(temp_nbosons_array, separate_atom_spring, nbosons,
-                  MPI_DOUBLE, MPI_SUM, universe->uworld);
+    // Reduce the result and send to bead_num=0
+    MPI_Reduce(temp_nbosons_array, separate_atom_spring, nbosons,
+                  MPI_DOUBLE, MPI_SUM, 0, universe->uworld);
 
     if (bead_num == 0 || bead_num == np - 1) {
         const double* x_first_bead;
         const double* x_last_bead;
         if (bead_num == 0) {
+            // Send to bead_num=np-1
+            MPI_Send(separate_atom_spring, nbosons, MPI_DOUBLE, np - 1, 0, universe->uworld);
+
             x_first_bead = x;
             x_last_bead = x_prev;
         } else {
+            // Receive at bead_num=np-1 from bead_num=0
+            MPI_Recv(separate_atom_spring, nbosons, MPI_DOUBLE, 0, 0, universe->uworld, MPI_STATUS_IGNORE);
+            
             x_first_bead = x_next;
             x_last_bead = x;
         }
