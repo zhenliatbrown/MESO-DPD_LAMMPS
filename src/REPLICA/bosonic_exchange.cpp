@@ -143,12 +143,12 @@ void BosonicExchange::Evaluate_VBn()
         for (int k = m; k > 0; k--) {
             double val = get_Enk(m,k) + V[m-k];
             Elongest = std::min(Elongest, val);
-            temp_nbosons_array[k] = val;
+            temp_nbosons_array[k - 1] = val;
         }
 
         double sig_denom = 0.0;
         for (int k = m; k > 0; k--) {
-            sig_denom += exp(-beta * (temp_nbosons_array[k] - Elongest));
+            sig_denom += exp(-beta * (temp_nbosons_array[k - 1] - Elongest));
         }
 
         V[m] = Elongest - (1.0 / beta) * log(sig_denom / (double)m);
