@@ -98,6 +98,14 @@ void FixPIMDBLangevin::spring_force() {
      } else {
          spring_energy = 0.0;
      }
+
+     compute_kinetic_energy();
 }
 
 /* ---------------------------------------------------------------------- */
+
+void FixPIMDBLangevin::compute_kinetic_energy() {
+    FixPIMDLangevin::compute_cvir();
+
+    t_prim = bosonic_exchange.prim_estimator();
+}

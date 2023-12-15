@@ -32,6 +32,8 @@ namespace LAMMPS_NS {
 
         void spring_force(double** f);
 
+        double prim_estimator();
+
     private:
         void evaluate_cycle_energies();
         void diff_two_beads(const double* x1, int l1, const double* x2, int l2, double diff[3]);
@@ -63,6 +65,8 @@ namespace LAMMPS_NS {
 
         double* temp_nbosons_array;
         double* separate_atom_spring;
+
+        double *prim_est;
     };
 
 

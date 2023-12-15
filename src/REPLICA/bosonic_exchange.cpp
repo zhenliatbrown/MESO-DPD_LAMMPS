@@ -16,6 +16,7 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
     memory->create(V, nbosons + 1, "BosonicExchange: V");
     memory->create(V_backwards, nbosons + 1, "BosonicExchange: V_backwards");
     memory->create(connection_probabilities, nbosons * nbosons, "BosonicExchange: connection probabilities");
+    memory->create(prim_est, nbosons + 1, "BosonicExchange: prim_est");
 }
 
 void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
@@ -38,6 +39,7 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
 /* ---------------------------------------------------------------------- */
 
 BosonicExchange::~BosonicExchange() {
+    memory->destroy(prim_est);
     memory->destroy(connection_probabilities);
     memory->destroy(V_backwards);
     memory->destroy(V);
@@ -345,6 +347,38 @@ void BosonicExchange::spring_force_interior_bead(double **f)
         f[l][1] += sum_y * spring_constant;
         f[l][2] += sum_z * spring_constant;
     }
+}
+
+/* ---------------------------------------------------------------------- */
+
+// Primitive kinetic energy estimator for bosons.
+// Corresponds to Eqns. (4)-(5) in SI of pnas.1913365116
+double BosonicExchange::prim_estimator()
+{
+  prim_est[0] = 0.0;
+
+  for (int m = 1; m < nbosons + 1; ++m) {
+    double sig = 0.0;
+
+    // Numerical stability (Xiong & Xiong method)
+    double Elongest = std::numeric_limits<double>::max();
+
+    for (int k = m; k > 0; k--) {
+      Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
+    }
+    
+    for (int k = m; k > 0; --k) {
+      double E_kn_val = get_Enk(m, k);
+
+      sig += (prim_est[m - k] - E_kn_val) * exp(-beta * (E_kn_val + V[m - k] - Elongest));
+    }
+
+    double sig_denom_m = m * exp(-beta * (V[m] - Elongest));
+
+    prim_est[m] = sig / sig_denom_m;
+  }
+  
+  return 0.5 * np * domain->dimension * nbosons / beta + prim_est[nbosons];
 }
 
 /* ---------------------------------------------------------------------- */
