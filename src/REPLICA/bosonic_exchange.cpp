@@ -105,11 +105,11 @@ void BosonicExchange::evaluate_cycle_energies()
 
         for (int v = 0; v < nbosons; v++) {
             set_Enk(v + 1, 1,
-                    -0.5 * spring_constant * separate_atom_spring[v]);
+                    0.5 * spring_constant * separate_atom_spring[v]);
 
             for (int u = v - 1; u >= 0; u--) {
                 double val = get_Enk(v + 1, v - u) +
-                             -0.5 * spring_constant * (
+                             0.5 * spring_constant * (
                                      // Eint(u)
                                      separate_atom_spring[u] - distance_squared_two_beads(x_first_bead, u, x_last_bead, u)
                                      // connect u to u+1
