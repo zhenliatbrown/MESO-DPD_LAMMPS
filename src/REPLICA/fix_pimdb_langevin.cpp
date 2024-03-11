@@ -76,7 +76,7 @@ void FixPIMDBLangevin::spring_force() {
 
     bosonic_exchange.prepare_with_coordinates(me_bead_positions,
                                               last_bead_positions, next_bead_positions,
-                                              beta, ff);
+                                              beta_np, ff);
 
     for (int i = 0; i < nbosons; i++) {
         f_tag_order[i][0] = 0.0;
@@ -93,5 +93,5 @@ void FixPIMDBLangevin::spring_force() {
         f[i][2] += f_tag_order[tag[i] - 1][2];
     }
 
-     total_spring_energy = bosonic_exchange.get_potential();
+    total_spring_energy = bosonic_exchange.get_potential();
 }
