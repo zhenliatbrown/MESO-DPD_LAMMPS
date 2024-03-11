@@ -93,19 +93,5 @@ void FixPIMDBLangevin::spring_force() {
         f[i][2] += f_tag_order[tag[i] - 1][2];
     }
 
-     if (universe->me == np - 1) {
-         spring_energy = bosonic_exchange.get_potential();
-     } else {
-         spring_energy = 0.0;
-     }
-
-     compute_kinetic_energy();
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixPIMDBLangevin::compute_kinetic_energy() {
-    FixPIMDLangevin::compute_cvir();
-
-    t_prim = bosonic_exchange.prim_estimator();
+     total_spring_energy = bosonic_exchange.get_potential();
 }

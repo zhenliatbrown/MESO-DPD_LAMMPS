@@ -37,8 +37,6 @@ private:
   int nbosons;
   BosonicExchange bosonic_exchange;
   double** f_tag_order;
-
-  void compute_kinetic_energy();
 };
 
 
