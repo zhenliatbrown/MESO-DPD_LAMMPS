@@ -377,8 +377,8 @@ double BosonicExchange::prim_estimator()
 
     prim_est[m] = sig / sig_denom_m;
   }
-  
-  return 0.5 * np * domain->dimension * nbosons / beta + prim_est[nbosons];
+
+  return 0.5 * domain->dimension * nbosons / beta + prim_est[nbosons] / np;
 }
 
 /* ---------------------------------------------------------------------- */
