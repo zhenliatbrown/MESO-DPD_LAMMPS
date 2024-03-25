@@ -54,6 +54,8 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
   }
 
+  size_vector = 6;
+
   nbosons    = atom->nlocal;
 
   memory->create(f_tag_order, nbosons, 3, "FixPIMDBLangevin:f_tag_order");
@@ -92,6 +94,21 @@ void FixPIMDBLangevin::spring_force() {
         f[i][1] += f_tag_order[tag[i] - 1][1];
         f[i][2] += f_tag_order[tag[i] - 1][2];
     }
+}
 
+/* ---------------------------------------------------------------------- */
+
+void FixPIMDBLangevin::compute_spring_energy() {
     total_spring_energy = bosonic_exchange.get_potential();
+    se_bead = (universe->iworld == np - 1 ? total_spring_energy : 0.0);
+}
+
+/* ---------------------------------------------------------------------- */
+
+double FixPIMDBLangevin::compute_vector(int n)
+{
+    if (0 <= n && n < 6) {
+        return FixPIMDLangevin::compute_vector(n);
+    }
+    return 0.0;
 }

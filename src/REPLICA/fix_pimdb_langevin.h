@@ -30,7 +30,10 @@ class FixPIMDBLangevin : public FixPIMDLangevin {
     FixPIMDBLangevin(class LAMMPS *, int, char **);
     ~FixPIMDBLangevin();
 
-protected:
+    double compute_vector(int) override;
+    void compute_spring_energy() override;
+
+        protected:
     void spring_force() override;
 
 private:
