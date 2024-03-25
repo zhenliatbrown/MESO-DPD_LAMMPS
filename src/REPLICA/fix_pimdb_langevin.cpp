@@ -105,6 +105,13 @@ void FixPIMDBLangevin::compute_spring_energy() {
 
 /* ---------------------------------------------------------------------- */
 
+void FixPIMDBLangevin::compute_t_prim()
+{
+    t_prim = bosonic_exchange.prim_estimator();
+}
+
+/* ---------------------------------------------------------------------- */
+
 double FixPIMDBLangevin::compute_vector(int n)
 {
     if (0 <= n && n < 6) {

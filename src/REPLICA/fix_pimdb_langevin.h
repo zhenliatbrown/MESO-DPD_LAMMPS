@@ -32,6 +32,7 @@ class FixPIMDBLangevin : public FixPIMDLangevin {
 
     double compute_vector(int) override;
     void compute_spring_energy() override;
+    void compute_t_prim() override;
 
         protected:
     void spring_force() override;

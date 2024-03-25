@@ -170,7 +170,7 @@ class FixPIMDLangevin : public Fix {
   void compute_pote();             // 3: potential energy
   void compute_tote();             // 4: total energy: 1+2+3 for all the beads
   void compute_stress_tensor();
-  void compute_t_prim();
+  virtual void compute_t_prim();
   void compute_t_vir();
   void compute_t_cv();
   void compute_p_prim();
