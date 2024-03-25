@@ -2,7 +2,6 @@
 ########################################
 # CMake build system
 # This file is part of LAMMPS
-# Created by Christoph Junghans and Richard Berger
 cmake_minimum_required(VERSION 3.16)
 ########################################
 # set policy to silence warnings about ignoring <PackageName>_ROOT but use it
@@ -106,7 +105,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 17.3 OR CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 17.4)
       set(CMAKE_TUNE_DEFAULT "-xCOMMON-AVX512")
     else()
-      set(CMAKE_TUNE_DEFAULT "-xHost -fp-model fast=2 -no-prec-div -qoverride-limits -diag-disable=10441 -diag-disable=2196")
+      set(CMAKE_TUNE_DEFAULT "-xHost -fp-model fast=2 -no-prec-div -qoverride-limits -diag-disable=10441 -diag-disable=11074 -diag-disable=11076 -diag-disable=2196")
     endif()
   endif()
 endif()
@@ -119,6 +118,19 @@ endif()
 # silence excessive warnings for PGI/NVHPC compilers
 if((CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC") OR (CMAKE_CXX_COMPILER_ID STREQUAL "PGI"))
   set(CMAKE_TUNE_DEFAULT "-Minform=severe")
+endif()
+
+# this hack is required to compile fmt lib with CrayClang version 15.0.2
+# CrayClang is only directly recognized by version 3.28 and later
+if(CMAKE_VERSION VERSION_LESS 3.28)
+  get_filename_component(_exe "${CMAKE_CXX_COMPILER}" NAME)
+  if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND (_exe STREQUAL "crayCC"))
+    set(CMAKE_TUNE_DEFAULT "-DFMT_STATIC_THOUSANDS_SEPARATOR")
+  endif()
+else()
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "CrayClang")
+    set(CMAKE_TUNE_DEFAULT "-DFMT_STATIC_THOUSANDS_SEPARATOR")
+  endif()
 endif()
 
 # silence nvcc warnings
@@ -210,6 +222,10 @@ endif()
 add_executable(lmp ${MAIN_SOURCES})
 target_link_libraries(lmp PRIVATE lammps)
 set_target_properties(lmp PROPERTIES OUTPUT_NAME ${LAMMPS_BINARY})
+# re-export all symbols for plugins
+if(PKG_PLUGIN AND (NOT ((CMAKE_SYSTEM_NAME STREQUAL "Windows"))))
+  set_target_properties(lmp PROPERTIES ENABLE_EXPORTS TRUE)
+endif()
 install(TARGETS lmp EXPORT LAMMPS_Targets DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 option(CMAKE_VERBOSE_MAKEFILE "Generate verbose Makefiles" OFF)
@@ -416,6 +432,7 @@ if(BUILD_OMP)
       (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM") OR (CMAKE_CXX_COMPILER_ID STREQUAL "XLClang") OR
       ((CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)) OR
       ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)) OR
+      ((CMAKE_CXX_COMPILER_ID STREQUAL "CrayClang") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)) OR
       ((CMAKE_CXX_COMPILER_ID STREQUAL "Intel") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0)))
     # GCC 9.x and later plus Clang 10.x and later implement strict OpenMP 4.0 semantics for consts.
     # Intel 18.0 was tested to support both, so we switch to OpenMP 4+ from 19.x onward to be safe.
@@ -426,6 +443,33 @@ if(BUILD_OMP)
   target_compile_definitions(lammps PRIVATE -DLAMMPS_OMP_COMPAT=${LAMMPS_OMP_COMPAT_LEVEL})
   target_link_libraries(lammps PRIVATE OpenMP::OpenMP_CXX)
   target_link_libraries(lmp PRIVATE OpenMP::OpenMP_CXX)
+
+  # this hack is required to correctly link with OpenMP support when using CrayClang version 15.0.2
+  # CrayClang is only directly recognized by version 3.28 and later
+  if(CMAKE_VERSION VERSION_LESS 3.28)
+    get_filename_component(_exe "${CMAKE_CXX_COMPILER}" NAME)
+    if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND (_exe STREQUAL "crayCC"))
+      set(CMAKE_SHARED_LINKER_FLAGS_${BTYPE} "${CMAKE_SHARED_LINKER_FLAGS_${BTYPE} -fopenmp")
+      set(CMAKE_STATIC_LINKER_FLAGS_${BTYPE} "${CMAKE_STATIC_LINKER_FLAGS_${BTYPE} -fopenmp")
+    endif()
+  else()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "CrayClang")
+      set(CMAKE_SHARED_LINKER_FLAGS_${BTYPE} "${CMAKE_SHARED_LINKER_FLAGS_${BTYPE} -fopenmp")
+      set(CMAKE_STATIC_LINKER_FLAGS_${BTYPE} "${CMAKE_STATIC_LINKER_FLAGS_${BTYPE} -fopenmp")
+    endif()
+  endif()
+endif()
+
+# lower C++ standard for fmtlib sources when using Intel classic compiler
+if((CMAKE_CXX_COMPILER_ID STREQUAL "Intel") AND (CMAKE_CXX_STANDARD GREATER_EQUAL 17)
+    AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2021.10))
+  message(STATUS "Lowering C++ standard for compiling fmtlib sources with Intel Classic compiler")
+  get_filename_component(LMP_UTILS_SRC "${LAMMPS_SOURCE_DIR}/utils.cpp" ABSOLUTE)
+  get_filename_component(LMP_VARIABLE_SRC "${LAMMPS_SOURCE_DIR}/variable.cpp" ABSOLUTE)
+  get_filename_component(FMT_FORMAT_SRC "${LAMMPS_SOURCE_DIR}/fmtlib_format.cpp" ABSOLUTE)
+  get_filename_component(FMT_OS_SRC "${LAMMPS_SOURCE_DIR}/fmtlib_os.cpp" ABSOLUTE)
+  set_source_files_properties("${FMT_FORMAT_SRC}" "${FMT_OS_SRC}" "${LMP_VARIABLE_SRC}" "${LMP_UTILS_SRC}"
+          PROPERTIES COMPILE_OPTIONS "-std=c++14")
 endif()
 
 if(PKG_ATC OR PKG_AWPMD OR PKG_ML-QUIP OR PKG_ML-POD OR PKG_ELECTRODE OR BUILD_TOOLS)
@@ -528,12 +572,12 @@ endforeach()
 ########################################################################
 # Basic system tests (standard libraries, headers, functions, types)   #
 ########################################################################
-foreach(HEADER cmath)
-  check_include_file_cxx(${HEADER} FOUND_${HEADER})
-  if(NOT FOUND_${HEADER})
-    message(FATAL_ERROR "Could not find needed header - ${HEADER}")
-  endif(NOT FOUND_${HEADER})
-endforeach(HEADER)
+if (NOT ((CMAKE_CXX_COMPILER_ID STREQUAL "Intel") OR (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")))
+  check_include_file_cxx(cmath FOUND_CMATH)
+  if(NOT FOUND_CMATH)
+    message(FATAL_ERROR "Could not find the required 'cmath' header")
+  endif(NOT FOUND_CMATH)
+endif()
 
 # make the standard math library overrideable and autodetected (for systems that don't have it)
 find_library(STANDARD_MATH_LIB m DOC "Standard Math library")
@@ -960,34 +1004,37 @@ if(PKG_KOKKOS)
   endif()
 endif()
 if(PKG_KSPACE)
-  message(STATUS "<<< FFT settings >>>
+  if (FFT_USE_HEFFTE)
+    message(STATUS "<<< FFT settings >>>
+-- Primary FFT lib:  heFFTe")
+    if (FFT_HEFFTE_BACKEND)
+      message(STATUS "heFFTe backend:  ${FFT_HEFFTE_BACKEND}")
+    else()
+      message(STATUS "heFFTe backend:  stock (builtin FFT implementation, tested for corrected but not optimized for production)")
+    endif()
+    message(STATUS "Using distributed FFT algorithms from heFTTe")
+    if(FFT_SINGLE)
+      message(STATUS "Using single precision FFTs")
+    else()
+      message(STATUS "Using double precision FFTs")
+    endif()
+  else()
+    message(STATUS "<<< FFT settings >>>
 -- Primary FFT lib:  ${FFT}")
-  if(FFT_SINGLE)
-    message(STATUS "Using single precision FFTs")
-  else()
-    message(STATUS "Using double precision FFTs")
-  endif()
-  if(FFT_FFTW_THREADS OR FFT_MKL_THREADS)
-    message(STATUS "Using threaded FFTs")
-  else()
-    message(STATUS "Using non-threaded FFTs")
+    if(FFT_SINGLE)
+      message(STATUS "Using single precision FFTs")
+    else()
+      message(STATUS "Using double precision FFTs")
+    endif()
+    if(FFT_FFTW_THREADS OR FFT_MKL_THREADS)
+      message(STATUS "Using threaded FFTs")
+    else()
+      message(STATUS "Using non-threaded FFTs")
+    endif()
+    message(STATUS "Using builtin distributed FFT algorithms")
   endif()
   if(PKG_KOKKOS)
-    if(Kokkos_ENABLE_CUDA)
-      if(FFT STREQUAL "KISS")
-        message(STATUS "Kokkos FFT: KISS")
-      else()
-        message(STATUS "Kokkos FFT: cuFFT")
-      endif()
-    elseif(Kokkos_ENABLE_HIP)
-      if(FFT STREQUAL "KISS")
-        message(STATUS "Kokkos FFT: KISS")
-      else()
-        message(STATUS "Kokkos FFT: hipFFT")
-      endif()
-    else()
-      message(STATUS "Kokkos FFT: ${FFT}")
-    endif()
+    message(STATUS "Kokkos FFT: ${FFT_KOKKOS}")
   endif()
 endif()
 if(BUILD_DOC)
