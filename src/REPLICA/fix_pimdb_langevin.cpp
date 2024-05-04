@@ -107,7 +107,8 @@ void FixPIMDBLangevin::compute_spring_energy() {
 
 void FixPIMDBLangevin::compute_t_prim()
 {
-    t_prim = bosonic_exchange.prim_estimator();
+    if (universe->iworld == 0)
+        t_prim = bosonic_exchange.prim_estimator();
 }
 
 /* ---------------------------------------------------------------------- */
