@@ -70,6 +70,7 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   surface_flag = 0;
   oxidation_flag = 0;
   self_mass_flag = 0;
+  coordination_flag = 0;
 
   int i;
   int n = atom->ntypes;
@@ -398,34 +399,39 @@ void FixRHEO::initial_integrate(int /*vflag*/)
 
 void FixRHEO::pre_force(int /*vflag*/)
 {
-  compute_kernel->compute_coordination();    // Needed for rho sum
+  if (coordination_flag)
+    compute_kernel->compute_coordination();
 
-  if (rhosum_flag) compute_rhosum->compute_peratom();
+  if (rhosum_flag)
+    compute_rhosum->compute_peratom();
 
   compute_kernel->compute_peratom();
 
-  if (interface_flag) {
-    // Note on first setup, have no forces for pressure to reference
+  // Note on first setup, have no forces for pressure to reference
+  if (interface_flag)
     compute_interface->compute_peratom();
-  }
 
   // No need to forward v, rho, or T for compute_grad since already done
   compute_grad->compute_peratom();
   compute_grad->forward_gradients();
 
-  if (shift_flag) compute_vshift->compute_peratom();
+  // Depends on NO_SHIFT status
+  if (shift_flag)
+    compute_vshift->compute_peratom();
 
   // Remove temporary options
   int *mask = atom->mask;
   int *status = atom->rheo_status;
   int nall = atom->nlocal + atom->nghost;
   for (int i = 0; i < nall; i++)
-    if (mask[i] & groupbit) status[i] &= OPTIONSMASK;
+    if (mask[i] & groupbit)
+      status[i] &= OPTIONSMASK;
 
   // Calculate surfaces, update status
   if (surface_flag) {
     compute_surface->compute_peratom();
-    if (shift_flag) compute_vshift->correct_surfaces();
+    if (shift_flag)
+      compute_vshift->correct_surfaces();
   }
 }
 

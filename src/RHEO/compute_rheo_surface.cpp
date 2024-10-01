@@ -81,6 +81,8 @@ void ComputeRHEOSurface::init()
   threshold_splash = fix_rheo->zmin_splash;
   interface_flag = fix_rheo->interface_flag;
 
+  fix_rheo->coordination_flag = 1;
+
   cutsq = cut * cut;
 
   // need an occasional half neighbor list

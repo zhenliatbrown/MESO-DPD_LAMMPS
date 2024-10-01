@@ -137,6 +137,9 @@ void ComputeRHEOKernel::init()
     }
   }
 
+  if (correction_order != -1)
+    fix_rheo->coordination_flag = 1;
+
   nmax_store = atom->nmax;
   memory->create(coordination, nmax_store, "rheo:coordination");
   if (kernel_style == RK0) {
