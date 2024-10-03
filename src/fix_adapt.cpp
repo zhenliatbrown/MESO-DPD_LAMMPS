@@ -15,8 +15,10 @@
 #include "fix_adapt.h"
 
 #include "angle.h"
+#include "angle_hybrid.h"
 #include "atom.h"
 #include "bond.h"
+#include "bond_hybrid.h"
 #include "domain.h"
 #include "error.h"
 #include "fix_store_atom.h"
@@ -100,9 +102,9 @@ FixAdapt::FixAdapt(LAMMPS *lmp, int narg, char **arg) :
       adapt[nadapt].pstyle = utils::strdup(arg[iarg+1]);
       adapt[nadapt].pparam = utils::strdup(arg[iarg+2]);
       utils::bounds_typelabel(FLERR, arg[iarg+3], 1, atom->ntypes,
-                              adapt[nadapt].ilo, adapt[nadapt].ihi, error, lmp, Atom::ATOM);
+                              adapt[nadapt].ilo, adapt[nadapt].ihi, lmp, Atom::ATOM);
       utils::bounds_typelabel(FLERR, arg[iarg+4], 1, atom->ntypes,
-                              adapt[nadapt].jlo, adapt[nadapt].jhi, error, lmp, Atom::ATOM);
+                              adapt[nadapt].jlo, adapt[nadapt].jhi, lmp, Atom::ATOM);
 
       // switch i,j if i > j, if wildcards were not used
 
@@ -127,7 +129,7 @@ FixAdapt::FixAdapt(LAMMPS *lmp, int narg, char **arg) :
       adapt[nadapt].bstyle = utils::strdup(arg[iarg+1]);
       adapt[nadapt].bparam = utils::strdup(arg[iarg+2]);
       utils::bounds_typelabel(FLERR, arg[iarg+3], 1, atom->nbondtypes,
-                              adapt[nadapt].ilo, adapt[nadapt].ihi, error, lmp, Atom::BOND);
+                              adapt[nadapt].ilo, adapt[nadapt].ihi, lmp, Atom::BOND);
       if (utils::strmatch(arg[iarg+4],"^v_")) {
         adapt[nadapt].var = utils::strdup(arg[iarg+4]+2);
       } else error->all(FLERR,"Argument #{} must be variable not {}", iarg+5, arg[iarg+4]);
@@ -140,7 +142,7 @@ FixAdapt::FixAdapt(LAMMPS *lmp, int narg, char **arg) :
       adapt[nadapt].astyle = utils::strdup(arg[iarg+1]);
       adapt[nadapt].aparam = utils::strdup(arg[iarg+2]);
       utils::bounds_typelabel(FLERR, arg[iarg+3], 1, atom->nangletypes,
-                              adapt[nadapt].ilo, adapt[nadapt].ihi, error, lmp, Atom::ANGLE);
+                              adapt[nadapt].ilo, adapt[nadapt].ihi, lmp, Atom::ANGLE);
       if (utils::strmatch(arg[iarg+4],"^v_")) {
         adapt[nadapt].var = utils::strdup(arg[iarg+4]+2);
       } else error->all(FLERR,"Argument #{} must be variable not {}", iarg+5, arg[iarg+4]);
@@ -218,7 +220,7 @@ FixAdapt::FixAdapt(LAMMPS *lmp, int narg, char **arg) :
 
   // allocate angle style arrays:
 
-  n = atom->nbondtypes;
+  n = atom->nangletypes;
   for (int m = 0; m < nadapt; ++m)
     if (adapt[m].which == ANGLE) memory->create(adapt[m].vector_orig,n+1,"adapt:vector_orig");
 }
@@ -386,11 +388,15 @@ void FixAdapt::init()
 
       if (utils::strmatch(force->pair_style,"^hybrid")) {
         auto pair = dynamic_cast<PairHybrid *>(force->pair);
-        for (i = ad->ilo; i <= ad->ihi; i++)
-          for (j = MAX(ad->jlo,i); j <= ad->jhi; j++)
-            if (!pair->check_ijtype(i,j,pstyle))
-              error->all(FLERR,"Fix adapt type pair range is not valid "
-                         "for pair hybrid sub-style {}", pstyle);
+        if (pair) {
+          for (i = ad->ilo; i <= ad->ihi; i++) {
+            for (j = MAX(ad->jlo,i); j <= ad->jhi; j++) {
+              if (!pair->check_ijtype(i,j,pstyle))
+                error->all(FLERR,"Fix adapt type pair range is not valid "
+                           "for pair hybrid sub-style {}", pstyle);
+            }
+          }
+        }
       }
 
       delete[] pstyle;
@@ -416,8 +422,16 @@ void FixAdapt::init()
 
       if (ad->bdim == 1) ad->vector = (double *) ptr;
 
-      if (utils::strmatch(force->bond_style,"^hybrid"))
-        error->all(FLERR,"Fix adapt does not support bond_style hybrid");
+      if (utils::strmatch(force->bond_style,"^hybrid")) {
+        auto bond = dynamic_cast<BondHybrid *>(force->bond);
+        if (bond) {
+          for (i = ad->ilo; i <= ad->ihi; i++) {
+            if (!bond->check_itype(i,bstyle))
+              error->all(FLERR,"Fix adapt type bond range is not valid "
+                         "for pair hybrid sub-style {}", bstyle);
+          }
+        }
+      }
 
       delete[] bstyle;
 
@@ -442,8 +456,16 @@ void FixAdapt::init()
 
       if (ad->adim == 1) ad->vector = (double *) ptr;
 
-      if (utils::strmatch(force->angle_style,"^hybrid"))
-        error->all(FLERR,"Fix adapt does not support angle_style hybrid");
+      if (utils::strmatch(force->angle_style,"^hybrid")) {
+        auto angle = dynamic_cast<AngleHybrid *>(force->angle);
+        if (angle) {
+          for (i = ad->ilo; i <= ad->ihi; i++) {
+            if (!angle->check_itype(i,astyle))
+              error->all(FLERR,"Fix adapt type angle range is not valid "
+                         "for pair hybrid sub-style {}", astyle);
+          }
+        }
+      }
 
       delete[] astyle;
 
