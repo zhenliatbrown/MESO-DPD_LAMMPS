@@ -24,7 +24,7 @@ namespace LAMMPS_NS {
         ~BosonicExchange();
 
         void prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
-                                      double beta, double spring_constant);
+                                      double beta, double kT, double spring_constant);
 
         double get_potential() const;
         double get_Vn(int n) const;
@@ -33,8 +33,7 @@ namespace LAMMPS_NS {
         void spring_force(double** f);
 
         double prim_estimator();
-
-        void vir_estimator(double** x, double** f);
+        double vir_estimator(double **x, double **f);
 
     private:
         void evaluate_cycle_energies();
@@ -56,7 +55,7 @@ namespace LAMMPS_NS {
 
         double spring_constant;
         double beta;
-        double virial;
+        double kT;
         const double* x;
         const double* x_prev;
         const double* x_next;

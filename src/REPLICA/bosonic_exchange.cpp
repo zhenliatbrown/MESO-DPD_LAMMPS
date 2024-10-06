@@ -20,11 +20,12 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
 }
 
 void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
-                                               double beta, double spring_constant) {
+                                               double beta, double kT, double spring_constant) {
     this->x = x;
     this->x_prev = x_prev;
     this->x_next = x_next;
     this->beta = beta;
+    this->kT = kT;
     this->spring_constant = spring_constant;
 
     evaluate_cycle_energies();
@@ -349,8 +350,6 @@ void BosonicExchange::spring_force_interior_bead(double **f) // VVVVVV
 
 /* ---------------------------------------------------------------------- */
 
-// Primitive kinetic energy estimator for bosons.
-// Corresponds to Eqns. (4)-(5) in SI of pnas.1913365116
 double BosonicExchange::prim_estimator()
 {
   prim_est[0] = 0.0;
@@ -376,7 +375,16 @@ double BosonicExchange::prim_estimator()
     prim_est[m] = sig / sig_denom_m;
   }
 
-  return 0.5 * domain->dimension * nbosons / beta + prim_est[nbosons] / np;
+  return 0.5 * domain->dimension * nbosons * np * kT + prim_est[nbosons];
 }
 
 /* ---------------------------------------------------------------------- */
+
+double BosonicExchange::vir_estimator(double **x, double **f)
+{
+  double virial = 0;
+  for (int i = 0; i < nbosons; i++) {
+      virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
+  }
+  return virial;
+}

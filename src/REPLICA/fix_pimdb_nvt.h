@@ -39,6 +39,7 @@ class FixPIMDBNVT : public FixPIMDNVT {
     double beta;
     double t_prim;
     double virial;
+    double prim;
 };
 
 
