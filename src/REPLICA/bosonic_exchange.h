@@ -34,7 +34,7 @@ namespace LAMMPS_NS {
 
         double prim_estimator();
 
-        double vir_estimator(double** x, double** f);
+        void vir_estimator(double** x, double** f);
 
     private:
         void evaluate_cycle_energies();
@@ -56,6 +56,7 @@ namespace LAMMPS_NS {
 
         double spring_constant;
         double beta;
+        double virial;
         const double* x;
         const double* x_prev;
         const double* x_next;

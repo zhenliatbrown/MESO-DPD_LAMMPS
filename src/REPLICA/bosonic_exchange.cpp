@@ -229,7 +229,6 @@ void BosonicExchange::spring_force(double** f) {
     } else {
         spring_force_interior_bead(f);
     }
-    // spring_force_interior_bead(f);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -378,18 +377,6 @@ double BosonicExchange::prim_estimator()
   }
 
   return 0.5 * domain->dimension * nbosons / beta + prim_est[nbosons] / np;
-}
-
-/* ---------------------------------------------------------------------- */
-
-double BosonicExchange::vir_estimator(double **x, double **f)
-{
-    double virial = 0;
-    for (int i = 0; i < nbosons; i++) {
-        virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
-    }
-    
-    return virial / np;
 }
 
 /* ---------------------------------------------------------------------- */

@@ -33,10 +33,12 @@ class FixPIMDBNVT : public FixPIMDNVT {
     double compute_vector(int) override;
 
  protected:
-    void spring_force();
+    void spring_force(double **x, double **f);
+    void vir_estimator(double **x, double **f);
     BosonicExchange bosonic_exchange;
     double beta;
     double t_prim;
+    double virial;
 };
 
 

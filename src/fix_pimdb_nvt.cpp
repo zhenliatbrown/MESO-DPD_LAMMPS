@@ -53,7 +53,7 @@ FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
 {
   beta = 1.0 / force->boltz / nhc_temp;
   t_prim = 0.;
-  virial = virial2 = 0.;
+  virial = 0.;
   size_vector = 4;
   if (method != PIMD) {
     error->universe_all(FLERR, "Method not supported in fix pimdb/nvt; only method PIMD");
@@ -66,21 +66,20 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 }
 void FixPIMDBNVT::post_force(int /*flag*/)
 {
+  double **x = atom->x;
+  double **f = atom->f;
   for (int i = 0; i < atom->nlocal; i++)
     for (int j = 0; j < 3; j++) atom->f[i][j] /= np;
 
   comm_exec(atom->x);
-  virial = bosonic_exchange.vir_estimator(atom->x, atom->f);
-  spring_force();
-  virial2 = bosonic_exchange.vir_estimator(atom->x, atom->f);
+  vir_estimator(x, f);
+  spring_force(x, f);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDBNVT::spring_force()
+void FixPIMDBNVT::spring_force(double **x, double **f)
 {
-  double **x = atom->x;
-  double **f = atom->f;
   double *xlast = buf_beads[x_last];
   double *xnext = buf_beads[x_next];
   double ff = fbond * atom->mass[atom->type[0]]; 
@@ -89,11 +88,20 @@ void FixPIMDBNVT::spring_force()
   bosonic_exchange.spring_force(f);
 }
 
+void FixPIMDBNVT::vir_estimator(double **x, double **f)
+{
+  virial = 0;
+  for (int i = 0; i < atom->nlocal; i++) {
+      virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
 double FixPIMDBNVT::compute_vector(int n)
 {
   if (n == 0) return bosonic_exchange.get_potential();
   if (n == 1) return t_sys;
   if (n == 2) return virial;
-  if (n == 3) return virial2; // bosonic_exchange.prim_estimator();
+  if (n == 3) return bosonic_exchange.prim_estimator();
   return 0.0;
 }
