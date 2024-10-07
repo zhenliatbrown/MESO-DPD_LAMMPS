@@ -52,13 +52,12 @@ FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
     bosonic_exchange(lmp, atom->nlocal, np, universe->me,false)
 {
   beta = 1.0 / force->boltz / nhc_temp;
-  t_prim = 0.;
   virial = 0.;
   prim = 0.;
   spring_energy = 0.;
   size_vector = 4;
-  if (method != PIMD) {
-    error->universe_all(FLERR, "Method not supported in fix pimdb/nvt; only method PIMD");
+  if (method != PIMD && method != NMPIMD) {
+    error->universe_all(FLERR, "Method not supported in fix pimdb/nvt; only methods PIMD and NMPIMD");
   }
 }
 
@@ -81,6 +80,21 @@ void FixPIMDBNVT::post_force(int /*flag*/)
     spring_energy = bosonic_exchange.get_potential();
   }
   spring_force(x, f);
+
+  if (method == NMPIMD) 
+  {
+  /* forward comm for the force on ghost atoms */
+
+  nmpimd_fill(atom->f);
+
+  /* inter-partition comm */
+
+  comm_exec(atom->f);
+
+  /* normal-mode transform */
+
+  nmpimd_transform(buf_beads, atom->f, M_f2fp[universe->iworld]);
+  }
 }
 
 /* ---------------------------------------------------------------------- */

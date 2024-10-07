@@ -350,37 +350,6 @@ void BosonicExchange::spring_force_interior_bead(double **f) // VVVVVV
 
 /* ---------------------------------------------------------------------- */
 
-// Primitive kinetic energy estimator for bosons.
-// Corresponds to Eqns. (4)-(5) in SI of pnas.1913365116
-
-// double BosonicExchange::prim_estimator()
-// {
-//   prim_est[0] = 0.0;
-
-//   for (int m = 1; m < nbosons + 1; ++m) {
-//     double sig = 0.0;
-//     double sig_denom_m = 0.0;
-
-//     // Numerical stability (Xiong & Xiong method)
-//     double Elongest = std::numeric_limits<double>::max();
-
-//     for (int k = m; k > 0; k--) {
-//       Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
-//     }
-    
-//     for (int k = m; k > 0; --k) {
-//       double E_kn_val = get_Enk(m, k);
-//       sig += (prim_est[m - k] - E_kn_val) * exp(-beta * (E_kn_val + V[m - k] - Elongest));
-//       sig_denom_m += exp(-beta * (E_kn_val + V[m - k] - Elongest));
-//     }
-
-//     prim_est[m] = sig / sig_denom_m;
-//   }
-
-//   return 0.5 * domain->dimension * nbosons * np * kT + prim_est[nbosons];
-// }
-
-
 double BosonicExchange::prim_estimator()
 {
   prim_est[0] = 0.0;

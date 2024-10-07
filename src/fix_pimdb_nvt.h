@@ -37,9 +37,9 @@ class FixPIMDBNVT : public FixPIMDNVT {
     void vir_estimator(double **x, double **f);
     BosonicExchange bosonic_exchange;
     double beta;
-    double t_prim;
     double virial;
     double prim;
+    double spring_energy;
 };
 
 
