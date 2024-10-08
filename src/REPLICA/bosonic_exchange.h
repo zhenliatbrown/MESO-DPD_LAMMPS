@@ -27,6 +27,7 @@ namespace LAMMPS_NS {
                                       double beta, double kT, double spring_constant);
 
         double get_potential() const;
+        double get_spring_energy() const;
         double get_Vn(int n) const;
         double get_E_kn_serial_order(int i) const;
 
@@ -47,6 +48,7 @@ namespace LAMMPS_NS {
         void spring_force_interior_bead(double** f);
         void Evaluate_VBn();
         void Evaluate_V_backwards();
+        void Evaluate_spring_energy();
 
         const int nbosons;
         const int np;
@@ -69,6 +71,7 @@ namespace LAMMPS_NS {
         double* separate_atom_spring;
 
         double *prim_est;
+        double *spring_energy;
     };
 
 

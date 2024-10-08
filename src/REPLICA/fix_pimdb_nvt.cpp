@@ -79,6 +79,9 @@ void FixPIMDBNVT::post_force(int /*flag*/)
     prim = bosonic_exchange.prim_estimator();
     spring_energy = bosonic_exchange.get_potential();
   }
+  else {
+    spring_energy = bosonic_exchange.get_spring_energy();
+  }
   spring_force(x, f);
 
   if (method == NMPIMD) 
