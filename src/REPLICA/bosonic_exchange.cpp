@@ -84,55 +84,6 @@ double BosonicExchange::distance_squared_two_beads(const double* x1, int l1, con
 
 /* ---------------------------------------------------------------------- */
 
-// void BosonicExchange::evaluate_cycle_energies()
-// {
-//     for (int i = 0; i < nbosons; i++) {
-//         temp_nbosons_array[i] = distance_squared_two_beads(x, i, x_next, i);
-//     }
-//     // Reduce the result and send to bead_num=0
-//     MPI_Reduce(temp_nbosons_array, separate_atom_spring, nbosons,
-//                   MPI_DOUBLE, MPI_SUM, 0, universe->uworld);
-
-//     if (bead_num == 0 || bead_num == np - 1) {
-//         const double* x_first_bead;
-//         const double* x_last_bead;
-//         if (bead_num == 0) {
-//             // Send to bead_num=np-1
-//             MPI_Send(separate_atom_spring, nbosons, MPI_DOUBLE, np - 1, 0, universe->uworld);
-
-//             x_first_bead = x;
-//             x_last_bead = x_prev;
-//         } else {
-//             // Receive at bead_num=np-1 from bead_num=0
-//             MPI_Recv(separate_atom_spring, nbosons, MPI_DOUBLE, 0, 0, universe->uworld, MPI_STATUS_IGNORE);
-
-//             x_first_bead = x_next;
-//             x_last_bead = x;
-//         }
-
-//         for (int v = 0; v < nbosons; v++) {
-//             set_Enk(v + 1, 1,
-//                     0.5 * spring_constant * (separate_atom_spring[v]));
-
-//             for (int u = v - 1; u >= 0; u--) {
-//                 double val = get_Enk(v + 1, v - u) + 
-//                              0.5 * spring_constant * (
-//                                      // Eint(u)
-//                                      separate_atom_spring[u] - distance_squared_two_beads(x_first_bead, u, x_last_bead, u)
-//                                      // connect u to u+1
-//                                      + distance_squared_two_beads(x_last_bead, u, x_first_bead, u + 1)
-//                                      // break cycle [u+1,v]
-//                                      - distance_squared_two_beads(x_first_bead, u + 1, x_last_bead, v)
-//                                      // close cycle from v to u
-//                                      + distance_squared_two_beads(x_first_bead, u, x_last_bead, v));
-
-//                 set_Enk(v + 1, v - u + 1, val);
-//             }
-//         }
-//     }
-// }
-
-
 void BosonicExchange::evaluate_cycle_energies()
 { 
     const double* x_first_bead;
@@ -212,6 +163,8 @@ void BosonicExchange::Evaluate_VBn()
         }
     }
 }
+
+/* ---------------------------------------------------------------------- */
 
 void BosonicExchange::Evaluate_V_backwards() {
     V_backwards[nbosons] = 0.0;
@@ -418,15 +371,12 @@ double BosonicExchange::prim_estimator()
 
   for (int m = 1; m < nbosons + 1; ++m) {
     double sig = 0.0;
-    // double internal_springs = 0.0;
 
     // Numerical stability (Xiong & Xiong method)
     double Elongest = std::numeric_limits<double>::max();
 
     for (int k = m; k > 0; k--) {
       Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
-    //   internal_springs += spring_energy[m - k];
-    //   temp_nbosons_array[m - k] = internal_springs;
     }
     
     for (int k = m; k > 0; --k) {

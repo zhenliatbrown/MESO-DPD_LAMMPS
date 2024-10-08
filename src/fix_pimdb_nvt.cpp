@@ -80,6 +80,7 @@ void FixPIMDBNVT::post_force(int /*flag*/)
     spring_energy = bosonic_exchange.get_potential();
   }
   else {
+    prim = -bosonic_exchange.get_spring_energy();
     spring_energy = bosonic_exchange.get_spring_energy();
   }
   spring_force(x, f);
