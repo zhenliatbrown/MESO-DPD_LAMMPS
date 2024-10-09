@@ -33,12 +33,16 @@ class FixPIMDBNVT : public FixPIMDNVT {
     double compute_vector(int) override;
 
  protected:
-    void spring_force(double **x, double **f);
+    void spring_force(double **x, double **f); // CR: override?
+    // CR: if it's not used in the case or derived classes, or expected to be, should be private, not protected
     void vir_estimator(double **x, double **f);
+    // CR: this too
     BosonicExchange bosonic_exchange;
     double beta;
+    // CR: shouldn't redefine fields that exist in the base class
     double virial;
     double prim;
+    // CR: here too
     double spring_energy;
 };
 

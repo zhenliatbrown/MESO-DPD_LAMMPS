@@ -10,6 +10,7 @@ using namespace LAMMPS_NS;
 BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic) :
         Pointers(lmp),
         nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic) {
+    // CR: temp_nbosons_array needs to be of size nbosons + 1 (my bad, I thought we fixed it here too)
     memory->create(temp_nbosons_array, nbosons, "BosonicExchange: temp_nbosons_array");
     memory->create(separate_atom_spring, nbosons, "BosonicExchange: separate_atom_spring");
     memory->create(E_kn, (nbosons * (nbosons + 1) / 2), "BosonicExchange: E_kn");
@@ -17,6 +18,7 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
     memory->create(V_backwards, nbosons + 1, "BosonicExchange: V_backwards");
     memory->create(connection_probabilities, nbosons * nbosons, "BosonicExchange: connection probabilities");
     memory->create(prim_est, nbosons + 1, "BosonicExchange: prim_est");
+    // CR: why is this stored in an array, rather than computed on the fly upon get_spring_energy()?
     memory->create(spring_energy, nbosons, "BosonicExchange: spring_energy");
 }
 
@@ -26,8 +28,13 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
     this->x_prev = x_prev;
     this->x_next = x_next;
     this->beta = beta;
+    // CR: confusing that it may or may not be 1/beta. It's used only for the primitive estimator, right?
+    // CR: If we can't think of a better way, having two versions of the primitive estimator is better imo.
+    // CR: Or just one version suffices, and the code outside can decide if it needs to divide by P?
+    // CR: Let's talk about the math here
     this->kT = kT;
     this->spring_constant = spring_constant;
+    // CR: remove comments
     // evaluate_cycle_energies();
 
     if (bead_num == 0 || bead_num == np - 1) {
@@ -38,6 +45,7 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
         evaluate_connection_probabilities();
     }
 
+    // CR: If spring_energy is not stored in an array, this can be removed.
     if (0 != bead_num) {
         Evaluate_spring_energy();
     }
@@ -123,6 +131,8 @@ void BosonicExchange::evaluate_cycle_energies()
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_Enk(int m, int k) {
+    // CR: Frankly, there is no reason for this layout. If we can organize it in a more reasonable way, that
+    // CR: would be nice. Not a requirement.
     int end_of_m = m * (m + 1) / 2;
     return E_kn[end_of_m - k];
 }
@@ -207,6 +217,7 @@ double BosonicExchange::get_potential() const {
 
 /* ---------------------------------------------------------------------- */
 
+// YF: this is the spring energy of what? total energy over the beads of the same index? better to have an indicative name
 double BosonicExchange::get_spring_energy() const {
     double summed_energy = 0;
     for (int i = 0; i < nbosons; i++) {
@@ -367,6 +378,8 @@ void BosonicExchange::spring_force_interior_bead(double **f)
 
 double BosonicExchange::prim_estimator()
 {
+  // CR: can use temp_nbosons_array instead of allocating one just for this calculation,
+  // CR: the important thing is the value you return, intermediate calculations are discarded.
   prim_est[0] = 0.0;
 
   for (int m = 1; m < nbosons + 1; ++m) {
@@ -397,6 +410,8 @@ double BosonicExchange::prim_estimator()
 
 double BosonicExchange::vir_estimator(double **x, double **f)
 {
+  // CR: I like the decision that the bosonic exchange is responsible for the logic of this estimator.
+  // CR: I don't know how I feel about the code duplication.
   double virial = 0;
   for (int i = 0; i < nbosons; i++) {
       virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);

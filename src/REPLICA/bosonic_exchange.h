@@ -29,11 +29,14 @@ namespace LAMMPS_NS {
         double get_potential() const;
         double get_spring_energy() const;
         double get_Vn(int n) const;
+        // CR: I think this method is not used by anyone and can be removed? (probably my bad)
         double get_E_kn_serial_order(int i) const;
 
+        // CR: actually this function can also be const? (probably my bad)
         void spring_force(double** f);
 
         double prim_estimator();
+        // CR: add const to arguments and to function
         double vir_estimator(double **x, double **f);
 
     private:
@@ -43,6 +46,7 @@ namespace LAMMPS_NS {
         double get_Enk(int m, int k);
         void set_Enk(int m, int k, double val);
         void evaluate_connection_probabilities();
+        // CR: actually these force functions can also be const? (probably my bad)
         void spring_force_last_bead(double** f);
         void spring_force_first_bead(double** f);
         void spring_force_interior_bead(double** f);
@@ -68,6 +72,7 @@ namespace LAMMPS_NS {
         double* connection_probabilities;
 
         double* temp_nbosons_array;
+        // CR: no longer used, purge! how wonderful
         double* separate_atom_spring;
 
         double *prim_est;

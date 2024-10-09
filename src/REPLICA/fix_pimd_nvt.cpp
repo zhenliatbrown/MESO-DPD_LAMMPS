@@ -545,6 +545,7 @@ void FixPIMDNVT::spring_force()
 
   double *xlast = buf_beads[x_last];
   double *xnext = buf_beads[x_next];
+  // CR: add space back (so that there'd be no diff from the main branch)
   virial = 0.0;
 
   for (int i = 0; i < nlocal; i++) {
