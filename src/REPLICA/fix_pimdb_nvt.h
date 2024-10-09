@@ -29,24 +29,18 @@ class FixPIMDBNVT : public FixPIMDNVT {
  public:
     FixPIMDBNVT(class LAMMPS *, int, char **);
     ~FixPIMDBNVT();
-    void post_force(int) override;
+   //  void post_force(int) override;
     double compute_vector(int) override;
 
  protected:
-    void spring_force(double **x, double **f); // CR: override?
-    // CR: if it's not used in the case or derived classes, or expected to be, should be private, not protected
+    void spring_force() override;
+    void kinetic_estimators() override;
+
+ private:
     void vir_estimator(double **x, double **f);
-    // CR: this too
     BosonicExchange bosonic_exchange;
-    double beta;
-    // CR: shouldn't redefine fields that exist in the base class
-    double virial;
     double prim;
-    // CR: here too
-    double spring_energy;
 };
-
-
 
 }    // namespace LAMMPS_NS
 

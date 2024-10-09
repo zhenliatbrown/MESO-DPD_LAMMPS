@@ -25,6 +25,8 @@ FixStyle(pimd/nvt,FixPIMDNVT);
 
 namespace LAMMPS_NS {
 
+enum { PIMD, NMPIMD, CMD };
+
 class FixPIMDNVT : public Fix {
  public:
   FixPIMDNVT(class LAMMPS *, int, char **);
@@ -63,7 +65,8 @@ class FixPIMDNVT : public Fix {
   double omega_np, fbond, spring_energy, sp, virial;
   int x_last, x_next;
 
-  void spring_force();
+  virtual void kinetic_estimators();
+  virtual void spring_force();
 
   /* fictitious mass */
 
@@ -101,6 +104,7 @@ class FixPIMDNVT : public Fix {
   int nhc_nchain;
   bool nhc_ready;
   double nhc_temp, dtv, dtf, t_sys;
+  double beta;
 
   double **nhc_eta;        /* coordinates of NH chains for ring-polymer beads */
   double **nhc_eta_dot;    /* velocities of NH chains                         */

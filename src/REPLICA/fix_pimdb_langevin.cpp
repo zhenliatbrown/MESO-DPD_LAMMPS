@@ -47,8 +47,7 @@ enum{PIMD,NMPIMD,CMD};
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDLangevin(lmp, narg, arg),
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me,
-                     false)
+    bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, true)
 {
   if (method != PIMD) {
     error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");

@@ -7,19 +7,15 @@
 
 using namespace LAMMPS_NS;
 
-BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic) :
+BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic, bool iPyConvention) :
         Pointers(lmp),
         nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic) {
-    // CR: temp_nbosons_array needs to be of size nbosons + 1 (my bad, I thought we fixed it here too)
-    memory->create(temp_nbosons_array, nbosons, "BosonicExchange: temp_nbosons_array");
-    memory->create(separate_atom_spring, nbosons, "BosonicExchange: separate_atom_spring");
+    memory->create(temp_nbosons_array, nbosons + 1, "BosonicExchange: temp_nbosons_array");
     memory->create(E_kn, (nbosons * (nbosons + 1) / 2), "BosonicExchange: E_kn");
     memory->create(V, nbosons + 1, "BosonicExchange: V");
     memory->create(V_backwards, nbosons + 1, "BosonicExchange: V_backwards");
     memory->create(connection_probabilities, nbosons * nbosons, "BosonicExchange: connection probabilities");
-    memory->create(prim_est, nbosons + 1, "BosonicExchange: prim_est");
-    // CR: why is this stored in an array, rather than computed on the fly upon get_spring_energy()?
-    memory->create(spring_energy, nbosons, "BosonicExchange: spring_energy");
+    iPyConvention = iPyConvention;
 }
 
 void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
@@ -28,14 +24,7 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
     this->x_prev = x_prev;
     this->x_next = x_next;
     this->beta = beta;
-    // CR: confusing that it may or may not be 1/beta. It's used only for the primitive estimator, right?
-    // CR: If we can't think of a better way, having two versions of the primitive estimator is better imo.
-    // CR: Or just one version suffices, and the code outside can decide if it needs to divide by P?
-    // CR: Let's talk about the math here
-    this->kT = kT;
     this->spring_constant = spring_constant;
-    // CR: remove comments
-    // evaluate_cycle_energies();
 
     if (bead_num == 0 || bead_num == np - 1) {
         // exterior beads
@@ -45,23 +34,19 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
         evaluate_connection_probabilities();
     }
 
-    // CR: If spring_energy is not stored in an array, this can be removed.
     if (0 != bead_num) {
-        Evaluate_spring_energy();
+        calc_total_spring_energy_for_bead();
     }
 }
 
 /* ---------------------------------------------------------------------- */
 
 BosonicExchange::~BosonicExchange() {
-    memory->destroy(prim_est);
     memory->destroy(connection_probabilities);
     memory->destroy(V_backwards);
     memory->destroy(V);
     memory->destroy(E_kn);
-    memory->destroy(separate_atom_spring);
     memory->destroy(temp_nbosons_array);
-    memory->destroy(spring_energy);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -133,6 +118,7 @@ void BosonicExchange::evaluate_cycle_energies()
 double BosonicExchange::get_Enk(int m, int k) {
     // CR: Frankly, there is no reason for this layout. If we can organize it in a more reasonable way, that
     // CR: would be nice. Not a requirement.
+    // OB: It indeed seemed like black magic to me at the begining.
     int end_of_m = m * (m + 1) / 2;
     return E_kn[end_of_m - k];
 }
@@ -208,7 +194,6 @@ void BosonicExchange::Evaluate_V_backwards() {
     V_backwards[0] = V[nbosons];
 }
 
-
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_potential() const {
@@ -217,20 +202,15 @@ double BosonicExchange::get_potential() const {
 
 /* ---------------------------------------------------------------------- */
 
-// YF: this is the spring energy of what? total energy over the beads of the same index? better to have an indicative name
-double BosonicExchange::get_spring_energy() const {
-    double summed_energy = 0;
-    for (int i = 0; i < nbosons; i++) {
-        summed_energy += spring_energy[i];
-    }
-    return summed_energy;
+double BosonicExchange::get_total_spring_energy_for_bead() {
+    return spring_energy_for_bead;
 }
-
 /* ---------------------------------------------------------------------- */
 
-void BosonicExchange::Evaluate_spring_energy() {
+void BosonicExchange::calc_total_spring_energy_for_bead() {
+    spring_energy_for_bead = 0.;
     for (int i = 0; i < nbosons; i++) {
-        spring_energy[i] =  0.5 * spring_constant * distance_squared_two_beads(x, i, x_prev, i);
+        spring_energy_for_bead += 0.5 * spring_constant * distance_squared_two_beads(x, i, x_prev, i);
     }
 }
 
@@ -238,12 +218,6 @@ void BosonicExchange::Evaluate_spring_energy() {
 
 double BosonicExchange::get_Vn(int n) const {
     return V[n];
-}
-
-/* ---------------------------------------------------------------------- */
-
-double BosonicExchange::get_E_kn_serial_order(int i) const {
-    return E_kn[i];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -378,12 +352,11 @@ void BosonicExchange::spring_force_interior_bead(double **f)
 
 double BosonicExchange::prim_estimator()
 {
-  // CR: can use temp_nbosons_array instead of allocating one just for this calculation,
-  // CR: the important thing is the value you return, intermediate calculations are discarded.
-  prim_est[0] = 0.0;
+  temp_nbosons_array[0] = 0.0;
 
   for (int m = 1; m < nbosons + 1; ++m) {
     double sig = 0.0;
+    temp_nbosons_array[m] = 0.0;
 
     // Numerical stability (Xiong & Xiong method)
     double Elongest = std::numeric_limits<double>::max();
@@ -395,23 +368,26 @@ double BosonicExchange::prim_estimator()
     for (int k = m; k > 0; --k) {
       double E_kn_val = get_Enk(m, k);
 
-      sig += (prim_est[m - k] - E_kn_val) * exp(-beta * (E_kn_val + V[m - k] - Elongest));
+      sig += (temp_nbosons_array[m - k] - E_kn_val) * exp(-beta * (E_kn_val + V[m - k] - Elongest));
     }
 
     double sig_denom_m = m * exp(-beta * (V[m] - Elongest));
 
-    prim_est[m] = sig / sig_denom_m;
+    temp_nbosons_array[m] = sig / sig_denom_m;
   }
-
-  return 0.5 * domain->dimension * nbosons * np * kT + prim_est[nbosons];
+  
+  // OB: is this a better solution?
+  int convention_correction = (iPyConvention ? 1 : np);
+  return 0.5 * domain->dimension * nbosons * convention_correction / beta + temp_nbosons_array[nbosons];
 }
 
 /* ---------------------------------------------------------------------- */
 
-double BosonicExchange::vir_estimator(double **x, double **f)
+double BosonicExchange::vir_estimator(double **x, double **f) const
 {
   // CR: I like the decision that the bosonic exchange is responsible for the logic of this estimator.
   // CR: I don't know how I feel about the code duplication.
+  // OB: You mean the code duplication? Do you want to better arrange the original NVT and take out the estimator from spring_force?
   double virial = 0;
   for (int i = 0; i < nbosons; i++) {
       virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
