@@ -37,7 +37,6 @@ class FixPIMDBNVT : public FixPIMDNVT {
     void kinetic_estimators() override;
 
  private:
-    void vir_estimator(double **x, double **f);
     BosonicExchange bosonic_exchange;
     double prim;
 };

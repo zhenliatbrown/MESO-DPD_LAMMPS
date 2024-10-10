@@ -382,15 +382,3 @@ double BosonicExchange::prim_estimator()
 }
 
 /* ---------------------------------------------------------------------- */
-
-double BosonicExchange::vir_estimator(double **x, double **f) const
-{
-  // CR: I like the decision that the bosonic exchange is responsible for the logic of this estimator.
-  // CR: I don't know how I feel about the code duplication.
-  // OB: You mean the code duplication? Do you want to better arrange the original NVT and take out the estimator from spring_force?
-  double virial = 0;
-  for (int i = 0; i < nbosons; i++) {
-      virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
-  }
-  return virial;
-}

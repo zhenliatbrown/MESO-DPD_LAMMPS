@@ -53,7 +53,7 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 
 void FixPIMDBNVT::kinetic_estimators()
 {
-  virial = bosonic_exchange.vir_estimator(atom->x, atom->f);
+  vir_estimator();
   if (universe->me == 0)
   {
     prim = bosonic_exchange.prim_estimator();

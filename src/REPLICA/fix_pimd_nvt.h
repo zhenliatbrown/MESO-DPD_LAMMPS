@@ -67,6 +67,7 @@ class FixPIMDNVT : public Fix {
 
   virtual void kinetic_estimators();
   virtual void spring_force();
+  void vir_estimator();
 
   /* fictitious mass */
 

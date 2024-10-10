@@ -532,8 +532,22 @@ void FixPIMDNVT::nmpimd_transform(double **src, double **des, double *vector)
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDNVT::kinetic_estimators(){}
+void FixPIMDNVT::kinetic_estimators(){
+  vir_estimator();
+}
 
+/* ---------------------------------------------------------------------- */
+
+void FixPIMDNVT::vir_estimator() {
+  double **x = atom->x;
+  double **f = atom->f;
+  int nlocal = atom->nlocal;
+
+  virial = 0.0;
+  for (int i = 0; i < nlocal; i++) {
+    virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
+  }
+}
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDNVT::spring_force()
@@ -548,8 +562,6 @@ void FixPIMDNVT::spring_force()
 
   double *xlast = buf_beads[x_last];
   double *xnext = buf_beads[x_next];
-
-  virial = 0.0;
 
   for (int i = 0; i < nlocal; i++) {
     double delx1 = xlast[0] - x[i][0];
@@ -569,8 +581,6 @@ void FixPIMDNVT::spring_force()
     double dx = delx1 + delx2;
     double dy = dely1 + dely2;
     double dz = delz1 + delz2;
-
-    virial += -0.5 * (x[i][0] * f[i][0] + x[i][1] * f[i][1] + x[i][2] * f[i][2]);
 
     f[i][0] -= (dx) *ff;
     f[i][1] -= (dy) *ff;

@@ -35,8 +35,6 @@ namespace LAMMPS_NS {
         void spring_force(double** f);
 
         double prim_estimator();
-        // OB: I left **x and **f not const such that they'll be compatible with atom->x and atom->f
-        double vir_estimator(double **x, double **f) const;
 
     private:
         void evaluate_cycle_energies();
