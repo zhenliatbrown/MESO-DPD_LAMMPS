@@ -82,15 +82,12 @@ template<class DeviceType>
 void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *cm)
 {
   int groupbit = bitmask[igroup];
-
   auto d_x = atomKK->k_x.template view<DeviceType>();
   auto d_mask = atomKK->k_mask.template view<DeviceType>();
-  auto d_type = atomKK->k_type.template view<DeviceType>();
   auto d_image = atomKK->k_image.template view<DeviceType>();
   auto l_prd = Few<double, 3>(domain->prd);
   auto l_h = Few<double, 6>(domain->h);
   auto l_triclinic = domain->triclinic;
-
   double cmone[3];
 
   if (atomKK->rmass) {
@@ -114,6 +111,7 @@ void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *cm)
   } else {
 
     auto d_mass = atomKK->k_mass.template view<DeviceType>();
+    auto d_type = atomKK->k_type.template view<DeviceType>();
 
     Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_cmx, double &l_cmy, double &l_cmz) {
       if (d_mask(i) & groupbit) {
@@ -137,6 +135,129 @@ void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *cm)
     cm[1] /= masstotal;
     cm[2] /= masstotal;
   }
+}
+
+/* ----------------------------------------------------------------------
+   compute the center-of-mass velocity of group of atoms
+   masstotal = total mass
+   return center-of-mass velocity in vcm[]
+------------------------------------------------------------------------- */
+
+template<class DeviceType>
+void GroupKokkos<DeviceType>::vcm(int igroup, double masstotal, double *vcm)
+{
+  int groupbit = bitmask[igroup];
+  auto d_v = atomKK->k_v.template view<DeviceType>();
+  auto d_mask = atomKK->k_mask.template view<DeviceType>();
+  auto d_image = atomKK->k_image.template view<DeviceType>();
+
+  double p[3], massone;
+  p[0] = p[1] = p[2] = 0.0;
+
+  if (atomKK->rmass) {
+
+    auto d_rmass = atomKK->k_rmass.template view<DeviceType>();
+
+    Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_px, double &l_py, double &l_pz) {
+      if (d_mask(i) & groupbit) {
+        double massone = d_rmass(i);
+        l_px += d_v(i,0) * massone;
+        l_py += d_v(i,1) * massone;
+        l_pz += d_v(i,2) * massone;
+      }
+    }, p[0], p[1], p[2]);
+
+  } else {
+
+    auto d_mass = atomKK->k_mass.template view<DeviceType>();
+    auto d_type = atomKK->k_type.template view<DeviceType>();
+
+    Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_px, double &l_py, double &l_pz) {
+      if (d_mask(i) & groupbit) {
+        double massone = d_mass(d_type(i));
+        l_px += d_v(i,0) * massone;
+        l_py += d_v(i,1) * massone;
+        l_pz += d_v(i,2) * massone;
+      }
+    }, p[0], p[1], p[2]);
+
+  }
+
+  MPI_Allreduce(p, vcm, 3, MPI_DOUBLE, MPI_SUM, world);
+  if (masstotal > 0.0) {
+    vcm[0] /= masstotal;
+    vcm[1] /= masstotal;
+    vcm[2] /= masstotal;
+  }
+}
+
+
+
+/* ----------------------------------------------------------------------
+   compute the angular momentum L (lmom) of group
+   around center-of-mass cm
+   must unwrap atoms to compute L correctly
+------------------------------------------------------------------------- */
+
+template<class DeviceType>
+void GroupKokkos<DeviceType>::angmom(int igroup, double *cm, double *lmom)
+{
+  int groupbit = bitmask[igroup];
+  auto d_x = atomKK->k_x.template view<DeviceType>();
+  auto d_v = atomKK->k_v.template view<DeviceType>();
+  auto d_mask = atomKK->k_mask.template view<DeviceType>();
+  auto d_image = atomKK->k_image.template view<DeviceType>();
+  auto l_prd = Few<double, 3>(domain->prd);
+  auto l_h = Few<double, 6>(domain->h);
+  auto l_triclinic = domain->triclinic;
+
+  double p[3] = {0.0, 0.0, 0.0};
+
+  if (atomKK->rmass) {
+
+    auto d_rmass = atomKK->k_rmass.template view<DeviceType>();
+
+    Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_px, double &l_py, double &l_pz) {
+      if (d_mask(i) & groupbit) {
+        double massone = d_rmass(i);
+        Few<double,3> x_i;
+        x_i[0] = d_x(i,0);
+        x_i[1] = d_x(i,1);
+        x_i[2] = d_x(i,2);
+        auto unwrapKK = DomainKokkos::unmap(l_prd,l_h,l_triclinic,x_i,d_image(i));
+        double dx = unwrapKK[0] - cm[0];
+        double dy = unwrapKK[1] - cm[1];
+        double dz = unwrapKK[2] - cm[2];
+        l_px += massone * (dy * d_v(i,2) - dz * d_v(i,1));
+        l_py += massone * (dz * d_v(i,0) - dx * d_v(i,2));
+        l_pz += massone * (dx * d_v(i,1) - dy * d_v(i,0));
+      }
+    }, p[0], p[1], p[2]);
+
+  } else {
+
+    auto d_mass = atomKK->k_mass.template view<DeviceType>();
+    auto d_type = atomKK->k_type.template view<DeviceType>();
+
+    Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_px, double &l_py, double &l_pz) {
+      if (d_mask(i) & groupbit) {
+        double massone = d_mass(d_type(i));
+        Few<double,3> x_i;
+        x_i[0] = d_x(i,0);
+        x_i[1] = d_x(i,1);
+        x_i[2] = d_x(i,2);
+        auto unwrapKK = DomainKokkos::unmap(l_prd,l_h,l_triclinic,x_i,d_image(i));
+        double dx = unwrapKK[0] - cm[0];
+        double dy = unwrapKK[1] - cm[1];
+        double dz = unwrapKK[2] - cm[2];
+        l_px += massone * (dy * d_v(i,2) - dz * d_v(i,1));
+        l_py += massone * (dz * d_v(i,0) - dx * d_v(i,2));
+        l_pz += massone * (dx * d_v(i,1) - dy * d_v(i,0));
+      }
+    }, p[0], p[1], p[2]);
+
+  }
+  MPI_Allreduce(p, lmom, 3, MPI_DOUBLE, MPI_SUM, world);
 }
 
 namespace LAMMPS_NS {

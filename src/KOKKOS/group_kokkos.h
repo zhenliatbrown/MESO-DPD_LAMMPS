@@ -25,6 +25,8 @@ class GroupKokkos : public Group {
   GroupKokkos(class LAMMPS *);
   double mass(int);                   // total mass of atoms in group
   void xcm(int, double, double *);    // center-of-mass coords of group
+  void vcm(int, double, double *);    // center-of-mass velocity of group
+  void angmom(int, double *, double *);    // angular momentum of group
 };
 
 }    // namespace LAMMPS_NS
