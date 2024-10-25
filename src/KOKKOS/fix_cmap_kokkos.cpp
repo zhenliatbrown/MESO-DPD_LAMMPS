@@ -695,6 +695,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
         d_buf(j++) = static_cast<double> (l_crossterm_atom3(i,m));
         d_buf(j++) = static_cast<double> (l_crossterm_atom4(i,m));
         d_buf(j++) = static_cast<double> (l_crossterm_atom5(i,m));
+        Kokkos::printf(" *** ok 1 ... i %i j %i m %i\n", i, j, m);
       }
 
       const int k = d_copylist(mysend);
@@ -707,6 +708,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
           l_crossterm_atom3(i,m) = l_crossterm_atom3(k,m);
           l_crossterm_atom4(i,m) = l_crossterm_atom4(k,m);
           l_crossterm_atom5(i,m) = l_crossterm_atom5(k,m);
+          Kokkos::printf(" *** ok 2 ... i %i k %i m %i\n", i, k, m);
         }
       }
     }
