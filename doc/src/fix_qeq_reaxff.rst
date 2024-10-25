@@ -124,7 +124,8 @@ LAMMPS was built with that package. See the :doc:`Build package
 
 This fix does not correctly handle interactions involving multiple
 periodic images of the same atom.  Hence, it should not be used for
-periodic cell dimensions less than 10 Angstroms.
+periodic cell dimensions smaller than the non-bonded cutoff radius,
+which is typically :math:`10~\AA` for ReaxFF simulations.
 
 This fix may be used in combination with :doc:`fix efield <fix_efield>`
 and will apply the external electric field during charge equilibration,
