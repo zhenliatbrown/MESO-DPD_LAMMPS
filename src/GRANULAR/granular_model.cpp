@@ -262,9 +262,9 @@ void GranularModel::init()
     if (sub_models[i]->beyond_contact)
       beyond_contact = 1;
     size_history += sub_models[i]->size_history;
-    // if (!sub_models[i]->allow_cohesion && normal_model->get_cohesive_flag())
-    //   error->all(FLERR,"Cannot use {} model with a cohesive normal model, {}",
-    //              sub_models[i]->name, normal_model->name);
+    if (!sub_models[i]->allow_cohesion && normal_model->get_cohesive_flag())
+      error->all(FLERR,"Cannot use {} model with a cohesive normal model, {}",
+                 sub_models[i]->name, normal_model->name);
     if (sub_models[i]->contact_radius_flag) contact_radius_flag = 1;
   }
 
