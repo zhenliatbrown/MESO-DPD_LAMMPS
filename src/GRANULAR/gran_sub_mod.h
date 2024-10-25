@@ -31,6 +31,7 @@ namespace Granular_NS {
     virtual void mix_coeffs(double *, double *);
     virtual void coeffs_to_local(){};
     virtual void init(){};    // called after all sub models + coeffs defined
+    void   rotate_rescale_vec(double *hislocal, double *n, double *ans); 
 
     void allocate_coeffs();
     std::string name;

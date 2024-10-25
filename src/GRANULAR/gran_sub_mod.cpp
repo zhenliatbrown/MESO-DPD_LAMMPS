@@ -21,11 +21,13 @@
 ----------------------------------------------------------------------- */
 
 #include "gran_sub_mod.h"
+#include "math_extra.h"
 
 #include <cmath>
 
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
+using namespace MathExtra;
 
 /* ----------------------------------------------------------------------
    Parent class for all types of granular sub models
@@ -128,4 +130,24 @@ double GranSubMod::mix_geom(double val1, double val2)
 double GranSubMod::mix_mean(double val1, double val2)
 {
   return 0.5 * (val1 + val2);
+}
+
+void GranSubMod::rotate_rescale_vec(double *v, double *n, double *ans) 
+{
+  double rsht, shrmag, prjmag, temp_dbl, temp_array[3];
+
+  rsht = dot3(v, n);
+  shrmag = len3(v);
+
+  scale3(rsht, n, temp_array);
+  sub3(v, temp_array, v);
+
+  // also rescale to preserve magnitude
+  prjmag = len3(v);
+  if (prjmag > 0)
+    temp_dbl = shrmag / prjmag;
+  else
+    temp_dbl = 0;
+  scale3(temp_dbl, v);
+  copy3(v, ans);
 }

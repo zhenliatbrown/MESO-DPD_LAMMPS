@@ -52,6 +52,7 @@ template <typename T> static GranSubMod *gran_sub_mod_creator(GranularModel *gm,
 GranularModel::GranularModel(LAMMPS *lmp) : Pointers(lmp)
 {
   limit_damping = 0;
+  synchronized_verlet = 0;
   beyond_contact = 0;
   nondefault_history_transfer = 0;
   classic_model = 0;
@@ -409,15 +410,16 @@ void GranularModel::calculate_forces()
   // relative translational velocity
   sub3(vi, vj, vr);
 
-  //Calculating half step normal
+  //Calculating half step normal for synchronized verlet
   double temp1[3], nhalf[3];
   scale3(0.5*dt, vr, temp1);
   sub3(dx, temp1, nhalf);
   norm3(nhalf);
-  if (contact_type != WALL){
-    scale3(1.0, nhalf, nxuse);
+
+  if (synchronized_verlet == 1 && contact_type != WALL){
+    copy3(nhalf, nxuse);
   } else {
-    scale3(1.0, nx, nxuse);
+    copy3(nx, nxuse);
   }
 
   // normal component

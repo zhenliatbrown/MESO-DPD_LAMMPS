@@ -127,64 +127,70 @@ void GranSubModTangentialLinearHistory::calculate_forces()
     rsht = dot3(history, gm->nxuse);
     frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
 
-    if (frame_update) {
-      shrmag = len3(history);
+    if (frame_update) rotate_rescale_vec(history, gm->nxuse, history);
+    //   shrmag = len3(history);
 
-      // first projection to half step normal
-      scale3(rsht, gm->nxuse, temp_array);
-      sub3(history, temp_array, history);
+    //   // first projection to half step normal
+    //   scale3(rsht, gm->nxuse, temp_array);
+    //   sub3(history, temp_array, history);
 
-      // also rescale to preserve magnitude
-      prjmag = len3(history);
-      if (prjmag > 0)
-        temp_dbl = shrmag / prjmag;
-      else
-        temp_dbl = 0;
-      scale3(temp_dbl, history);
-    }
+    //   // also rescale to preserve magnitude
+    //   prjmag = len3(history);
+    //   if (prjmag > 0)
+    //     temp_dbl = shrmag / prjmag;
+    //   else
+    //     temp_dbl = 0;
+    //   scale3(temp_dbl, history);
+    // }
 
     // update history, tangential force using velocities at half step
     // see e.g. eq. 18 of Thornton et al, Pow. Tech. 2013, v223,p30-46
     scale3(gm->dt, gm->vtr, temp_array);
     add3(history, temp_array, history);
 
-    //Second projection to nx (t+\Delta t)
-    rsht = dot3(history, gm->nx);
-    frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
-
-    if (frame_update) {
-      shrmag = len3(history);
-
-      // second projection to full step normal
-      scale3(rsht, gm->nx, temp_array);
-      sub3(history, temp_array, history);
-
-      // also rescale to preserve magnitude
-      prjmag = len3(history);
-      if (prjmag > 0)
-        temp_dbl = shrmag / prjmag;
-      else
-        temp_dbl = 0;
-      scale3(temp_dbl, history);
+    if(gm->synchronized_verlet == 1) {
+      rsht = dot3(history, gm->nx);
+      frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit); 
+      //Second projection to nx (t+\Delta t)
+      if (frame_update) rotate_rescale_vec(history, gm->nx, history);
     }
+    // rsht = dot3(history, gm->nx);
+    // frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
+
+    // if (frame_update) {
+    //   shrmag = len3(history);
+
+    //   // second projection to full step normal
+    //   scale3(rsht, gm->nx, temp_array);
+    //   sub3(history, temp_array, history);
+
+    //   // also rescale to preserve magnitude
+    //   prjmag = len3(history);
+    //   if (prjmag > 0)
+    //     temp_dbl = shrmag / prjmag;
+    //   else
+    //     temp_dbl = 0;
+    //   scale3(temp_dbl, history);
+    // }
   }
 
   // tangential forces = history + tangential velocity damping
   scale3(-k, history, gm->fs);
   //Rotating vtr for damping term in nx direction
-  rsht = dot3(gm->vtr, gm->nx);
-  if (frame_update) {
-    shrmag = len3(gm->vtr);
-    scale3(rsht, gm->nx, temp_array);
-    sub3(gm->vtr, temp_array, vtr2);
+  // rsht = dot3(gm->vtr, gm->nx);
+  if (frame_update && gm->synchronized_verlet == 1) {
+    rotate_rescale_vec(gm->vtr, gm->nx, vtr2);
+    // shrmag = len3(gm->vtr);
+    // scale3(rsht, gm->nx, temp_array);
+    // sub3(gm->vtr, temp_array, vtr2);
 
-    // also rescale to preserve magnitude
-    prjmag = len3(vtr2);
-    if (prjmag > 0)
-      temp_dbl = shrmag / prjmag;
-    else
-      temp_dbl = 0;
-    scale3(temp_dbl, vtr2);
+    // // also rescale to preserve magnitude
+    // prjmag = len3(vtr2);
+    // if (prjmag > 0)
+    //   temp_dbl = shrmag / prjmag;
+    // else
+    //   temp_dbl = 0;
+    // scale3(temp_dbl, vtr2);
   } else {
     copy3(gm->vtr, vtr2);
   }
@@ -364,19 +370,20 @@ void GranSubModTangentialMindlin::calculate_forces()
       frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
     }
 
-    if (frame_update) {
-      shrmag = len3(history);
-      // projection
-      scale3(rsht, gm->nxuse, temp_array);
-      sub3(history, temp_array, history);
-      // also rescale to preserve magnitude
-      prjmag = len3(history);
-      if (prjmag > 0)
-        temp_dbl = shrmag / prjmag;
-      else
-        temp_dbl = 0;
-      scale3(temp_dbl, history);
-    }
+    if (frame_update) rotate_rescale_vec(history, gm->nxuse, history);
+    // {
+    //   shrmag = len3(history);
+    //   // projection
+    //   scale3(rsht, gm->nxuse, temp_array);
+    //   sub3(history, temp_array, history);
+    //   // also rescale to preserve magnitude
+    //   prjmag = len3(history);
+    //   if (prjmag > 0)
+    //     temp_dbl = shrmag / prjmag;
+    //   else
+    //     temp_dbl = 0;
+    //   scale3(temp_dbl, history);
+    // }
 
     // update history
     if (mindlin_force) {
@@ -398,36 +405,39 @@ void GranSubModTangentialMindlin::calculate_forces()
       frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
     }
 
-    if (frame_update) {
-      shrmag = len3(history);
-      // projection
-      scale3(rsht, gm->nx, temp_array);
-      sub3(history, temp_array, history);
-      // also rescale to preserve magnitude
-      prjmag = len3(history);
-      if (prjmag > 0)
-        temp_dbl = shrmag / prjmag;
-      else
-        temp_dbl = 0;
-      scale3(temp_dbl, history);
-    }
+    if (frame_update) rotate_rescale_vec(history, gm->nx, history);
+    // {
+    //   shrmag = len3(history);
+    //   // projection
+    //   scale3(rsht, gm->nx, temp_array);
+    //   sub3(history, temp_array, history);
+    //   // also rescale to preserve magnitude
+    //   prjmag = len3(history);
+    //   if (prjmag > 0)
+    //     temp_dbl = shrmag / prjmag;
+    //   else
+    //     temp_dbl = 0;
+    //   scale3(temp_dbl, history);
+    // }
   }
 
   // tangential forces = history + tangential velocity damping
   //Rotating vtr for damping term in nx direction
-  rsht = dot3(gm->vtr, gm->nx);
-  if (frame_update) {
-    shrmag = len3(gm->vtr);
-    scale3(rsht, gm->nx, temp_array);
-    sub3(gm->vtr, temp_array, vtr2);
+  // rsht = dot3(gm->vtr, gm->nx);
+  if (frame_update && gm->synchronized_verlet) 
+  {
+    rotate_rescale_vec(gm->vtr, gm->nx, vtr2);
+    // shrmag = len3(gm->vtr);
+    // scale3(rsht, gm->nx, temp_array);
+    // sub3(gm->vtr, temp_array, vtr2);
 
-    // also rescale to preserve magnitude
-    prjmag = len3(vtr2);
-    if (prjmag > 0)
-      temp_dbl = shrmag / prjmag;
-    else
-      temp_dbl = 0;
-    scale3(temp_dbl, vtr2);
+    // // also rescale to preserve magnitude
+    // prjmag = len3(vtr2);
+    // if (prjmag > 0)
+    //   temp_dbl = shrmag / prjmag;
+    // else
+    //   temp_dbl = 0;
+    // scale3(temp_dbl, vtr2);
   } else {
     copy3(gm->vtr, vtr2);
   }

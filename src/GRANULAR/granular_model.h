@@ -71,7 +71,7 @@ class GranularModel : protected Pointers {
   GranSubMod *sub_models[NSUBMODELS];
 
   // Extra options
-  int beyond_contact, limit_damping, history_update;
+  int beyond_contact, limit_damping, history_update, synchronized_verlet;
   ContactType contact_type;
 
   // History variables
