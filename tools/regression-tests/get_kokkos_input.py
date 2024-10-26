@@ -55,20 +55,35 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--examples-top-level", dest="example_toplevel", default="", help="Examples top-level")
     parser.add_argument("--filter-out", dest="filter_out", default="", help="Filter out input scripts that contain strings")
+    parser.add_argument("--batch-size", dest="batch_size", default=50, help="Batch size of scripts per input list")
 
     args = parser.parse_args()
     example_toplevel = args.example_toplevel
     filter_out = args.filter_out.split(";")
-
+    batch_size = int(args.batch_size)
+    
     # print the list of the input scripts that has each feature to a separate file
     features = [ 'pair', 'fix', 'compute' ]
     for feature in features:
         input_list = []
         generate_list(feature, example_toplevel, filter_out, input_list)
-        with open(f"input-list-{feature}-kk.txt", "w") as f:
-            for input in input_list:
-                if input != "":
-                    f.write(f"{input}\n")
+
+        num_batches = int((len(input_list) + batch_size - 1) / batch_size)
+        if num_batches < 2:
+            with open(f"input-list-{feature}-kk.txt", "w") as f:
+                for input in input_list:
+                    if input != "":
+                        f.write(f"{input}\n")
+        else:
+            for idx in range(num_batches):
+                with open(f"input-list-{feature}-{idx}-kk.txt", "w") as f:
+                    start = idx * batch_size
+                    for i in range(batch_size):
+                        if start + i < len(input_list):
+                            input = input_list[start + i]
+                            if input != "":
+                                f.write(f"{input}\n")
+
 
     # combine the list of the input scripts that have these feature to a single file input-list-misc-kk.txt
     features = [ 'angle', 'bond', 'dihedral', 'improper', 'min' ]
