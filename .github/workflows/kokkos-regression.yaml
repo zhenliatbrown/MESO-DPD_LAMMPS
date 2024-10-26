@@ -95,9 +95,9 @@ jobs:
         python3 tools/regression-tests/get_kokkos_input.py \
                --examples-top-level=examples --batch-size=100 \
                --filter-out="balance;fire;gcmc;granregion;mdi;mliap;neb;pace;prd;pour;python;snap"
-        cat input-list-fix-1-kk.txt >> input-list-fix-0-kk.txt
-        mv input-list-fix-0-kk.txt input-list-fix-kk.txt
+        cat input-list-fix-*-kk.txt > input-list-fix-kk.txt
 
+        export OMP_PROC_BIND=false
         python3 tools/regression-tests/run_tests.py \
                --lmp-bin=build/lmp \
                --config-file=tools/regression-tests/config_kokkos_openmp.yaml \
