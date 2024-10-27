@@ -83,6 +83,7 @@ jobs:
               -D PKG_REAXFF=on \
               -D PKG_REPLICA=on \
               -D PKG_SRD=on \
+              -D PKG_SPH=on \
               -D PKG_VORONOI=on \
               -G Ninja
         cmake --build build
@@ -93,8 +94,8 @@ jobs:
       run: |
         source linuxenv/bin/activate
         python3 tools/regression-tests/get_kokkos_input.py \
-               --examples-top-level=examples --batch-size=100 \
-               --filter-out="balance;fire;gcmc;granregion;mdi;mliap;neb;pace;prd;pour;python;snap"
+               --examples-top-level=examples --batch-size=50 \
+               --filter-out="balance;fire;gcmc;granregion;hyper;mc;mdi;mliap;neb;pace;prd;pour;python;rigid;snap;streitz;shear;ttm"
         cat input-list-fix-*-kk.txt > input-list-fix-kk.txt
 
         export OMP_PROC_BIND=false

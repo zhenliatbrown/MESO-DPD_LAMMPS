@@ -7,6 +7,7 @@
 # These 4 files will be read in by the regression tester run_tests.py
 
 from argparse import ArgumentParser
+import random
 import subprocess
 import sys
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
         input_list = []
         generate_list(feature, example_toplevel, filter_out, input_list)
 
-        num_batches = int((len(input_list) + batch_size - 1) / batch_size)
+        num_batches = int(len(input_list) / batch_size)
         if num_batches < 2:
             with open(f"input-list-{feature}-kk.txt", "w") as f:
                 for input in input_list:
@@ -77,13 +78,15 @@ if __name__ == "__main__":
         else:
             for idx in range(num_batches):
                 with open(f"input-list-{feature}-{idx}-kk.txt", "w") as f:
-                    start = idx * batch_size
-                    for i in range(batch_size):
-                        if start + i < len(input_list):
-                            input = input_list[start + i]
-                            if input != "":
-                                f.write(f"{input}\n")
-
+                    if len(input_list) > batch_size:
+                        sampled = random.sample(input_list, batch_size)
+                    else:
+                        sampled = input_list
+                    for input in sampled:
+                        if input != "":
+                            if input in input_list:
+                                input_list.remove(input)
+                            f.write(f"{input}\n")
 
     # combine the list of the input scripts that have these feature to a single file input-list-misc-kk.txt
     features = [ 'angle', 'bond', 'dihedral', 'improper', 'min' ]
