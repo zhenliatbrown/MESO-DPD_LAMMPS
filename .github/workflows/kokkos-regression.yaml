@@ -17,9 +17,9 @@ jobs:
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
     strategy:
-      max-parallel: 5
+      max-parallel: 6
       matrix:
-        idx: [ 'pair-0', 'pair-1', 'fix', 'compute', 'misc' ]
+        idx: [ 'pair-0', 'pair-1', 'fix-0', 'fix-1', 'compute', 'misc' ]
 
     steps:
     - name: Checkout repository
@@ -96,7 +96,6 @@ jobs:
         python3 tools/regression-tests/get_kokkos_input.py \
                --examples-top-level=examples --batch-size=50 \
                --filter-out="balance;fire;gcmc;granregion;hyper;mc;mdi;mliap;neb;pace;prd;pour;python;rigid;snap;streitz;shear;ttm"
-        cat input-list-fix-*-kk.txt > input-list-fix-kk.txt
 
         export OMP_PROC_BIND=false
         python3 tools/regression-tests/run_tests.py \
