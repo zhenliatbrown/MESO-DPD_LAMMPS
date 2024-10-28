@@ -699,7 +699,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
         d_buf(j++) = static_cast<double> (l_crossterm_atom3(i,m));
         d_buf(j++) = static_cast<double> (l_crossterm_atom4(i,m));
         d_buf(j++) = static_cast<double> (l_crossterm_atom5(i,m));
-        Kokkos::printf(" *** ok 1 ... i %i j %i m %i\n", i, j, m);
+        Kokkos::printf(" *** ok 1 ... i %i j %i l_num_crossterm(i) %i m %i\n", i, j, l_num_crossterm(i), m);
       }
 
       const int k = d_copylist(mysend);
