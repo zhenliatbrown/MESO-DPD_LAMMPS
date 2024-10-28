@@ -663,6 +663,14 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
   k_copylist.template sync<DeviceType>();
   k_exchange_sendlist.template sync<DeviceType>();
 
+  k_num_crossterm.template sync<DeviceType>();
+  k_crossterm_type.template sync<DeviceType>();
+  k_crossterm_atom1.template sync<DeviceType>();
+  k_crossterm_atom2.template sync<DeviceType>();
+  k_crossterm_atom3.template sync<DeviceType>();
+  k_crossterm_atom4.template sync<DeviceType>();
+  k_crossterm_atom5.template sync<DeviceType>();
+
   auto d_buf = typename ArrayTypes<DeviceType>::t_xfloat_1d_um(
     k_buf.template view<DeviceType>().data(),
     k_buf.extent(0)*k_buf.extent(1));
@@ -700,6 +708,9 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
 
       const int k = d_copylist(mysend);
       if (k > -1) {
+
+          Kokkos::printf(" *** ok 2 ... i %i k %i\n", i, k);
+
         l_num_crossterm(i) = l_num_crossterm(k);
         for (int m = 0; m < l_num_crossterm(k); m++) {
           l_crossterm_type(i,m) = l_crossterm_type(k,m);
@@ -708,7 +719,6 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
           l_crossterm_atom3(i,m) = l_crossterm_atom3(k,m);
           l_crossterm_atom4(i,m) = l_crossterm_atom4(k,m);
           l_crossterm_atom5(i,m) = l_crossterm_atom5(k,m);
-          Kokkos::printf(" *** ok 2 ... i %i k %i m %i\n", i, k, m);
         }
       }
     }
