@@ -705,7 +705,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
       const int k = d_copylist(mysend);
       if (k > -1) {
 
-          Kokkos::printf(" *** ok 2 ... i %i k %i\n", i, k);
+        // Kokkos::printf(" *** ok 2 ... i %i k %i\n", i, k);
 
         l_num_crossterm(i) = l_num_crossterm(k);
         for (int m = 0; m < l_num_crossterm(k); m++) {
@@ -719,6 +719,8 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
       }
     }
   },n);
+
+  Kokkos::printf(" *** ok 3 ... n %i \n", n);
 
   copymode = 0;
 
@@ -776,7 +778,7 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
   auto l_crossterm_atom4 = d_crossterm_atom4;
   auto l_crossterm_atom5 = d_crossterm_atom5;
 
-  Kokkos::parallel_for(nrecv, KOKKOS_LAMBDA(const int &i) {
+  Kokkos::parallel_for(nextrarecv1, KOKKOS_LAMBDA(const int &i) {
     int index = d_indices(i);
 
     if (index > -1) {
@@ -789,7 +791,7 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
 
         Kokkos::printf(" *** unpack_exchange_kokkos() ... nrecv %i nrecv1 %i nextrarecv1 %i i %i index %i m %i l_num_crossterm(index) %i\n", nrecv, nrecv1, nextrarecv1, i, index, m, l_num_crossterm(index));
 
-        l_crossterm_type(index,m) = static_cast<int>(d_buf(i+1));
+        l_crossterm_type(index,m) = static_cast<int> (d_buf(i+1));
         l_crossterm_atom1(index,m) = static_cast<tagint> (d_buf(i+2));
         l_crossterm_atom2(index,m) = static_cast<tagint> (d_buf(i+3));
         l_crossterm_atom3(index,m) = static_cast<tagint> (d_buf(i+4));
