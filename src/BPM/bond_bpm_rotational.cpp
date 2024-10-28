@@ -51,8 +51,10 @@ BondBPMRotational::BondBPMRotational(LAMMPS *_lmp) :
   partial_flag = 1;
   smooth_flag = 1;
   normalize_flag = 0;
+  writedata = 0;
 
   nhistory = 4;
+  id_fix_bond_history = utils::strdup("HISTORY_BPM_ROTATIONAL");
 
   single_extra = 7;
   svector = new double[7];

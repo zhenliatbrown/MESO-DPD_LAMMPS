@@ -34,15 +34,16 @@ using namespace LAMMPS_NS;
 
 BondBPMSpring::BondBPMSpring(LAMMPS *_lmp) :
     BondBPM(_lmp), k(nullptr), av(nullptr), ecrit(nullptr), gamma(nullptr),
-    id_fix_prop_bond(nullptr), vol_current(nullptr), dvol0(nullptr)
+    id_fix_property_bond(nullptr), vol_current(nullptr), dvol0(nullptr)
 {
   partial_flag = 1;
   smooth_flag = 1;
   normalize_flag = 0;
   volume_flag = 0;
-  writedata = 1;
+  writedata = 0;
 
   nhistory = 1;
+  id_fix_bond_history = utils::strdup("HISTORY_BPM_SPRING");
 
   single_extra = 1;
   svector = new double[1];
@@ -58,9 +59,9 @@ BondBPMSpring::BondBPMSpring(LAMMPS *_lmp) :
 BondBPMSpring::~BondBPMSpring()
 {
   delete[] svector;
-  if (id_fix_prop_bond && modify->nfix) {
-    modify->delete_fix(id_fix_prop_bond);
-    delete[] id_fix_prop_bond;
+  if (id_fix_property_bond && modify->nfix) {
+    modify->delete_fix(id_fix_property_bond);
+    delete[] id_fix_property_bond;
   }
 
   if (allocated) {
@@ -148,8 +149,7 @@ void BondBPMSpring::store_data()
 
 void BondBPMSpring::compute(int eflag, int vflag)
 {
-  if (hybrid_flag)
-    fix_bond_history->compress_history();
+  if (hybrid_flag) fix_bond_history->compress_history();
 
   int i, bond_change_flag;
   double *vol0, *vol;
@@ -252,11 +252,9 @@ void BondBPMSpring::compute(int eflag, int vflag)
       if (volume_flag) {
         bond_change_flag = 1;
         vol_temp = r0 * r0;
-        if (dim == 3)  vol_temp *= r0;
-        if (newton_bond || i1 < nlocal)
-          dvol0[i1] -= vol_temp;
-        if (newton_bond || i2 < nlocal)
-          dvol0[i2] -= vol_temp;
+        if (dim == 3) vol_temp *= r0;
+        if (newton_bond || i1 < nlocal) dvol0[i1] -= vol_temp;
+        if (newton_bond || i2 < nlocal) dvol0[i2] -= vol_temp;
       }
 
       continue;
@@ -306,11 +304,9 @@ void BondBPMSpring::compute(int eflag, int vflag)
   }
 
   // Update vol0 to account for any broken bonds
-  if (volume_flag && bond_change_flag)
-    update_vol0();
+  if (volume_flag && bond_change_flag) update_vol0();
 
-  if (hybrid_flag)
-    fix_bond_history->uncompress_history();
+  if (hybrid_flag) fix_bond_history->uncompress_history();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -346,20 +342,16 @@ int BondBPMSpring::calculate_vol()
     rsq = delx * delx + dely * dely + delz * delz;
 
     vol_temp = rsq;
-    if (dim == 3)  vol_temp *= sqrt(rsq);
+    if (dim == 3) vol_temp *= sqrt(rsq);
 
-    if (newton_bond || i1 < nlocal)
-      vol_current[i1] += vol_temp;
-    if (newton_bond || i2 < nlocal)
-      vol_current[i2] += vol_temp;
+    if (newton_bond || i1 < nlocal) vol_current[i1] += vol_temp;
+    if (newton_bond || i2 < nlocal) vol_current[i2] += vol_temp;
 
     // If bond hasn't been set - increment dvol0 too to update vol0
     if (r0 < EPSILON || std::isnan(r0)) {
       bond_change_flag = 1;
-      if (newton_bond || i1 < nlocal)
-        dvol0[i1] += vol_temp;
-      if (newton_bond || i2 < nlocal)
-        dvol0[i2] += vol_temp;
+      if (newton_bond || i1 < nlocal) dvol0[i1] += vol_temp;
+      if (newton_bond || i2 < nlocal) dvol0[i2] += vol_temp;
     }
   }
 
@@ -378,8 +370,7 @@ void BondBPMSpring::update_vol0()
   if (force->newton_bond) comm->reverse_comm(this);
 
   double *vol0 = atom->dvector[index_vol0];
-  for (int i = 0; i < atom->nlocal; i++)
-    vol0[i] += dvol0[i];
+  for (int i = 0; i < atom->nlocal; i++) vol0[i] += dvol0[i];
 
   // zero dvol0 for next change
   for (int i = 0; i < nmax; i++) dvol0[i] = 0.0;
@@ -419,8 +410,7 @@ void BondBPMSpring::coeff(int narg, char **arg)
   double gamma_one = utils::numeric(FLERR, arg[3], false, lmp);
 
   double av_one = 0.0;
-  if (volume_flag)
-    av_one = utils::numeric(FLERR, arg[4], false, lmp);
+  if (volume_flag) av_one = utils::numeric(FLERR, arg[4], false, lmp);
 
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
@@ -448,11 +438,12 @@ void BondBPMSpring::init_style()
   if (comm->ghost_velocity == 0)
     error->all(FLERR, "Bond bpm/spring requires ghost atoms store velocity");
 
-  if (volume_flag && !id_fix_prop_bond) {
-    id_fix_prop_bond = utils::strdup("BOND_BPM_SPRING_FIX_PROP_ATOM");
-    modify->add_fix(fmt::format("{} all property/atom d_vol d_vol0 ghost yes writedata no", id_fix_prop_bond));
+  if (volume_flag && !id_fix_property_bond) {
+    id_fix_property_bond = utils::strdup("BOND_BPM_SPRING_FIX_PROPERTY_ATOM");
+    modify->add_fix(fmt::format("{} all property/atom d_vol d_vol0 ghost yes writedata no",
+                                id_fix_property_bond));
 
-    int tmp1, tmp2;
+    int tmp1 = 0, tmp2 = 0;
     index_vol = atom->find_custom("vol", tmp1, tmp2);
     index_vol0 = atom->find_custom("vol0", tmp1, tmp2);
   }
@@ -472,11 +463,13 @@ void BondBPMSpring::settings(int narg, char **arg)
       smooth_flag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       i += 1;
     } else if (strcmp(arg[iarg], "normalize") == 0) {
-      if (iarg + 1 > narg) error->all(FLERR, "Illegal bond bpm command, missing option for normalize");
+      if (iarg + 1 > narg)
+        error->all(FLERR, "Illegal bond bpm command, missing option for normalize");
       normalize_flag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       i += 1;
     } else if (strcmp(arg[iarg], "volume/factor") == 0) {
-      if (iarg + 1 > narg) error->all(FLERR, "Illegal bond bpm command, missing option for volume/factor");
+      if (iarg + 1 > narg)
+        error->all(FLERR, "Illegal bond bpm command, missing option for volume/factor");
       volume_flag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
 
       if (volume_flag) {
@@ -560,21 +553,6 @@ void BondBPMSpring::read_restart_settings(FILE *fp)
   MPI_Bcast(&volume_flag, 1, MPI_INT, 0, world);
 }
 
-/* ----------------------------------------------------------------------
-   proc 0 writes to data file file
-------------------------------------------------------------------------- */
-
-void BondBPMSpring::write_data(FILE *fp)
-{
-  if (volume_flag) {
-    for (int i = 1; i <= atom->nbondtypes; i++)
-      fprintf(fp, "%d %g %g %g %g\n", i, k[i], ecrit[i], gamma[i], av[i]);
-  } else {
-    for (int i = 1; i <= atom->nbondtypes; i++)
-      fprintf(fp, "%d %g %g %g\n", i, k[i], ecrit[i], gamma[i]);
-  }
-}
-
 /* ---------------------------------------------------------------------- */
 
 double BondBPMSpring::single(int type, double rsq, int i, int j, double &fforce)
@@ -639,8 +617,7 @@ int BondBPMSpring::pack_reverse_comm(int n, int first, double *buf)
   int i, m, last;
   m = 0;
   last = first + n;
-  for (i = first; i < last; i++)
-    buf[m++] = vol_current[i];
+  for (i = first; i < last; i++) buf[m++] = vol_current[i];
   return m;
 }
 
@@ -658,8 +635,7 @@ void BondBPMSpring::unpack_reverse_comm(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int BondBPMSpring::pack_forward_comm(int n, int *list, double *buf,
-                                     int /*pbc_flag*/, int * /*pbc*/)
+int BondBPMSpring::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/, int * /*pbc*/)
 {
   int i, j, m;
   m = 0;
@@ -677,6 +653,5 @@ void BondBPMSpring::unpack_forward_comm(int n, int first, double *buf)
   int i, m, last;
   m = 0;
   last = first + n;
-  for (i = first; i < last; i++)
-    vol_current[i] = buf[m++];
+  for (i = first; i < last; i++) vol_current[i] = buf[m++];
 }

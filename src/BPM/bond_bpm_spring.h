@@ -36,7 +36,6 @@ class BondBPMSpring : public BondBPM {
   void read_restart(FILE *) override;
   void write_restart_settings(FILE *) override;
   void read_restart_settings(FILE *) override;
-  void write_data(FILE *) override;
   double single(int, double, int, int, double &) override;
   int pack_forward_comm(int, int *, double *, int, int *) override;
   void unpack_forward_comm(int, int, double *) override;
@@ -48,7 +47,7 @@ class BondBPMSpring : public BondBPM {
   int smooth_flag, normalize_flag, volume_flag;
 
   int index_vol, index_vol0, nmax;
-  char *id_fix_prop_bond;
+  char *id_fix_property_bond;
   double *vol_current, *dvol0;
 
   void allocate();
