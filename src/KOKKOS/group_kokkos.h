@@ -27,6 +27,7 @@ class GroupKokkos : public Group {
   void xcm(int, double, double *);    // center-of-mass coords of group
   void vcm(int, double, double *);    // center-of-mass velocity of group
   void angmom(int, double *, double *);    // angular momentum of group
+  void inertia(int, double *, double[3][3]);    // inertia tensor
 };
 
 }    // namespace LAMMPS_NS
