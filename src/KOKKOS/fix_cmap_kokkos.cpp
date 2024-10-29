@@ -691,7 +691,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
     if (!final) offset += l_num_crossterm(i);
     else {
       int j = nsend + offset;
-      d_buf(j) = static_cast<double> (l_num_crossterm(i));
+      d_buf(j++) = static_cast<double> (l_num_crossterm(i));
       for (int m = 0; m < l_num_crossterm(i); m++) {
         d_buf(j++) = static_cast<double> (l_crossterm_type(i,m));
         d_buf(j++) = static_cast<double> (l_crossterm_atom1(i,m));
@@ -757,9 +757,6 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
 
   auto d_indices = k_indices.template view<DeviceType>();
 
-  //this->nrecv1 = nrecv1;
-  //this->nextrarecv1 = nextrarecv1;
-
   k_num_crossterm.template sync<DeviceType>();
   k_crossterm_type.template sync<DeviceType>();
   k_crossterm_atom1.template sync<DeviceType>();
@@ -786,19 +783,18 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
     // int m = d_buf[i];
     // if (i >= nrecv1) m = nextrarecv1 + d_buf[nextrarecv1 + i - nrecv1];
 
-      l_num_crossterm(index) = static_cast<int> (d_buf(i));
+      int j = nrecv + i;
+      l_num_crossterm(index) = static_cast<int> (d_buf(j));
 
-      Kokkos::printf(" *** unpack_exchange_kokkos() ... nrecv %i nrecv1 %i nextrarecv1 %i i %i index %i l_num_crossterm(index) %i d_buf[] %f %f %f %f %f %f %f\n", nrecv, nrecv1, nextrarecv1, i, index, l_num_crossterm(index), d_buf(i), d_buf(i+1), d_buf(i+2), d_buf(i+3), d_buf(i+4), d_buf(i+5), d_buf(i+6));
+      Kokkos::printf(" *** unpack_exchange_kokkos() ... nrecv %i nrecv1 %i nextrarecv1 %i i %i j %i index %i l_num_crossterm(index) %i d_buf[] %f %f %f %f %f %f %f\n", nrecv, nrecv1, nextrarecv1, i, j, index, l_num_crossterm(index), d_buf(j), d_buf(j+1), d_buf(j+2), d_buf(j+3), d_buf(j+4), d_buf(j+5), d_buf(j+6));
 
       for (int m = 0; m < l_num_crossterm(index); m++) {
-
-
-        l_crossterm_type(index,m) = static_cast<int> (d_buf(i+1));
-        l_crossterm_atom1(index,m) = static_cast<tagint> (d_buf(i+2));
-        l_crossterm_atom2(index,m) = static_cast<tagint> (d_buf(i+3));
-        l_crossterm_atom3(index,m) = static_cast<tagint> (d_buf(i+4));
-        l_crossterm_atom4(index,m) = static_cast<tagint> (d_buf(i+5));
-        l_crossterm_atom5(index,m) = static_cast<tagint> (d_buf(i+6));
+        l_crossterm_type(index,m) = static_cast<int> (d_buf(j+1));
+        l_crossterm_atom1(index,m) = static_cast<tagint> (d_buf(j+2));
+        l_crossterm_atom2(index,m) = static_cast<tagint> (d_buf(j+3));
+        l_crossterm_atom3(index,m) = static_cast<tagint> (d_buf(j+4));
+        l_crossterm_atom4(index,m) = static_cast<tagint> (d_buf(j+5));
+        l_crossterm_atom5(index,m) = static_cast<tagint> (d_buf(j+6));
       }
     }
   });
