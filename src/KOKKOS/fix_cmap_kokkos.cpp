@@ -795,7 +795,7 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
 
       l_num_crossterm(index) = static_cast<int> (d_buf(m++));
 
-      Kokkos::printf(" *** unpack_exchange_kokkos() ... m %i l_num_crossterm(index) %i \n", m, index, l_num_crossterm(index));
+      Kokkos::printf(" *** unpack_exchange_kokkos() ... m %i l_num_crossterm(index) %i \n", m, l_num_crossterm(index));
 
 
 
