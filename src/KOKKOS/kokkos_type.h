@@ -166,7 +166,7 @@ template<typename DataType, typename Layout, typename Device, typename... Args>
 using KKScatterView = Kokkos::Experimental::ScatterView<DataType, Layout, Device, Args...>;
 
 
-// set ExecutionSpace stuct with variable "space"
+// set ExecutionSpace struct with variable "space"
 
 template<class Device>
 struct ExecutionSpaceFromDevice;
