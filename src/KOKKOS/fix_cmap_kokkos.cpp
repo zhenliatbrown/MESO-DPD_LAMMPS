@@ -719,8 +719,8 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
         }
       }
 
-      for( int k=0 ; k<d_buf.extent(0) ; k++ )
-        Kokkos::printf(" *** pack_exchange_kokkos() ... d_buf(%i) %f\n", k, d_buf(k));
+      for( int k=0 ; k<100 ; k++ )
+        Kokkos::printf(" *** pack_exchange_kokkos() ... mysend %i d_buf(%i) %f\n", mysend, k, d_buf(k));
 
     }
   },n);
@@ -788,12 +788,13 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
       int m = d_buf(i);
       // if (i >= nrecv1) m = nextrarecv1 + d_buf[nextrarecv1 + i - nrecv1];
 
-      for( int k=0 ; k<d_buf.extent(0) ; k++ )
-        Kokkos::printf(" *** unpack_exchange_kokkos() ... d_buf(%i) %f\n", k, d_buf(k));
-
       l_num_crossterm(index) = static_cast<int> (d_buf(m++));
 
       Kokkos::printf(" *** unpack_exchange_kokkos() ... nrecv %i nrecv1 %i nextrarecv1 %i i %i m %i index %i l_num_crossterm(index) %i \n", nrecv, nrecv1, nextrarecv1, i, m, index, l_num_crossterm(index));
+
+      for( int k=0 ; k<100 ; k++ )
+        Kokkos::printf(" *** unpack_exchange_kokkos() ... d_buf(%i) %f\n", k, d_buf(k));
+
 
       for (int k = 0; k < l_num_crossterm(index); k++) {
         l_crossterm_type(index,k) = static_cast<int> (d_buf(m++));
