@@ -2,7 +2,7 @@
 name: "Kokkos OpenMP Regression Test"
 
 on:
-  pull_request:
+  push:
     branches:
       - develop
 
