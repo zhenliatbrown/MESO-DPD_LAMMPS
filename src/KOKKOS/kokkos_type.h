@@ -41,6 +41,16 @@ constexpr int HALF = 4;
 #define MAX_TYPES_STACKPARAMS 12
 static constexpr LAMMPS_NS::bigint LMP_KOKKOS_AV_DELTA = 10;
 
+namespace LAMMPS_NS {
+  union d_ubuf {
+    double d;
+    int64_t i;
+    KOKKOS_INLINE_FUNCTION d_ubuf(double arg) : d(arg) {}
+    KOKKOS_INLINE_FUNCTION d_ubuf(int64_t arg) : i(arg) {}
+    KOKKOS_INLINE_FUNCTION d_ubuf(int arg) : i(arg) {}
+  };
+}
+
 namespace Kokkos {
   static auto NoInit = [](std::string const& label) {
     return Kokkos::view_alloc(Kokkos::WithoutInitializing, label);
