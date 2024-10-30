@@ -70,7 +70,7 @@ particles to solid (e.g. with the :doc:`set <set>` command), (b) create bpm
 bonds between the particles (see the :doc:`bpm howto <Howto_bpm>` page for
 more details), and (c) use :doc:`pair rheo/solid <pair_rheo_solid>` to
 apply repulsive contact forces between distinct solid bodies. Akin to pair rheo,
-pair rheo/solid considers a particles fluid/solid phase to determine whether to
+pair rheo/solid considers a particle's fluid/solid phase to determine whether to
 apply forces. However, unlike pair rheo, pair rheo/solid does obey special bond
 settings such that contact forces do not have to be calculated between two bonded
 solid particles in the same elastic body.
@@ -79,10 +79,10 @@ In systems with thermal evolution, fix rheo/thermal can optionally set a
 melting/solidification temperature allowing particles to dynamically swap their
 state between fluid and solid when the temperature exceeds or drops below the
 critical temperature, respectively. Using the *react* option, one can specify a maximum
-bond length and a bond type. Then, when solidifying, particles will search their
+bond length and a bond type. Then, when solidifying, particles search their
 local neighbors and automatically create bonds with any neighboring solid particles
-in range. For BPM bond styles, bonds will then use the immediate position of the two
-particles to calculate a reference state. When melting, particles will delete any
+in range. For BPM bond styles, bonds then use the immediate position of the two
+particles to calculate a reference state. When melting, particles delete any
 bonds of the specified type when reverting to a fluid state. Special bonds are updated
 as bonds are created/broken.
 
