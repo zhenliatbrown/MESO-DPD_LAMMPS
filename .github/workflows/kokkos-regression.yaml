@@ -105,7 +105,7 @@ jobs:
                --output-file=output-${{ matrix.idx }}.xml \
                --progress-file=progress-${{ matrix.idx }}.yaml \
                --log-file=run-${{ matrix.idx }}.log \
-               --quick-max=100 --verbose
+               --quick-max=100
 
         tar -cvf kokkos-regression-test-${{ matrix.idx }}.tar run-${{ matrix.idx }}.log progress-${{ matrix.idx }}.yaml output-${{ matrix.idx }}.xml
 
