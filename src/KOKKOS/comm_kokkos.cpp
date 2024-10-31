@@ -661,7 +661,7 @@ void CommKokkos::reverse_comm(Pair *pair, int size)
 template<class DeviceType>
 void CommKokkos::reverse_comm_device(Pair *pair, int size)
 {
-  int iswap,n;
+  int iswap,n,nsize;
   MPI_Request request;
   DAT::tdual_xfloat_1d k_buf_tmp;
 
