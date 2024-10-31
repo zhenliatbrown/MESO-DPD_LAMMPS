@@ -378,10 +378,10 @@ void CommKokkos::forward_comm(Fix *fix, int size)
 {
   if (fix->execution_space == Host || !fix->forward_comm_device || forward_fix_comm_classic) {
     k_sendlist.sync<LMPHostType>();
-    CommBrick::forward_comm(fix,size);
+    CommBrick::forward_comm(fix, size);
   } else {
     k_sendlist.sync<LMPDeviceType>();
-    forward_comm_device<LMPDeviceType>(fix,size);
+    forward_comm_device<LMPDeviceType>(fix, size);
   }
 }
 
@@ -668,7 +668,7 @@ void CommKokkos::reverse_comm_device(Pair *pair, int size)
   KokkosBase* pairKKBase = dynamic_cast<KokkosBase*>(pair);
 
   if (size) nsize = size;
-  else nsize = MAX(pair->comm_reverse,pair->comm_reverse_off);
+  else nsize = MAX(pair->comm_reverse, pair->comm_reverse_off);
 
   int nmax = max_buf_pair;
   for (iswap = 0; iswap < nswap; iswap++) {

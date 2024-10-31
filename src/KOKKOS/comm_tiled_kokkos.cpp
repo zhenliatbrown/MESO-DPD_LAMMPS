@@ -424,9 +424,9 @@ void CommTiledKokkos::borders()
      some are smaller than max stored in its comm_forward
 ------------------------------------------------------------------------- */
 
-void CommTiledKokkos::forward_comm(Pair *pair)
+void CommTiledKokkos::forward_comm(Pair *pair, int size)
 {
-  CommTiled::forward_comm(pair);
+  CommTiled::forward_comm(pair, size);
 }
 
 /* ----------------------------------------------------------------------
