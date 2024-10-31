@@ -81,6 +81,9 @@ class FixCMAPKokkos : public FixCMAP, public KokkosBase {
     DAT::tdual_int_1d k_map_array;
     dual_hash_type k_map_hash;
 
+    typename AT::t_int_scalar d_count;
+    HAT::t_int_scalar h_count;
+
     DAT::tdual_int_1d k_num_crossterm;
     typename AT::t_int_1d d_num_crossterm;
 
