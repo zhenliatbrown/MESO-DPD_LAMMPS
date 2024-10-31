@@ -686,7 +686,6 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
   auto l_crossterm_atom3 = d_crossterm_atom3;
   auto l_crossterm_atom4 = d_crossterm_atom4;
   auto l_crossterm_atom5 = d_crossterm_atom5;
-  //auto l_nsend = nsend;
   auto l_count = d_count;
 
   copymode = 1;
@@ -702,20 +701,13 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
       d_buf(mysend) = d_ubuf(m).d;
       d_buf(m++) = d_ubuf(l_num_crossterm(i)).d;
 
-      if( l_num_crossterm(i) > 0 ) {
-
-        for (int k = 0; k < l_num_crossterm(i); k++) {
-
-          d_buf(m++) = d_ubuf(l_crossterm_type(i,k)).d;
-          d_buf(m++) = d_ubuf(l_crossterm_atom1(i,k)).d;
-          d_buf(m++) = d_ubuf(l_crossterm_atom2(i,k)).d;
-          d_buf(m++) = d_ubuf(l_crossterm_atom3(i,k)).d;
-          d_buf(m++) = d_ubuf(l_crossterm_atom4(i,k)).d;
-          d_buf(m++) = d_ubuf(l_crossterm_atom5(i,k)).d;
-
-          Kokkos::printf(" *** pack_exchange_kokkos() ... mysend %i i %i l_nsend %i offset %i m %i l_num_crossterm(i) %i l_crossterm_type(i,k) %i k %i d_buf[] %i %i %i %i %i %i %i\n", mysend, i, nsend, offset, m, l_num_crossterm(i), l_crossterm_type(i,k), k, d_ubuf(d_buf(m-7)).i, d_ubuf(d_buf(m-6)).i, d_ubuf(d_buf(m-5)).i, d_ubuf(d_buf(m-4)).i, d_ubuf(d_buf(m-3)).i, d_ubuf(d_buf(m-2)).i, d_ubuf(d_buf(m-1)).i);
-
-        }
+      for (int k = 0; k < l_num_crossterm(i); k++) {
+        d_buf(m++) = d_ubuf(l_crossterm_type(i,k)).d;
+        d_buf(m++) = d_ubuf(l_crossterm_atom1(i,k)).d;
+        d_buf(m++) = d_ubuf(l_crossterm_atom2(i,k)).d;
+        d_buf(m++) = d_ubuf(l_crossterm_atom3(i,k)).d;
+        d_buf(m++) = d_ubuf(l_crossterm_atom4(i,k)).d;
+        d_buf(m++) = d_ubuf(l_crossterm_atom5(i,k)).d;
       }
 
       if (mysend == nsend-1) l_count() = m;
@@ -765,13 +757,7 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
 {
   k_buf.template sync<DeviceType>();
   k_indices.template sync<DeviceType>();
-
-  auto d_buf = typename ArrayTypes<DeviceType>::t_xfloat_1d_um(
-    k_buf.template view<DeviceType>().data(),
-    k_buf.extent(0)*k_buf.extent(1));
-
-  auto d_indices = k_indices.template view<DeviceType>();
-
+  
   k_num_crossterm.template sync<DeviceType>();
   k_crossterm_type.template sync<DeviceType>();
   k_crossterm_atom1.template sync<DeviceType>();
@@ -779,6 +765,12 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
   k_crossterm_atom3.template sync<DeviceType>();
   k_crossterm_atom4.template sync<DeviceType>();
   k_crossterm_atom5.template sync<DeviceType>();
+
+  auto d_buf = typename ArrayTypes<DeviceType>::t_xfloat_1d_um(
+    k_buf.template view<DeviceType>().data(),
+    k_buf.extent(0)*k_buf.extent(1));
+
+  auto d_indices = k_indices.template view<DeviceType>();
 
   auto l_num_crossterm = d_num_crossterm;
   auto l_crossterm_type = d_crossterm_type;
@@ -792,14 +784,10 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
 
   Kokkos::parallel_for(nrecv, KOKKOS_LAMBDA(const int &i) {
     int index = d_indices(i);
-
     if (index > -1) {
-
       int m = d_ubuf(d_buf(i)).i;
       if (i >= nrecv1) m = nextrarecv1 + d_ubuf(d_buf(nextrarecv1 + i - nrecv1)).i;
-
       l_num_crossterm(index) = static_cast<int> (d_ubuf(d_buf(m++)).i);
-
       for (int k = 0; k < l_num_crossterm(index); k++) {
         l_crossterm_type(index,k) = static_cast<int> (d_ubuf(d_buf(m++)).i);
         l_crossterm_atom1(index,k) = static_cast<tagint> (d_ubuf(d_buf(m++)).i);
@@ -807,9 +795,6 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
         l_crossterm_atom3(index,k) = static_cast<tagint> (d_ubuf(d_buf(m++)).i);
         l_crossterm_atom4(index,k) = static_cast<tagint> (d_ubuf(d_buf(m++)).i);
         l_crossterm_atom5(index,k) = static_cast<tagint> (d_ubuf(d_buf(m++)).i);
-
-      Kokkos::printf(" *** unpack_exchange_kokkos() ... m %i l_num_crossterm(index) %i l_crossterm_type %i l_crossterm_atom1-5 %i %i %i %i %i \n", m, l_num_crossterm(index), l_crossterm_type(index,k), l_crossterm_atom1(index,k), l_crossterm_atom2(index,k), l_crossterm_atom3(index,k), l_crossterm_atom4(index,k), l_crossterm_atom5(index,k));
-
       }
     }
   });
