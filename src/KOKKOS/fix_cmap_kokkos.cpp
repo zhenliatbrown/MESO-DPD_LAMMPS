@@ -757,7 +757,7 @@ void FixCMAPKokkos<DeviceType>::unpack_exchange_kokkos(
 {
   k_buf.template sync<DeviceType>();
   k_indices.template sync<DeviceType>();
-  
+
   k_num_crossterm.template sync<DeviceType>();
   k_crossterm_type.template sync<DeviceType>();
   k_crossterm_atom1.template sync<DeviceType>();
