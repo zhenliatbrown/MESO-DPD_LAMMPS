@@ -687,6 +687,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
   auto l_crossterm_atom4 = d_crossterm_atom4;
   auto l_crossterm_atom5 = d_crossterm_atom5;
   //auto l_nsend = nsend;
+  auto l_count = d_count;
 
   copymode = 1;
 
@@ -717,7 +718,7 @@ int FixCMAPKokkos<DeviceType>::pack_exchange_kokkos(
         }
       }
 
-      if (mysend == nsend-1) d_count() = m;
+      if (mysend == nsend-1) l_count() = m;
       offset = m - nsend;
 
       const int j = d_copylist(mysend);
