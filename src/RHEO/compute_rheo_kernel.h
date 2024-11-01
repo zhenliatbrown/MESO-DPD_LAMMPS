@@ -52,7 +52,7 @@ class ComputeRHEOKernel : public Compute {
   class FixRHEO *fix_rheo;
 
  private:
-  int comm_stage, comm_forward_save;
+  int comm_stage;
   int interface_flag;
   int lapack_error_flag;
   std::unordered_set<tagint> lapack_error_tags;

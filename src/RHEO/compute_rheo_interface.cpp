@@ -218,8 +218,7 @@ void ComputeRHEOInterface::compute_peratom()
   }
 
   comm_stage = 1;
-  comm_forward = 2;
-  comm->forward_comm(this);
+  comm->forward_comm(this, 2);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -369,9 +368,8 @@ void ComputeRHEOInterface::store_forces()
   }
 
   // Forward comm forces
-  comm_forward = 3;
   comm_stage = 0;
-  comm->forward_comm(this);
+  comm->forward_comm(this, 3);
 }
 
 /* ----------------------------------------------------------------------

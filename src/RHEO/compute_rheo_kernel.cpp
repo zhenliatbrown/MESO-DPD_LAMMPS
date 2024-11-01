@@ -90,7 +90,6 @@ ComputeRHEOKernel::ComputeRHEOKernel(LAMMPS *lmp, int narg, char **arg) :
     comm_forward = ncor * Mdim;
   }
 
-  comm_forward_save = comm_forward;
   corrections_calculated = 0;
   lapack_error_flag = 0;
 }
@@ -778,7 +777,6 @@ void ComputeRHEOKernel::compute_peratom()
 
   // communicate calculated quantities
   comm_stage = 1;
-  comm_forward = comm_forward_save;
   comm->forward_comm(this);
 }
 
@@ -826,8 +824,7 @@ void ComputeRHEOKernel::compute_coordination()
 
   // communicate calculated quantities
   comm_stage = 0;
-  comm_forward = 1;
-  comm->forward_comm(this);
+  comm->forward_comm(this, 1);
 }
 
 /* ---------------------------------------------------------------------- */
