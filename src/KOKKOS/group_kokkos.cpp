@@ -73,7 +73,7 @@ double GroupKokkos<DeviceType>::mass(int igroup)
 ------------------------------------------------------------------------- */
 
 template<class DeviceType>
-void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *cm)
+void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *xcm)
 {
   int groupbit = bitmask[igroup];
   auto d_x = atomKK->k_x.template view<DeviceType>();
@@ -123,11 +123,11 @@ void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *cm)
 
   }
 
-  MPI_Allreduce(cmone, cm, 3, MPI_DOUBLE, MPI_SUM, world);
+  MPI_Allreduce(cmone, xcm, 3, MPI_DOUBLE, MPI_SUM, world);
   if (masstotal > 0.0) {
-    cm[0] /= masstotal;
-    cm[1] /= masstotal;
-    cm[2] /= masstotal;
+    xcm[0] /= masstotal;
+    xcm[1] /= masstotal;
+    xcm[2] /= masstotal;
   }
 }
 
@@ -200,6 +200,9 @@ void GroupKokkos<DeviceType>::angmom(int igroup, double *xcm, double *lmom)
   auto l_prd = Few<double, 3>(domain->prd);
   auto l_h = Few<double, 6>(domain->h);
   auto l_triclinic = domain->triclinic;
+  auto l_xcm0 = xcm[0];
+  auto l_xcm1 = xcm[1];
+  auto l_xcm2 = xcm[2];
   double p[3] = {0.0, 0.0, 0.0};
 
   if (atomKK->rmass) {
@@ -214,9 +217,9 @@ void GroupKokkos<DeviceType>::angmom(int igroup, double *xcm, double *lmom)
         x_i[1] = d_x(i,1);
         x_i[2] = d_x(i,2);
         auto unwrapKK = DomainKokkos::unmap(l_prd,l_h,l_triclinic,x_i,d_image(i));
-        double dx = unwrapKK[0] - xcm[0];
-        double dy = unwrapKK[1] - xcm[1];
-        double dz = unwrapKK[2] - xcm[2];
+        double dx = unwrapKK[0] - l_xcm0;
+        double dy = unwrapKK[1] - l_xcm1;
+        double dz = unwrapKK[2] - l_xcm2;
         l_px += massone * (dy * d_v(i,2) - dz * d_v(i,1));
         l_py += massone * (dz * d_v(i,0) - dx * d_v(i,2));
         l_pz += massone * (dx * d_v(i,1) - dy * d_v(i,0));
@@ -236,9 +239,9 @@ void GroupKokkos<DeviceType>::angmom(int igroup, double *xcm, double *lmom)
         x_i[1] = d_x(i,1);
         x_i[2] = d_x(i,2);
         auto unwrapKK = DomainKokkos::unmap(l_prd,l_h,l_triclinic,x_i,d_image(i));
-        double dx = unwrapKK[0] - xcm[0];
-        double dy = unwrapKK[1] - xcm[1];
-        double dz = unwrapKK[2] - xcm[2];
+        double dx = unwrapKK[0] - l_xcm0;
+        double dy = unwrapKK[1] - l_xcm1;
+        double dz = unwrapKK[2] - l_xcm2;
         l_px += massone * (dy * d_v(i,2) - dz * d_v(i,1));
         l_py += massone * (dz * d_v(i,0) - dx * d_v(i,2));
         l_pz += massone * (dx * d_v(i,1) - dy * d_v(i,0));
@@ -264,6 +267,9 @@ void GroupKokkos<DeviceType>::inertia(int igroup, double *xcm, double itensor[3]
   auto l_prd = Few<double, 3>(domain->prd);
   auto l_h = Few<double, 6>(domain->h);
   auto l_triclinic = domain->triclinic;
+  auto l_xcm0 = xcm[0];
+  auto l_xcm1 = xcm[1];
+  auto l_xcm2 = xcm[2];
 
   double ione[3][3];
   for (int i = 0; i < 3; i++)
@@ -281,9 +287,9 @@ void GroupKokkos<DeviceType>::inertia(int igroup, double *xcm, double itensor[3]
         x_i[1] = d_x(i,1);
         x_i[2] = d_x(i,2);
         auto unwrapKK = DomainKokkos::unmap(l_prd,l_h,l_triclinic,x_i,d_image(i));
-        double dx = unwrapKK[0] - xcm[0];
-        double dy = unwrapKK[1] - xcm[1];
-        double dz = unwrapKK[2] - xcm[2];
+        double dx = unwrapKK[0] - l_xcm0;
+        double dy = unwrapKK[1] - l_xcm1;
+        double dz = unwrapKK[2] - l_xcm2;
         l_i00 += massone * (dy * dy + dz * dz);
         l_i11 += massone * (dx * dx + dz * dz);
         l_i22 += massone * (dx * dx + dy * dy);
@@ -306,9 +312,9 @@ void GroupKokkos<DeviceType>::inertia(int igroup, double *xcm, double itensor[3]
         x_i[1] = d_x(i,1);
         x_i[2] = d_x(i,2);
         auto unwrapKK = DomainKokkos::unmap(l_prd,l_h,l_triclinic,x_i,d_image(i));
-        double dx = unwrapKK[0] - xcm[0];
-        double dy = unwrapKK[1] - xcm[1];
-        double dz = unwrapKK[2] - xcm[2];
+        double dx = unwrapKK[0] - l_xcm0;
+        double dy = unwrapKK[1] - l_xcm1;
+        double dz = unwrapKK[2] - l_xcm2;
         l_i00 += massone * (dy * dy + dz * dz);
         l_i11 += massone * (dx * dx + dz * dz);
         l_i22 += massone * (dx * dx + dy * dy);
