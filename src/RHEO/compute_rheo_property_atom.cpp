@@ -440,7 +440,7 @@ void ComputeRHEOPropertyAtom::pack_pressure(int n)
 
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit)
-      buf[n] = fix_pressure->calc_pressure(rho[i], type[i]);
+      buf[n] = fix_pressure->calc_pressure(rho[i], i);
     else
       buf[n] = 0.0;
     n += nvalues;
@@ -490,7 +490,7 @@ void ComputeRHEOPropertyAtom::pack_total_stress(int n)
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       if (index == index_transpose)
-        p = fix_pressure->calc_pressure(rho[i], type[i]);
+        p = fix_pressure->calc_pressure(rho[i], i);
       else
         p = 0.0;
       buf[n] = viscosity[i] * (gradv[i][index] + gradv[i][index_transpose]) + p;

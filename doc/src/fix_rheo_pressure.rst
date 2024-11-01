@@ -19,8 +19,10 @@ Syntax
   .. parsed-literal::
 
        *linear* args = none
-       *taitwater* args = none
+       *tait/water* args = none
+       *tait/general* args = exponent :math:`gamma` (unitless) and background pressure :math:`P[b]` (pressure)
        *cubic* args = cubic prefactor :math:`A_3` (pressure/density\^2)
+       *ideal/gas* args = heat capacity ratio :math:`gamma` (unitless)
 
 Examples
 """"""""
@@ -65,11 +67,30 @@ is a cubic equation of state which has an extra argument :math:`A_3`,
 
    P = c ((\rho - \rho_0) + A_3 (\rho - \rho_0)^3) .
 
-Style *taitwater* is Tait's equation of state:
+Style *tait/water* is Tait's equation of state:
 
 .. math::
 
    P = \frac{c^2 \rho_0}{7} \biggl[\left(\frac{\rho}{\rho_0}\right)^{7} - 1\biggr].
+
+Style *tait/general* generalizes this equation of state
+
+.. math::
+
+   P = \frac{c^2 \rho_0}{\gamma} \biggl[\left(\frac{\rho}{\rho_0}\right)^{\gamma} - 1\biggr] + P[b].
+
+where :math:`\gamma` is an exponent and :math:`P[b]` is a constant background pressure.
+
+Style *ideal/gas* is the ideal gas equation of state
+
+.. math::
+
+   P = (\gamma - 1) \rho e
+
+where :math:`\gamma` is the heat capacity ratio and :math:`e` is the internal energy of
+a particle per unit mass. This style is only compatible with atom style rheo/thermal.
+Note that when using this style, the speed of sound is no longer constant such that the
+value of :math:`c` specified in :doc:`fix rheo <fix_rheo>` is not used.
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
