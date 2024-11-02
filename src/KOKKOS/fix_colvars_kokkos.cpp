@@ -26,7 +26,10 @@ using namespace LAMMPS_NS;
 FixColvarsKokkos::FixColvarsKokkos(LAMMPS *lmp, int narg, char **arg) :
   FixColvars(lmp, narg, arg)
 {
+  kokkosable = 1;
   atomKK = (AtomKokkos *)atom;
+  datamask_read = X_MASK | F_MASK;
+  datamask_modify = F_MASK;
 }
 
 /* ---------------------------------------------------------------------- */
