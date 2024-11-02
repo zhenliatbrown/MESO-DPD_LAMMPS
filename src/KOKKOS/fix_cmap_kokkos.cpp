@@ -439,29 +439,54 @@ void FixCMAPKokkos<DeviceType>::operator()(TagFixCmapPostForce, const int n, dou
   // apply force to each of the 5 atoms
 
   if (i1 < nlocal) {
-    d_f(i1,0) += dEdPhi*dphidr1x;
-    d_f(i1,1) += dEdPhi*dphidr1y;
-    d_f(i1,2) += dEdPhi*dphidr1z;
+    //d_f(i1,0) += dEdPhi*dphidr1x;
+    //d_f(i1,1) += dEdPhi*dphidr1y;
+    //d_f(i1,2) += dEdPhi*dphidr1z;
+
+    Kokkos::atomic_add(&d_f(i1,0), dEdPhi*dphidr1x);
+    Kokkos::atomic_add(&d_f(i1,1), dEdPhi*dphidr1y);
+    Kokkos::atomic_add(&d_f(i1,2), dEdPhi*dphidr1z);
+
   }
   if (i2 < nlocal) {
-    d_f(i2,0) += dEdPhi*dphidr2x + dEdPsi*dpsidr1x;
-    d_f(i2,1) += dEdPhi*dphidr2y + dEdPsi*dpsidr1y;
-    d_f(i2,2) += dEdPhi*dphidr2z + dEdPsi*dpsidr1z;
+    //d_f(i2,0) += dEdPhi*dphidr2x + dEdPsi*dpsidr1x;
+    //d_f(i2,1) += dEdPhi*dphidr2y + dEdPsi*dpsidr1y;
+    //d_f(i2,2) += dEdPhi*dphidr2z + dEdPsi*dpsidr1z;
+
+    Kokkos::atomic_add(&d_f(i2,0), dEdPhi*dphidr2x + dEdPsi*dpsidr1x);
+    Kokkos::atomic_add(&d_f(i2,1), dEdPhi*dphidr2y + dEdPsi*dpsidr1y);
+    Kokkos::atomic_add(&d_f(i2,2), dEdPhi*dphidr2z + dEdPsi*dpsidr1z);
+
   }
   if (i3 < nlocal) {
-    d_f(i3,0) += (-dEdPhi*dphidr3x - dEdPsi*dpsidr2x);
-    d_f(i3,1) += (-dEdPhi*dphidr3y - dEdPsi*dpsidr2y);
-    d_f(i3,2) += (-dEdPhi*dphidr3z - dEdPsi*dpsidr2z);
+    //d_f(i3,0) += (-dEdPhi*dphidr3x - dEdPsi*dpsidr2x);
+    //d_f(i3,1) += (-dEdPhi*dphidr3y - dEdPsi*dpsidr2y);
+    //d_f(i3,2) += (-dEdPhi*dphidr3z - dEdPsi*dpsidr2z);
+
+    Kokkos::atomic_add(&d_f(i3,0), -dEdPhi*dphidr3x - dEdPsi*dpsidr2x);
+    Kokkos::atomic_add(&d_f(i3,1), -dEdPhi*dphidr3y - dEdPsi*dpsidr2y);
+    Kokkos::atomic_add(&d_f(i3,2), -dEdPhi*dphidr3z - dEdPsi*dpsidr2z);
+
   }
   if (i4 < nlocal) {
-    d_f(i4,0) += (-dEdPhi*dphidr4x - dEdPsi*dpsidr3x);
-    d_f(i4,1) += (-dEdPhi*dphidr4y - dEdPsi*dpsidr3y);
-    d_f(i4,2) += (-dEdPhi*dphidr4z - dEdPsi*dpsidr3z);
+    //d_f(i4,0) += (-dEdPhi*dphidr4x - dEdPsi*dpsidr3x);
+    //d_f(i4,1) += (-dEdPhi*dphidr4y - dEdPsi*dpsidr3y);
+    //d_f(i4,2) += (-dEdPhi*dphidr4z - dEdPsi*dpsidr3z);
+
+    Kokkos::atomic_add(&d_f(i4,0), -dEdPhi*dphidr4x - dEdPsi*dpsidr3x);
+    Kokkos::atomic_add(&d_f(i4,1), -dEdPhi*dphidr4y - dEdPsi*dpsidr3y);
+    Kokkos::atomic_add(&d_f(i4,2), -dEdPhi*dphidr4z - dEdPsi*dpsidr3z);
+
   }
   if (i5 < nlocal) {
-    d_f(i5,0) -= dEdPsi*dpsidr4x;
-    d_f(i5,1) -= dEdPsi*dpsidr4y;
-    d_f(i5,2) -= dEdPsi*dpsidr4z;
+    //d_f(i5,0) -= dEdPsi*dpsidr4x;
+    //d_f(i5,1) -= dEdPsi*dpsidr4y;
+    //d_f(i5,2) -= dEdPsi*dpsidr4z;
+
+    Kokkos::atomic_add(&d_f(i5,0), -dEdPsi*dpsidr4x);
+    Kokkos::atomic_add(&d_f(i5,1), -dEdPsi*dpsidr4y);
+    Kokkos::atomic_add(&d_f(i5,2), -dEdPsi*dpsidr4z);
+
   }
 }
 
