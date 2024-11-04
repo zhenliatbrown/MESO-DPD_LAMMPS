@@ -543,13 +543,13 @@ void BondBPMRotational::compute(int eflag, int vflag)
     // ------------------------------------------------------//
 
     MathExtra::scale3(smooth, force1on2);
-    MathExtra::scale3(smooth, torque2on1);
 
     if (newton_bond || i1 < nlocal) {
       f[i1][0] -= force1on2[0];
       f[i1][1] -= force1on2[1];
       f[i1][2] -= force1on2[2];
 
+      MathExtra::scale3(smooth, torque2on1);
       torque[i1][0] += torque2on1[0];
       torque[i1][1] += torque2on1[1];
       torque[i1][2] += torque2on1[2];
@@ -818,21 +818,22 @@ double BondBPMRotational::single(int type, double rsq, int i, int j, double &ffo
 
   // set single_extra quantities
 
+  MathExtra::scale3(smooth, force1on2);
   svector[0] = r0_mag;
   if (flipped) {
     svector[1] = -r0[0];
     svector[2] = -r0[1];
     svector[3] = -r0[2];
-    svector[4] = force1on2[0] * smooth;
-    svector[5] = force1on2[1] * smooth;
-    svector[6] = force1on2[2] * smooth;
+    svector[4] = force1on2[0];
+    svector[5] = force1on2[1];
+    svector[6] = force1on2[2];
   } else {
     svector[1] = r0[0];
     svector[2] = r0[1];
     svector[3] = r0[2];
-    svector[4] = -force1on2[0] * smooth;
-    svector[5] = -force1on2[1] * smooth;
-    svector[6] = -force1on2[2] * smooth;
+    svector[4] = -force1on2[0];
+    svector[5] = -force1on2[1];
+    svector[6] = -force1on2[2];
   }
 
   return 0.0;
