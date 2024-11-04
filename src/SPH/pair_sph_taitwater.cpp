@@ -264,7 +264,7 @@ void PairSPHTaitwater::coeff(int narg, char **arg)
 double PairSPHTaitwater::init_one(int i, int j)
 {
   if (setflag[i][j] == 0) {
-    error->all(FLERR, "All pair sph/taitwater coeffs are notset");
+    error->all(FLERR, "All pair sph/taitwater coeffs are not set");
   }
 
   cut[j][i] = cut[i][j];
