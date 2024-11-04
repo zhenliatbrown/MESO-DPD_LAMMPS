@@ -104,5 +104,6 @@ Tutorials howto
    Howto_lammps_gui
    Howto_moltemplate
    Howto_pylammps
+   Howto_python
    Howto_wsl
 
