@@ -464,6 +464,8 @@ double NStencil::memory_usage()
     bytes += (double)atom->ntypes * maxstencil_multi_old * sizeof(double);
   } else if (neighstyle == Neighbor::MULTI) {
     int n = ncollections;
+
+    // May not yet be initialized for occasional lists
     if (maxstencil_multi) {
       for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
