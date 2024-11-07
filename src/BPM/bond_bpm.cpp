@@ -149,10 +149,8 @@ void BondBPM::init_style()
         // check if an update fix already exists, if so use it
         auto fixes = modify->get_fix_by_style("UPDATE_SPECIAL_BONDS");
         if (fixes.size() > 0 ) {
-          printf("loading\n");
           fix_update_special_bonds = dynamic_cast<FixUpdateSpecialBonds *>(fixes[0]);
         } else {
-          printf("making\n");
           id_fix_update_special_bonds = utils::strdup("BPM_UPDATE_SPECIAL_BONDS");
           auto newfix = modify->replace_fix(
             id_fix_dummy_special,
@@ -161,7 +159,6 @@ void BondBPM::init_style()
         }
         delete[] id_fix_dummy_special;
         id_fix_dummy_special = nullptr;
-        printf("fix %p\n", fix_update_special_bonds);
       }
     }
 
