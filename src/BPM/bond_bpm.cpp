@@ -146,13 +146,22 @@ void BondBPM::init_style()
                    "weights = 1,1,1");
 
       if (id_fix_dummy_special && break_flag) {
-        id_fix_update_special_bonds = utils::strdup("BPM_UPDATE_SPECIAL_BONDS");
-        auto newfix = modify->replace_fix(
+        // check if an update fix already exists, if so use it
+        auto fixes = modify->get_fix_by_style("UPDATE_SPECIAL_BONDS");
+        if (fixes.size() > 0 ) {
+          printf("loading\n");
+          fix_update_special_bonds = dynamic_cast<FixUpdateSpecialBonds *>(fixes[0]);
+        } else {
+          printf("making\n");
+          id_fix_update_special_bonds = utils::strdup("BPM_UPDATE_SPECIAL_BONDS");
+          auto newfix = modify->replace_fix(
             id_fix_dummy_special,
             fmt::format("{} all UPDATE_SPECIAL_BONDS", id_fix_update_special_bonds), 1);
-        fix_update_special_bonds = dynamic_cast<FixUpdateSpecialBonds *>(newfix);
+          fix_update_special_bonds = dynamic_cast<FixUpdateSpecialBonds *>(newfix);
+        }
         delete[] id_fix_dummy_special;
         id_fix_dummy_special = nullptr;
+        printf("fix %p\n", fix_update_special_bonds);
       }
     }
 
@@ -162,10 +171,12 @@ void BondBPM::init_style()
       error->all(FLERR, "Bond style bpm requires 1-3 and 1-4 special weights of 1.0");
   }
 
-  if (force->angle || force->dihedral || force->improper)
-    error->all(FLERR, "Bond style bpm cannot be used with 3,4-body interactions");
-  if (atom->molecular == 2)
-    error->all(FLERR, "Bond style bpm cannot be used with atom style template");
+  if (break_flag) {
+    if (force->angle || force->dihedral || force->improper)
+      error->all(FLERR, "Bond style bpm cannot break with 3,4-body interactions");
+    if (atom->molecular == 2)
+      error->all(FLERR, "Bond style bpm cannot break with atom style template");
+  }
 
   // find all instances of bond history to delete/shift data
   // (bond hybrid may create multiple)
