@@ -149,8 +149,6 @@ void BondBPMSpring::store_data()
 
 void BondBPMSpring::compute(int eflag, int vflag)
 {
-  if (hybrid_flag) fix_bond_history->compress_history();
-
   int i, bond_change_flag;
   double *vol0, *vol;
 
@@ -194,6 +192,8 @@ void BondBPMSpring::compute(int eflag, int vflag)
       bond_change_flag = 0;
     }
   }
+
+  if (hybrid_flag) fix_bond_history->compress_history();
 
   int i1, i2, itmp, n, type;
   double delx, dely, delz, delvx, delvy, delvz;
