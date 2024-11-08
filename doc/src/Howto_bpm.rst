@@ -5,7 +5,11 @@ The BPM package implements bonded particle models which can be used to
 simulate mesoscale solids.  Solids are constructed as a collection of
 particles, which each represent a coarse-grained region of space much
 larger than the atomistic scale.  Particles within a solid region are
-then connected by a network of bonds to provide solid elasticity.
+then connected by a network of bonds to model solid elasticity.
+There are many names for methods that are based on similar (or
+equivalent) capabilities to those in this package, including, but not
+limited to, cohesive beam models, bonded DEMs, lattice spring models,
+mass spring models, and lattice particle methods.
 
 Unlike traditional bonds in molecular dynamics, the equilibrium bond
 length can vary between bonds. Bonds store the reference state.  This
