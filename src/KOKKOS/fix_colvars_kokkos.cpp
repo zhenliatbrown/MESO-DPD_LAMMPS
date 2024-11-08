@@ -36,7 +36,7 @@ FixColvarsKokkos::FixColvarsKokkos(LAMMPS *lmp, int narg, char **arg) :
 
 void FixColvarsKokkos::post_force(int vflag)
 {
-  atomKK->sync(Host,X_MASK|F_MASK);
+  atomKK->sync(Host,X_MASK|F_MASK|TAG_MASK|IMAGE_MASK);
   FixColvars::post_force(vflag);
   atomKK->modified(Host,F_MASK);
 }
@@ -45,7 +45,7 @@ void FixColvarsKokkos::post_force(int vflag)
 void FixColvarsKokkos::end_of_step()
 {
   if (store_forces) {
-    atomKK->sync(Host,F_MASK);
+    atomKK->sync(Host,F_MASK|TAG_MASK);
     FixColvars::end_of_step();
   }
 }
