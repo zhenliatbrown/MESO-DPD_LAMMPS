@@ -124,9 +124,9 @@ Therefore, by default, LAMMPS requires that
 :doc:`fix qeq/reaxff <fix_qeq_reaxff>` or :doc:`fix qeq/shielded <fix_qeq>`
 or :doc:`fix acks2/reaxff <fix_acks2_reaxff>`
 or :doc:`fix qtpie/reaxff <fix_qtpie_reaxff>`
-is used with *pair_style reaxff* when simulating a ReaxFF model, 
-to equilibrate the charges at each timestep. 
-See the :doc:`fix qeq/reaxff <fix_qeq_reaxff>` or :doc:`fix qeq/shielded <fix_qeq>` 
+is used with *pair_style reaxff* when simulating a ReaxFF model,
+to equilibrate the charges at each timestep.
+See the :doc:`fix qeq/reaxff <fix_qeq_reaxff>` or :doc:`fix qeq/shielded <fix_qeq>`
 or :doc:`fix acks2/reaxff <fix_acks2_reaxff>`
 or :doc:`fix qtpie/reaxff <fix_qtpie_reaxff>`
 command documentation for more details.
@@ -135,7 +135,7 @@ Using the keyword *checkqeq* with the value *no* turns off the check
 for the QEq fixes, allowing a simulation to be run without charge
 equilibration. In this case, the static charges you assign to each
 atom will be used for computing the electrostatic interactions in
-the system. 
+the system.
 
 Using the optional keyword *lgvdw* with the value *yes* turns on the
 low-gradient correction of ReaxFF for long-range London Dispersion,
