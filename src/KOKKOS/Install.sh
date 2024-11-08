@@ -133,6 +133,8 @@ action fix_acks2_reaxff_kokkos.cpp fix_acks2_reaxff.cpp
 action fix_acks2_reaxff_kokkos.h fix_acks2_reaxff.h
 action fix_cmap_kokkos.cpp fix_cmap.cpp
 action fix_cmap_kokkos.h fix_cmap.h
+action fix_colvars_kokkos.cpp fix_colvars.cpp
+action fix_colvars_kokkos.h fix_colvars.h
 action fix_deform_kokkos.cpp
 action fix_deform_kokkos.h
 action fix_dpd_energy_kokkos.cpp fix_dpd_energy.cpp
