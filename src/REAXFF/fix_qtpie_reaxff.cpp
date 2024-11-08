@@ -903,15 +903,6 @@ int FixQtpieReaxFF::pack_forward_comm(int n, int *list, double *buf,
     for (m = 0; m < n; m++) buf[m] = t[list[m]];
   else if (pack_flag == 4)
     for (m = 0; m < n; m++) buf[m] = atom->q[list[m]];
-  else if (pack_flag == 5) {
-    m = 0;
-    for (int i = 0; i < n; i++) {
-      int j = 2 * list[i];
-      buf[m++] = d[j];
-      buf[m++] = d[j+1];
-    }
-    return m;
-  }
   return n;
 }
 
@@ -929,15 +920,6 @@ void FixQtpieReaxFF::unpack_forward_comm(int n, int first, double *buf)
     for (m = 0, i = first; m < n; m++, i++) t[i] = buf[m];
   else if (pack_flag == 4)
     for (m = 0, i = first; m < n; m++, i++) atom->q[i] = buf[m];
-  else if (pack_flag == 5) {
-    int last = first + n;
-    m = 0;
-    for (i = first; i < last; i++) {
-      int j = 2 * i;
-      d[j] = buf[m++];
-      d[j+1] = buf[m++];
-    }
-  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -945,35 +927,15 @@ void FixQtpieReaxFF::unpack_forward_comm(int n, int first, double *buf)
 int FixQtpieReaxFF::pack_reverse_comm(int n, int first, double *buf)
 {
   int i, m;
-  if (pack_flag == 5) {
-    m = 0;
-    int last = first + n;
-    for (i = first; i < last; i++) {
-      int indxI = 2 * i;
-      buf[m++] = q[indxI];
-      buf[m++] = q[indxI+1];
-    }
-    return m;
-  } else {
-    for (m = 0, i = first; m < n; m++, i++) buf[m] = q[i];
-    return n;
-  }
+  for (m = 0, i = first; m < n; m++, i++) buf[m] = q[i];
+  return n;
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixQtpieReaxFF::unpack_reverse_comm(int n, int *list, double *buf)
 {
-  if (pack_flag == 5) {
-    int m = 0;
-    for (int i = 0; i < n; i++) {
-      int indxI = 2 * list[i];
-      q[indxI] += buf[m++];
-      q[indxI+1] += buf[m++];
-    }
-  } else {
-    for (int m = 0; m < n; m++) q[list[m]] += buf[m];
-  }
+  for (int m = 0; m < n; m++) q[list[m]] += buf[m];
 }
 
 /* ----------------------------------------------------------------------
