@@ -79,7 +79,7 @@ NEBSpin::NEBSpin(LAMMPS *lmp) : Command(lmp), fp(nullptr) {
 
 NEBSpin::~NEBSpin()
 {
-  MPI_Comm_free(&roots);
+  if (roots != MPI_COMM_NULL) MPI_Comm_free(&roots);
   memory->destroy(all);
   delete[] rdist;
   if (fp) {
