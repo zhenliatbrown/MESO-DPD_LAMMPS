@@ -70,6 +70,7 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   surface_flag = 0;
   oxidation_flag = 0;
   self_mass_flag = 0;
+  coordination_flag = 0;
   shift_multiphase_flag = 0;
 
   int i;
