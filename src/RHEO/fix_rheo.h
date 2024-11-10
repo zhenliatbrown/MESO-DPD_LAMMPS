@@ -41,10 +41,12 @@ class FixRHEO : public Fix {
   // Model parameters
   double cut;
   double *rho0, *csq;
+  int *shift_type;
   int self_mass_flag;
   int zmin_kernel, zmin_surface, zmin_splash;
   int kernel_style, surface_style;
   double divr_surface;
+  double shift_scale, shift_wmin, shift_cmin;
 
   // Accessory fixes/computes
   int thermal_flag;
@@ -53,7 +55,7 @@ class FixRHEO : public Fix {
   int interface_flag;
   int surface_flag;
   int oxidation_flag;
-  int coordination_flag;
+  int shift_multiphase_flag;
 
   int viscosity_fix_defined;
   int pressure_fix_defined;

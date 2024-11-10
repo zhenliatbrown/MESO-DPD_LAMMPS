@@ -70,15 +70,17 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   surface_flag = 0;
   oxidation_flag = 0;
   self_mass_flag = 0;
-  coordination_flag = 0;
+  shift_multiphase_flag = 0;
 
   int i;
   int n = atom->ntypes;
   memory->create(rho0, n + 1, "rheo:rho0");
   memory->create(csq, n + 1, "rheo:csq");
+  memory->create(shift_type, n + 1, "rheo:shift_type");
   for (i = 1; i <= n; i++) {
     rho0[i] = 1.0;
     csq[i] = 1.0;
+    shift_type[i] = 1;
   }
 
   if (igroup != 0) error->all(FLERR, "fix rheo command requires group all");
@@ -112,6 +114,19 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   while (iarg < narg) {
     if (strcmp(arg[iarg], "shift") == 0) {
       shift_flag = 1;
+    } else if (strcmp(arg[iarg], "shift/multiphase/scale") == 0) {
+      if (iarg + 3 >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift/multiphase/scale", error);
+      shift_multiphase_flag = 1;
+      shift_scale = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
+      shift_wmin = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
+      shift_cmin = utils::numeric(FLERR, arg[iarg + 3], false, lmp);
+      iarg += 3;
+    } else if (strcmp(arg[iarg], "shift/type") == 0) {
+      if (iarg + n >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift/type", error);
+      for (i = 1; i <= n; i++) {
+        shift_type[i] = utils::logical(FLERR, arg[iarg + i], false, lmp);
+      }
+      iarg += n;
     } else if (strcmp(arg[iarg], "thermal") == 0) {
       thermal_flag = 1;
     } else if (strcmp(arg[iarg], "surface/detection") == 0) {
@@ -128,7 +143,6 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
       } else {
         error->all(FLERR, "Illegal surface/detection option in fix rheo, {}", arg[iarg + 1]);
       }
-
       iarg += 3;
     } else if (strcmp(arg[iarg], "interface/reconstruct") == 0) {
       interface_flag = 1;
@@ -153,6 +167,9 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
     iarg += 1;
   }
 
+  if ((!shift_flag) && shift_multiphase_flag)
+    error->all(FLERR, "Cannot use shift/multiphase/scale without shifting");
+
   if (self_mass_flag && (!rhosum_flag))
     error->all(FLERR, "Cannot use self/mass setting without rho/sum");
 
@@ -174,6 +191,7 @@ FixRHEO::~FixRHEO()
 
   memory->destroy(csq);
   memory->destroy(rho0);
+  memory->destroy(shift_type);
 }
 
 /* ----------------------------------------------------------------------
@@ -376,7 +394,6 @@ void FixRHEO::initial_integrate(int /*vflag*/)
   // Shifting atoms
   if (shift_flag) {
     for (i = 0; i < nlocal; i++) {
-
       if (status[i] & STATUS_NO_SHIFT) continue;
       if (status[i] & PHASECHECK) continue;
 
@@ -399,39 +416,34 @@ void FixRHEO::initial_integrate(int /*vflag*/)
 
 void FixRHEO::pre_force(int /*vflag*/)
 {
-  if (coordination_flag)
-    compute_kernel->compute_coordination();
+  compute_kernel->compute_coordination();    // Needed for rho sum
 
-  if (rhosum_flag)
-    compute_rhosum->compute_peratom();
+  if (rhosum_flag) compute_rhosum->compute_peratom();
 
   compute_kernel->compute_peratom();
 
-  // Note on first setup, have no forces for pressure to reference
-  if (interface_flag)
+  if (interface_flag) {
+    // Note on first setup, have no forces for pressure to reference
     compute_interface->compute_peratom();
+  }
 
   // No need to forward v, rho, or T for compute_grad since already done
   compute_grad->compute_peratom();
   compute_grad->forward_gradients();
 
-  // Depends on NO_SHIFT status
-  if (shift_flag)
-    compute_vshift->compute_peratom();
+  if (shift_flag) compute_vshift->compute_peratom();
 
   // Remove temporary options
   int *mask = atom->mask;
   int *status = atom->rheo_status;
   int nall = atom->nlocal + atom->nghost;
   for (int i = 0; i < nall; i++)
-    if (mask[i] & groupbit)
-      status[i] &= OPTIONSMASK;
+    if (mask[i] & groupbit) status[i] &= OPTIONSMASK;
 
   // Calculate surfaces, update status
   if (surface_flag) {
     compute_surface->compute_peratom();
-    if (shift_flag)
-      compute_vshift->correct_surfaces();
+    if (shift_flag) compute_vshift->correct_surfaces();
   }
 }
 
