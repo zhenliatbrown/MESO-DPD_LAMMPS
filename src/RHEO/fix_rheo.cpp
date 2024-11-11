@@ -52,9 +52,9 @@ static const char cite_rheo[] =
 /* ---------------------------------------------------------------------- */
 
 FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
-    Fix(lmp, narg, arg), rho0(nullptr), csq(nullptr), compute_grad(nullptr),
-    compute_kernel(nullptr), compute_interface(nullptr), compute_surface(nullptr),
-    compute_rhosum(nullptr), compute_vshift(nullptr)
+    Fix(lmp, narg, arg), rho0(nullptr), csq(nullptr), shift_type(nullptr),
+    compute_grad(nullptr), compute_kernel(nullptr), compute_interface(nullptr),
+    compute_surface(nullptr), compute_rhosum(nullptr), compute_vshift(nullptr)
 {
   time_integrate = 1;
 
@@ -68,20 +68,18 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   shift_flag = 0;
   interface_flag = 0;
   surface_flag = 0;
-  oxidation_flag = 0;
-  self_mass_flag = 0;
   coordination_flag = 0;
-  shift_multiphase_flag = 0;
+
+  rhosum_self_mass_flag = 0;
+  shift_cross_type_flag = 0;
 
   int i;
   int n = atom->ntypes;
   memory->create(rho0, n + 1, "rheo:rho0");
   memory->create(csq, n + 1, "rheo:csq");
-  memory->create(shift_type, n + 1, "rheo:shift_type");
   for (i = 1; i <= n; i++) {
     rho0[i] = 1.0;
     csq[i] = 1.0;
-    shift_type[i] = 1;
   }
 
   if (igroup != 0) error->all(FLERR, "fix rheo command requires group all");
@@ -115,19 +113,26 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   while (iarg < narg) {
     if (strcmp(arg[iarg], "shift") == 0) {
       shift_flag = 1;
-    } else if (strcmp(arg[iarg], "shift/multiphase/scale") == 0) {
-      if (iarg + 3 >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift/multiphase/scale", error);
-      shift_multiphase_flag = 1;
-      shift_scale = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
-      shift_wmin = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
-      shift_cmin = utils::numeric(FLERR, arg[iarg + 3], false, lmp);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "shift/type") == 0) {
-      if (iarg + n >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift/type", error);
-      for (i = 1; i <= n; i++) {
-        shift_type[i] = utils::logical(FLERR, arg[iarg + i], false, lmp);
+      memory->create(shift_type, n + 1, "rheo:shift_type");
+      for (i = 1; i <= n; i++) shift_type[i] = 1;
+      while (iarg < narg) {  // optional sub-arguments
+        if (strcmp(arg[iarg], "scale/cross/type") == 0) {
+          if (iarg + 3 >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift scale/cross/type", error);
+          shift_cross_type_flag = 1;
+          shift_scale = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
+          shift_wmin = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
+          shift_cmin = utils::numeric(FLERR, arg[iarg + 3], false, lmp);
+          iarg += 3;
+        } else if (strcmp(arg[iarg], "exclude/type") == 0) {
+          if (iarg + n >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift exclude/type", error);
+          for (i = 1; i <= n; i++)
+            shift_type[i] = utils::logical(FLERR, arg[iarg + i], false, lmp);
+          iarg += n;
+        } else {
+          break;
+        }
+        iarg += 1;
       }
-      iarg += n;
     } else if (strcmp(arg[iarg], "thermal") == 0) {
       thermal_flag = 1;
     } else if (strcmp(arg[iarg], "surface/detection") == 0) {
@@ -149,8 +154,14 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
       interface_flag = 1;
     } else if (strcmp(arg[iarg], "rho/sum") == 0) {
       rhosum_flag = 1;
-    } else if (strcmp(arg[iarg], "self/mass") == 0) {
-      self_mass_flag = 1;
+      while (iarg < narg) {  // optional sub-arguments
+        if (strcmp(arg[iarg], "self/mass") == 0) {
+          rhosum_self_mass_flag = 1;
+        } else {
+          break;
+        }
+        iarg += 1;
+      }
     } else if (strcmp(arg[iarg], "density") == 0) {
       if (iarg + n >= narg) utils::missing_cmd_args(FLERR, "fix rheo density", error);
       for (i = 1; i <= n; i++) rho0[i] = utils::numeric(FLERR, arg[iarg + i], false, lmp);
@@ -167,12 +178,6 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
     }
     iarg += 1;
   }
-
-  if ((!shift_flag) && shift_multiphase_flag)
-    error->all(FLERR, "Cannot use shift/multiphase/scale without shifting");
-
-  if (self_mass_flag && (!rhosum_flag))
-    error->all(FLERR, "Cannot use self/mass setting without rho/sum");
 
 #if 0
   if (lmp->citeme) lmp->citeme->add(cite_rheo);
@@ -212,7 +217,7 @@ void FixRHEO::post_constructor()
 
   if (rhosum_flag) {
     compute_rhosum = dynamic_cast<ComputeRHEORhoSum *>(
-        modify->add_compute(fmt::format("rheo_rhosum all RHEO/RHO/SUM {}", self_mass_flag)));
+        modify->add_compute(fmt::format("rheo_rhosum all RHEO/RHO/SUM {}", rhosum_self_mass_flag)));
     compute_rhosum->fix_rheo = this;
   }
 

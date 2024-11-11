@@ -81,8 +81,8 @@ void ComputeRHEOVShift::init()
   cutsq = cut * cut;
   cutthird = cut / 3.0;
 
-  multiphase_flag = fix_rheo->shift_multiphase_flag;
-  if (multiphase_flag) {
+  cross_type_flag = fix_rheo->shift_cross_type_flag;
+  if (cross_type_flag) {
     scale = fix_rheo->shift_scale;
     wmin = fix_rheo->shift_wmin;
     cmin = fix_rheo->shift_cmin;
@@ -134,7 +134,7 @@ void ComputeRHEOVShift::compute_peratom()
   if (nmax_store < atom->nmax) {
     memory->grow(vshift, atom->nmax, 3, "rheo:vshift");
 
-    if (multiphase_flag) {
+    if (cross_type_flag) {
       memory->grow(ct, atom->nmax, "rheo:ct");
       memory->grow(cgradt, atom->nmax, 3, "rheo:cgradt");
       memory->grow(wsame, atom->nmax, "rheo:wsame");
@@ -254,7 +254,7 @@ void ComputeRHEOVShift::compute_peratom()
       for (a = 0; a < dim; a++)
         vshift[i][a] = 0.0;
 
-  if (multiphase_flag) correct_interfaces();
+  if (cross_type_flag) correct_interfaces();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -624,7 +624,7 @@ double ComputeRHEOVShift::memory_usage()
 {
   double bytes = 3 * nmax_store * sizeof(double);
 
-  if (multiphase_flag)
+  if (cross_type_flag)
     bytes += 5 * nmax_store * sizeof(double);
 
   return bytes;

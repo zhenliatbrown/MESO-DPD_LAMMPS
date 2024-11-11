@@ -46,7 +46,7 @@ class ComputeRHEOVShift : public Compute {
   int nmax_store, comm_stage;
   double dtv, cut, cutsq, cutthird;
   double scale, wmin, cmin;
-  int surface_flag, interface_flag, multiphase_flag;
+  int surface_flag, interface_flag, cross_type_flag;
   double *rho0;
   double *wsame, *ct, **cgradt;
   int *shift_type;
