@@ -28,9 +28,16 @@ Syntax
          values = *sdstyle* *limit* *limit/splash*
            *sdstyle* = *coordination* or *divergence*
            *limit* = threshold for surface particles
-           *limit/splash* = threshold for splash particles
+           *limit/splash* = threshold for splash particles (unitless)
        *shift* turns on velocity shifting
          values = none
+         optional args = *exclude/type* or *scale/cross/type*
+           *exclude/type* values = *types*
+             *types* = list of types
+           *scale/cross/type* values = *shiftscale* *cmin* *wmin*
+             *shiftscale* = fraction of shifting in normal direction to preserve (unitless)
+             *cmin* = minimum color function value required for scaling (unitless)
+             *wmin* = minimum local same-type support required for any shifting (unitless)
        *rho/sum* density evolution performed by a kernel summation
          values = none
          optional args = *self/mass*
@@ -83,19 +90,49 @@ This is done by estimating the location of the fluid-solid interface and
 extrapolating fluid particle properties across the interface to calculate a
 temporary apparent density and velocity for a solid particle. The numerical
 details are the same as those described in
-:ref:`(Palermo) <howto_rheo_palermo>` except there is an additional
+:ref:`(Palermo) <fix_rheo_palermo>` except there is an additional
 restriction that the reconstructed solid density cannot be less than the
 equilibrium density. This prevents fluid particles from sticking to solid
 surfaces.
 
 A modified form of Fickian particle shifting can be enabled with the
 *shift* keyword. This effectively shifts particle positions to generate a
-more uniform spatial distribution. Shifting currently does not consider the
+more uniform spatial distribution. By default, shifting does not consider the
 type of a particle and therefore may be inappropriate in systems consisting
-of multiple fluid phases.
+of multiple atom types representing multiple fluid phases. However, two
+optional subarguments can follow the *shift* keyword, *exclude/type* and
+*scale/cross/type*.
 
-In systems with free surfaces, the *surface/detection* keyword can be used
-to classify the location of particles as being within the bulk fluid, on a
+The *exclude/type* option lets the user specify a list of atom types which
+are not shifted, *types*. A wild-card asterisk can be used in place
+of or in conjunction with the *types* argument to set the coefficients for
+multiple pairs of atom types.  This takes the form "\*" or "\*n" or "m\*"
+or "m\*n".  If :math:`N` is the number of atom types, then an asterisk with
+no numeric values means all types from 1 to :math:`N`.  A leading asterisk
+means all types from 1 to n (inclusive).  A trailing asterisk means all types
+from m to :math:`N` (inclusive).  A middle asterisk means all types from m to n
+(inclusive).
+
+The *scale/cross/type* option is designed to handle interfaces between fluids
+made up of different atom types. Similar to the method by
+:ref:`(Yang) <fix_rheo_yang>`, a color function is calculated and used to
+estimate a local interfacial normal vector. Shifting along this normal direction
+is rescaled by a factor of *scaleshift*, such that a value of *scaleshift* of
+zero implies there is no shifting in the normal direction and a value of
+*scaleshift* of one implies no change in behavior. This scaling is only applied
+to atoms with a color function value greater than *cmin*. To handle scenarios
+of a small inclusion of one fluid type (e.g. a single atom) inside another,
+the amount of same-type support is calculated
+
+.. math::
+   W_{i,\mathrm{same}} = \sum_{j} W_{ij} \delta_{ij}
+
+where :math:`\delta_{ij}` is zero if atoms :math:`i` and :math:`j` have different
+types but unity otherwise. If :math:`W_{i,\mathrm{same}}` is ever less than the
+specified value of *wmin*, shifting is turned off for particle :math:`i`
+
+In systems with free surfaces (atom-vacuum), the *surface/detection* keyword
+can classify the location of particles as being within the bulk fluid, on a
 free surface, or isolated from other particles in a splash or droplet.
 Shifting is then disabled in the normal direction away from the free surface
 to prevent particles from diffusing away. Surface detection can also be used
@@ -117,9 +154,9 @@ threshold for this classification is set by the numerical value of
 By default, RHEO integrates particles' densities using a mass diffusion
 equation. Alternatively, one can update densities every timestep by performing
 a kernel summation of the masses of neighboring particles by specifying the *rho/sum*
-keyword. The optional *self/mass* subargument then modifies the behavior of the
-density summation. Typically, the density :math:`\rho` of a particle is calculated
-as the sum over neighbors
+keyword. Following this keyword, one may include the optional *self/mass* subargument
+which modifies the behavior of the density summation. Typically, the density
+:math:`\rho` of a particle is calculated as the sum over neighbors
 
 .. math::
    \rho_i = \sum_{j} W_{ij} M_j
@@ -182,6 +219,10 @@ Default
 
 **(Palermo)** Palermo, Wolf, Clemmer, O'Connor, Phys. Fluids, 36, 113337 (2024).
 
+.. _rheo_yang:
+
+**(Yang)** Yang, Rakhsha, Hu, Negrut, J. Comp. Physics, 458, 111079 (2022).
+
 .. _fix_rheo_hu:
 
-**(Hu)** Hu, and Adams J. Comp. Physics, 213, 844-861 (2006).
+**(Hu)** Hu, and Adams, J. Comp. Physics, 213, 844-861 (2006).

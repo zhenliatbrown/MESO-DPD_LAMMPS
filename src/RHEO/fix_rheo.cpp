@@ -75,7 +75,7 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
   rhosum_self_mass_flag = 0;
   shift_cross_type_flag = 0;
 
-  int i;
+  int i, nlo, nhi;
   int n = atom->ntypes;
   memory->create(rho0, n + 1, "rheo:rho0");
   memory->create(csq, n + 1, "rheo:csq");
@@ -122,14 +122,14 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
           if (iarg + 3 >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift scale/cross/type", error);
           shift_cross_type_flag = 1;
           shift_scale = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
-          shift_wmin = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
-          shift_cmin = utils::numeric(FLERR, arg[iarg + 3], false, lmp);
+          shift_cmin = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
+          shift_wmin = utils::numeric(FLERR, arg[iarg + 3], false, lmp);
           iarg += 3;
         } else if (strcmp(arg[iarg], "exclude/type") == 0) {
-          if (iarg + n >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift exclude/type", error);
-          for (i = 1; i <= n; i++)
-            shift_type[i] = utils::logical(FLERR, arg[iarg + i], false, lmp);
-          iarg += n;
+          if (iarg + 1 >= narg) utils::missing_cmd_args(FLERR, "fix rheo shift exclude/type", error);
+          utils::bounds(FLERR, arg[iarg + 1], 1, n, nlo, nhi, error);
+          for (i = nlo; i <= nhi; i++) shift_type[i] = 0;
+          iarg += 1;
         } else {
           break;
         }
