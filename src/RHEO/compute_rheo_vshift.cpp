@@ -254,7 +254,7 @@ void ComputeRHEOVShift::compute_peratom()
       for (a = 0; a < dim; a++)
         vshift[i][a] = 0.0;
 
-  if (cross_type_flag) correct_interfaces();
+  if (cross_type_flag) correct_type_interface();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -312,7 +312,7 @@ void ComputeRHEOVShift::correct_surfaces()
 
 /* ---------------------------------------------------------------------- */
 
-void ComputeRHEOVShift::correct_interfaces()
+void ComputeRHEOVShift::correct_type_interface()
 {
   int i, j, a, ii, jj, jnum, itype, jtype;
   int fluidi, fluidj;
@@ -417,6 +417,10 @@ void ComputeRHEOVShift::correct_interfaces()
   if (newton_pair) comm->reverse_comm(this, 1);
 
   // Calculate color gradient
+  // Note: in future might want to generalize this so color function can be used
+  //   by other calculations (e.g. surface tension)
+  //   maybe can create custom "calc_grad" method that takes an arbitrary field
+  //   in ComputeRHEOGrad?
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
@@ -495,8 +499,7 @@ void ComputeRHEOVShift::correct_interfaces()
   // remove normal shifting component for interfacial particles
   // Based on Yang, Rakhsha, Hu, & Negrut 2022
 
-  double *vs, ntmp[3];
-  double minv, dot;
+  double ntmp[3], minv, dot;
 
   for (i = 0; i < nlocal; i++) {
 
@@ -509,8 +512,9 @@ void ComputeRHEOVShift::correct_interfaces()
 
     if (ct[i] < cmin) continue;
 
-    minv = cgradt[i][0] * cgradt[i][0] + cgradt[i][1] * cgradt[i][1];
-    if (dim == 3) minv += cgradt[i][2] * cgradt[i][2];
+    minv = 0;
+    for (a = 0; a < dim; a++)
+      minv += cgradt[i][a] * cgradt[i][a];
 
     if (minv != 0)
       minv = 1 / sqrt(minv);
@@ -518,18 +522,15 @@ void ComputeRHEOVShift::correct_interfaces()
     for (a = 0; a < dim; a++)
       ntmp[a] = cgradt[i][a] * minv;
 
-    vs = vshift[i];
-    dot = ntmp[0] * vs[0] + ntmp[1] * vs[1];
-    if (dim == 3)
-      dot += ntmp[2] * vs[2];
+    dot = 0.0;
+    for (a = 0; a < dim; a++)
+      dot += ntmp[a] * vshift[i][a];
 
-    // To allowing shifting into the bulk
+    // To allowing shifting into the same phase bulk
     // if (dot > 0.0) continue;
 
-    vshift[i][0] -= (1.0 - scale) * ntmp[0] * dot;
-    vshift[i][1] -= (1.0 - scale) * ntmp[1] * dot;
-    if (dim == 3)
-      vshift[i][2] -= (1.0 - scale) * ntmp[2] * dot;
+    for (a = 0; a < dim; a++)
+      vshift[i][a] -= (1.0 - scale) * ntmp[a] * dot;
   }
 }
 

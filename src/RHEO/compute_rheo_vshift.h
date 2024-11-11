@@ -37,7 +37,7 @@ class ComputeRHEOVShift : public Compute {
   void unpack_reverse_comm(int, int *, double *) override;
   double memory_usage() override;
   void correct_surfaces();
-  void correct_interfaces();
+  void correct_type_interface();
   double **vshift;
 
   class FixRHEO *fix_rheo;
