@@ -18,6 +18,7 @@
 #include "group_kokkos.h"
 
 #include "atom_kokkos.h"
+#include "atom_masks.h"
 #include "domain_kokkos.h"
 #include "kokkos_few.h"
 
@@ -60,7 +61,8 @@ double GroupKokkos<DeviceType>::mass(int igroup)
 
     auto d_mass = atomKK->k_mass.template view<DeviceType>();
     auto d_type = atomKK->k_type.template view<DeviceType>();
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,MASK_MASK|MASS_MASK|TYPE_MASK);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,MASK_MASK|TYPE_MASK);
+    atomKK->k_mass.template sync<DeviceType>();
 
     Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_one) {
       if (d_mask(i) & groupbit) l_one += d_mass(d_type(i));
@@ -115,7 +117,8 @@ void GroupKokkos<DeviceType>::xcm(int igroup, double masstotal, double *xcm)
 
     auto d_mass = atomKK->k_mass.template view<DeviceType>();
     auto d_type = atomKK->k_type.template view<DeviceType>();
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK|MASK_MASK|IMAGE_MASK|MASS_MASK|TYPE_MASK);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK|MASK_MASK|IMAGE_MASK|TYPE_MASK);
+    atomKK->k_mass.template sync<DeviceType>();
 
     Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_cmx, double &l_cmy, double &l_cmz) {
       if (d_mask(i) & groupbit) {
@@ -174,7 +177,8 @@ void GroupKokkos<DeviceType>::vcm(int igroup, double masstotal, double *vcm)
 
     auto d_mass = atomKK->k_mass.template view<DeviceType>();
     auto d_type = atomKK->k_type.template view<DeviceType>();
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,V_MASK|MASK_MASK|IMAGE_MASK|MASS_MASK|TYPE_MASK);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,V_MASK|MASK_MASK|IMAGE_MASK|TYPE_MASK);
+    atomKK->k_mass.template sync<DeviceType>();
 
     Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_px, double &l_py, double &l_pz) {
       if (d_mask(i) & groupbit) {
@@ -243,7 +247,8 @@ void GroupKokkos<DeviceType>::angmom(int igroup, double *xcm, double *lmom)
 
     auto d_mass = atomKK->k_mass.template view<DeviceType>();
     auto d_type = atomKK->k_type.template view<DeviceType>();
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK|V_MASK|MASK_MASK|IMAGE_MASK|MASS_MASK|TYPE_MASK);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK|V_MASK|MASK_MASK|IMAGE_MASK|TYPE_MASK);
+    atomKK->k_mass.template sync<DeviceType>();
 
     Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_px, double &l_py, double &l_pz) {
       if (d_mask(i) & groupbit) {
@@ -318,7 +323,8 @@ void GroupKokkos<DeviceType>::inertia(int igroup, double *xcm, double itensor[3]
 
     auto d_mass = atomKK->k_mass.template view<DeviceType>();
     auto d_type = atomKK->k_type.template view<DeviceType>();
-    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK|MASK_MASK|IMAGE_MASK|MASS_MASK|TYPE_MASK);
+    atomKK->sync(ExecutionSpaceFromDevice<DeviceType>::space,X_MASK|MASK_MASK|IMAGE_MASK|TYPE_MASK);
+    atomKK->k_mass.template sync<DeviceType>();
 
     Kokkos::parallel_reduce(atom->nlocal, KOKKOS_LAMBDA(const int i, double &l_i00, double &l_i11, double &l_i22, double &l_i01, double &l_i12, double &l_i02) {
       if (d_mask(i) & groupbit) {
