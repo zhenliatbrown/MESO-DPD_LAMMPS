@@ -38,16 +38,18 @@ using namespace LAMMPS_NS;
 using namespace RHEO_NS;
 using namespace FixConst;
 
-#if 0
-// publication was removed from documentation
 static const char cite_rheo[] =
-    "@article{PalermoInPrep,\n"
-    " journal = {in prep},\n"
-    " title = {RHEO: A Hybrid Mesh-Free Model Framework for Dynamic Multi-Phase Flows},\n"
+    "@article{Palermo2024,\n"
+    " journal = {Physics of Fluids},\n"
+    " title = {Reproducing hydrodynamics and elastic objects: A hybrid mesh-free model framework for dynamic multi-phase flows},\n"
+    " volume = {36},\n"
+    " number = {11},\n"
+    " pages = {113337},\n"
     " year = {2024},\n"
-    " author = {Eric T. Palermo and Ki T. Wolf and Joel T. Clemmer and Thomas C. O'Connor},\n"
+    " issn = {1070-6631},\n"
+    " doi = {https://doi.org/10.1063/5.0228823},\n"
+    " author = {Palermo, Eric T. and Wolf, Ki T. and Clemmer, Joel T. and O'Connor, Thomas C.},\n"
     "}\n\n";
-#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -179,9 +181,7 @@ FixRHEO::FixRHEO(LAMMPS *lmp, int narg, char **arg) :
     iarg += 1;
   }
 
-#if 0
   if (lmp->citeme) lmp->citeme->add(cite_rheo);
-#endif
 }
 
 /* ---------------------------------------------------------------------- */
