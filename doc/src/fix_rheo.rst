@@ -54,6 +54,7 @@ Examples
 
    fix 1 all rheo 3.0 quintic 0 thermal density 0.1 0.1 speed/sound 10.0 1.0
    fix 1 all rheo 3.0 RK1 10 shift surface/detection coordination 40
+   fix 1 all rheo 3.0 RK1 10 shift exclude/type 2*4 scale/cross/type 0.05 0.02 0.5
    fix 1 all rheo 3.0 RK1 10 rhosum self/mass
 
 Description
@@ -172,7 +173,9 @@ equilibrium density *rho0*.
 
 The *speed/sound* keyword is used to specify the speed of sound of each of the
 N particle types. It must be followed by N numerical values specifying each type's
-speed of sound *cs*.
+speed of sound *cs*. These values may be ignored if the pressure equation of
+state has a non-constant speed of sound, as discussed further in
+:doc:`fix rheo/pressure <fix_rheo_pressure>`.
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
