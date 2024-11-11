@@ -20,17 +20,25 @@ Syntax
 
   .. parsed-literal::
 
-       *thermal* values = none, turns on thermal evolution
-       *interface/reconstruct* values = none, reconstructs interfaces with solid particles
-       *surface/detection* values = *sdstyle* *limit* *limit/splash*
-         *sdstyle* = *coordination* or *divergence*
-         *limit* = threshold for surface particles
-         *limit/splash* = threshold for splash particles
-       *shift* values = none, turns on velocity shifting
-       *rho/sum* values = none, uses the kernel to compute the density of particles
-       *self/mass* values = none, a particle uses its own mass in a rho summation
-       *density* values = *rho01*, ... *rho0N* (density)
-       *speed/sound* values = *cs0*, ... *csN* (velocity)
+       *thermal* turns on thermal evolution
+         values = none
+       *interface/reconstruct* reconstructs interfaces with solid particles
+         values = none
+       *surface/detection* detects free-surfaces with an absence of particles
+         values = *sdstyle* *limit* *limit/splash*
+           *sdstyle* = *coordination* or *divergence*
+           *limit* = threshold for surface particles
+           *limit/splash* = threshold for splash particles
+       *shift* turns on velocity shifting
+         values = none
+       *rho/sum* density evolution performed by a kernel summation
+         values = none
+         optional args = *self/mass*
+           *self/mass* values = none, a particle uses its own mass in summation
+       *density* specify equilibrium densities for each atom type
+         values = *rho01*, ... *rho0N* (density)
+       *speed/sound* specify speeds of sound for each atom type
+         values = *cs0*, ... *csN* (velocity)
 
 Examples
 """"""""
@@ -39,6 +47,7 @@ Examples
 
    fix 1 all rheo 3.0 quintic 0 thermal density 0.1 0.1 speed/sound 10.0 1.0
    fix 1 all rheo 3.0 RK1 10 shift surface/detection coordination 40
+   fix 1 all rheo 3.0 RK1 10 rhosum self/mass
 
 Description
 """""""""""
@@ -108,10 +117,9 @@ threshold for this classification is set by the numerical value of
 By default, RHEO integrates particles' densities using a mass diffusion
 equation. Alternatively, one can update densities every timestep by performing
 a kernel summation of the masses of neighboring particles by specifying the *rho/sum*
-keyword.
-
-The *self/mass* keyword modifies the behavior of the density summation in *rho/sum*.
-Typically, the density :math:`\rho` of a particle is calculated as the sum over neighbors
+keyword. The optional *self/mass* subargument then modifies the behavior of the
+density summation. Typically, the density :math:`\rho` of a particle is calculated
+as the sum over neighbors
 
 .. math::
    \rho_i = \sum_{j} W_{ij} M_j
