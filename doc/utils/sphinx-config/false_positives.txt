@@ -639,6 +639,7 @@ cstyle
 csvr
 ctest
 ctilde
+ctip
 ctrl
 ctrn
 ctypes
@@ -1286,6 +1287,7 @@ gcc
 gcmc
 gdot
 GeC
+Geesthacht
 Geier
 gencode
 Geocomputing
@@ -3665,6 +3667,7 @@ Tanmoy
 Tartakovsky
 taskset
 taubi
+Tavenner
 taylor
 tb
 tchain
@@ -4218,6 +4221,7 @@ zeeman
 Zeeman
 Zemer
 zenodo
+Zentrum
 Zepeda
 zflag
 Zhang
