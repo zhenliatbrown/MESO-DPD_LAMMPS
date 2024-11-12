@@ -38,6 +38,7 @@ class FixPythonInvoke : public Fix {
   void *lmpPtr;
   void *pFunc;
   int selected_callback;
+  bigint nextvalid();
 };
 
 }    // namespace LAMMPS_NS

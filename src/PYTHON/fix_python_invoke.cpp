@@ -22,6 +22,7 @@
 #include "lmppython.h"
 #include "python_compat.h"
 #include "python_utils.h"
+#include "modify.h"
 #include "update.h"
 
 #include <cstring>
@@ -70,6 +71,8 @@ FixPythonInvoke::FixPythonInvoke(LAMMPS *lmp, int narg, char **arg) :
   }
 
   lmpPtr = PY_VOID_POINTER(lmp);
+
+  modify->addstep_compute_all(nextvalid());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -91,6 +94,8 @@ int FixPythonInvoke::setmask()
 
 void FixPythonInvoke::end_of_step()
 {
+  modify->clearstep_compute();
+
   PyUtils::GIL lock;
 
   PyObject * result = PyObject_CallFunction((PyObject*)pFunc, (char *)"O", (PyObject*)lmpPtr);
@@ -101,6 +106,8 @@ void FixPythonInvoke::end_of_step()
   }
 
   Py_CLEAR(result);
+
+  modify->addstep_compute(nextvalid());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -116,6 +123,8 @@ void FixPythonInvoke::post_force(int vflag)
 {
   if (update->ntimestep % nevery != 0) return;
 
+  modify->clearstep_compute();
+
   PyUtils::GIL lock;
   char fmt[] = "Oi";
 
@@ -127,4 +136,13 @@ void FixPythonInvoke::post_force(int vflag)
   }
 
   Py_CLEAR(result);
+
+  modify->addstep_compute(nextvalid());
+}
+
+/* ---------------------------------------------------------------------- */
+
+bigint FixPythonInvoke::nextvalid()
+{
+  return (update->ntimestep/nevery + 1)*nevery;
 }
