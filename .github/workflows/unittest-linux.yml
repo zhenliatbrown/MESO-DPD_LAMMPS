@@ -18,7 +18,6 @@ concurrency:
 jobs:
   build:
     name: Linux Unit Test
-    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-latest
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache

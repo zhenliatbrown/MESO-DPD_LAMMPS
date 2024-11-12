@@ -14,7 +14,6 @@ on:
 jobs:
   build:
     name: Build with -Werror=vla
-    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-latest
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
