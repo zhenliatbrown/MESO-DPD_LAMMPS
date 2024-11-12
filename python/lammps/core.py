@@ -339,6 +339,10 @@ class lammps(object):
     self.lib.lammps_extract_variable_datatype.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_extract_variable_datatype.restype = c_int
 
+    self.lib.lammps_compute_clearstep.argtype = [c_void_p]
+    self.lib.lammps_compute_addstep.argtype = [c_void_p, self.c_bigint]
+    self.lib.lammps_compute_addstep_all.argtype = [c_void_p, self.c_bigint]
+
     self.lib.lammps_fix_external_get_force.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_fix_external_get_force.restype = POINTER(POINTER(c_double))
 
@@ -1450,6 +1454,24 @@ class lammps(object):
         ptr = self.lib.lammps_extract_variable(self.lmp, newname, newgroup)
         return ptr.decode('utf-8')
     return None
+
+  # -------------------------------------------------------------------------
+
+  def compute_clearstep(self, nextstep):
+    with ExceptionCheck(self):
+      return self.lib.lammps_compute_clearstep(self.lmp)
+
+  # -------------------------------------------------------------------------
+
+  def compute_addstep(self, nextstep):
+    with ExceptionCheck(self):
+      return self.lib.lammps_compute_addstep(self.lmp, nextstep)
+
+  # -------------------------------------------------------------------------
+
+  def compute_addstep_all(self, nextstep):
+    with ExceptionCheck(self):
+      return self.lib.lammps_compute_addstep_all(self.lmp, nextstep)
 
   # -------------------------------------------------------------------------
 

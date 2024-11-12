@@ -2904,6 +2904,87 @@ int lammps_variable_info(void *handle, int idx, char *buffer, int buf_size) {
   return 0;
 }
 
+/* ---------------------------------------------------------------------- */
+
+/** Clear whether a compute has been invoked.
+ *
+\verbatim embed:rst
+
+.. versionadded:: TBD
+
+   This function clears the invoked flag of all computes.
+   Called everywhere that computes are used, before computes are invoked.
+   The invoked flag is used to avoid re-invoking same compute multiple times
+   and to flag computes that store invocation times as having been invoked
+
+\endverbatim
+
+ * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
+ */
+void lammps_compute_clearstep(void * handle) {
+  auto lmp = (LAMMPS *) handle;
+
+  BEGIN_CAPTURE
+  {
+    lmp->modify->clearstep_compute();
+  }
+  END_CAPTURE
+}
+
+/* ---------------------------------------------------------------------- */
+
+/** Add next timestep to all computes
+ *
+\verbatim embed:rst
+
+.. versionadded:: TBD
+
+   loop over all computes
+   schedule next invocation for those that store invocation times
+   called when not sure what computes will be needed on newstep
+   do not loop only over n_timeflag, since may not be set yet
+
+\endverbatim
+
+ * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
+ * \param newstep  next timestep the compute will be invoked
+ */
+void lammps_compute_addstep_all(void * handle, bigint newstep) {
+  auto lmp = (LAMMPS *) handle;
+
+  BEGIN_CAPTURE
+  {
+    lmp->modify->addstep_compute_all(newstep);
+  }
+  END_CAPTURE
+}
+/* ---------------------------------------------------------------------- */
+
+/** Add next timestep to compute if it has been invoked in the current timestep
+ *
+\verbatim embed:rst
+
+.. versionadded:: TBD
+
+   loop over computes that store invocation times
+   if its invoked flag set on this timestep, schedule next invocation
+   called everywhere that computes are used, after computes are invoked
+
+\endverbatim
+
+ * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
+ * \param newstep  next timestep the compute will be invoked
+ */
+void lammps_compute_addstep(void * handle, bigint newstep) {
+  auto lmp = (LAMMPS *) handle;
+
+  BEGIN_CAPTURE
+  {
+    lmp->modify->addstep_compute(newstep);
+  }
+  END_CAPTURE
+}
+
 // ----------------------------------------------------------------------
 // Library functions for scatter/gather operations of data
 // ----------------------------------------------------------------------
