@@ -18,22 +18,22 @@ Modified from fix_efield
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(epot/lepton,FixEpotLepton);
+FixStyle(efield/lepton,FixEfieldLepton);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_EPOT_LEPTON_H
-#define LMP_FIX_EPOT_LEPTON_H
+#ifndef LMP_FIX_EFIELD_LEPTON_H
+#define LMP_FIX_EFIELD_LEPTON_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixEpotLepton : public Fix {
+class FixEfieldLepton : public Fix {
 
  public:
-  FixEpotLepton(class LAMMPS *, int, char **);
-  ~FixEpotLepton() override;
+  FixEfieldLepton(class LAMMPS *, int, char **);
+  ~FixEfieldLepton() override;
   int setmask() override;
   void init() override;
   void setup(int) override;

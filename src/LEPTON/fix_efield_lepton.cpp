@@ -16,7 +16,7 @@
    Modified from fix_efield
 ------------------------------------------------------------------------- */
 
-#include "fix_epot_lepton.h"
+#include "fix_efield_lepton.h"
 
 #include "atom.h"
 #include "comm.h"
@@ -41,7 +41,7 @@ using namespace FixConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixEpotLepton::FixEpotLepton(LAMMPS *lmp, int narg, char **arg) :
+FixEfieldLepton::FixEfieldLepton(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), idregion(nullptr), region(nullptr)
 {
   if (domain->xperiodic || domain->yperiodic || domain->zperiodic) {
@@ -94,14 +94,14 @@ FixEpotLepton::FixEpotLepton(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-FixEpotLepton::~FixEpotLepton()
+FixEfieldLepton::~FixEfieldLepton()
 {
   delete[] idregion;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixEpotLepton::setmask()
+int FixEfieldLepton::setmask()
 {
   int mask = 0;
   mask |= POST_FORCE;
@@ -112,7 +112,7 @@ int FixEpotLepton::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixEpotLepton::init()
+void FixEfieldLepton::init()
 {
   if (!atom->q_flag && !atom->mu_flag)
     error->all(FLERR, "Fix {} requires atom attribute q or mu", style);
@@ -141,7 +141,7 @@ void FixEpotLepton::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixEpotLepton::setup(int vflag)
+void FixEfieldLepton::setup(int vflag)
 {
   if (utils::strmatch(update->integrate_style, "^respa")) {
     auto respa = dynamic_cast<Respa *>(update->integrate);
@@ -155,7 +155,7 @@ void FixEpotLepton::setup(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixEpotLepton::min_setup(int vflag)
+void FixEfieldLepton::min_setup(int vflag)
 {
   post_force(vflag);
 }
@@ -166,7 +166,7 @@ void FixEpotLepton::min_setup(int vflag)
         T = mu x E
 ------------------------------------------------------------------------- */
 
-void FixEpotLepton::post_force(int vflag)
+void FixEfieldLepton::post_force(int vflag)
 {
   double **f = atom->f;
   double **x = atom->x;
@@ -456,14 +456,14 @@ void FixEpotLepton::post_force(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixEpotLepton::post_force_respa(int vflag, int ilevel, int /*iloop*/)
+void FixEfieldLepton::post_force_respa(int vflag, int ilevel, int /*iloop*/)
 {
   if (ilevel == ilevel_respa) post_force(vflag);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixEpotLepton::min_post_force(int vflag)
+void FixEfieldLepton::min_post_force(int vflag)
 {
   post_force(vflag);
 }
@@ -472,7 +472,7 @@ void FixEpotLepton::min_post_force(int vflag)
    return energy added by fix
 ------------------------------------------------------------------------- */
 
-double FixEpotLepton::compute_scalar()
+double FixEfieldLepton::compute_scalar()
 {
   if (force_flag == 0) {
     MPI_Allreduce(fsum, fsum_all, 4, MPI_DOUBLE, MPI_SUM, world);
@@ -485,7 +485,7 @@ double FixEpotLepton::compute_scalar()
    return total extra force due to fix
 ------------------------------------------------------------------------- */
 
-double FixEpotLepton::compute_vector(int n)
+double FixEfieldLepton::compute_vector(int n)
 {
   if (force_flag == 0) {
     MPI_Allreduce(fsum, fsum_all, 4, MPI_DOUBLE, MPI_SUM, world);

@@ -1020,7 +1020,6 @@ eos
 epair
 epcc
 epl
-epot
 Epp
 Epq
 eps
