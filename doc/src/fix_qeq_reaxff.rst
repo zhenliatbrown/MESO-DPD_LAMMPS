@@ -139,7 +139,8 @@ as an atom-style variable using the *potential* keyword for `fix efield`.
 Related commands
 """"""""""""""""
 
-:doc:`pair_style reaxff <pair_reaxff>`, :doc:`fix qeq/shielded <fix_qeq>`
+:doc:`pair_style reaxff <pair_reaxff>`, :doc:`fix qeq/shielded <fix_qeq>`,
+:doc:`fix acks2/reaxff <fix_acks2_reaxff>`, :doc:`fix qtpie/reaxff <fix_qtpie_reaxff>`
 
 Default
 """""""
