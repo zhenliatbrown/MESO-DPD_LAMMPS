@@ -724,7 +724,7 @@ double PairSWAngleTable::splint(double *xa, double *ya, double *y2a, int n, doub
 
 void PairSWAngleTable::uf_lookup(ParamTable *pm, double x, double &u, double &f)
 {
-  if (!std::isfinite(x)) { error->one(FLERR, "Illegal angle in angle style table"); }
+  if (!std::isfinite(x)) error->one(FLERR, "Illegal angle in pair style sw/angle/table");
 
   double fraction,a,b;
 
