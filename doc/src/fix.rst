@@ -237,6 +237,7 @@ accelerated styles exist.
 * :doc:`dt/reset <fix_dt_reset>` - reset the timestep based on velocity, forces
 * :doc:`edpd/source <fix_dpd_source>` - add heat source to eDPD simulations
 * :doc:`efield <fix_efield>` - impose electric field on system
+* :doc:`efield/lepton <fix_efield_lepton>` - impose electric field on system using a Lepton expression for the potential
 * :doc:`efield/tip4p <fix_efield>` - impose electric field on system with TIP4P molecules
 * :doc:`ehex <fix_ehex>` - enhanced heat exchange algorithm
 * :doc:`electrode/conp <fix_electrode>` - impose electric potential
@@ -248,7 +249,6 @@ accelerated styles exist.
 * :doc:`eos/cv <fix_eos_cv>` - applies a mesoparticle equation of state to relate the particle internal energy to the particle internal temperature
 * :doc:`eos/table <fix_eos_table>` - applies a tabulated mesoparticle equation of state to relate the particle internal energy to the particle internal temperature
 * :doc:`eos/table/rx <fix_eos_table_rx>` - applies a tabulated mesoparticle equation of state to relate the concentration-dependent particle internal energy to the particle internal temperature
-* :doc:`epot/lepton <fix_epot_lepton>` - apply electric potential on system using Lepton expression
 * :doc:`evaporate <fix_evaporate>` - remove atoms from simulation periodically
 * :doc:`external <fix_external>` - callback to an external driver program
 * :doc:`ffl <fix_ffl>` - apply a Fast-Forward Langevin equation thermostat
