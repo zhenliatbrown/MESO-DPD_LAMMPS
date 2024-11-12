@@ -18,12 +18,21 @@ from __future__ import print_function
 
 import os
 import sys
-from ctypes import *                    # lgtm [py/polluting-import]
-from os.path import dirname,abspath,join
+from ctypes import CDLL, POINTER, RTLD_GLOBAL, CFUNCTYPE, py_object, byref, cast, sizeof, \
+  create_string_buffer, c_int, c_int32, c_int64, c_double, c_void_p, c_char_p, c_char,    \
+  pythonapi, pointer
+from os.path import dirname, abspath, join
 from inspect import getsourcefile
 
-from .constants import *                # lgtm [py/polluting-import]
-from .data import *                     # lgtm [py/polluting-import]
+from lammps.constants import LAMMPS_AUTODETECT, LAMMPS_STRING, \
+  LAMMPS_INT, LAMMPS_INT_2D, LAMMPS_DOUBLE, LAMMPS_DOUBLE_2D, LAMMPS_INT64, LAMMPS_INT64_2D, \
+  LMP_STYLE_GLOBAL, LMP_STYLE_ATOM, LMP_STYLE_LOCAL, \
+  LMP_TYPE_SCALAR, LMP_TYPE_VECTOR, LMP_TYPE_ARRAY, \
+  LMP_SIZE_VECTOR, LMP_SIZE_ROWS, LMP_SIZE_COLS, \
+  LMP_VAR_EQUAL, LMP_VAR_ATOM, LMP_VAR_VECTOR, LMP_VAR_STRING, \
+  get_ctypes_int
+
+from lammps.data import NeighList
 
 # -------------------------------------------------------------------------
 
@@ -168,6 +177,9 @@ class lammps(object):
     self.lib.lammps_free.argtypes = [c_void_p]
 
     self.lib.lammps_error.argtypes = [c_void_p, c_int, c_char_p]
+
+    self.lib.lammps_expand.argtypes = [c_void_p, c_char_p]
+    self.lib.lammps_expand.restype = POINTER(c_char)
 
     self.lib.lammps_file.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_file.restype = None
@@ -602,6 +614,37 @@ class lammps(object):
       return MPIAbortException(error_msg)
     return Exception(error_msg)
 
+  # -------------------------------------------------------------------------
+
+  def expand(self,line):
+    """Expand a single LAMMPS string like an input line
+
+    This is a wrapper around the :cpp:func:`lammps_expand`
+    function of the C-library interface.
+
+    :param cmd: a single lammps line
+    :type cmd:  string
+    :return: expanded string
+    :rtype: string
+    """
+    if line: newline = line.encode()
+    else: return None
+
+    with ExceptionCheck(self):
+      strptr = self.lib.lammps_expand(self.lmp, newline)
+      rval = strptr[0]
+      if rval == b'\0':
+        rval = None
+      else:
+        i = 1
+        while strptr[i] != b'\0':
+          rval += strptr[i]
+          i = i + 1
+      self.lib.lammps_free(strptr)
+      if rval:
+        return rval.decode('utf-8')
+
+    return None
   # -------------------------------------------------------------------------
 
   def file(self, path):
@@ -2258,7 +2301,6 @@ class lammps(object):
     :param caller: reference to some object passed to the callback function
     :type: object, optional
     """
-    import numpy as np
 
     def callback_wrapper(caller, ntimestep, nlocal, tag_ptr, x_ptr, fext_ptr):
       tag = self.numpy.iarray(self.c_tagint, tag_ptr, nlocal, 1)

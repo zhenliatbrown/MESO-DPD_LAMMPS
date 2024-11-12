@@ -141,6 +141,7 @@ arg
 arge
 args
 argv
+Armv
 arrhenius
 Arun
 arXiv
@@ -215,7 +216,6 @@ ba
 Babadi
 Babaei
 backcolor
-backends
 Baczewski
 Bagchi
 Bagi
@@ -639,6 +639,7 @@ cstyle
 csvr
 ctest
 ctilde
+ctip
 ctrl
 ctrn
 ctypes
@@ -1287,6 +1288,7 @@ gcc
 gcmc
 gdot
 GeC
+Geesthacht
 Geier
 gencode
 Geocomputing
@@ -1543,6 +1545,7 @@ idx
 ie
 ielement
 ieni
+ifdef
 ifdefs
 iff
 ifort
@@ -2732,6 +2735,7 @@ OMP
 oneAPI
 onebody
 onelevel
+oneMKL
 oneway
 onlysalt
 ons
@@ -3670,6 +3674,7 @@ Tanmoy
 Tartakovsky
 taskset
 taubi
+Tavenner
 taylor
 tb
 tchain
@@ -4223,6 +4228,7 @@ zeeman
 Zeeman
 Zemer
 zenodo
+Zentrum
 Zepeda
 zflag
 Zhang
