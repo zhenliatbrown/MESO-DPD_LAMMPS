@@ -45,8 +45,8 @@ what kind of information and sections are needed.
 
 ## Formatting conventions
 
-For headlines we try to follow the conventions posted here:
-https://documentation-style-guide-sphinx.readthedocs.io/en/latest/style-guide.html#headings
+For headlines we try to follow the conventions posted [here]
+(https://documentation-style-guide-sphinx.readthedocs.io/en/latest/style-guide.html#headings).
 It seems to be sufficient to have this consistent only within
 any single file and it is not (yet) enforced strictly, but making
 this globally consistent makes it easier to move sections around.
