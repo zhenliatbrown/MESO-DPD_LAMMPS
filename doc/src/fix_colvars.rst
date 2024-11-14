@@ -1,7 +1,10 @@
 .. index:: fix colvars
+.. index:: fix colvars/kk
 
 fix colvars command
 ===================
+
+Accelerator Variants: *colvars/kk*
 
 Syntax
 """"""
@@ -118,6 +121,11 @@ thermostat target temperature.
 The *seed* keyword contains the seed for the random number generator
 that will be used in the colvars module.
 
+----------
+
+.. include:: accel_styles.rst
+
+----------
 
 Restarting
 """"""""""

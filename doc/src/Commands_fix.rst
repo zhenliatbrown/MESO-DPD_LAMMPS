@@ -44,7 +44,7 @@ OPT.
    * :doc:`brownian/sphere <fix_brownian>`
    * :doc:`charge/regulation <fix_charge_regulation>`
    * :doc:`cmap (k) <fix_cmap>`
-   * :doc:`colvars <fix_colvars>`
+   * :doc:`colvars (k) <fix_colvars>`
    * :doc:`controller <fix_controller>`
    * :doc:`damping/cundall <fix_damping_cundall>`
    * :doc:`deform (k) <fix_deform>`
