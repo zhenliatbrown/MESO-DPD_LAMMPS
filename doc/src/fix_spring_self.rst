@@ -106,7 +106,9 @@ invoked by the :doc:`minimize <minimize>` command.
 
 Restrictions
 """"""""""""
- none
+
+The KOKKOS version, *fix spring/self/kk* may only be used with a constant
+value of K, not a variable.
 
 Related commands
 """"""""""""""""
