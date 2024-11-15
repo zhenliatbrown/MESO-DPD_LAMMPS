@@ -26,6 +26,7 @@ namespace LAMMPS_NS {
 
 class FixSpringSelf : public Fix {
  public:
+  enum { NONE, CONSTANT, EQUAL, ATOM };
   FixSpringSelf(class LAMMPS *, int, char **);
   ~FixSpringSelf() override;
   int setmask() override;
