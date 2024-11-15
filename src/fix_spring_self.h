@@ -50,8 +50,11 @@ class FixSpringSelf : public Fix {
  protected:
   double k, espring;
   double **xoriginal;    // original coords of atoms
+  char *kstr;            // name of variable for K
+  double *kval;          // per-atom variable values for K
+  int kvar, kstyle;
   int xflag, yflag, zflag;
-  int ilevel_respa;
+  int ilevel_respa, maxatom;
 };
 
 }    // namespace LAMMPS_NS

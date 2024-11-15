@@ -21,20 +21,23 @@
 #include "atom.h"
 #include "domain.h"
 #include "error.h"
+#include "input.h"
 #include "memory.h"
 #include "respa.h"
 #include "update.h"
+#include "variable.h"
 
 #include <cstring>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
+enum { NONE, CONSTANT, EQUAL, ATOM };
+
 /* ---------------------------------------------------------------------- */
 
 FixSpringSelf::FixSpringSelf(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg),
-  xoriginal(nullptr)
+  Fix(lmp, narg, arg), xoriginal(nullptr), kstr(nullptr)
 {
   if ((narg < 4) || (narg > 5))
     error->all(FLERR,"Illegal fix spring/self command");
@@ -46,8 +49,14 @@ FixSpringSelf::FixSpringSelf(LAMMPS *lmp, int narg, char **arg) :
   energy_global_flag = 1;
   respa_level_support = 1;
 
-  k = utils::numeric(FLERR,arg[3],false,lmp);
-  if (k <= 0.0) error->all(FLERR,"Illegal fix spring/self command");
+  if (utils::strmatch(arg[3], "^v_")) {
+    kstr = utils::strdup(arg[3] + 2);
+    kstyle = NONE;
+  } else {
+    k = utils::numeric(FLERR,arg[3],false,lmp);
+    kstyle = CONSTANT;
+    if (k <= 0.0) error->all(FLERR,"Illegal force constatnt for fix spring/self command");
+  }
 
   xflag = yflag = zflag = 1;
 
@@ -123,6 +132,25 @@ int FixSpringSelf::setmask()
 
 void FixSpringSelf::init()
 {
+  // check variable
+
+  if (kstr) {
+    kvar = input->variable->find(kstr);
+    if (kvar < 0) error->all(FLERR, "Variable {} for fix spring/self does not exist", kstr);
+    if (input->variable->equalstyle(kvar))
+      kstyle = EQUAL;
+    else if (input->variable->atomstyle(kvar))
+      kstyle = ATOM;
+    else
+      error->all(FLERR, "Variable {} for fix spring/self is invalid style", kstr);
+  }
+  
+
+  if ((kstyle == ATOM) && (atom->nmax > maxatom)) {
+    maxatom = atom->nmax;
+    memory->destroy(kval);
+    memory->create(kval, maxatom, "sprint/self:kval");
+  }
   if (utils::strmatch(update->integrate_style,"^respa")) {
     ilevel_respa = (dynamic_cast<Respa *>(update->integrate))->nlevels-1;
     if (respa_level >= 0) ilevel_respa = MIN(respa_level,ilevel_respa);
@@ -162,24 +190,55 @@ void FixSpringSelf::post_force(int /*vflag*/)
   double dx,dy,dz;
   double unwrap[3];
 
+  // reallocate kval array if necessary
+
+  if ((kstyle == ATOM) && (atom->nmax > maxatom)) {
+    maxatom = atom->nmax;
+    memory->destroy(kval);
+    memory->create(kval, maxatom, "sprint/self:kval");
+  }
+
   espring = 0.0;
 
-  for (int i = 0; i < nlocal; i++)
-    if (mask[i] & groupbit) {
-      domain->unmap(x[i],image[i],unwrap);
-      dx = unwrap[0] - xoriginal[i][0];
-      dy = unwrap[1] - xoriginal[i][1];
-      dz = unwrap[2] - xoriginal[i][2];
-      if (!xflag) dx = 0.0;
-      if (!yflag) dy = 0.0;
-      if (!zflag) dz = 0.0;
-      f[i][0] -= k*dx;
-      f[i][1] -= k*dy;
-      f[i][2] -= k*dz;
-      espring += k * (dx*dx + dy*dy + dz*dz);
-    }
+  if ((kstyle == CONSTANT) || (kstyle == EQUAL)) {
+    // update k if equal style variable
+    if (kstyle == EQUAL) k = input->variable->compute_equal(kvar);
+  
+    for (int i = 0; i < nlocal; i++)
+      if (mask[i] & groupbit) {
+        domain->unmap(x[i],image[i],unwrap);
+        dx = unwrap[0] - xoriginal[i][0];
+        dy = unwrap[1] - xoriginal[i][1];
+        dz = unwrap[2] - xoriginal[i][2];
+        if (!xflag) dx = 0.0;
+        if (!yflag) dy = 0.0;
+        if (!zflag) dz = 0.0;
+        f[i][0] -= k*dx;
+        f[i][1] -= k*dy;
+        f[i][2] -= k*dz;
+        espring += k * (dx*dx + dy*dy + dz*dz);
+      }
+    espring *= 0.5;
+  } else {
+    // update kval for kstyle == ATOM
+    input->variable->compute_atom(kvar, igroup, kval, 1, 0);
+    for (int i = 0; i < nlocal; i++)
+      if (mask[i] & groupbit) {
+        domain->unmap(x[i],image[i],unwrap);
+        dx = unwrap[0] - xoriginal[i][0];
+        dy = unwrap[1] - xoriginal[i][1];
+        dz = unwrap[2] - xoriginal[i][2];
+        if (!xflag) dx = 0.0;
+        if (!yflag) dy = 0.0;
+        if (!zflag) dz = 0.0;
+        f[i][0] -= kval[i]*dx;
+        f[i][1] -= kval[i]*dy;
+        f[i][2] -= kval[i]*dz;
+        espring += kval[i] * (dx*dx + dy*dy + dz*dz);
+      }
 
-  espring *= 0.5;
+    espring *= 0.5;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -213,7 +272,8 @@ double FixSpringSelf::compute_scalar()
 
 double FixSpringSelf::memory_usage()
 {
-  double bytes = (double)atom->nmax*3 * sizeof(double);
+  double bytes = (double)atom->nmax*4 * sizeof(double);
+  if (kstyle == ATOM) bytes += (double)atom->nmax * sizeof(double);
   return bytes;
 }
 
