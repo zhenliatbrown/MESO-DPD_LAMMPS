@@ -194,8 +194,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
       if (iarg + ntypes + 1 > narg)
         utils::missing_cmd_args(FLERR, "fix reaxff/species element", error);
 
-      for (int i = 0; i < ntypes; i++)
-        eletype[i] = arg[iarg + 1 + i];
+      for (int i = 0; i < ntypes; i++) eletype[i] = arg[iarg + 1 + i];
       GetUniqueElements();
       iarg += ntypes + 1;
 
@@ -349,8 +348,7 @@ void FixReaxFFSpecies::setup(int /*vflag*/)
   ntotal = static_cast<int>(atom->natoms);
 
   if (!eleflag) {
-    for (int i = 0; i < ntypes; i++)
-      eletype[i] = reaxff->eletype[i+1];
+    for (int i = 0; i < ntypes; i++) eletype[i] = reaxff->eletype[i + 1];
     GetUniqueElements();
   }
   memory->destroy(Name);
