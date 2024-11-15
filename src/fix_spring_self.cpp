@@ -144,7 +144,7 @@ void FixSpringSelf::init()
     else
       error->all(FLERR, "Variable {} for fix spring/self is invalid style", kstr);
   }
-  
+
 
   if ((kstyle == ATOM) && (atom->nmax > maxatom)) {
     maxatom = atom->nmax;
@@ -203,7 +203,7 @@ void FixSpringSelf::post_force(int /*vflag*/)
   if ((kstyle == CONSTANT) || (kstyle == EQUAL)) {
     // update k if equal style variable
     if (kstyle == EQUAL) k = input->variable->compute_equal(kvar);
-  
+
     for (int i = 0; i < nlocal; i++)
       if (mask[i] & groupbit) {
         domain->unmap(x[i],image[i],unwrap);
