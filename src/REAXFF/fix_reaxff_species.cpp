@@ -143,9 +143,10 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
   x0 = nullptr;
   clusterID = nullptr;
 
-  int ntmp = 1;
+  int ntmp = atom->nmax;
   memory->create(x0, ntmp, "reaxff/species:x0");
   memory->create(clusterID, ntmp, "reaxff/species:clusterID");
+  memset(clusterID, 0, sizeof(double) * ntmp);
   vector_atom = clusterID;
 
   nmax = 0;
@@ -441,6 +442,7 @@ void FixReaxFFSpecies::Output_ReaxFF_Bonds(bigint ntimestep, FILE * /*fp*/)
     memory->destroy(clusterID);
     memory->create(x0, nmax, "reaxff/species:x0");
     memory->create(clusterID, nmax, "reaxff/species:clusterID");
+    memset(clusterID, 0, sizeof(double) * nmax);
     vector_atom = clusterID;
   }
 
