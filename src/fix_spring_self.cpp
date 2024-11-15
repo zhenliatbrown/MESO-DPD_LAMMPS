@@ -55,7 +55,7 @@ FixSpringSelf::FixSpringSelf(LAMMPS *lmp, int narg, char **arg) :
   } else {
     k = utils::numeric(FLERR,arg[3],false,lmp);
     kstyle = CONSTANT;
-    if (k <= 0.0) error->all(FLERR,"Illegal force constatnt for fix spring/self command");
+    if (k <= 0.0) error->all(FLERR,"Illegal force constant for fix spring/self command");
   }
 
   xflag = yflag = zflag = 1;
@@ -202,8 +202,11 @@ void FixSpringSelf::post_force(int /*vflag*/)
 
   if ((kstyle == CONSTANT) || (kstyle == EQUAL)) {
     // update k if equal style variable
-    if (kstyle == EQUAL) k = input->variable->compute_equal(kvar);
-
+    if (kstyle == EQUAL) {
+      k = input->variable->compute_equal(kvar);
+      if (k < 0.0)
+        error->all(FLERR,"Evaluation of {} gave bad value {} for fix spring/self", kstr, k);
+    }
     for (int i = 0; i < nlocal; i++)
       if (mask[i] & groupbit) {
         domain->unmap(x[i],image[i],unwrap);
