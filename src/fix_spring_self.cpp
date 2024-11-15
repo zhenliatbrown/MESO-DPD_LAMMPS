@@ -37,7 +37,7 @@ enum { NONE, CONSTANT, EQUAL, ATOM };
 /* ---------------------------------------------------------------------- */
 
 FixSpringSelf::FixSpringSelf(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg), xoriginal(nullptr), kstr(nullptr)
+  Fix(lmp, narg, arg), xoriginal(nullptr), kstr(nullptr), kval(nullptr)
 {
   if ((narg < 4) || (narg > 5))
     error->all(FLERR,"Illegal fix spring/self command");
@@ -48,6 +48,8 @@ FixSpringSelf::FixSpringSelf(LAMMPS *lmp, int narg, char **arg) :
   extscalar = 1;
   energy_global_flag = 1;
   respa_level_support = 1;
+  maxatom = 0;
+  kvar = -1;
 
   if (utils::strmatch(arg[3], "^v_")) {
     kstr = utils::strdup(arg[3] + 2);
