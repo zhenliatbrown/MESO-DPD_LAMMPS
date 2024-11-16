@@ -123,7 +123,12 @@ that will be used in the colvars module.
 
 ----------
 
-.. include:: accel_styles.rst
+.. note::
+
+   Fix colvars/kk is not really ported to KOKKOS, since the colvars
+   library has not been ported to KOKKOS.  It merely has some
+   optimizations to reduce the data transfers between host and device
+   for KOKKOS with GPUs.
 
 ----------
 
