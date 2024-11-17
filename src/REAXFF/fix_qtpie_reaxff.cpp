@@ -200,7 +200,7 @@ void FixQtpieReaxFF::pertype_parameters(char *arg)
     gauss_exp[0] = 0.0;
     try {
       FILE *fp = utils::open_potential(gauss_file, lmp, nullptr);
-      if (!fp) throw TokenizerException("Fix qtpie/reaxff: coul not open gauss file", gauss_file);
+      if (!fp) throw TokenizerException("Fix qtpie/reaxff: could not open gauss file", gauss_file);
       TextFileReader reader(fp,"qtpie/reaxff gaussian exponents");
       reader.ignore_comments = true;
       for (int i = 1; i <= ntypes; i++) {
