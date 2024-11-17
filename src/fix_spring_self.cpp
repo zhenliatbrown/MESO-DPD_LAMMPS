@@ -112,8 +112,10 @@ FixSpringSelf::~FixSpringSelf()
   atom->delete_callback(id,Atom::GROW);
   atom->delete_callback(id,Atom::RESTART);
 
-  // delete locally stored array
+  // delete locally stored arrays
 
+  delete[] kstr;
+  memory->destroy(kval);
   memory->destroy(xoriginal);
 }
 
