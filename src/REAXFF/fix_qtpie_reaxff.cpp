@@ -199,7 +199,9 @@ void FixQtpieReaxFF::pertype_parameters(char *arg)
   if (comm->me == 0) {
     gauss_exp[0] = 0.0;
     try {
-      TextFileReader reader(gauss_file,"qtpie/reaxff gaussian exponents");
+      FILE *fp = utils::open_potential(gauss_file, lmp, nullptr);
+      if (!fp) throw TokenizerException("Fix qtpie/reaxff: could not open gauss file", gauss_file);
+      TextFileReader reader(fp,"qtpie/reaxff gaussian exponents");
       reader.ignore_comments = true;
       for (int i = 1; i <= ntypes; i++) {
         const char *line = reader.next_line();
@@ -370,7 +372,7 @@ void FixQtpieReaxFF::allocate_matrix()
   int mincap;
   double safezone;
 
-  if (reaxflag) {
+  if (reaxflag && reaxff) {
     mincap = reaxff->api->system->mincap;
     safezone = reaxff->api->system->safezone;
   } else {
