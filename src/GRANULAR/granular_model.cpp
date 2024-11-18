@@ -271,6 +271,9 @@ void GranularModel::init()
   if (limit_damping && normal_model->get_cohesive_flag())
     error->all(FLERR,"Cannot limit damping with a cohesive normal model, {}", normal_model->name);
 
+  if ((synchronized_verlet == 1) && (tangential_model->get_synchronization_flag()==0))
+    error->all(FLERR,"Cannot use synchronized verlet with a non-synchronized tangential model, {}", tangential_model->name);
+
   if (nondefault_history_transfer) {
     transfer_history_factor = new double[size_history];
 

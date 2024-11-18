@@ -85,20 +85,6 @@ void GranSubModRollingSDS::calculate_forces()
 
     frameupdate = (fabs(rolldotn) * k) > (EPSILON * Frcrit);
     if (frameupdate) rotate_rescale_vec(hist_temp, gm->nxuse, hist_temp);
-    // {    // rotate into tangential plane at half-step
-    //   rollmag = len3(hist_temp);
-    //   // projection
-    //   scale3(rolldotn, gm->nxuse, temp_array);
-    //   sub3(hist_temp, temp_array, hist_temp);
-
-    //   // also rescale to preserve magnitude
-    //   prjmag = len3(hist_temp);
-    //   if (prjmag > 0)
-    //     scalefac = rollmag / prjmag;
-    //   else
-    //     scalefac = 0;
-    //   scale3(scalefac, hist_temp);
-    // }
 
     // update history at half-step
     scale3(gm->dt, gm->vrl, temp_array);
@@ -108,20 +94,6 @@ void GranSubModRollingSDS::calculate_forces()
     rolldotn = dot3(hist_temp, gm->nx);
     frameupdate = (fabs(rolldotn) * k) > (EPSILON * Frcrit);
     if (frameupdate) rotate_rescale_vec(hist_temp, gm->nx, hist_temp);
-    // {    // rotate into tangential plane at full-step
-    //   rollmag = len3(hist_temp);
-    //   // projection
-    //   scale3(rolldotn, gm->nx, temp_array);
-    //   sub3(hist_temp, temp_array, hist_temp);
-
-    //   // also rescale to preserve magnitude
-    //   prjmag = len3(hist_temp);
-    //   if (prjmag > 0)
-    //     scalefac = rollmag / prjmag;
-    //   else
-    //     scalefac = 0;
-    //   scale3(scalefac, hist_temp);
-    // }
   }
 
   scaleadd3(-k, hist_temp, -gamma, gm->vrl, gm->fr);

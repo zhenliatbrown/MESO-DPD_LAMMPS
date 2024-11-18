@@ -44,6 +44,7 @@ GranSubMod::GranSubMod(class GranularModel *gm, LAMMPS *lmp) : Pointers(lmp)
   beyond_contact = 0;
   num_coeffs = 0;
   contact_radius_flag = 0;
+  allow_synchronization = 0;
 
   nondefault_history_transfer = 0;
   transfer_history_factor = nullptr;
@@ -132,7 +133,7 @@ double GranSubMod::mix_mean(double val1, double val2)
   return 0.5 * (val1 + val2);
 }
 
-void GranSubMod::rotate_rescale_vec(double *v, double *n, double *ans) 
+void GranSubMod::rotate_rescale_vec(double *v, double *n, double *ans)
 {
   double rsht, shrmag, prjmag, temp_dbl, temp_array[3];
 

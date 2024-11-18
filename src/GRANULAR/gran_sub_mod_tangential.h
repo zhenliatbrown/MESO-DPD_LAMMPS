@@ -38,6 +38,7 @@ namespace Granular_NS {
     GranSubModTangential(class GranularModel *, class LAMMPS *);
     virtual void calculate_forces() = 0;
 
+    int get_synchronization_flag() const { return allow_synchronization; }
     double get_k() const { return k; }
     double get_damp() const { return damp; }
     double get_mu() const { return mu; }
