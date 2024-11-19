@@ -134,6 +134,8 @@ class SNAKokkos {
   static constexpr int vector_length = vector_length_;
 
   using KKDeviceType = typename KKDevice<DeviceType>::value;
+  static constexpr LAMMPS_NS::ExecutionSpace execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
+  static constexpr int host_flag = (execution_space == LAMMPS_NS::Host);
 
   typedef Kokkos::View<int*, DeviceType> t_sna_1i;
   typedef Kokkos::View<real_type*, DeviceType> t_sna_1d;
@@ -182,7 +184,6 @@ class SNAKokkos {
   double memory_usage();
 
   int ncoeff;
-  int host_flag;
 
   // functions for bispectrum coefficients, GPU only
   KOKKOS_INLINE_FUNCTION

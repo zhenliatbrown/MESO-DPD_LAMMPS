@@ -34,9 +34,6 @@ SNAKokkos<DeviceType, real_type, vector_length>::SNAKokkos(real_type rfac0_in,
          int twojmax_in, real_type rmin0_in, int switch_flag_in, int bzero_flag_in,
          int chem_flag_in, int bnorm_flag_in, int wselfall_flag_in, int nelements_in, int switch_inner_flag_in)
 {
-  LAMMPS_NS::ExecutionSpace execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
-  host_flag = (execution_space == LAMMPS_NS::Host);
-
   wself = static_cast<real_type>(1.0);
 
   rfac0 = rfac0_in;
@@ -312,8 +309,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::grow_rij(int newnatom, int
   MemKK::realloc_kokkos(element,"sna:element",natom,nmax);
   MemKK::realloc_kokkos(dedr,"sna:dedr",natom,nmax,3);
 
-#ifdef LMP_KOKKOS_GPU
-  if (!host_flag) {
+  if constexpr (!host_flag) {
     const int natom_div = (natom + vector_length - 1) / vector_length;
 
     MemKK::realloc_kokkos(a_pack,"sna:a_pack",vector_length,nmax,natom_div);
@@ -336,7 +332,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::grow_rij(int newnatom, int
     MemKK::realloc_kokkos(ylist_pack_im,"sna:ylist_pack_im",vector_length,idxu_half_max,nelements,natom_div);
     MemKK::realloc_kokkos(dulist,"sna:dulist",1,1,1);
   } else {
-#endif
     MemKK::realloc_kokkos(a_pack,"sna:a_pack",1,1,1);
     MemKK::realloc_kokkos(b_pack,"sna:b_pack",1,1,1);
     MemKK::realloc_kokkos(da_pack,"sna:da_pack",1,1,1,1);
@@ -356,10 +351,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::grow_rij(int newnatom, int
     MemKK::realloc_kokkos(ylist_pack_re,"sna:ylist_pack_re",1,1,1,1);
     MemKK::realloc_kokkos(ylist_pack_im,"sna:ylist_pack_im",1,1,1,1);
     MemKK::realloc_kokkos(dulist,"sna:dulist",idxu_cache_max,natom,nmax);
-
-#ifdef LMP_KOKKOS_GPU
   }
-#endif
 }
 
 /* ----------------------------------------------------------------------
@@ -2339,8 +2331,7 @@ double SNAKokkos<DeviceType, real_type, vector_length>::memory_usage()
   bytes += MemKK::memory_usage(rootpqarray);
   bytes += MemKK::memory_usage(cglist);
 
-#ifdef LMP_KOKKOS_GPU
-  if (!host_flag) {
+  if constexpr (!host_flag) {
 
     bytes += MemKK::memory_usage(a_pack);
     bytes += MemKK::memory_usage(b_pack);
@@ -2359,7 +2350,6 @@ double SNAKokkos<DeviceType, real_type, vector_length>::memory_usage()
     bytes += MemKK::memory_usage(ylist_pack_re);
     bytes += MemKK::memory_usage(ylist_pack_im);
   } else {
-#endif
 
     bytes += MemKK::memory_usage(ulist);
     bytes += MemKK::memory_usage(ulisttot);
@@ -2371,9 +2361,7 @@ double SNAKokkos<DeviceType, real_type, vector_length>::memory_usage()
     bytes += MemKK::memory_usage(ylist);
 
     bytes += MemKK::memory_usage(dulist);
-#ifdef LMP_KOKKOS_GPU
   }
-#endif
 
   bytes += MemKK::memory_usage(dedr);
 

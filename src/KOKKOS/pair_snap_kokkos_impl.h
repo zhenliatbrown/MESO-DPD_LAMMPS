@@ -59,11 +59,8 @@ PairSNAPKokkos<DeviceType, real_type, vector_length>::PairSNAPKokkos(LAMMPS *lmp
 
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;
-  execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
   datamask_read = EMPTY_MASK;
   datamask_modify = EMPTY_MASK;
-
-  host_flag = (execution_space == Host);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -85,7 +82,7 @@ PairSNAPKokkos<DeviceType, real_type, vector_length>::~PairSNAPKokkos()
 template<class DeviceType, typename real_type, int vector_length>
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::init_style()
 {
-  //if (host_flag) {
+  //if constexpr (host_flag) {
   //  if (lmp->kokkos->nthreads > 1)
   //    error->all(FLERR,"Pair style snap/kk can currently only run on a single "
   //                       "CPU thread");
@@ -134,7 +131,7 @@ struct FindMaxNumNeighs {
 template<class DeviceType, typename real_type, int vector_length>
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in, int vflag_in)
 {
-  //if (host_flag) {
+  //if constexpr (host_flag) {
   //  atomKK->sync(Host,X_MASK|F_MASK|TYPE_MASK);
   //  PairSNAP::compute(eflag_in,vflag_in);
   //  atomKK->modified(Host,F_MASK);
@@ -197,13 +194,13 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
   Kokkos::parallel_reduce("PairSNAPKokkos::find_max_neighs",inum, FindMaxNumNeighs<DeviceType>(k_list), Kokkos::Max<int>(max_neighs));
 
   int team_size_default = 1;
-  if (!host_flag)
+  if constexpr (!host_flag)
     team_size_default = 32;//max_neighs;
 
   if (beta_max < inum) {
     beta_max = inum;
     MemKK::realloc_kokkos(d_beta,"PairSNAPKokkos:beta",ncoeff,inum);
-    if (!host_flag)
+    if constexpr (!host_flag)
       MemKK::realloc_kokkos(d_beta_pack,"PairSNAPKokkos:beta_pack",vector_length,ncoeff,(inum + vector_length - 1) / vector_length);
     MemKK::realloc_kokkos(d_ninside,"PairSNAPKokkos:ninside",inum);
   }
@@ -222,7 +219,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     if (chunk_size > inum - chunk_offset)
       chunk_size = inum - chunk_offset;
 
-    if (host_flag)
+    if constexpr (host_flag)
     {
       // Host codepath
 
@@ -297,7 +294,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
     } else { // GPU
 
-#ifdef LMP_KOKKOS_GPU
+      // The compiler will only hit this codepath if this is the GPU code
 
       // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
       const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
@@ -462,9 +459,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
         }
       }
-
-#endif // LMP_KOKKOS_GPU
-
     }
 
     //ComputeForce
@@ -1411,7 +1405,7 @@ double PairSNAPKokkos<DeviceType, real_type, vector_length>::memory_usage()
 {
   double bytes = Pair::memory_usage();
   bytes += MemKK::memory_usage(d_beta);
-  if (!host_flag)
+  if constexpr (!host_flag)
     bytes += MemKK::memory_usage(d_beta_pack);
   bytes += MemKK::memory_usage(d_ninside);
   bytes += MemKK::memory_usage(d_map);
