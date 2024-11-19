@@ -302,11 +302,11 @@ class SNAKokkos {
   t_sna_4c3_ll dulist;
 
   // Modified structures for GPU backend
-  t_sna_3c_ll a_pack; // Cayley-Klein `a`
-  t_sna_3c_ll b_pack; // `b`
-  t_sna_4c_ll da_pack; // `da`
-  t_sna_4c_ll db_pack; // `db`
-  t_sna_4d_ll sfac_pack; // sfac, dsfac_{x,y,z}
+  t_sna_2c a_gpu; // Cayley-Klein `a`
+  t_sna_2c b_gpu; // `b`
+  t_sna_3c da_gpu; // `da`
+  t_sna_3c db_gpu; // `db`
+  t_sna_3d sfac_gpu; // sfac, dsfac_{x,y,z}
 
   t_sna_4d_ll ulisttot_re_pack; // split real,
   t_sna_4d_ll ulisttot_im_pack; // imag, AoSoA, flattened
