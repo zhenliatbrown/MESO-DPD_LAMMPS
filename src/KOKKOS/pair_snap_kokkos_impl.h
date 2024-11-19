@@ -847,8 +847,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
     snaKK.ulisttot_gpu(iatom, idxu, ielem) = { utot_re, utot_im };
 
     if (mapper.flip_sign == 0) {
-      snaKK.ylist_re_gpu(iatom, mapper.idxu_half, ielem) = 0.;
-      snaKK.ylist_im_gpu(iatom, mapper.idxu_half, ielem) = 0.;
+      snaKK.ylist_re(iatom, ielem, mapper.idxu_half) = 0.;
+      snaKK.ylist_im(iatom, ielem, mapper.idxu_half) = 0.;
     }
   }
 }
@@ -1118,7 +1118,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
         snaKK.ulisttot_full(idxu, ielem, iatom) = utot;
 
         // Zero Yi
-        snaKK.ylist(idxu_half, ielem, iatom) = {0., 0.};
+        snaKK.ylist_re(iatom, ielem, idxu_half) = 0;
+        snaKK.ylist_im(iatom, ielem, idxu_half) = 0;
 
         // Symmetric term
         const int sign_factor = (((ma+mb)%2==0)?1:-1);

@@ -289,13 +289,17 @@ class SNAKokkos {
   // Beta for all atoms in list; aliases the object in PairSnapKokkos
   t_sna_2d d_beta;
 
+  // Structures for both the CPU, GPU backend
+  t_sna_3d ylist_re;
+  t_sna_3d ylist_im;
+
+  // Structures for the CPU backend only
   t_sna_3d blist;
   t_sna_3c_ll ulisttot;
   t_sna_3c_ll ulisttot_full; // un-folded ulisttot, cpu only
   t_sna_3c_ll zlist;
 
   t_sna_3c_ll ulist;
-  t_sna_3c_ll ylist;
 
   // derivatives of data
   t_sna_4c3_ll dulist;
@@ -312,8 +316,6 @@ class SNAKokkos {
   t_sna_3c ulisttot_gpu; // packed and de-symmetrized
   t_sna_3c zlist_gpu;
   t_sna_3d blist_gpu;
-  t_sna_3d ylist_re_gpu; // split real,
-  t_sna_3d ylist_im_gpu; // imag
 
   int idxcg_max, idxu_max, idxu_half_max, idxu_cache_max, idxz_max, idxb_max;
 
@@ -409,4 +411,3 @@ class SNAKokkos {
 
 #include "sna_kokkos_impl.h"
 #endif
-
