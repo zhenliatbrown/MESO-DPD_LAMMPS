@@ -290,13 +290,15 @@ class SNAKokkos {
   t_sna_2d d_beta;
 
   // Structures for both the CPU, GPU backend
+  t_sna_3d ulisttot_re;
+  t_sna_3d ulisttot_im;
+  t_sna_3c ulisttot; // un-folded ulisttot
+
   t_sna_3d ylist_re;
   t_sna_3d ylist_im;
 
   // Structures for the CPU backend only
   t_sna_3d blist;
-  t_sna_3c_ll ulisttot;
-  t_sna_3c_ll ulisttot_full; // un-folded ulisttot, cpu only
   t_sna_3c_ll zlist;
 
   t_sna_3c_ll ulist;
@@ -311,9 +313,6 @@ class SNAKokkos {
   t_sna_3c db_gpu; // `db`
   t_sna_3d sfac_gpu; // sfac, dsfac_{x,y,z}
 
-  t_sna_3d ulisttot_re_gpu; // split real,
-  t_sna_3d ulisttot_im_gpu; // imag, AoSoA, flattened
-  t_sna_3c ulisttot_gpu; // packed and de-symmetrized
   t_sna_3c zlist_gpu;
   t_sna_3d blist_gpu;
 

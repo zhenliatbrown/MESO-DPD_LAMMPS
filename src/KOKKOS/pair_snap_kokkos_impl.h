@@ -250,7 +250,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
       }
 
       {
-        // Expand ulisttot -> ulisttot_full
+        // Expand ulisttot_re,_im -> ulisttot
         // Zero out ylist
         typename Kokkos::MDRangePolicy<DeviceType, Kokkos::IndexType<int>, Kokkos::Rank<2, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, TagPairSNAPTransformUiCPU> policy_transform_ui_cpu({0,0},{twojmax+1,chunk_size});
         Kokkos::parallel_for("TransformUiCPU",policy_transform_ui_cpu,*this);
@@ -823,7 +823,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUi,const int iatom_mod, const int idxu, const int iatom_div) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUi, const int iatom_mod, const int idxu, const int iatom_div) const {
 
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
@@ -835,8 +835,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
     const FullHalfMapper mapper = snaKK.idxu_full_half[idxu];
 
-    auto utot_re = snaKK.ulisttot_re_gpu(iatom, mapper.idxu_half, ielem);
-    auto utot_im = snaKK.ulisttot_im_gpu(iatom, mapper.idxu_half, ielem);
+    auto utot_re = snaKK.ulisttot_re(iatom, ielem, mapper.idxu_half);
+    auto utot_im = snaKK.ulisttot_im(iatom, ielem, mapper.idxu_half);
 
     if (mapper.flip_sign == 1) {
       utot_im = -utot_im;
@@ -844,7 +844,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
       utot_re = -utot_re;
     }
 
-    snaKK.ulisttot_gpu(iatom, idxu, ielem) = { utot_re, utot_im };
+    snaKK.ulisttot(iatom, ielem, idxu) = { utot_re, utot_im };
 
     if (mapper.flip_sign == 0) {
       snaKK.ylist_re(iatom, ielem, mapper.idxu_half) = 0.;
@@ -1112,10 +1112,10 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
         const int idxu = jju + idxu_shift;
 
         // Load ulist
-        auto utot = snaKK.ulisttot(idxu_half, ielem, iatom);
+        complex utot = { snaKK.ulisttot_re(iatom, ielem, idxu_half), snaKK.ulisttot_im(iatom, ielem, idxu_half) };
 
         // Store
-        snaKK.ulisttot_full(idxu, ielem, iatom) = utot;
+        snaKK.ulisttot(iatom, ielem, idxu) = utot;
 
         // Zero Yi
         snaKK.ylist_re(iatom, ielem, idxu_half) = 0;
@@ -1131,7 +1131,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
           utot.re = -utot.re;
         }
 
-        snaKK.ulisttot_full(idxu_flip, ielem, iatom) = utot;
+        snaKK.ulisttot(iatom, ielem, idxu_flip) = utot;
       }
     }
   }
