@@ -746,26 +746,25 @@ template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeCayleyKlein,const int iatom_mod, const int jnbor, const int iatom_div) const {
 
-  const int ii = iatom_mod + iatom_div * vector_length;
-  if (ii >= chunk_size) return;
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
 
-  const int ninside = d_ninside(ii);
+  const int ninside = d_ninside(iatom);
   if (jnbor >= ninside) return;
 
-  snaKK.compute_cayley_klein(iatom_mod,jnbor,iatom_div);
+  snaKK.compute_cayley_klein(iatom,jnbor);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUi, const int iatom_mod, const int j, const int iatom_div) const {
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
 
-  const int ii = iatom_mod + iatom_div * vector_length;
-  if (ii >= chunk_size) return;
-
-  int itype = type(ii);
+  int itype = type(iatom);
   int ielem = d_map[itype];
 
-  snaKK.pre_ui(iatom_mod, j, ielem, iatom_div);
+  snaKK.pre_ui(iatom, j, ielem);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -834,8 +833,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
     const FullHalfMapper mapper = snaKK.idxu_full_half[idxu];
 
-    auto utot_re = snaKK.ulisttot_re_pack(iatom_mod, mapper.idxu_half, ielem, iatom_div);
-    auto utot_im = snaKK.ulisttot_im_pack(iatom_mod, mapper.idxu_half, ielem, iatom_div);
+    auto utot_re = snaKK.ulisttot_re_gpu(iatom, mapper.idxu_half, ielem);
+    auto utot_im = snaKK.ulisttot_im_gpu(iatom, mapper.idxu_half, ielem);
 
     if (mapper.flip_sign == 1) {
       utot_im = -utot_im;
@@ -843,7 +842,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
       utot_re = -utot_re;
     }
 
-    snaKK.ulisttot_pack(iatom_mod, idxu, ielem, iatom_div) = { utot_re, utot_im };
+    snaKK.ulisttot_gpu(iatom, idxu, ielem) = { utot_re, utot_im };
 
     if (mapper.flip_sign == 0) {
       snaKK.ylist_pack_re(iatom_mod, mapper.idxu_half, ielem, iatom_div) = 0.;

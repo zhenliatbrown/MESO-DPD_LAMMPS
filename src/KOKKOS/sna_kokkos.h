@@ -187,9 +187,9 @@ class SNAKokkos {
 
   // functions for bispectrum coefficients, GPU only
   KOKKOS_INLINE_FUNCTION
-  void compute_cayley_klein(const int&, const int&, const int&) const;
+  void compute_cayley_klein(const int&, const int&) const;
   KOKKOS_INLINE_FUNCTION
-  void pre_ui(const int&, const int&, const int&, const int&) const; // ForceSNAP
+  void pre_ui(const int&, const int&, const int&) const; // ForceSNAP
 
   // version of the code with parallelism over j_bend
   KOKKOS_INLINE_FUNCTION
@@ -223,7 +223,7 @@ class SNAKokkos {
   // plugged into compute_ui_small, compute_ui_large
   KOKKOS_FORCEINLINE_FUNCTION
   void evaluate_ui_jbend(const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&, const int&,
-                        const int&, const int&, const int&) const;
+                        const int&, const int&) const;
   // plugged into compute_zi, compute_yi
   KOKKOS_FORCEINLINE_FUNCTION
   complex evaluate_zi(const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&,
@@ -308,9 +308,9 @@ class SNAKokkos {
   t_sna_3c db_gpu; // `db`
   t_sna_3d sfac_gpu; // sfac, dsfac_{x,y,z}
 
-  t_sna_4d_ll ulisttot_re_pack; // split real,
-  t_sna_4d_ll ulisttot_im_pack; // imag, AoSoA, flattened
-  t_sna_4c_ll ulisttot_pack; // AoSoA layout
+  t_sna_3d_ll ulisttot_re_gpu; // split real,
+  t_sna_3d_ll ulisttot_im_gpu; // imag, AoSoA, flattened
+  t_sna_3c_ll ulisttot_gpu; // packed and de-symmetrized
   t_sna_4c_ll zlist_pack; // AoSoA layout
   t_sna_4d_ll blist_pack;
   t_sna_4d_ll ylist_pack_re; // split real,
