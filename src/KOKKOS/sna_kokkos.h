@@ -284,7 +284,7 @@ class SNAKokkos {
   t_sna_2d dinnerij;
   t_sna_2i element;
   t_sna_3d dedr;
-  int natom, nmax;
+  int natom, natom_pad, nmax;
 
   void grow_rij(int, int);
 
