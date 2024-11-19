@@ -782,10 +782,8 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(int iatom_mod, int jjz, int iatom_div,
- const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_gpu) const
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iatom, const int& jjz) const
 {
-  const int iatom = iatom_mod + vector_length * iatom_div;
   int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg;
   idxz(jjz).get_yi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg);
 
@@ -806,7 +804,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(int iatom_mod, 
       // pick out right beta value
       for (int elem3 = 0; elem3 < nelements; elem3++) {
 
-        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom_mod, elem1, elem2, elem3, iatom_div, beta_gpu);
+        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
 
         Kokkos::atomic_add(&(ylist_re_gpu(iatom, jju_half, elem3)), betaj * ztmp.re);
         Kokkos::atomic_add(&(ylist_im_gpu(iatom, jju_half, elem3)), betaj * ztmp.im);
@@ -823,10 +821,8 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(int iatom_mod, 
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(int iatom_mod, int jjz, int iatom_div,
- const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_gpu) const
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(const int& iatom, const int& jjz) const
 {
-  const int iatom = iatom_mod + vector_length * iatom_div;
   int j1, j2, j, jju_half;
   idxz(jjz).get_yi_with_zlist(j1, j2, j, jju_half);
 
@@ -841,7 +837,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(int 
       // pick out right beta value
       for (int elem3 = 0; elem3 < nelements; elem3++) {
 
-        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom_mod, elem1, elem2, elem3, iatom_div, beta_gpu);
+        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
 
         Kokkos::atomic_add(&(ylist_re_gpu(iatom, jju_half, elem3)), betaj * ztmp.re);
         Kokkos::atomic_add(&(ylist_im_gpu(iatom, jju_half, elem3)), betaj * ztmp.im);
@@ -907,8 +903,7 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<Devi
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_FORCEINLINE_FUNCTION
 typename SNAKokkos<DeviceType, real_type, vector_length>::real_type SNAKokkos<DeviceType, real_type, vector_length>::evaluate_beta_scaled(const int& j1, const int& j2, const int& j,
-          const int& iatom_mod, const int& elem1, const int& elem2, const int& elem3, const int& iatom_div,
-          const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_gpu) const {
+          const int& iatom, const int& elem1, const int& elem2, const int& elem3) const {
 
   real_type betaj = 0;
 
@@ -916,18 +911,18 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::real_type SNAKokkos<De
     const int jjb = idxb_block(j1, j2, j);
     const int itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max + jjb;
     if (j1 == j) {
-      if (j2 == j) betaj = static_cast<real_type>(3) * beta_gpu(iatom_mod, itriple, iatom_div);
-      else betaj = static_cast<real_type>(2) * beta_gpu(iatom_mod, itriple, iatom_div);
-    } else betaj = beta_gpu(iatom_mod, itriple, iatom_div);
+      if (j2 == j) betaj = static_cast<real_type>(3) * d_beta(iatom, itriple);
+      else betaj = static_cast<real_type>(2) * d_beta(iatom, itriple);
+    } else betaj = d_beta(iatom, itriple);
   } else if (j >= j2) {
     const int jjb = idxb_block(j, j2, j1);
     const int itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
-    if (j2 == j) betaj = static_cast<real_type>(2) * beta_gpu(iatom_mod, itriple, iatom_div);
-    else betaj = beta_gpu(iatom_mod, itriple, iatom_div);
+    if (j2 == j) betaj = static_cast<real_type>(2) * d_beta(iatom, itriple);
+    else betaj = d_beta(iatom, itriple);
   } else {
     const int jjb = idxb_block(j2, j, j1);
     const int itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
-    betaj = beta_gpu(iatom_mod, itriple, iatom_div);
+    betaj = d_beta(iatom, itriple);
   }
 
   if (!bnorm_flag && j1 > j) {
@@ -1402,8 +1397,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi_cpu(const typen
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_cpu(int iter,
- const Kokkos::View<real_type**, DeviceType> &beta) const
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_cpu(int iter) const
 {
   real_type betaj;
   const int iatom = iter / idxz_max;
@@ -1470,18 +1464,18 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_cpu(int iter,
           const int jjb = idxb_block(j1, j2, j);
           const int itriple = ((elem1 * nelements + elem2) * nelements + elem3) * idxb_max + jjb;
           if (j1 == j) {
-            if (j2 == j) betaj = 3 * beta(itriple, iatom);
-            else betaj = 2 * beta(itriple, iatom);
-          } else betaj = beta(itriple, iatom);
+            if (j2 == j) betaj = 3 * d_beta(iatom, itriple);
+            else betaj = 2 * d_beta(iatom, itriple);
+          } else betaj = d_beta(iatom, itriple);
         } else if (j >= j2) {
           const int jjb = idxb_block(j, j2, j1);
           const int itriple = ((elem3 * nelements + elem2) * nelements + elem1) * idxb_max + jjb;
-          if (j2 == j) betaj = 2 * beta(itriple, iatom);
-          else betaj = beta(itriple, iatom);
+          if (j2 == j) betaj = 2 * d_beta(iatom, itriple);
+          else betaj = d_beta(iatom, itriple);
         } else {
           const int jjb = idxb_block(j2, j, j1);
           const int itriple = ((elem2 * nelements + elem3) * nelements + elem1) * idxb_max + jjb;
-          betaj = beta(itriple, iatom);
+          betaj = d_beta(iatom, itriple);
         }
 
         if (!bnorm_flag && j1 > j)

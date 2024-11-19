@@ -201,11 +201,9 @@ class SNAKokkos {
   KOKKOS_INLINE_FUNCTION
   void compute_zi(const int&, const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_yi(int,int,int,
-   const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack) const; // ForceSNAP
+  void compute_yi(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_yi_with_zlist(int,int,int,
-   const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack) const; // ForceSNAP
+  void compute_yi_with_zlist(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_bi(const int&, const int&) const;    // ForceSNAP
 
@@ -230,8 +228,7 @@ class SNAKokkos {
                         const int&, const int&, const int&, const real_type*) const;
   // plugged into compute_yi, compute_yi_with_zlist
   KOKKOS_FORCEINLINE_FUNCTION
-  real_type evaluate_beta_scaled(const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&,
-                        const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &) const;
+  real_type evaluate_beta_scaled(const int&, const int&, const int&, const int&, const int&, const int&, const int&) const;
   // plugged into compute_fused_deidrj_small, compute_fused_deidrj_large
   KOKKOS_FORCEINLINE_FUNCTION
   real_type evaluate_duidrj_jbend(const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&,
@@ -246,8 +243,7 @@ class SNAKokkos {
   KOKKOS_INLINE_FUNCTION
   void compute_zi_cpu(const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_yi_cpu(int,
-   const Kokkos::View<real_type**, DeviceType> &beta) const; // ForceSNAP
+  void compute_yi_cpu(int) const; // ForceSNAP
     KOKKOS_INLINE_FUNCTION
   void compute_bi_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int) const;    // ForceSNAP
 
@@ -289,6 +285,9 @@ class SNAKokkos {
   void grow_rij(int, int);
 
   int twojmax, diagonalstyle;
+
+  // Beta for all atoms in list; aliases the object in PairSnapKokkos
+  t_sna_2d d_beta;
 
   t_sna_3d blist;
   t_sna_3c_ll ulisttot;

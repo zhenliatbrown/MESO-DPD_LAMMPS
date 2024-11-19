@@ -199,16 +199,18 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
   if (beta_max < inum) {
     beta_max = inum;
-    MemKK::realloc_kokkos(d_beta,"PairSNAPKokkos:beta",ncoeff,inum);
-    if constexpr (!host_flag)
-      MemKK::realloc_kokkos(d_beta_pack,"PairSNAPKokkos:beta_pack",vector_length,ncoeff,(inum + vector_length - 1) / vector_length);
-    MemKK::realloc_kokkos(d_ninside,"PairSNAPKokkos:ninside",inum);
+    // padded allocation, similar to within grow_rij
+    const int inum_div = (inum + vector_length - 1) / vector_length;
+    const int inum_pad = inum_div * vector_length;
+    MemKK::realloc_kokkos(d_beta,"PairSNAPKokkos:beta", inum_pad, ncoeff);
+    snaKK.d_beta = d_beta;
+    MemKK::realloc_kokkos(d_ninside,"PairSNAPKokkos:ninside", inum);
   }
 
-  chunk_size = MIN(chunksize,inum); // "chunksize" variable is set by user
+  chunk_size = MIN(chunksize, inum); // "chunksize" variable is set by user
   chunk_offset = 0;
 
-  snaKK.grow_rij(chunk_size,max_neighs);
+  snaKK.grow_rij(chunk_size, max_neighs);
 
   EV_FLOAT ev;
 
@@ -271,8 +273,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
       //ComputeYi
       {
         //Compute beta = dE_i/dB_i for all i in list
-        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPBetaCPU> policy_beta(0,chunk_size);
-        Kokkos::parallel_for("ComputeBetaCPU",policy_beta,*this);
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPBeta> policy_beta(0,chunk_size);
+        Kokkos::parallel_for("ComputeBeta",policy_beta,*this);
 
         //ComputeYi
         int idxz_max = snaKK.idxz_max;
@@ -608,27 +610,23 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::coeff(int narg, char 
 }
 
 /* ----------------------------------------------------------------------
-   Begin routines that are unique to the GPU codepath. These take advantage
-   of AoSoA data layouts and scratch memory for recursive polynomials
+   Begin routines that are common to both the CPU and GPU codepath.
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPBeta,const int& ii) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPBeta, const int& iatom) const {
 
-  if (ii >= chunk_size) return;
+  if (iatom >= chunk_size) return;
 
-  const int iatom_mod = ii % vector_length;
-  const int iatom_div = ii / vector_length;
-
-  const int i = d_ilist[ii + chunk_offset];
+  const int i = d_ilist[iatom + chunk_offset];
   const int itype = type[i];
   const int ielem = d_map[itype];
 
   auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
 
   for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-    d_beta_pack(iatom_mod,icoeff,iatom_div) = d_coeffi[icoeff+1];
+    d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
   }
 
   if (quadraticflag) {
@@ -637,20 +635,25 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
     for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
       const auto idxb = icoeff % idxb_max;
       const auto idx_chem = icoeff / idxb_max;
-      real_type bveci = snaKK.blist(ii, idx_chem, idxb);
-      d_beta_pack(iatom_mod,icoeff,iatom_div) += d_coeffi[k]*bveci;
+      real_type bveci = snaKK.blist(iatom, idx_chem, idxb);
+      d_beta(iatom, icoeff) += d_coeffi[k] * bveci;
       k++;
       for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
         const auto jdxb = jcoeff % idxb_max;
         const auto jdx_chem = jcoeff / idxb_max;
-        real_type bvecj = snaKK.blist(ii, jdx_chem, jdxb);
-        d_beta_pack(iatom_mod,icoeff,iatom_div) += d_coeffi[k]*bvecj;
-        d_beta_pack(iatom_mod,jcoeff,iatom_div) += d_coeffi[k]*bveci;
+        real_type bvecj = snaKK.blist(iatom, jdx_chem, jdxb);
+        d_beta(iatom, icoeff) += d_coeffi[k] * bvecj;
+        d_beta(iatom, jcoeff) += d_coeffi[k] * bveci;
         k++;
       }
     }
   }
 }
+
+/* ----------------------------------------------------------------------
+   Begin routines that are unique to the GPU codepath. These take advantage
+   of AoSoA data layouts and scratch memory for recursive polynomials
+------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
@@ -859,7 +862,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
   if (jjz >= snaKK.idxz_max) return;
 
-  snaKK.compute_yi(iatom_mod,jjz,iatom_div,d_beta_pack);
+  snaKK.compute_yi(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -871,7 +874,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
   if (jjz >= snaKK.idxz_max) return;
 
-  snaKK.compute_yi_with_zlist(iatom_mod,jjz,iatom_div,d_beta_pack);
+  snaKK.compute_yi_with_zlist(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -976,40 +979,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
    that scratch memory optimizations will ever be useful for the CPU due to
    different arithmetic intensity requirements for the CPU vs GPU.
 ------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPBetaCPU,const int& ii) const {
-
-  const int i = d_ilist[ii + chunk_offset];
-  const int itype = type[i];
-  const int ielem = d_map[itype];
-
-  auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
-
-  for (int icoeff = 0; icoeff < ncoeff; icoeff++)
-    d_beta(icoeff,ii) = d_coeffi[icoeff+1];
-
-  if (quadraticflag) {
-    const auto idxb_max = snaKK.idxb_max;
-    int k = ncoeff+1;
-    for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-      const auto idxb = icoeff % idxb_max;
-      const auto idx_chem = icoeff / idxb_max;
-      real_type bveci = snaKK.blist(ii,idx_chem,idxb);
-      d_beta(icoeff,ii) += d_coeffi[k]*bveci;
-      k++;
-      for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
-        const auto jdxb = jcoeff % idxb_max;
-        const auto jdx_chem = jcoeff / idxb_max;
-        real_type bvecj = snaKK.blist(ii,jdx_chem,jdxb);
-        d_beta(icoeff,ii) += d_coeffi[k]*bvecj;
-        d_beta(jcoeff,ii) += d_coeffi[k]*bveci;
-        k++;
-      }
-    }
-  }
-}
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
@@ -1170,7 +1139,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiCPU,const int& ii) const {
-  snaKK.compute_yi_cpu(ii,d_beta);
+  snaKK.compute_yi_cpu(ii);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -1373,8 +1342,6 @@ double PairSNAPKokkos<DeviceType, real_type, vector_length>::memory_usage()
 {
   double bytes = Pair::memory_usage();
   bytes += MemKK::memory_usage(d_beta);
-  if constexpr (!host_flag)
-    bytes += MemKK::memory_usage(d_beta_pack);
   bytes += MemKK::memory_usage(d_ninside);
   bytes += MemKK::memory_usage(d_map);
   bytes += MemKK::memory_usage(d_radelem);

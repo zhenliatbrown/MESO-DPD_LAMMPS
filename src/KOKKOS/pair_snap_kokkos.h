@@ -36,6 +36,7 @@ PairStyle(snap/kk/host,PairSNAPKokkosDevice<LMPHostType>);
 namespace LAMMPS_NS {
 
 // Routines for both the CPU and GPU backend
+struct TagPairSNAPBeta{};
 template<int NEIGHFLAG, int EVFLAG>
 struct TagPairSNAPComputeForce{};
 
@@ -48,7 +49,6 @@ struct TagPairSNAPComputeUiSmall{}; // more parallelism, more divergence
 struct TagPairSNAPComputeUiLarge{}; // less parallelism, no divergence
 struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
 struct TagPairSNAPComputeZi{};
-struct TagPairSNAPBeta{};
 struct TagPairSNAPComputeBi{};
 struct TagPairSNAPTransformBi{}; // re-order blist from AoSoA to AoS
 struct TagPairSNAPComputeYi{};
@@ -64,7 +64,6 @@ struct TagPairSNAPPreUiCPU{};
 struct TagPairSNAPComputeUiCPU{};
 struct TagPairSNAPTransformUiCPU{};
 struct TagPairSNAPComputeZiCPU{};
-struct TagPairSNAPBetaCPU{};
 struct TagPairSNAPComputeBiCPU{};
 struct TagPairSNAPZeroYiCPU{};
 struct TagPairSNAPComputeYiCPU{};
@@ -151,6 +150,10 @@ class PairSNAPKokkos : public PairSNAP {
   template<class TagStyle>
   void check_team_size_reduce(int, int&);
 
+  // CPU and GPU backend
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPBeta, const int& ii) const;
+
   template<int NEIGHFLAG, int EVFLAG>
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeForce<NEIGHFLAG,EVFLAG>,const int& ii) const;
@@ -158,9 +161,6 @@ class PairSNAPKokkos : public PairSNAP {
   template<int NEIGHFLAG, int EVFLAG>
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeForce<NEIGHFLAG,EVFLAG>,const int& ii, EV_FLOAT&) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPBetaCPU,const int& ii) const;
 
   // GPU backend only
   KOKKOS_INLINE_FUNCTION
@@ -183,9 +183,6 @@ class PairSNAPKokkos : public PairSNAP {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeZi,const int iatom_mod, const int idxz, const int iatom_div) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPBeta, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeBi,const int iatom_mod, const int idxb, const int iatom_div) const;
@@ -267,8 +264,7 @@ class PairSNAPKokkos : public PairSNAP {
   Kokkos::View<real_type*, DeviceType> d_dinnerelem;           // element inner cutoff half-width
   Kokkos::View<T_INT*, DeviceType> d_map;                    // mapping from atom types to elements
   Kokkos::View<T_INT*, DeviceType> d_ninside;                // ninside for all atoms in list
-  Kokkos::View<real_type**, DeviceType> d_beta;                // betas for all atoms in list
-  Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> d_beta_pack;          // betas for all atoms in list, GPU
+  typename SNAKokkos<DeviceType, real_type, vector_length>::t_sna_2d d_beta;                // betas for all atoms in list
 
   typedef Kokkos::DualView<F_FLOAT**, DeviceType> tdual_fparams;
   tdual_fparams k_cutsq;
