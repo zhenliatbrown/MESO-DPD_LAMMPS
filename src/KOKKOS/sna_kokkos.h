@@ -187,84 +187,84 @@ class SNAKokkos {
 
   // functions for bispectrum coefficients, GPU only
   KOKKOS_INLINE_FUNCTION
-  void compute_cayley_klein(const int&, const int&, const int&);
+  void compute_cayley_klein(const int&, const int&, const int&) const;
   KOKKOS_INLINE_FUNCTION
-  void pre_ui(const int&, const int&, const int&, const int&); // ForceSNAP
+  void pre_ui(const int&, const int&, const int&, const int&) const; // ForceSNAP
 
   // version of the code with parallelism over j_bend
   KOKKOS_INLINE_FUNCTION
-  void compute_ui_small(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int, const int); // ForceSNAP
+  void compute_ui_small(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int, const int) const; // ForceSNAP
   // version of the code without parallelism over j_bend
   KOKKOS_INLINE_FUNCTION
-  void compute_ui_large(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int); // ForceSNAP
+  void compute_ui_large(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int) const; // ForceSNAP
 
   KOKKOS_INLINE_FUNCTION
-  void compute_zi(const int&, const int&, const int&);    // ForceSNAP
+  void compute_zi(const int&, const int&, const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_yi(int,int,int,
-   const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack); // ForceSNAP
+   const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_yi_with_zlist(int,int,int,
-   const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack); // ForceSNAP
+   const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_bi(const int&, const int&, const int&);    // ForceSNAP
+  void compute_bi(const int&, const int&, const int&) const;    // ForceSNAP
 
   // functions for derivatives, GPU only
   // version of the code with parallelism over j_bend
   template<int dir>
   KOKKOS_INLINE_FUNCTION
-  void compute_fused_deidrj_small(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int, const int); //ForceSNAP
+  void compute_fused_deidrj_small(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int, const int) const; //ForceSNAP
   // version of the code without parallelism over j_bend
   template<int dir>
   KOKKOS_INLINE_FUNCTION
-  void compute_fused_deidrj_large(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int); //ForceSNAP
+  void compute_fused_deidrj_large(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int) const; //ForceSNAP
 
   // core "evaluation" functions that get plugged into "compute" functions
   // plugged into compute_ui_small, compute_ui_large
   KOKKOS_FORCEINLINE_FUNCTION
   void evaluate_ui_jbend(const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&, const int&,
-                        const int&, const int&, const int&);
+                        const int&, const int&, const int&) const;
   // plugged into compute_zi, compute_yi
   KOKKOS_FORCEINLINE_FUNCTION
   complex evaluate_zi(const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&,
-                        const int&, const int&, const int&, const int&, const real_type*);
+                        const int&, const int&, const int&, const int&, const real_type*) const;
   // plugged into compute_yi, compute_yi_with_zlist
   KOKKOS_FORCEINLINE_FUNCTION
   real_type evaluate_beta_scaled(const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&,
-                        const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &);
+                        const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &) const;
   // plugged into compute_fused_deidrj_small, compute_fused_deidrj_large
   KOKKOS_FORCEINLINE_FUNCTION
   real_type evaluate_duidrj_jbend(const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&,
                         const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&,
-                        const int&, const int&, const int&, const int&);
+                        const int&, const int&, const int&, const int&) const;
 
   // functions for bispectrum coefficients, CPU only
   KOKKOS_INLINE_FUNCTION
-  void pre_ui_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team,const int&,const int&); // ForceSNAP
+  void pre_ui_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team,const int&,const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_ui_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int); // ForceSNAP
+  void compute_ui_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_zi_cpu(const int&);    // ForceSNAP
+  void compute_zi_cpu(const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_yi_cpu(int,
-   const Kokkos::View<real_type**, DeviceType> &beta); // ForceSNAP
+   const Kokkos::View<real_type**, DeviceType> &beta) const; // ForceSNAP
     KOKKOS_INLINE_FUNCTION
-  void compute_bi_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int);    // ForceSNAP
+  void compute_bi_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int) const;    // ForceSNAP
 
   // functions for derivatives, CPU only
   KOKKOS_INLINE_FUNCTION
-  void compute_duidrj_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int); //ForceSNAP
+  void compute_duidrj_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int) const; //ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_deidrj_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int); // ForceSNAP
+  void compute_deidrj_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int) const; // ForceSNAP
 
   KOKKOS_INLINE_FUNCTION
-  real_type compute_sfac(real_type, real_type, real_type, real_type); // add_uarraytot, compute_duarray
+  real_type compute_sfac(real_type, real_type, real_type, real_type) const; // add_uarraytot, compute_duarray
 
   KOKKOS_INLINE_FUNCTION
-  real_type compute_dsfac(real_type, real_type, real_type, real_type); // compute_duarray
+  real_type compute_dsfac(real_type, real_type, real_type, real_type) const; // compute_duarray
 
   KOKKOS_INLINE_FUNCTION
-  void compute_s_dsfac(const real_type, const real_type, const real_type, const real_type, real_type&, real_type&); // compute_cayley_klein
+  void compute_s_dsfac(const real_type, const real_type, const real_type, const real_type, real_type&, real_type&) const; // compute_cayley_klein
 
 #ifdef TIMING_INFO
   double* timers;
@@ -365,12 +365,12 @@ class SNAKokkos {
   void init_rootpqarray();    // init()
 
   KOKKOS_INLINE_FUNCTION
-  void add_uarraytot(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int, const real_type&, const real_type&, const real_type&, const real_type&, const real_type&, int); // compute_ui
+  void add_uarraytot(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int, const real_type&, const real_type&, const real_type&, const real_type&, const real_type&, int) const; // compute_ui
 
   KOKKOS_INLINE_FUNCTION
   void compute_uarray_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int,
                       const real_type&, const real_type&, const real_type&,
-                      const real_type&, const real_type&); // compute_ui_cpu
+                      const real_type&, const real_type&) const; // compute_ui_cpu
 
 
   inline
@@ -382,7 +382,7 @@ class SNAKokkos {
   void compute_duarray_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int,
                        const real_type&, const real_type&, const real_type&, // compute_duidrj_cpu
                            const real_type&, const real_type&, const real_type&, const real_type&, const real_type&,
-                           const real_type&, const real_type&);
+                           const real_type&, const real_type&) const;
 
   // Sets the style for the switching function
   // 0 = none
