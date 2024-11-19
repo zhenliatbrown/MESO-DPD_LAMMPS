@@ -199,7 +199,7 @@ class SNAKokkos {
   void compute_ui_large(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int) const; // ForceSNAP
 
   KOKKOS_INLINE_FUNCTION
-  void compute_zi(const int&, const int&, const int&) const;    // ForceSNAP
+  void compute_zi(const int&, const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_yi(int,int,int,
    const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack) const; // ForceSNAP
@@ -207,7 +207,7 @@ class SNAKokkos {
   void compute_yi_with_zlist(int,int,int,
    const Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> &beta_pack) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_bi(const int&, const int&, const int&) const;    // ForceSNAP
+  void compute_bi(const int&, const int&) const;    // ForceSNAP
 
   // functions for derivatives, GPU only
   // version of the code with parallelism over j_bend
@@ -227,7 +227,7 @@ class SNAKokkos {
   // plugged into compute_zi, compute_yi
   KOKKOS_FORCEINLINE_FUNCTION
   complex evaluate_zi(const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&,
-                        const int&, const int&, const int&, const int&, const real_type*) const;
+                        const int&, const int&, const int&, const real_type*) const;
   // plugged into compute_yi, compute_yi_with_zlist
   KOKKOS_FORCEINLINE_FUNCTION
   real_type evaluate_beta_scaled(const int&, const int&, const int&, const int&, const int&, const int&, const int&, const int&,
@@ -236,7 +236,7 @@ class SNAKokkos {
   KOKKOS_FORCEINLINE_FUNCTION
   real_type evaluate_duidrj_jbend(const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&,
                         const WignerWrapper<real_type, vector_length>&, const complex&, const complex&, const real_type&,
-                        const int&, const int&, const int&, const int&) const;
+                        const int&, const int&, const int&) const;
 
   // functions for bispectrum coefficients, CPU only
   KOKKOS_INLINE_FUNCTION
@@ -308,13 +308,13 @@ class SNAKokkos {
   t_sna_3c db_gpu; // `db`
   t_sna_3d sfac_gpu; // sfac, dsfac_{x,y,z}
 
-  t_sna_3d_ll ulisttot_re_gpu; // split real,
-  t_sna_3d_ll ulisttot_im_gpu; // imag, AoSoA, flattened
-  t_sna_3c_ll ulisttot_gpu; // packed and de-symmetrized
-  t_sna_4c_ll zlist_pack; // AoSoA layout
-  t_sna_4d_ll blist_pack;
-  t_sna_4d_ll ylist_pack_re; // split real,
-  t_sna_4d_ll ylist_pack_im; // imag AoSoA layout
+  t_sna_3d ulisttot_re_gpu; // split real,
+  t_sna_3d ulisttot_im_gpu; // imag, AoSoA, flattened
+  t_sna_3c ulisttot_gpu; // packed and de-symmetrized
+  t_sna_3c zlist_gpu;
+  t_sna_3d blist_gpu;
+  t_sna_3d ylist_re_gpu; // split real,
+  t_sna_3d ylist_im_gpu; // imag
 
   int idxcg_max, idxu_max, idxu_half_max, idxu_cache_max, idxz_max, idxb_max;
 

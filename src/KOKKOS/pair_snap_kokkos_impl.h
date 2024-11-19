@@ -824,7 +824,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
-
   if (idxu > snaKK.idxu_max) return;
 
   int elem_count = chemflag ? nelements : 1;
@@ -845,8 +844,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
     snaKK.ulisttot_gpu(iatom, idxu, ielem) = { utot_re, utot_im };
 
     if (mapper.flip_sign == 0) {
-      snaKK.ylist_pack_re(iatom_mod, mapper.idxu_half, ielem, iatom_div) = 0.;
-      snaKK.ylist_pack_im(iatom_mod, mapper.idxu_half, ielem, iatom_div) = 0.;
+      snaKK.ylist_re_gpu(iatom, mapper.idxu_half, ielem) = 0.;
+      snaKK.ylist_im_gpu(iatom, mapper.idxu_half, ielem) = 0.;
     }
   }
 }
@@ -881,10 +880,9 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
-
   if (jjz >= snaKK.idxz_max) return;
 
-  snaKK.compute_zi(iatom_mod,jjz,iatom_div);
+  snaKK.compute_zi(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -896,7 +894,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
   if (jjb >= snaKK.idxb_max) return;
 
-  snaKK.compute_bi(iatom_mod,jjb,iatom_div);
+  snaKK.compute_bi(iatom,jjb);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -905,14 +903,13 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
-
   if (idxb >= snaKK.idxb_max) return;
 
   const int ntriples = snaKK.ntriples;
 
   for (int itriple = 0; itriple < ntriples; itriple++) {
 
-    const real_type blocal = snaKK.blist_pack(iatom_mod, idxb, itriple, iatom_div);
+    const real_type blocal = snaKK.blist_gpu(iatom, idxb, itriple);
 
     snaKK.blist(iatom, itriple, idxb) = blocal;
   }
