@@ -244,8 +244,6 @@ class SNAKokkos {
   void compute_zi_cpu(const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_yi_cpu(int) const; // ForceSNAP
-    KOKKOS_INLINE_FUNCTION
-  void compute_bi_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int) const;    // ForceSNAP
 
   // functions for derivatives, CPU only
   KOKKOS_INLINE_FUNCTION
@@ -294,12 +292,13 @@ class SNAKokkos {
   t_sna_3d ulisttot_im;
   t_sna_3c ulisttot; // un-folded ulisttot
 
+  t_sna_3c zlist;
+  t_sna_3d blist;
+
   t_sna_3d ylist_re;
   t_sna_3d ylist_im;
 
   // Structures for the CPU backend only
-  t_sna_3d blist;
-  t_sna_3c_ll zlist;
 
   t_sna_3c_ll ulist;
 
@@ -312,9 +311,6 @@ class SNAKokkos {
   t_sna_3c da_gpu; // `da`
   t_sna_3c db_gpu; // `db`
   t_sna_3d sfac_gpu; // sfac, dsfac_{x,y,z}
-
-  t_sna_3c zlist_gpu;
-  t_sna_3d blist_gpu;
 
   int idxcg_max, idxu_max, idxu_half_max, idxu_cache_max, idxz_max, idxb_max;
 

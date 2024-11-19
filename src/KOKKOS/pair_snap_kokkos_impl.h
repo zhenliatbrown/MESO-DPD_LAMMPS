@@ -264,9 +264,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
         Kokkos::parallel_for("ComputeZiCPU",policy_zi_cpu,*this);
 
         //ComputeBi
-        int team_size = team_size_default;
-        check_team_size_for<TagPairSNAPComputeBiCPU>(chunk_size,team_size);
-        typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeBiCPU> policy_bi_cpu(chunk_size,team_size,vector_length);
+        int idxb_max = snaKK.idxb_max;
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPComputeBiCPU> policy_bi_cpu(0, chunk_size * idxb_max);
         Kokkos::parallel_for("ComputeBiCPU",policy_bi_cpu,*this);
       }
 
@@ -381,13 +380,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
         Snap3DRangePolicy<DeviceType, tile_size_compute_bi, TagPairSNAPComputeBi>
             policy_compute_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_compute_bi,1});
         Kokkos::parallel_for("ComputeBi",policy_compute_bi,*this);
-
-        //Transform data layout of blist out of AoSoA
-        //We need this because `blist` gets used in ComputeForce which doesn't
-        //take advantage of AoSoA, which at best would only be beneficial on the margins
-        Snap3DRangePolicy<DeviceType, tile_size_transform_bi, TagPairSNAPTransformBi>
-            policy_transform_bi({0,0,0},{vector_length,idxb_max,chunk_size_div},{vector_length,tile_size_transform_bi,1});
-        Kokkos::parallel_for("TransformBi",policy_transform_bi,*this);
       }
 
       //Note zeroing `ylist` is fused into `TransformUi`.
@@ -901,25 +893,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformBi,const int iatom_mod, const int idxb, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-  if (idxb >= snaKK.idxb_max) return;
-
-  const int ntriples = snaKK.ntriples;
-
-  for (int itriple = 0; itriple < ntriples; itriple++) {
-
-    const real_type blocal = snaKK.blist_gpu(iatom, idxb, itriple);
-
-    snaKK.blist(iatom, itriple, idxb) = blocal;
-  }
-
-}
-
-template<class DeviceType, typename real_type, int vector_length>
 template<int dir>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeFusedDeidrjSmall<dir>,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeFusedDeidrjSmall<dir> >::member_type& team) const {
@@ -1151,9 +1124,10 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBiCPU,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeBiCPU>::member_type& team) const {
-  int ii = team.league_rank();
-  snaKK.compute_bi_cpu(team,ii);
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBiCPU, const int& ii) const {
+  const int iatom = ii / snaKK.idxb_max;
+  const int jjb = ii % snaKK.idxb_max;
+  snaKK.compute_bi(iatom, jjb);
 }
 
 template<class DeviceType, typename real_type, int vector_length>

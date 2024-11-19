@@ -40,7 +40,6 @@ struct TagPairSNAPBeta{};
 template<int NEIGHFLAG, int EVFLAG>
 struct TagPairSNAPComputeForce{};
 
-
 // GPU backend only
 struct TagPairSNAPComputeNeigh{};
 struct TagPairSNAPComputeCayleyKlein{};
@@ -50,7 +49,6 @@ struct TagPairSNAPComputeUiLarge{}; // less parallelism, no divergence
 struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
 struct TagPairSNAPComputeZi{};
 struct TagPairSNAPComputeBi{};
-struct TagPairSNAPTransformBi{}; // re-order blist from AoSoA to AoS
 struct TagPairSNAPComputeYi{};
 struct TagPairSNAPComputeYiWithZlist{};
 template<int dir>
@@ -188,9 +186,6 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeBi,const int iatom_mod, const int idxb, const int iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPTransformBi,const int iatom_mod, const int idxb, const int iatom_div) const;
-
-  KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeYi,const int iatom_mod, const int idxz, const int iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
@@ -221,7 +216,7 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeZiCPU,const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBiCPU,const typename Kokkos::TeamPolicy<DeviceType, TagPairSNAPComputeBiCPU>::member_type& team) const;
+  void operator() (TagPairSNAPComputeBiCPU, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeYiCPU,const int& ii) const;
