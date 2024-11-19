@@ -204,7 +204,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     const int inum_pad = inum_div * vector_length;
     MemKK::realloc_kokkos(d_beta,"PairSNAPKokkos:beta", inum_pad, ncoeff);
     snaKK.d_beta = d_beta;
-    MemKK::realloc_kokkos(d_ninside,"PairSNAPKokkos:ninside", inum);
+    MemKK::realloc_kokkos(d_ninside,"PairSNAPKokkos:ninside", inum_pad);
   }
 
   chunk_size = MIN(chunksize, inum); // "chunksize" variable is set by user
@@ -235,17 +235,14 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
       //PreUi
       {
-        int team_size = team_size_default;
-        check_team_size_for<TagPairSNAPPreUiCPU>(chunk_size,team_size);
-        typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPPreUiCPU> policy_preui_cpu((chunk_size+team_size-1)/team_size,team_size,vector_length);
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPPreUiCPU> policy_preui_cpu(0, chunk_size);
         Kokkos::parallel_for("PreUiCPU",policy_preui_cpu,*this);
       }
 
       // ComputeUi
       {
-        int team_size = team_size_default;
         // Fused calculation of ulist and accumulation into ulisttot using atomics
-        typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeUiCPU> policy_ui_cpu(((chunk_size+team_size-1)/team_size)*max_neighs,team_size,vector_length);
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPComputeUiCPU> policy_ui_cpu(0, chunk_size*max_neighs);
         Kokkos::parallel_for("ComputeUiCPU",policy_ui_cpu,*this);
       }
 
@@ -283,13 +280,10 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
       //ComputeDuidrj and Deidrj
       {
-        int team_size = team_size_default;
-
-        typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeDuidrjCPU> policy_duidrj_cpu(((chunk_size+team_size-1)/team_size)*max_neighs,team_size,vector_length);
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPComputeDuidrjCPU> policy_duidrj_cpu(0,chunk_size*max_neighs);
         Kokkos::parallel_for("ComputeDuidrjCPU",policy_duidrj_cpu,*this);
 
-        typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeDeidrjCPU> policy_deidrj_cpu(((chunk_size+team_size-1)/team_size)*max_neighs,team_size,vector_length);
-
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPComputeDeidrjCPU> policy_deidrj_cpu(0,chunk_size*max_neighs);
         Kokkos::parallel_for("ComputeDeidrjCPU",policy_deidrj_cpu,*this);
       }
 
@@ -602,47 +596,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::coeff(int narg, char 
 }
 
 /* ----------------------------------------------------------------------
-   Begin routines that are common to both the CPU and GPU codepath.
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPBeta, const int& iatom) const {
-
-  if (iatom >= chunk_size) return;
-
-  const int i = d_ilist[iatom + chunk_offset];
-  const int itype = type[i];
-  const int ielem = d_map[itype];
-
-  auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
-
-  for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-    d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
-  }
-
-  if (quadraticflag) {
-    const auto idxb_max = snaKK.idxb_max;
-    int k = ncoeff+1;
-    for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-      const auto idxb = icoeff % idxb_max;
-      const auto idx_chem = icoeff / idxb_max;
-      real_type bveci = snaKK.blist(iatom, idx_chem, idxb);
-      d_beta(iatom, icoeff) += d_coeffi[k] * bveci;
-      k++;
-      for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
-        const auto jdxb = jcoeff % idxb_max;
-        const auto jdx_chem = jcoeff / idxb_max;
-        real_type bvecj = snaKK.blist(iatom, jdx_chem, jdxb);
-        d_beta(iatom, icoeff) += d_coeffi[k] * bvecj;
-        d_beta(iatom, jcoeff) += d_coeffi[k] * bveci;
-        k++;
-      }
-    }
-  }
-}
-
-/* ----------------------------------------------------------------------
    Begin routines that are unique to the GPU codepath. These take advantage
    of AoSoA data layouts and scratch memory for recursive polynomials
 ------------------------------------------------------------------------- */
@@ -739,222 +692,6 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeCayleyKlein,const int iatom_mod, const int jnbor, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-
-  const int ninside = d_ninside(iatom);
-  if (jnbor >= ninside) return;
-
-  snaKK.compute_cayley_klein(iatom,jnbor);
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUi, const int iatom_mod, const int j, const int iatom_div) const {
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-
-  int itype = type(iatom);
-  int ielem = d_map[itype];
-
-  snaKK.pre_ui(iatom, j, ielem);
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeUiSmall,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeUiSmall>::member_type& team) const {
-
-  // extract flattened atom_div / neighbor number / bend location
-  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_ui;
-
-  // extract neighbor index, iatom_div
-  int iatom_div = flattened_idx / (max_neighs * (twojmax + 1)); // removed "const" to work around GCC 7 bug
-  const int jj_jbend = flattened_idx - iatom_div * (max_neighs * (twojmax + 1));
-  const int jbend = jj_jbend / max_neighs;
-  int jj = jj_jbend - jbend * max_neighs; // removed "const" to work around GCC 7 bug
-
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
-    [&] (const int iatom_mod) {
-    const int ii = iatom_mod + vector_length * iatom_div;
-    if (ii >= chunk_size) return;
-
-    const int ninside = d_ninside(ii);
-    if (jj >= ninside) return;
-
-    snaKK.compute_ui_small(team, iatom_mod, jbend, jj, iatom_div);
-  });
-
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeUiLarge,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeUiLarge>::member_type& team) const {
-
-  // extract flattened atom_div / neighbor number / bend location
-  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_ui;
-
-  // extract neighbor index, iatom_div
-  int iatom_div = flattened_idx / max_neighs; // removed "const" to work around GCC 7 bug
-  int jj = flattened_idx - iatom_div * max_neighs;
-
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
-    [&] (const int iatom_mod) {
-    const int ii = iatom_mod + vector_length * iatom_div;
-    if (ii >= chunk_size) return;
-
-    const int ninside = d_ninside(ii);
-    if (jj >= ninside) return;
-
-    snaKK.compute_ui_large(team,iatom_mod, jj, iatom_div);
-  });
-
-}
-
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUi, const int iatom_mod, const int idxu, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-  if (idxu > snaKK.idxu_max) return;
-
-  int elem_count = chemflag ? nelements : 1;
-
-  for (int ielem = 0; ielem < elem_count; ielem++) {
-
-    const FullHalfMapper mapper = snaKK.idxu_full_half[idxu];
-
-    auto utot_re = snaKK.ulisttot_re(iatom, ielem, mapper.idxu_half);
-    auto utot_im = snaKK.ulisttot_im(iatom, ielem, mapper.idxu_half);
-
-    if (mapper.flip_sign == 1) {
-      utot_im = -utot_im;
-    } else if (mapper.flip_sign == -1) {
-      utot_re = -utot_re;
-    }
-
-    snaKK.ulisttot(iatom, ielem, idxu) = { utot_re, utot_im };
-
-    if (mapper.flip_sign == 0) {
-      snaKK.ylist_re(iatom, ielem, mapper.idxu_half) = 0.;
-      snaKK.ylist_im(iatom, ielem, mapper.idxu_half) = 0.;
-    }
-  }
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi,const int iatom_mod, const int jjz, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-
-  if (jjz >= snaKK.idxz_max) return;
-
-  snaKK.compute_yi(iatom, jjz);
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist,const int iatom_mod, const int jjz, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-
-  if (jjz >= snaKK.idxz_max) return;
-
-  snaKK.compute_yi_with_zlist(iatom, jjz);
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi,const int iatom_mod, const int jjz, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-  if (jjz >= snaKK.idxz_max) return;
-
-  snaKK.compute_zi(iatom, jjz);
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi,const int iatom_mod, const int jjb, const int iatom_div) const {
-
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-
-  if (jjb >= snaKK.idxb_max) return;
-
-  snaKK.compute_bi(iatom,jjb);
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-template<int dir>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeFusedDeidrjSmall<dir>,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeFusedDeidrjSmall<dir> >::member_type& team) const {
-
-  // extract flattened atom_div / neighbor number / bend location
-  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_fused_deidrj;
-
-  // extract neighbor index, iatom_div
-  int iatom_div = flattened_idx / (max_neighs * (twojmax + 1)); // removed "const" to work around GCC 7 bug
-  const int jj_jbend = flattened_idx - iatom_div * (max_neighs * (twojmax + 1));
-  const int jbend = jj_jbend / max_neighs;
-  int jj = jj_jbend - jbend * max_neighs; // removed "const" to work around GCC 7 bug
-
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
-    [&] (const int iatom_mod) {
-    const int ii = iatom_mod + vector_length * iatom_div;
-    if (ii >= chunk_size) return;
-
-    const int ninside = d_ninside(ii);
-    if (jj >= ninside) return;
-
-    snaKK.template compute_fused_deidrj_small<dir>(team, iatom_mod, jbend, jj, iatom_div);
-
-  });
-
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-template<int dir>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeFusedDeidrjLarge<dir>,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeFusedDeidrjLarge<dir> >::member_type& team) const {
-
-  // extract flattened atom_div / neighbor number / bend location
-  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_fused_deidrj;
-
-  // extract neighbor index, iatom_div
-  int iatom_div = flattened_idx / max_neighs; // removed "const" to work around GCC 7 bug
-  int jj = flattened_idx - max_neighs * iatom_div;
-
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
-    [&] (const int iatom_mod) {
-    const int ii = iatom_mod + vector_length * iatom_div;
-    if (ii >= chunk_size) return;
-
-    const int ninside = d_ninside(ii);
-    if (jj >= ninside) return;
-
-    snaKK.template compute_fused_deidrj_large<dir>(team, iatom_mod, jj, iatom_div);
-
-  });
-}
-
-/* ----------------------------------------------------------------------
-   Begin routines that are unique to the CPU codepath. These do not take
-   advantage of AoSoA data layouts, but that could be a good point of
-   future optimization and unification with the above kernels. It's unlikely
-   that scratch memory optimizations will ever be useful for the CPU due to
-   different arithmetic intensity requirements for the CPU vs GPU.
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeNeighCPU,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeNeighCPU>::member_type& team) const {
 
   int ii = team.league_rank();
@@ -1028,36 +765,156 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   });
 }
 
+/* ----------------------------------------------------------------------
+  Pre-compute the Cayley-Klein parameters for reuse in later routines.
+  GPU only.
+------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUiCPU,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPPreUiCPU>::member_type& team) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeCayleyKlein,const int iatom_mod, const int jnbor, const int iatom_div) const {
 
-  // Extract the atom number
-  const int ii = team.team_rank() + team.team_size() * team.league_rank();
-  if (ii >= chunk_size) return;
-  int itype = type(ii);
-  int ielem = d_map[itype];
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
 
-  snaKK.pre_ui_cpu(team,ii,ielem);
+  const int ninside = d_ninside(iatom);
+  if (jnbor >= ninside) return;
+
+  snaKK.compute_cayley_klein(iatom, jnbor);
 }
 
-
+/* ----------------------------------------------------------------------
+  Initialize the "ulisttot" structure with non-zero on-diagonal terms
+  and zero terms elsewhere; both CPU and GPU.
+------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeUiCPU,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeUiCPU>::member_type& team) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUi, const int iatom_mod, const int j, const int iatom_div) const {
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
 
-  // Extract the atom number
-  int ii = team.team_rank() + team.team_size() * (team.league_rank() % ((chunk_size+team.team_size()-1)/team.team_size()));
-  if (ii >= chunk_size) return;
+  int itype = type(iatom);
+  int ielem = d_map[itype];
 
-  // Extract the neighbor number
-  const int jj = team.league_rank() / ((chunk_size+team.team_size()-1)/team.team_size());
-  const int ninside = d_ninside(ii);
-  if (jj >= ninside) return;
+  snaKK.pre_ui(iatom, j, ielem);
+}
 
-  snaKK.compute_ui_cpu(team,ii,jj);
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUiCPU, const int& iatom) const {
+  const int itype = type(iatom);
+  const int ielem = d_map[itype];
+
+  snaKK.pre_ui_cpu(iatom, ielem);
+}
+
+/* ----------------------------------------------------------------------
+  Accumulate the spectral contributions from atom, neighbor pairs into
+  ulisttot_re and _im. These routines are GPU only and use scratch memory
+  staging.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeUiSmall,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeUiSmall>::member_type& team) const {
+
+  // extract flattened atom_div / neighbor number / bend location
+  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_ui;
+
+  // extract neighbor index, iatom_div
+  int iatom_div = flattened_idx / (max_neighs * (twojmax + 1)); // removed "const" to work around GCC 7 bug
+  const int jj_jbend = flattened_idx - iatom_div * (max_neighs * (twojmax + 1));
+  const int jbend = jj_jbend / max_neighs;
+  int jj = jj_jbend - jbend * max_neighs; // removed "const" to work around GCC 7 bug
+
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
+    [&] (const int iatom_mod) {
+    const int ii = iatom_mod + vector_length * iatom_div;
+    if (ii >= chunk_size) return;
+
+    const int ninside = d_ninside(ii);
+    if (jj >= ninside) return;
+
+    snaKK.compute_ui_small(team, iatom_mod, jbend, jj, iatom_div);
+  });
+
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeUiLarge,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeUiLarge>::member_type& team) const {
+
+  // extract flattened atom_div / neighbor number / bend location
+  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_ui;
+
+  // extract neighbor index, iatom_div
+  int iatom_div = flattened_idx / max_neighs; // removed "const" to work around GCC 7 bug
+  int jj = flattened_idx - iatom_div * max_neighs;
+
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
+    [&] (const int iatom_mod) {
+    const int ii = iatom_mod + vector_length * iatom_div;
+    if (ii >= chunk_size) return;
+
+    const int ninside = d_ninside(ii);
+    if (jj >= ninside) return;
+
+    snaKK.compute_ui_large(team,iatom_mod, jj, iatom_div);
+  });
+}
+
+/* ----------------------------------------------------------------------
+  Accumulate the spectral contributions from atom, neighbor pairs into
+  ulisttot_re and _im. This routine is CPU only and does not use staging.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeUiCPU, const int& ii) const {
+  const int iatom = ii / max_neighs;
+  const int jnbor = ii % max_neighs;
+  const int ninside = d_ninside(iatom);
+  if (jnbor >= ninside) return;
+
+  snaKK.compute_ui_cpu(iatom, jnbor);
+}
+
+/* ----------------------------------------------------------------------
+  De-symmetrize ulisttot_re and _im and pack it into a unified ulisttot
+  structure. Zero-initialize ylist. CPU and GPU.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUi, const int iatom_mod, const int idxu, const int iatom_div) const {
+
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (idxu > snaKK.idxu_max) return;
+
+  int elem_count = chemflag ? nelements : 1;
+
+  for (int ielem = 0; ielem < elem_count; ielem++) {
+
+    const FullHalfMapper mapper = snaKK.idxu_full_half[idxu];
+
+    auto utot_re = snaKK.ulisttot_re(iatom, ielem, mapper.idxu_half);
+    auto utot_im = snaKK.ulisttot_im(iatom, ielem, mapper.idxu_half);
+
+    if (mapper.flip_sign == 1) {
+      utot_im = -utot_im;
+    } else if (mapper.flip_sign == -1) {
+      utot_re = -utot_re;
+    }
+
+    snaKK.ulisttot(iatom, ielem, idxu) = { utot_re, utot_im };
+
+    if (mapper.flip_sign == 0) {
+      snaKK.ylist_re(iatom, ielem, mapper.idxu_half) = 0.;
+      snaKK.ylist_im(iatom, ielem, mapper.idxu_half) = 0.;
+    }
+  }
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -1110,16 +967,43 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   }
 }
 
+/* ----------------------------------------------------------------------
+  Compute all elements of the Z tensor and store them into the `zlist`
+  View. This is only used for energy timesteps or quadratic SNAP.
+  CPU and GPU.
+------------------------------------------------------------------------- */
+
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiCPU,const int& ii) const {
-  snaKK.compute_yi_cpu(ii);
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi,const int iatom_mod, const int jjz, const int iatom_div) const {
+
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (jjz >= snaKK.idxz_max) return;
+
+  snaKK.compute_zi(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZiCPU,const int& ii) const {
   snaKK.compute_zi_cpu(ii);
+}
+
+/* ----------------------------------------------------------------------
+  Compute the energy triple products and store in the "blist" View.
+  CPU and GPU.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi,const int iatom_mod, const int jjb, const int iatom_div) const {
+
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (jjb >= snaKK.idxb_max) return;
+
+  snaKK.compute_bi(iatom,jjb);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -1130,42 +1014,187 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   snaKK.compute_bi(iatom, jjb);
 }
 
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeDuidrjCPU,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeDuidrjCPU>::member_type& team) const {
 
-  // Extract the atom number
-  int ii = team.team_rank() + team.team_size() * (team.league_rank() % ((chunk_size+team.team_size()-1)/team.team_size()));
-  if (ii >= chunk_size) return;
-
-  // Extract the neighbor number
-  const int jj = team.league_rank() / ((chunk_size+team.team_size()-1)/team.team_size());
-  const int ninside = d_ninside(ii);
-  if (jj >= ninside) return;
-
-  snaKK.compute_duidrj_cpu(team,ii,jj);
-}
+/* ----------------------------------------------------------------------
+  Assemble the "beta" coefficients that enter the computation of the
+  adjoint matrices Y. For quadratic SNAP, this includes accumulating
+  energy triple products into an "effective" beta that encodes the
+  quadratic terms with otherwise linear compute work.
+  CPU and GPU.
+------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeDeidrjCPU,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeDeidrjCPU>::member_type& team) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPBeta, const int& iatom) const {
 
-  // Extract the atom number
-  int ii = team.team_rank() + team.team_size() * (team.league_rank() % ((chunk_size+team.team_size()-1)/team.team_size()));
-  if (ii >= chunk_size) return;
+  if (iatom >= chunk_size) return;
 
-  // Extract the neighbor number
-  const int jj = team.league_rank() / ((chunk_size+team.team_size()-1)/team.team_size());
-  const int ninside = d_ninside(ii);
-  if (jj >= ninside) return;
+  const int i = d_ilist[iatom + chunk_offset];
+  const int itype = type[i];
+  const int ielem = d_map[itype];
 
-  snaKK.compute_deidrj_cpu(team,ii,jj);
+  auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
+
+  for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
+    d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
+  }
+
+  if (quadraticflag) {
+    const auto idxb_max = snaKK.idxb_max;
+    int k = ncoeff+1;
+    for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
+      const auto idxb = icoeff % idxb_max;
+      const auto idx_chem = icoeff / idxb_max;
+      real_type bveci = snaKK.blist(iatom, idx_chem, idxb);
+      d_beta(iatom, icoeff) += d_coeffi[k] * bveci;
+      k++;
+      for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+        const auto jdxb = jcoeff % idxb_max;
+        const auto jdx_chem = jcoeff / idxb_max;
+        real_type bvecj = snaKK.blist(iatom, jdx_chem, jdxb);
+        d_beta(iatom, icoeff) += d_coeffi[k] * bvecj;
+        d_beta(iatom, jcoeff) += d_coeffi[k] * bveci;
+        k++;
+      }
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------
-   Also used for both CPU and GPU codepaths. Could maybe benefit from a
-   separate GPU/CPU codepath, but this kernel takes so little time it's
-   likely not worth it.
+  Compute all elements of the Z tensor and accumultate them into the
+  adjoint matrices Y (ylist_re, _im) on non-energy timesteps. CPU and GPU.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi,const int iatom_mod, const int jjz, const int iatom_div) const {
+
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (jjz >= snaKK.idxz_max) return;
+
+  snaKK.compute_yi(iatom, jjz);
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiCPU, const int& ii) const {
+  snaKK.compute_yi_cpu(ii);
+}
+
+/* ----------------------------------------------------------------------
+  Accumulate the pre-computed elements of the Z tensor into the adjoint
+  matrices Y (ylist_re, _im) on non-energy timesteps. CPU and GPU.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist,const int iatom_mod, const int jjz, const int iatom_div) const {
+
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (jjz >= snaKK.idxz_max) return;
+
+  snaKK.compute_yi_with_zlist(iatom, jjz);
+}
+
+/* ----------------------------------------------------------------------
+  Assemble the force contributions for each atom, neighbor pair by
+  contracting the adjoint matrices Y with derivatives of the Wigner
+  matrices U. These routines are GPU only and use scratch memory
+  staging.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+template<int dir>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeFusedDeidrjSmall<dir>,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeFusedDeidrjSmall<dir> >::member_type& team) const {
+
+  // extract flattened atom_div / neighbor number / bend location
+  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_fused_deidrj;
+
+  // extract neighbor index, iatom_div
+  int iatom_div = flattened_idx / (max_neighs * (twojmax + 1)); // removed "const" to work around GCC 7 bug
+  const int jj_jbend = flattened_idx - iatom_div * (max_neighs * (twojmax + 1));
+  const int jbend = jj_jbend / max_neighs;
+  int jj = jj_jbend - jbend * max_neighs; // removed "const" to work around GCC 7 bug
+
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
+    [&] (const int iatom_mod) {
+    const int ii = iatom_mod + vector_length * iatom_div;
+    if (ii >= chunk_size) return;
+
+    const int ninside = d_ninside(ii);
+    if (jj >= ninside) return;
+
+    snaKK.template compute_fused_deidrj_small<dir>(team, iatom_mod, jbend, jj, iatom_div);
+
+  });
+
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+template<int dir>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeFusedDeidrjLarge<dir>,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeFusedDeidrjLarge<dir> >::member_type& team) const {
+
+  // extract flattened atom_div / neighbor number / bend location
+  int flattened_idx = team.team_rank() + team.league_rank() * team_size_compute_fused_deidrj;
+
+  // extract neighbor index, iatom_div
+  int iatom_div = flattened_idx / max_neighs; // removed "const" to work around GCC 7 bug
+  int jj = flattened_idx - max_neighs * iatom_div;
+
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, vector_length),
+    [&] (const int iatom_mod) {
+    const int ii = iatom_mod + vector_length * iatom_div;
+    if (ii >= chunk_size) return;
+
+    const int ninside = d_ninside(ii);
+    if (jj >= ninside) return;
+
+    snaKK.template compute_fused_deidrj_large<dir>(team, iatom_mod, jj, iatom_div);
+
+  });
+}
+
+/* ----------------------------------------------------------------------
+  Assemble the derivatives of the Winger matrices U into the View
+  "dulist". CPU only.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeDuidrjCPU, const int& ii) const {
+  const int iatom = ii / max_neighs;
+  const int jnbor = ii % max_neighs;
+  const int ninside = d_ninside(iatom);
+  if (jnbor >= ninside) return;
+
+  snaKK.compute_duidrj_cpu(iatom, jnbor);
+}
+
+/* ----------------------------------------------------------------------
+  Assemble the force contributions for each atom, neighbor pair by
+  contracting the adjoint matrices Y with the pre-computed derivatives
+  of the Wigner matrices U. CPU only.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeDeidrjCPU, const int& ii) const {
+  const int iatom = ii / max_neighs;
+  const int jnbor = ii % max_neighs;
+  const int ninside = d_ninside(iatom);
+  if (jnbor >= ninside) return;
+
+  snaKK.compute_deidrj_cpu(iatom, jnbor);
+}
+
+/* ----------------------------------------------------------------------
+   This routine formally accumulates the "chunked" force contributions
+   into the broader LAMMPS "f" force View. As appropriate it
+   also accumulates the total energy and the virial. CPU and GPU.
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>

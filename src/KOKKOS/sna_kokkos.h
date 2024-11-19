@@ -237,9 +237,9 @@ class SNAKokkos {
 
   // functions for bispectrum coefficients, CPU only
   KOKKOS_INLINE_FUNCTION
-  void pre_ui_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team,const int&,const int&) const; // ForceSNAP
+  void pre_ui_cpu(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_ui_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int) const; // ForceSNAP
+  void compute_ui_cpu(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_zi_cpu(const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
@@ -247,9 +247,9 @@ class SNAKokkos {
 
   // functions for derivatives, CPU only
   KOKKOS_INLINE_FUNCTION
-  void compute_duidrj_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int) const; //ForceSNAP
+  void compute_duidrj_cpu(const int&, const int&) const; //ForceSNAP
   KOKKOS_INLINE_FUNCTION
-  void compute_deidrj_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int) const; // ForceSNAP
+  void compute_deidrj_cpu(const int&, const int&) const; // ForceSNAP
 
   KOKKOS_INLINE_FUNCTION
   real_type compute_sfac(real_type, real_type, real_type, real_type) const; // add_uarraytot, compute_duarray
@@ -358,11 +358,10 @@ class SNAKokkos {
   void init_rootpqarray();    // init()
 
   KOKKOS_INLINE_FUNCTION
-  void add_uarraytot(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int, const real_type&, const real_type&, const real_type&, const real_type&, const real_type&, int) const; // compute_ui
+  void add_uarraytot(int, int, const real_type&, const real_type&, const real_type&, const real_type&, const real_type&, int) const; // compute_ui
 
   KOKKOS_INLINE_FUNCTION
-  void compute_uarray_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int,
-                      const real_type&, const real_type&, const real_type&,
+  void compute_uarray_cpu(int, int, const real_type&, const real_type&, const real_type&,
                       const real_type&, const real_type&) const; // compute_ui_cpu
 
 
@@ -372,8 +371,7 @@ class SNAKokkos {
   inline
   int compute_ncoeff();           // SNAKokkos()
   KOKKOS_INLINE_FUNCTION
-  void compute_duarray_cpu(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, int, int,
-                       const real_type&, const real_type&, const real_type&, // compute_duidrj_cpu
+  void compute_duarray_cpu(int, int, const real_type&, const real_type&, const real_type&, // compute_duidrj_cpu
                            const real_type&, const real_type&, const real_type&, const real_type&, const real_type&,
                            const real_type&, const real_type&) const;
 
