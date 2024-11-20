@@ -464,7 +464,30 @@ void SNAKokkos<DeviceType, real_type, vector_length>::pre_ui(const int& iatom, c
       }
     }
   }
+}
 
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::pre_ui_cpu(const int& iatom, const int& ielem) const
+{
+  for (int jelem = 0; jelem < nelements; jelem++) {
+    for (int j = 0; j <= twojmax; j++) {
+      int jju = idxu_half_block(j); // removed "const" to work around GCC 7 bug
+
+      // Only diagonal elements get initialized
+      for (int m = 0; m < (j+1)*(j/2+1); m++) {
+        const int jjup = jju + m;
+
+        // if m is on the "diagonal", initialize it with the self energy.
+        // Otherwise zero it out
+        real_type init = 0;
+        if (m % (j+2) == 0 && (!chem_flag || ielem == jelem || wselfall_flag)) { init = wself; } //need to map iatom to element
+
+        ulisttot_re(iatom, jelem, jjup) = init;
+        ulisttot_im(iatom, jelem, jjup) = 0;
+      };
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -635,13 +658,157 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
     Kokkos::atomic_add(&(ulisttot_re(iatom, jelem, jjup + ma)), ulist_prev.re * sfac);
     Kokkos::atomic_add(&(ulisttot_im(iatom, jelem, jjup + ma)), ulist_prev.im * sfac);
   }
-
 }
 
 /* ----------------------------------------------------------------------
-   compute Zi by summing over products of Ui,
-   AoSoA data layout to take advantage of coalescing, avoiding warp
-   divergence. GPU version
+   compute Ui by summing over bispectrum components. CPU only.
+   See comments above compute_uarray_cpu and add_uarraytot for
+   data layout comments.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_cpu(const int& iatom, const int& jnbor) const
+{
+  real_type rsq, r, x, y, z, z0, theta0;
+
+  // utot(j,ma,mb) = 0 for all j,ma,ma
+  // utot(j,ma,ma) = 1 for all j,ma
+  // for j in neighbors of i:
+  //   compute r0 = (x,y,z,z0)
+  //   utot(j,ma,mb) += u(r0;j,ma,mb) for all j,ma,mb
+
+  x = rij(iatom,jnbor,0);
+  y = rij(iatom,jnbor,1);
+  z = rij(iatom,jnbor,2);
+  rsq = x * x + y * y + z * z;
+  r = sqrt(rsq);
+
+  theta0 = (r - rmin0) * rfac0 * MY_PI / (rcutij(iatom,jnbor) - rmin0);
+  //    theta0 = (r - rmin0) * rscale0;
+  z0 = r / tan(theta0);
+
+  compute_uarray_cpu(iatom, jnbor, x, y, z, z0, r);
+  add_uarraytot(iatom, jnbor, r, wj(iatom,jnbor), rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor), element(iatom, jnbor));
+}
+
+/* ----------------------------------------------------------------------
+   compute Wigner U-functions for one neighbor.
+   `ulisttot` uses a "cached" data layout, matching the amount of
+   information stored between layers via scratch memory on the GPU path
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_uarray_cpu(int iatom, int jnbor,
+                         const real_type& x, const real_type& y, const real_type& z, const real_type& z0, const real_type& r) const
+{
+  // compute Cayley-Klein parameters for unit quaternion
+  real_type r0inv = static_cast<real_type>(1.0) / sqrt(r * r + z0 * z0);
+  complex a = { r0inv * z0, -r0inv * z };
+  complex b = { r0inv * y, -r0inv * x };
+
+  // VMK Section 4.8.2
+  ulist_cpu(iatom, jnbor, 0) = complex::one();
+
+  for (int j = 1; j <= twojmax; j++) {
+    int jju = idxu_cache_block[j]; // removed "const" to work around GCC 7 bug
+    int jjup = idxu_cache_block[j-1]; // removed "const" to work around GCC 7 bug
+
+    // fill in left side of matrix layer from previous layer
+    for (int mb = 0; 2*mb <= j; mb++) {
+      int jju_index = jju + (j + 1) * mb;
+      int jjup_index = jjup + j * mb;
+
+      complex ui = complex::zero();
+
+      for (int ma = 0; ma < j; ma++) {
+        complex ui_prev = ulist_cpu(iatom, jnbor, jjup_index);
+
+        real_type rootpq = rootpqarray(j - ma, j - mb);
+        ui.re += rootpq * (a.re * ui_prev.re + a.im * ui_prev.im);
+        ui.im += rootpq * (a.re * ui_prev.im - a.im * ui_prev.re);
+
+        ulist_cpu(iatom, jnbor, jju_index) = ui;
+
+        rootpq = rootpqarray(ma + 1, j - mb);
+        ui.re = -rootpq * (b.re * ui_prev.re + b.im * ui_prev.im);
+        ui.im = -rootpq * (b.re * ui_prev.im - b.im * ui_prev.re);
+
+        jju_index++;
+        jjup_index++;
+      }
+
+      ulist_cpu(iatom, jnbor, jju_index) = ui;
+    }
+
+    // If j is odd (half-integer in the mathematical convention), we need
+    // to add one more row for convenience (for now). This can either be done
+    // via symmetry (see the commented code below), or by the equations to fill
+    // from the left instead of the right
+    if (j % 2 == 1) {
+      int mb = j / 2;
+      // begin filling in the extra row
+      int jju_index = jju + (mb + 1) * (j + 1);
+      int jjup_index = jjup + mb * j;
+
+      complex ui = complex::zero();
+
+      for (int ma = 0; ma < j; ma++) {
+        complex ui_prev = ulist_cpu(iatom, jnbor, jjup_index);
+
+        real_type rootpq = rootpqarray(j - ma, mb + 1);
+        ui.re += rootpq * (b.re * ui_prev.re - b.im * ui_prev.im);
+        ui.im += rootpq * (b.re * ui_prev.im + b.im * ui_prev.re);
+
+        ulist_cpu(iatom, jnbor, jju_index) = ui;
+
+        rootpq = rootpqarray(ma + 1, mb + 1);
+        ui.re = rootpq * (a.re * ui_prev.re - a.im * ui_prev.im);
+        ui.im = rootpq * (a.re * ui_prev.im + a.im * ui_prev.re);
+
+        jju_index++;
+        jjup_index++;
+      }
+
+      ulist_cpu(iatom, jnbor, jju_index) = ui;
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
+   add Wigner U-functions for one neighbor to the total
+   ulist is in a "cached" data layout, which is a compressed layout
+   which still keeps the recursive calculation simple. On the other hand
+   `ulisttot` uses a "half" data layout, which fully takes advantage
+   of the symmetry of the Wigner U matrices.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::add_uarraytot(int iatom, int jnbor,
+    const real_type& r, const real_type& wj, const real_type& rcut,
+    const real_type& sinner, const real_type& dinner, int jelem) const
+{
+  const real_type sfac = compute_sfac(r, rcut, sinner, dinner) * wj;
+
+  for (int j = 0; j <= twojmax; j++) {
+    int jju_half = idxu_half_block[j]; // index into ulisttot
+    int jju_cache = idxu_cache_block[j]; // index into ulist
+
+    int count = 0;
+    for (int mb = 0; 2*mb <= j; mb++) {
+      for (int ma = 0; ma <= j; ma++) {
+        Kokkos::atomic_add(&(ulisttot_re(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).re);
+        Kokkos::atomic_add(&(ulisttot_im(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).im);
+        count++;
+      }
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
+   compute Zi by summing over products of Ui
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -663,6 +830,82 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi(const int& iato
       idouble++;
     }
   }
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi_cpu(const int& iter) const
+{
+  const int iatom = iter / idxz_max;
+  const int jjz = iter % idxz_max;
+
+  int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg;
+  idxz(jjz).get_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg);
+
+  const real_type *cgblock = cglist.data() + idxcg;
+
+  int idouble = 0;
+
+  for (int elem1 = 0; elem1 < nelements; elem1++) {
+    for (int elem2 = 0; elem2 < nelements; elem2++) {
+      zlist(iatom, idouble, jjz) = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
+      idouble++;
+    } // end loop over elem2
+  } // end loop over elem1
+}
+
+/* ----------------------------------------------------------------------
+   Core "evaluation" kernel that computes a single zlist value.
+   This gets used in both `compute_zi` and `compute_yi`
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_FORCEINLINE_FUNCTION
+typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<DeviceType, real_type, vector_length>::evaluate_zi(const int& j1, const int& j2, const int& j,
+        const int& ma1min, const int& ma2max, const int& mb1min, const int& mb2max, const int& na, const int& nb,
+        const int& iatom, const int& elem1, const int& elem2, const real_type* cgblock) const {
+  complex ztmp = complex::zero();
+
+  int jju1 = idxu_block[j1] + (j1+1)*mb1min;
+  int jju2 = idxu_block[j2] + (j2+1)*mb2max;
+  int icgb = mb1min*(j2+1) + mb2max;
+
+  #ifdef LMP_KK_DEVICE_COMPILE
+  #pragma unroll
+  #endif
+  for (int ib = 0; ib < nb; ib++) {
+
+    int ma1 = ma1min;
+    int ma2 = ma2max;
+    int icga = ma1min*(j2+1) + ma2max;
+
+    #ifdef LMP_KK_DEVICE_COMPILE
+    #pragma unroll
+    #endif
+    for (int ia = 0; ia < na; ia++) {
+      const complex utot1 = ulisttot(iatom, elem1, jju1+ma1);
+      const complex utot2 = ulisttot(iatom, elem2, jju2+ma2);
+      const real_type cgcoeff_a = cgblock[icga];
+      const real_type cgcoeff_b = cgblock[icgb];
+      ztmp.re += cgcoeff_a * cgcoeff_b * (utot1.re * utot2.re - utot1.im * utot2.im);
+      ztmp.im += cgcoeff_a * cgcoeff_b * (utot1.re * utot2.im + utot1.im * utot2.re);
+      ma1++;
+      ma2--;
+      icga += j2;
+    } // end loop over ia
+
+    jju1 += j1 + 1;
+    jju2 -= j2 + 1;
+    icgb += j2;
+  } // end loop over ib
+
+  if (bnorm_flag) {
+    const real_type scale = static_cast<real_type>(1) / static_cast<real_type>(j + 1);
+    ztmp.re *= scale;
+    ztmp.im *= scale;
+  }
+
+  return ztmp;
 }
 
 /* ----------------------------------------------------------------------
@@ -759,9 +1002,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
 
 
 /* ----------------------------------------------------------------------
-   compute Yi from Ui without storing Zi, looping over zlist indices.
-   AoSoA data layout to take advantage of coalescing, avoiding warp
-   divergence. GPU version.
+   Compute Yi from Ui without storing Zi, looping over zlist indices.
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -797,10 +1038,81 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iato
   } // end loop over elem1
 }
 
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_cpu(int iter) const
+{
+  real_type betaj;
+  const int iatom = iter / idxz_max;
+  const int jjz = iter % idxz_max;
+
+  int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg;
+  idxz(jjz).get_yi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg);
+
+  const real_type *cgblock = cglist.data() + idxcg;
+  //int mb = (2 * (mb1min+mb2max) - j1 - j2 + j) / 2;
+  //int ma = (2 * (ma1min+ma2max) - j1 - j2 + j) / 2;
+
+  for (int elem1 = 0; elem1 < nelements; elem1++) {
+    for (int elem2 = 0; elem2 < nelements; elem2++) {
+
+      real_type ztmp_r = 0.0;
+      real_type ztmp_i = 0.0;
+
+      int jju1 = idxu_block[j1] + (j1 + 1) * mb1min;
+      int jju2 = idxu_block[j2] + (j2 + 1) * mb2max;
+      int icgb = mb1min * (j2 +1) + mb2max;
+
+      for (int ib = 0; ib < nb; ib++) {
+
+        real_type suma1_r = 0.0;
+        real_type suma1_i = 0.0;
+
+        int ma1 = ma1min;
+        int ma2 = ma2max;
+        int icga = ma1min*(j2+1) + ma2max;
+
+        for (int ia = 0; ia < na; ia++) {
+          suma1_r += cgblock[icga] * (ulisttot(iatom, elem1, jju1+ma1).re * ulisttot(iatom, elem2, jju2+ma2).re -
+                                      ulisttot(iatom, elem1, jju1+ma1).im * ulisttot(iatom, elem2, jju2+ma2).im);
+          suma1_i += cgblock[icga] * (ulisttot(iatom, elem1, jju1+ma1).re * ulisttot(iatom, elem2, jju2+ma2).im +
+                                      ulisttot(iatom, elem1, jju1+ma1).im * ulisttot(iatom, elem2, jju2+ma2).re);
+          ma1++;
+          ma2--;
+          icga += j2;
+        } // end loop over ia
+
+        ztmp_r += cgblock[icgb] * suma1_r;
+        ztmp_i += cgblock[icgb] * suma1_i;
+        jju1 += j1 + 1;
+        jju2 -= j2 + 1;
+        icgb += j2;
+      } // end loop over ib
+
+      if (bnorm_flag) {
+        const real_type scale = static_cast<real_type>(1) / static_cast<real_type>(j + 1);
+        ztmp_i *= scale;
+        ztmp_r *= scale;
+      }
+
+      // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
+      // find right y_list[jju] and beta(iatom,jjb) entries
+      // multiply and divide by j+1 factors
+      // account for multiplicity of 1, 2, or 3
+
+      // pick out right beta value
+      for (int elem3 = 0; elem3 < nelements; elem3++) {
+        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
+
+        Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj*ztmp_r);
+        Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj*ztmp_i);
+      } // end loop over elem3
+    } // end loop over elem2
+  } // end loop over elem1
+}
+
 /* ----------------------------------------------------------------------
-   compute Yi from Ui without storing Zi, looping over zlist indices.
-   AoSoA data layout to take advantage of coalescing, avoiding warp
-   divergence. GPU version.
+   compute Yi from Ui with the precomputed Zi.
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -831,59 +1143,11 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(cons
   } // end loop over elem1
 }
 
-// Core "evaluation" kernel that computes a single zlist value
-// which gets used in both `compute_zi` and `compute_yi`
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_FORCEINLINE_FUNCTION
-typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<DeviceType, real_type, vector_length>::evaluate_zi(const int& j1, const int& j2, const int& j,
-        const int& ma1min, const int& ma2max, const int& mb1min, const int& mb2max, const int& na, const int& nb,
-        const int& iatom, const int& elem1, const int& elem2, const real_type* cgblock) const {
-  complex ztmp = complex::zero();
+/* ----------------------------------------------------------------------
+   Core "evaluation" kernel that extracts and rescales the appropriate
+   `beta` value which gets used in both `compute_yi` and `compute_yi_from_zlist`
+------------------------------------------------------------------------- */
 
-  int jju1 = idxu_block[j1] + (j1+1)*mb1min;
-  int jju2 = idxu_block[j2] + (j2+1)*mb2max;
-  int icgb = mb1min*(j2+1) + mb2max;
-
-  #ifdef LMP_KK_DEVICE_COMPILE
-  #pragma unroll
-  #endif
-  for (int ib = 0; ib < nb; ib++) {
-
-    int ma1 = ma1min;
-    int ma2 = ma2max;
-    int icga = ma1min*(j2+1) + ma2max;
-
-    #ifdef LMP_KK_DEVICE_COMPILE
-    #pragma unroll
-    #endif
-    for (int ia = 0; ia < na; ia++) {
-      const complex utot1 = ulisttot(iatom, elem1, jju1+ma1);
-      const complex utot2 = ulisttot(iatom, elem2, jju2+ma2);
-      const real_type cgcoeff_a = cgblock[icga];
-      const real_type cgcoeff_b = cgblock[icgb];
-      ztmp.re += cgcoeff_a * cgcoeff_b * (utot1.re * utot2.re - utot1.im * utot2.im);
-      ztmp.im += cgcoeff_a * cgcoeff_b * (utot1.re * utot2.im + utot1.im * utot2.re);
-      ma1++;
-      ma2--;
-      icga += j2;
-    } // end loop over ia
-
-    jju1 += j1 + 1;
-    jju2 -= j2 + 1;
-    icgb += j2;
-  } // end loop over ib
-
-  if (bnorm_flag) {
-    const real_type scale = static_cast<real_type>(1) / static_cast<real_type>(j + 1);
-    ztmp.re *= scale;
-    ztmp.im *= scale;
-  }
-
-  return ztmp;
-}
-
-// Core "evaluation" kernel that extracts and rescales the appropriate `beta` value,
-// which gets used in both `compute_yi` and `compute_yi_from_zlist
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_FORCEINLINE_FUNCTION
 typename SNAKokkos<DeviceType, real_type, vector_length>::real_type SNAKokkos<DeviceType, real_type, vector_length>::evaluate_beta_scaled(const int& j1, const int& j2, const int& j,
@@ -1146,178 +1410,6 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::real_type SNAKokkos<De
 }
 
 /* ----------------------------------------------------------------------
- * CPU routines
- * ----------------------------------------------------------------------*/
-
-/* ----------------------------------------------------------------------
-   Ulisttot uses a "half" data layout which takes
-   advantage of the symmetry of the Wigner U matrices.
- * ------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::pre_ui_cpu(const int& iatom, const int& ielem) const
-{
-  for (int jelem = 0; jelem < nelements; jelem++) {
-    for (int j = 0; j <= twojmax; j++) {
-      int jju = idxu_half_block(j); // removed "const" to work around GCC 7 bug
-
-      // Only diagonal elements get initialized
-      for (int m = 0; m < (j+1)*(j/2+1); m++) {
-        const int jjup = jju + m;
-
-        // if m is on the "diagonal", initialize it with the self energy.
-        // Otherwise zero it out
-        real_type init = 0;
-        if (m % (j+2) == 0 && (!chem_flag || ielem == jelem || wselfall_flag)) { init = wself; } //need to map iatom to element
-
-        ulisttot_re(iatom, jelem, jjup) = init;
-        ulisttot_im(iatom, jelem, jjup) = 0;
-      };
-    }
-  }
-
-}
-
-
-/* ----------------------------------------------------------------------
-   compute Ui by summing over bispectrum components. CPU only.
-   See comments above compute_uarray_cpu and add_uarraytot for
-   data layout comments.
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_cpu(const int& iatom, const int& jnbor) const
-{
-  real_type rsq, r, x, y, z, z0, theta0;
-
-  // utot(j,ma,mb) = 0 for all j,ma,ma
-  // utot(j,ma,ma) = 1 for all j,ma
-  // for j in neighbors of i:
-  //   compute r0 = (x,y,z,z0)
-  //   utot(j,ma,mb) += u(r0;j,ma,mb) for all j,ma,mb
-
-  x = rij(iatom,jnbor,0);
-  y = rij(iatom,jnbor,1);
-  z = rij(iatom,jnbor,2);
-  rsq = x * x + y * y + z * z;
-  r = sqrt(rsq);
-
-  theta0 = (r - rmin0) * rfac0 * MY_PI / (rcutij(iatom,jnbor) - rmin0);
-  //    theta0 = (r - rmin0) * rscale0;
-  z0 = r / tan(theta0);
-
-  compute_uarray_cpu(iatom, jnbor, x, y, z, z0, r);
-  add_uarraytot(iatom, jnbor, r, wj(iatom,jnbor), rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor), element(iatom, jnbor));
-
-}
-/* ----------------------------------------------------------------------
-   compute Zi by summing over products of Ui, CPU version
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi_cpu(const int& iter) const
-{
-  const int iatom = iter / idxz_max;
-  const int jjz = iter % idxz_max;
-
-  int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg;
-  idxz(jjz).get_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg);
-
-  const real_type *cgblock = cglist.data() + idxcg;
-
-  int idouble = 0;
-
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-      zlist(iatom, idouble, jjz) = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
-      idouble++;
-    } // end loop over elem2
-  } // end loop over elem1
-}
-
-/* ----------------------------------------------------------------------
-   compute Yi from Ui without storing Zi, looping over zlist indices,
-   CPU version
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_cpu(int iter) const
-{
-  real_type betaj;
-  const int iatom = iter / idxz_max;
-  const int jjz = iter % idxz_max;
-
-  int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg;
-  idxz(jjz).get_yi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg);
-
-  const real_type *cgblock = cglist.data() + idxcg;
-  //int mb = (2 * (mb1min+mb2max) - j1 - j2 + j) / 2;
-  //int ma = (2 * (ma1min+ma2max) - j1 - j2 + j) / 2;
-
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-
-      real_type ztmp_r = 0.0;
-      real_type ztmp_i = 0.0;
-
-      int jju1 = idxu_block[j1] + (j1 + 1) * mb1min;
-      int jju2 = idxu_block[j2] + (j2 + 1) * mb2max;
-      int icgb = mb1min * (j2 +1) + mb2max;
-
-      for (int ib = 0; ib < nb; ib++) {
-
-        real_type suma1_r = 0.0;
-        real_type suma1_i = 0.0;
-
-        int ma1 = ma1min;
-        int ma2 = ma2max;
-        int icga = ma1min*(j2+1) + ma2max;
-
-        for (int ia = 0; ia < na; ia++) {
-          suma1_r += cgblock[icga] * (ulisttot(iatom, elem1, jju1+ma1).re * ulisttot(iatom, elem2, jju2+ma2).re -
-                                      ulisttot(iatom, elem1, jju1+ma1).im * ulisttot(iatom, elem2, jju2+ma2).im);
-          suma1_i += cgblock[icga] * (ulisttot(iatom, elem1, jju1+ma1).re * ulisttot(iatom, elem2, jju2+ma2).im +
-                                      ulisttot(iatom, elem1, jju1+ma1).im * ulisttot(iatom, elem2, jju2+ma2).re);
-          ma1++;
-          ma2--;
-          icga += j2;
-        } // end loop over ia
-
-        ztmp_r += cgblock[icgb] * suma1_r;
-        ztmp_i += cgblock[icgb] * suma1_i;
-        jju1 += j1 + 1;
-        jju2 -= j2 + 1;
-        icgb += j2;
-      } // end loop over ib
-
-      if (bnorm_flag) {
-        const real_type scale = static_cast<real_type>(1) / static_cast<real_type>(j + 1);
-        ztmp_i *= scale;
-        ztmp_r *= scale;
-      }
-
-      // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
-      // find right y_list[jju] and beta(iatom,jjb) entries
-      // multiply and divide by j+1 factors
-      // account for multiplicity of 1, 2, or 3
-
-      // pick out right beta value
-      for (int elem3 = 0; elem3 < nelements; elem3++) {
-        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
-
-        Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj*ztmp_r);
-        Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj*ztmp_i);
-      } // end loop over elem3
-    } // end loop over elem2
-  } // end loop over elem1
-}
-
-
-/* ----------------------------------------------------------------------
    calculate derivative of Ui w.r.t. atom j
    see comments above compute_duarray_cpu for comments on the
    data layout
@@ -1343,173 +1435,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_duidrj_cpu(const i
   dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
 
   compute_duarray_cpu(iatom, jnbor, x, y, z, z0, r, dz0dr, wj(iatom,jnbor), rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor));
-}
-
-
-/* ----------------------------------------------------------------------
-   compute dEidRj, CPU path only.
-   dulist takes advantage of a `cached` data layout, similar to the
-   shared memory layout for the GPU routines, which is efficient for
-   compressing the calculation in compute_duarray_cpu. That said,
-   dulist only uses the "half" data layout part of that structure.
-------------------------------------------------------------------------- */
-
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_deidrj_cpu(const int& iatom, const int& jnbor) const
-{
-  real_type force_sum[3] = { 0, 0, 0 };
-  const int jelem = element(iatom, jnbor);
-
-  for (int j = 0; j <= twojmax; j++) {
-    int jju_half = idxu_half_block[j];
-    int jju_cache = idxu_cache_block[j];
-
-    for (int mb = 0; 2 * mb < j; mb++) {
-      for (int ma = 0; ma <= j; ma++) {
-        complex y = { ylist_re(iatom, jelem, jju_half), ylist_im(iatom, jelem, jju_half) };
-        for (int k = 0; k < 3; k++)
-          force_sum[k] += dulist_cpu(iatom, jnbor, jju_cache, k).re * y.re +
-                          dulist_cpu(iatom, jnbor, jju_cache, k).im * y.im;
-        jju_half++; jju_cache++;
-      }
-    } //end loop over ma mb
-
-    // For j even, handle middle column
-
-    if (j % 2 == 0) {
-      //int mb = j / 2;
-      for (int ma = 0; ma <= j; ma++) {
-        complex y = { ylist_re(iatom, jelem, jju_half), ylist_im(iatom, jelem, jju_half) };
-        for (int k = 0; k < 3; k++)
-          force_sum[k] += static_cast<real_type>(0.5) * (dulist_cpu(iatom, jnbor, jju_cache, k).re * y.re +
-                          dulist_cpu(iatom, jnbor, jju_cache, k).im * y.im);
-        jju_half++; jju_cache++;
-      }
-    } // end if jeven
-
-  }
-
-  for (int k = 0; k < 3; k++)
-    dedr(iatom, jnbor, k) = 2 * force_sum[k];
-}
-
-
-/* ----------------------------------------------------------------------
-   add Wigner U-functions for one neighbor to the total
-   ulist is in a "cached" data layout, which is a compressed layout
-   which still keeps the recursive calculation simple. On the other hand
-   `ulisttot` uses a "half" data layout, which fully takes advantage
-   of the symmetry of the Wigner U matrices.
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::add_uarraytot(int iatom, int jnbor,
-    const real_type& r, const real_type& wj, const real_type& rcut,
-    const real_type& sinner, const real_type& dinner, int jelem) const
-{
-  const real_type sfac = compute_sfac(r, rcut, sinner, dinner) * wj;
-
-  for (int j = 0; j <= twojmax; j++) {
-    int jju_half = idxu_half_block[j]; // index into ulisttot
-    int jju_cache = idxu_cache_block[j]; // index into ulist
-
-    int count = 0;
-    for (int mb = 0; 2*mb <= j; mb++) {
-      for (int ma = 0; ma <= j; ma++) {
-        Kokkos::atomic_add(&(ulisttot_re(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).re);
-        Kokkos::atomic_add(&(ulisttot_im(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).im);
-        count++;
-      }
-    }
-  }
-}
-
-/* ----------------------------------------------------------------------
-   compute Wigner U-functions for one neighbor.
-   `ulisttot` uses a "cached" data layout, matching the amount of
-   information stored between layers via scratch memory on the GPU path
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_uarray_cpu(int iatom, int jnbor,
-                         const real_type& x, const real_type& y, const real_type& z, const real_type& z0, const real_type& r) const
-{
-  // compute Cayley-Klein parameters for unit quaternion
-  real_type r0inv = static_cast<real_type>(1.0) / sqrt(r * r + z0 * z0);
-  complex a = { r0inv * z0, -r0inv * z };
-  complex b = { r0inv * y, -r0inv * x };
-
-  // VMK Section 4.8.2
-  ulist_cpu(iatom, jnbor, 0) = complex::one();
-
-  for (int j = 1; j <= twojmax; j++) {
-    int jju = idxu_cache_block[j]; // removed "const" to work around GCC 7 bug
-    int jjup = idxu_cache_block[j-1]; // removed "const" to work around GCC 7 bug
-
-    // fill in left side of matrix layer from previous layer
-    for (int mb = 0; 2*mb <= j; mb++) {
-      int jju_index = jju + (j + 1) * mb;
-      int jjup_index = jjup + j * mb;
-
-      complex ui = complex::zero();
-
-      for (int ma = 0; ma < j; ma++) {
-        complex ui_prev = ulist_cpu(iatom, jnbor, jjup_index);
-
-        real_type rootpq = rootpqarray(j - ma, j - mb);
-        ui.re += rootpq * (a.re * ui_prev.re + a.im * ui_prev.im);
-        ui.im += rootpq * (a.re * ui_prev.im - a.im * ui_prev.re);
-
-        ulist_cpu(iatom, jnbor, jju_index) = ui;
-
-        rootpq = rootpqarray(ma + 1, j - mb);
-        ui.re = -rootpq * (b.re * ui_prev.re + b.im * ui_prev.im);
-        ui.im = -rootpq * (b.re * ui_prev.im - b.im * ui_prev.re);
-
-        jju_index++;
-        jjup_index++;
-      }
-
-      ulist_cpu(iatom, jnbor, jju_index) = ui;
-    }
-
-    // If j is odd (half-integer in the mathematical convention), we need
-    // to add one more row for convenience (for now). This can either be done
-    // via symmetry (see the commented code below), or by the equations to fill
-    // from the left instead of the right
-    if (j % 2 == 1) {
-      int mb = j / 2;
-      // begin filling in the extra row
-      int jju_index = jju + (mb + 1) * (j + 1);
-      int jjup_index = jjup + mb * j;
-
-      complex ui = complex::zero();
-
-      for (int ma = 0; ma < j; ma++) {
-        complex ui_prev = ulist_cpu(iatom, jnbor, jjup_index);
-
-        real_type rootpq = rootpqarray(j - ma, mb + 1);
-        ui.re += rootpq * (b.re * ui_prev.re - b.im * ui_prev.im);
-        ui.im += rootpq * (b.re * ui_prev.im + b.im * ui_prev.re);
-
-        ulist_cpu(iatom, jnbor, jju_index) = ui;
-
-        rootpq = rootpqarray(ma + 1, mb + 1);
-        ui.re = rootpq * (a.re * ui_prev.re - a.im * ui_prev.im);
-        ui.im = rootpq * (a.re * ui_prev.im + a.im * ui_prev.re);
-
-        jju_index++;
-        jjup_index++;
-      }
-
-      ulist_cpu(iatom, jnbor, jju_index) = ui;
-    }
-  }
-
 }
 
 /* ----------------------------------------------------------------------
@@ -1681,6 +1606,54 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_duarray_cpu(int ia
         jju++;
       }
   }
+}
+
+/* ----------------------------------------------------------------------
+   compute dEidRj, CPU path only.
+   dulist takes advantage of a `cached` data layout, similar to the
+   shared memory layout for the GPU routines, which is efficient for
+   compressing the calculation in compute_duarray_cpu. That said,
+   dulist only uses the "half" data layout part of that structure.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_deidrj_cpu(const int& iatom, const int& jnbor) const
+{
+  real_type force_sum[3] = { 0, 0, 0 };
+  const int jelem = element(iatom, jnbor);
+
+  for (int j = 0; j <= twojmax; j++) {
+    int jju_half = idxu_half_block[j];
+    int jju_cache = idxu_cache_block[j];
+
+    for (int mb = 0; 2 * mb < j; mb++) {
+      for (int ma = 0; ma <= j; ma++) {
+        complex y = { ylist_re(iatom, jelem, jju_half), ylist_im(iatom, jelem, jju_half) };
+        for (int k = 0; k < 3; k++)
+          force_sum[k] += dulist_cpu(iatom, jnbor, jju_cache, k).re * y.re +
+                          dulist_cpu(iatom, jnbor, jju_cache, k).im * y.im;
+        jju_half++; jju_cache++;
+      }
+    } //end loop over ma mb
+
+    // For j even, handle middle column
+
+    if (j % 2 == 0) {
+      //int mb = j / 2;
+      for (int ma = 0; ma <= j; ma++) {
+        complex y = { ylist_re(iatom, jelem, jju_half), ylist_im(iatom, jelem, jju_half) };
+        for (int k = 0; k < 3; k++)
+          force_sum[k] += static_cast<real_type>(0.5) * (dulist_cpu(iatom, jnbor, jju_cache, k).re * y.re +
+                          dulist_cpu(iatom, jnbor, jju_cache, k).im * y.im);
+        jju_half++; jju_cache++;
+      }
+    } // end if jeven
+
+  }
+
+  for (int k = 0; k < 3; k++)
+    dedr(iatom, jnbor, k) = 2 * force_sum[k];
 }
 
 /* ----------------------------------------------------------------------
