@@ -662,47 +662,36 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
 
 /* ----------------------------------------------------------------------
    compute Ui by summing over bispectrum components. CPU only.
-   See comments above compute_uarray_cpu and add_uarraytot for
-   data layout comments.
+   This first computes Wigner U-functions for one neighbor.
+   `ulisttot` uses a "cached" data layout, matching the amount of
+   information stored between layers via scratch memory on the GPU path.
+   Next, it adds Wigner U-functions for each neighbor to ulisttot which is
+   in a "half" data layout, which is a compressed layout
+   which still keeps the recursive calculation simple.
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_cpu(const int& iatom, const int& jnbor) const
 {
-  real_type rsq, r, x, y, z, z0, theta0;
-
   // utot(j,ma,mb) = 0 for all j,ma,ma
   // utot(j,ma,ma) = 1 for all j,ma
   // for j in neighbors of i:
   //   compute r0 = (x,y,z,z0)
   //   utot(j,ma,mb) += u(r0;j,ma,mb) for all j,ma,mb
 
-  x = rij(iatom,jnbor,0);
-  y = rij(iatom,jnbor,1);
-  z = rij(iatom,jnbor,2);
-  rsq = x * x + y * y + z * z;
-  r = sqrt(rsq);
+  const real_type x = rij(iatom,jnbor,0);
+  const real_type y = rij(iatom,jnbor,1);
+  const real_type z = rij(iatom,jnbor,2);
+  const real_type rsq = x * x + y * y + z * z;
+  const real_type r = sqrt(rsq);
 
-  theta0 = (r - rmin0) * rfac0 * MY_PI / (rcutij(iatom,jnbor) - rmin0);
+  const real_type theta0 = (r - rmin0) * rfac0 * MY_PI / (rcutij(iatom,jnbor) - rmin0);
   //    theta0 = (r - rmin0) * rscale0;
-  z0 = r / tan(theta0);
+  const real_type z0 = r / tan(theta0);
 
-  compute_uarray_cpu(iatom, jnbor, x, y, z, z0, r);
-  add_uarraytot(iatom, jnbor, r, wj(iatom,jnbor), rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor), element(iatom, jnbor));
-}
+  // begin what was "compute_uarray_cpu"
 
-/* ----------------------------------------------------------------------
-   compute Wigner U-functions for one neighbor.
-   `ulisttot` uses a "cached" data layout, matching the amount of
-   information stored between layers via scratch memory on the GPU path
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_uarray_cpu(int iatom, int jnbor,
-                         const real_type& x, const real_type& y, const real_type& z, const real_type& z0, const real_type& r) const
-{
   // compute Cayley-Klein parameters for unit quaternion
   real_type r0inv = static_cast<real_type>(1.0) / sqrt(r * r + z0 * z0);
   complex a = { r0inv * z0, -r0inv * z };
@@ -774,23 +763,11 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_uarray_cpu(int iat
       ulist_cpu(iatom, jnbor, jju_index) = ui;
     }
   }
-}
 
-/* ----------------------------------------------------------------------
-   add Wigner U-functions for one neighbor to the total
-   ulist is in a "cached" data layout, which is a compressed layout
-   which still keeps the recursive calculation simple. On the other hand
-   `ulisttot` uses a "half" data layout, which fully takes advantage
-   of the symmetry of the Wigner U matrices.
-------------------------------------------------------------------------- */
+  // begin what was add_uarraytot
 
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::add_uarraytot(int iatom, int jnbor,
-    const real_type& r, const real_type& wj, const real_type& rcut,
-    const real_type& sinner, const real_type& dinner, int jelem) const
-{
-  const real_type sfac = compute_sfac(r, rcut, sinner, dinner) * wj;
+  const real_type sfac = compute_sfac(r, rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor)) * wj(iatom,jnbor);
+  const auto jelem = element(iatom, jnbor);
 
   for (int j = 0; j <= twojmax; j++) {
     int jju_half = idxu_half_block[j]; // index into ulisttot
@@ -1419,40 +1396,22 @@ template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_duidrj_cpu(const int& iatom, const int& jnbor) const
 {
-  real_type rsq, r, x, y, z, z0, theta0, cs, sn;
-  real_type dz0dr;
-
-  x = rij(iatom,jnbor,0);
-  y = rij(iatom,jnbor,1);
-  z = rij(iatom,jnbor,2);
-  rsq = x * x + y * y + z * z;
-  r = sqrt(rsq);
-  real_type rscale0 = rfac0 * static_cast<real_type>(MY_PI) / (rcutij(iatom,jnbor) - rmin0);
-  theta0 = (r - rmin0) * rscale0;
-  sn = sin(theta0);
-  cs = cos(theta0);
-  z0 = r * cs / sn;
-  dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
-
-  compute_duarray_cpu(iatom, jnbor, x, y, z, z0, r, dz0dr, wj(iatom,jnbor), rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor));
-}
-
-/* ----------------------------------------------------------------------
-   compute derivatives of Wigner U-functions for one neighbor
-   see comments in compute_uarray_cpu()
-   Uses same cached data layout of ulist
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_duarray_cpu(int iatom, int jnbor,
-                          const real_type& x, const real_type& y, const real_type& z,
-                          const real_type& z0, const real_type& r, const real_type& dz0dr,
-                          const real_type& wj, const real_type& rcut,
-                          const real_type& sinner, const real_type& dinner) const
-{
   complex da[3], db[3];
   real_type u[3], dz0[3], dr0inv[3];
+
+  const real_type x = rij(iatom,jnbor,0);
+  const real_type y = rij(iatom,jnbor,1);
+  const real_type z = rij(iatom,jnbor,2);
+  const real_type rsq = x * x + y * y + z * z;
+  const real_type r = sqrt(rsq);
+  const real_type rscale0 = rfac0 * static_cast<real_type>(MY_PI) / (rcutij(iatom,jnbor) - rmin0);
+  const real_type theta0 = (r - rmin0) * rscale0;
+  const real_type sn = sin(theta0);
+  const real_type cs = cos(theta0);
+  const real_type z0 = r * cs / sn;
+  const real_type dz0dr = z0 / r - (r*rscale0) * (rsq + z0 * z0) / rsq;
+
+  // begin what was compute_duarray_cpu
 
   real_type rinv = 1.0 / r;
   u[0] = x * rinv;
@@ -1584,11 +1543,11 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_duarray_cpu(int ia
     }
   }
 
-  real_type sfac = compute_sfac(r, rcut, sinner, dinner);
-  real_type dsfac = compute_dsfac(r, rcut, sinner, dinner);
+  real_type sfac, dsfac;
+  compute_s_dsfac(r, rcutij(iatom,jnbor), sinnerij(iatom,jnbor), dinnerij(iatom,jnbor), sfac, dsfac);
 
-  sfac *= wj;
-  dsfac *= wj;
+  sfac *= wj(iatom,jnbor);
+  dsfac *= wj(iatom,jnbor);
 
   // Even though we fill out a full "cached" data layout above,
   // we only need the "half" data for the accumulation into dedr.

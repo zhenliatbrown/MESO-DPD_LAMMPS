@@ -357,23 +357,11 @@ class SNAKokkos {
   inline
   void init_rootpqarray();    // init()
 
-  KOKKOS_INLINE_FUNCTION
-  void add_uarraytot(int, int, const real_type&, const real_type&, const real_type&, const real_type&, const real_type&, int) const; // compute_ui
-
-  KOKKOS_INLINE_FUNCTION
-  void compute_uarray_cpu(int, int, const real_type&, const real_type&, const real_type&,
-                      const real_type&, const real_type&) const; // compute_ui_cpu
-
-
   inline
   double deltacg(int, int, int);  // init_clebsch_gordan
 
   inline
   int compute_ncoeff();           // SNAKokkos()
-  KOKKOS_INLINE_FUNCTION
-  void compute_duarray_cpu(int, int, const real_type&, const real_type&, const real_type&, // compute_duidrj_cpu
-                           const real_type&, const real_type&, const real_type&, const real_type&, const real_type&,
-                           const real_type&, const real_type&) const;
 
   // Sets the style for the switching function
   // 0 = none
