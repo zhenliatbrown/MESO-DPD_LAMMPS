@@ -127,6 +127,17 @@ class PairSNAPKokkos : public PairSNAP {
   template <class Device, int num_teams, class TagPairSNAP>
   using SnapAoSoATeamPolicy = typename Kokkos::TeamPolicy<Device, Kokkos::LaunchBounds<vector_length * num_teams>, TagPairSNAP>;
 
+  // Helper routine that returns a CPU or a GPU policy as appropriate
+  template <class Device, int num_teams, class TagPairSNAP>
+  auto snap_get_policy(const int& chunk_size_div, const int& second_loop) {
+    if constexpr (host_flag)
+      return typename Kokkos::RangePolicy<Device, TagPairSNAP>(0, chunk_size_div * vector_length * second_loop);
+    else
+      return Snap3DRangePolicy<Device, num_teams, TagPairSNAP>({0, 0, 0},
+                                                                   {vector_length, second_loop, chunk_size_div},
+                                                                   {vector_length, num_teams, 1});
+  }
+
   PairSNAPKokkos(class LAMMPS *);
   ~PairSNAPKokkos() override;
 
