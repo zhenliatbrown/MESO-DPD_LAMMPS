@@ -30,8 +30,14 @@ PairStyle(snap/kk/host,PairSNAPKokkosDevice<LMPHostType>);
 #include "pair_snap.h"
 #include "kokkos_type.h"
 #include "neigh_list_kokkos.h"
-#include "sna_kokkos.h"
 #include "pair_kokkos.h"
+
+namespace LAMMPS_NS {
+// pre-declare so sna_kokkos.h can refer to it
+template<class DeviceType, typename real_type_, int vector_length_> class PairSNAPKokkos;
+};
+
+#include "sna_kokkos.h"
 
 namespace LAMMPS_NS {
 
@@ -262,7 +268,7 @@ class PairSNAPKokkos : public PairSNAP {
 
   Kokkos::View<real_type*, DeviceType> d_radelem;              // element radii
   Kokkos::View<real_type*, DeviceType> d_wjelem;               // elements weights
-  Kokkos::View<real_type**, Kokkos::LayoutRight, DeviceType> d_coeffelem;           // element bispectrum coefficients
+  typename SNAKokkos<DeviceType, real_type, vector_length>::t_sna_2d_lr d_coeffelem; // element bispectrum coefficients
   Kokkos::View<real_type*, DeviceType> d_sinnerelem;           // element inner cutoff midpoint
   Kokkos::View<real_type*, DeviceType> d_dinnerelem;           // element inner cutoff half-width
   Kokkos::View<T_INT*, DeviceType> d_map;                    // mapping from atom types to elements
@@ -301,6 +307,9 @@ class PairSNAPKokkos : public PairSNAP {
   // ComputeNeigh, ComputeUi, and ComputeFusedDeidrj
   template <typename scratch_type>
   int scratch_size_helper(int values_per_team);
+
+  // Make SNAKokkos a friend
+  friend class SNAKokkos<DeviceType, real_type, vector_length>;
 
 };
 

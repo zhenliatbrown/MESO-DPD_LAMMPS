@@ -30,27 +30,18 @@ static const double MY_PI2  = 1.57079632679489661923; // pi/2
 
 template<class DeviceType, typename real_type, int vector_length>
 inline
-SNAKokkos<DeviceType, real_type, vector_length>::SNAKokkos(real_type rfac0_in,
-         int twojmax_in, real_type rmin0_in, int switch_flag_in, int bzero_flag_in,
-         int chem_flag_in, int bnorm_flag_in, int wselfall_flag_in, int nelements_in, int switch_inner_flag_in)
+SNAKokkos<DeviceType, real_type, vector_length>::SNAKokkos(const PairSNAPKokkos<DeviceType, real_type, vector_length>& psk)
+  : rfac0(psk.rfac0), rmin0(psk.rmin0), switch_flag(psk.switchflag),
+    bzero_flag(psk.bzeroflag), chem_flag(psk.chemflag), bnorm_flag(psk.bnormflag),
+    wselfall_flag(psk.wselfallflag), switch_inner_flag(psk.switchinnerflag),
+    quadratic_flag(psk.quadraticflag), twojmax(psk.twojmax), d_coeffelem(psk.d_coeffelem)
 {
   wself = static_cast<real_type>(1.0);
 
-  rfac0 = rfac0_in;
-  rmin0 = rmin0_in;
-  switch_flag = switch_flag_in;
-  switch_inner_flag = switch_inner_flag_in;
-  bzero_flag = bzero_flag_in;
-
-  chem_flag = chem_flag_in;
   if (chem_flag)
-    nelements = nelements_in;
+    nelements = psk.nelements;
   else
     nelements = 1;
-  bnorm_flag = bnorm_flag_in;
-  wselfall_flag = wselfall_flag_in;
-
-  twojmax = twojmax_in;
 
   ncoeff = compute_ncoeff();
 

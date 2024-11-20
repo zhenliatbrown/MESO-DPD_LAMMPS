@@ -143,6 +143,7 @@ class SNAKokkos {
   typedef Kokkos::View<int**, DeviceType> t_sna_2i;
   typedef Kokkos::View<real_type**, DeviceType> t_sna_2d;
   typedef Kokkos::View<real_type**, Kokkos::LayoutLeft, DeviceType> t_sna_2d_ll;
+  typedef Kokkos::View<real_type**, Kokkos::LayoutRight, DeviceType> t_sna_2d_lr;
   typedef Kokkos::View<real_type***, DeviceType> t_sna_3d;
   typedef Kokkos::View<real_type***, Kokkos::LayoutLeft, DeviceType> t_sna_3d_ll;
   typedef Kokkos::View<real_type***[3], DeviceType> t_sna_4d;
@@ -170,7 +171,8 @@ class SNAKokkos {
   SNAKokkos(const SNAKokkos<DeviceType,real_type,vector_length>& sna, const typename Kokkos::TeamPolicy<DeviceType>::member_type& team);
 
   inline
-  SNAKokkos(real_type, int, real_type, int, int, int, int, int, int, int);
+  //SNAKokkos(real_type, int, real_type, int, int, int, int, int, int, int);
+  SNAKokkos(const PairSNAPKokkos<DeviceType, real_type, vector_length>&);
 
   KOKKOS_INLINE_FUNCTION
   ~SNAKokkos();
@@ -282,7 +284,12 @@ class SNAKokkos {
 
   int twojmax, diagonalstyle;
 
+  // Input beta coefficients; aliases the object in PairSnapKokkos
+  t_sna_2d_lr d_coeffelem;
+
   // Beta for all atoms in list; aliases the object in PairSnapKokkos
+  // for qSNAP the quadratic terms get accumulated into it
+  // in compute_bi
   t_sna_2d d_beta;
 
   // Structures for both the CPU, GPU backend
@@ -378,6 +385,9 @@ class SNAKokkos {
   // Self-weight
   real_type wself;
   int wselfall_flag;
+
+  // quadratic flag
+  int quadratic_flag;
 
   int bzero_flag; // 1 if bzero subtracted from barray
   Kokkos::View<real_type*, DeviceType> bzero; // array of B values for isolated atoms

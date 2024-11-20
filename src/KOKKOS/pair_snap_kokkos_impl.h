@@ -245,14 +245,14 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
       // tile_size_compute_ck is defined in `pair_snap_kokkos.h`
       Snap3DRangePolicy<DeviceType, tile_size_compute_ck, TagPairSNAPComputeCayleyKlein>
           policy_compute_ck({0,0,0},{vector_length,max_neighs,chunk_size_div},{vector_length,tile_size_compute_ck,1});
-      Kokkos::parallel_for("ComputeCayleyKlein",policy_compute_ck,*this);
+      Kokkos::parallel_for("ComputeCayleyKlein", policy_compute_ck, *this);
     }
 
     // PreUi; same CPU and GPU codepath
     {
       auto policy_pre_ui = snap_get_policy<DeviceType, tile_size_pre_ui, TagPairSNAPPreUi>(chunk_size_div, twojmax + 1);
       //typename Kokkos::RangePolicy<DeviceType,TagPairSNAPPreUi> policy_preui_cpu(0, chunk_size * (twojmax + 1));
-      Kokkos::parallel_for("PreUi",policy_pre_ui,*this);
+      Kokkos::parallel_for("PreUi", policy_pre_ui, *this);
     }
 
     // ComputeUi; separate CPU, GPU codepaths
@@ -531,8 +531,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::coeff(int narg, char 
   Kokkos::deep_copy(d_dinnerelem,h_dinnerelem);
   Kokkos::deep_copy(d_map,h_map);
 
-  snaKK = SNAKokkos<DeviceType, real_type, vector_length>(rfac0,twojmax,
-    rmin0,switchflag,bzeroflag,chemflag,bnormflag,wselfallflag,nelements,switchinnerflag);
+  snaKK = SNAKokkos<DeviceType, real_type, vector_length>(*this); //rfac0,twojmax,
+    //rmin0,switchflag,bzeroflag,chemflag,bnormflag,wselfallflag,nelements,switchinnerflag);
   snaKK.grow_rij(0,0);
   snaKK.init();
 }
