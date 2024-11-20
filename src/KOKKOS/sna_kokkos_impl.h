@@ -953,6 +953,62 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
   } // end loop over elem1
 }
 
+/* ----------------------------------------------------------------------
+   compute beta by either appropriately copying it from d_coeffi
+   or accumulating the quadratic terms from blist
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta(const int& iatom, const int& idxb, const int& ielem) const
+{
+  auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
+
+  // handle quadratic && chemflag as a special case
+  if (quadratic_flag && chem_flag) {
+    if (idxb == 0) {
+      for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
+        d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
+      }
+
+      int k = ncoeff+1;
+      for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
+        const auto idxb = icoeff % idxb_max;
+        const auto idx_chem = icoeff / idxb_max;
+        real_type bveci = blist(iatom, idx_chem, idxb);
+        d_beta(iatom, icoeff) += d_coeffi[k] * bveci;
+        k++;
+        for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
+          const auto jdxb = jcoeff % idxb_max;
+          const auto jdx_chem = jcoeff / idxb_max;
+          real_type bvecj = blist(iatom, jdx_chem, jdxb);
+          d_beta(iatom, icoeff) += d_coeffi[k] * bvecj;
+          d_beta(iatom, jcoeff) += d_coeffi[k] * bveci;
+          k++;
+        }
+      }
+    }
+  } else {
+    for (int itriple = 0; itriple < ntriples; itriple++) {
+      int icoeff = idxb + itriple * idxb_max;
+      Kokkos::atomic_add(&d_beta(iatom, icoeff), d_coeffi[icoeff+1]);
+    }
+
+    if (quadratic_flag) {
+      int k = (idxb * (1 + 2 * idxb_max - idxb)) / 2 + idxb_max + 1;
+      real_type bveci = blist(iatom, 0, idxb);
+      Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bveci);
+      k++;
+
+      for (int jdxb = idxb + 1; jdxb < idxb_max; jdxb++) {
+        real_type bvecj = blist(iatom, 0, jdxb);
+        Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bvecj);
+        Kokkos::atomic_add(&d_beta(iatom, jdxb), d_coeffi[k] * bveci);
+        k++;
+      }
+    }
+  }
+}
 
 /* ----------------------------------------------------------------------
    Compute Yi from Ui without storing Zi, looping over zlist indices.

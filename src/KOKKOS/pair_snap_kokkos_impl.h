@@ -315,9 +315,13 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     }
 
     {
+      // Zero beta out
+      auto policy_zero_beta = snap_get_policy<DeviceType, tile_size_zero_beta, TagPairSNAPZeroBeta>(chunk_size_div, snaKK.idxb_max);
+      Kokkos::parallel_for("ZeroBeta",policy_zero_beta,*this);
+
       //Compute beta = dE_i/dB_i for all i in list
-      typename Kokkos::RangePolicy<DeviceType,TagPairSNAPBeta> policy_beta(0, chunk_size_pad);
-      Kokkos::parallel_for("ComputeBeta", policy_beta, *this);
+      auto policy_compute_beta = snap_get_policy<DeviceType, tile_size_compute_beta, TagPairSNAPComputeBeta>(chunk_size_div, snaKK.idxb_max);
+      Kokkos::parallel_for("ComputeBeta", policy_compute_beta, *this);
 
       //Note zeroing `ylist` is fused into `TransformUi`.
       if (quadraticflag || eflag) {
@@ -902,6 +906,32 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   snaKK.compute_bi(iatom, jjb);
 }
 
+/* ----------------------------------------------------------------------
+  Zero out beta in advance of accumulating. CPU and GPU.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPZeroBeta,const int iatom_mod, const int jjb, const int iatom_div) const {
+
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (jjb >= snaKK.idxb_max) return;
+
+  for (int itriple = 0; itriple < snaKK.ntriples; itriple++)
+    snaKK.d_beta(iatom, jjb + itriple * snaKK.idxb_max) = 0;
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPZeroBeta, const int& ii) const {
+  const int iatom = ii / snaKK.idxb_max;
+  const int jjb = ii % snaKK.idxb_max;
+  if (iatom >= chunk_size) return;
+
+  for (int itriple = 0; itriple < snaKK.ntriples; itriple++)
+    snaKK.d_beta(iatom, jjb + itriple * snaKK.idxb_max) = 0;
+}
 
 /* ----------------------------------------------------------------------
   Assemble the "beta" coefficients that enter the computation of the
@@ -913,39 +943,30 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPBeta, const int& iatom) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBeta, const int iatom_mod, const int idxb, const int iatom_div) const {
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (idxb >= snaKK.idxb_max) return;
 
+  const int i = d_ilist[iatom + chunk_offset];
+  const int itype = type[i];
+  const int ielem = d_map[itype];
+
+  snaKK.compute_beta(iatom, idxb, ielem);
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBeta, const int& ii) const {
+  const int iatom = ii / snaKK.idxb_max;
+  const int idxb = ii % snaKK.idxb_max;
   if (iatom >= chunk_size) return;
 
   const int i = d_ilist[iatom + chunk_offset];
   const int itype = type[i];
   const int ielem = d_map[itype];
 
-  auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
-
-  for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-    d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
-  }
-
-  if (quadraticflag) {
-    const auto idxb_max = snaKK.idxb_max;
-    int k = ncoeff+1;
-    for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-      const auto idxb = icoeff % idxb_max;
-      const auto idx_chem = icoeff / idxb_max;
-      real_type bveci = snaKK.blist(iatom, idx_chem, idxb);
-      d_beta(iatom, icoeff) += d_coeffi[k] * bveci;
-      k++;
-      for (int jcoeff = icoeff+1; jcoeff < ncoeff; jcoeff++) {
-        const auto jdxb = jcoeff % idxb_max;
-        const auto jdx_chem = jcoeff / idxb_max;
-        real_type bvecj = snaKK.blist(iatom, jdx_chem, jdxb);
-        d_beta(iatom, icoeff) += d_coeffi[k] * bvecj;
-        d_beta(iatom, jcoeff) += d_coeffi[k] * bveci;
-        k++;
-      }
-    }
-  }
+  snaKK.compute_beta(iatom, idxb, ielem);
 }
 
 /* ----------------------------------------------------------------------

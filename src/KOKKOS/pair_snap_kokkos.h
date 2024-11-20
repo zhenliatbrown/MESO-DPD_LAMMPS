@@ -46,7 +46,8 @@ struct TagPairSNAPPreUi{};
 struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
 struct TagPairSNAPComputeZi{};
 struct TagPairSNAPComputeBi{};
-struct TagPairSNAPBeta{};
+struct TagPairSNAPZeroBeta{};
+struct TagPairSNAPComputeBeta{};
 struct TagPairSNAPComputeYi{};
 struct TagPairSNAPComputeYiWithZlist{};
 template<int NEIGHFLAG, int EVFLAG>
@@ -93,7 +94,8 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_transform_ui = 2;
   static constexpr int tile_size_compute_zi = 2;
   static constexpr int tile_size_compute_bi = 2;
-  static constexpr int tile_size_transform_bi = 2;
+  static constexpr int tile_size_zero_beta = 2;
+  static constexpr int tile_size_compute_beta = 2;
   static constexpr int tile_size_compute_yi = 2;
   static constexpr int team_size_compute_fused_deidrj = 2;
 #elif defined(KOKKOS_ENABLE_SYCL)
@@ -104,7 +106,8 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_transform_ui = 8;
   static constexpr int tile_size_compute_zi = 4;
   static constexpr int tile_size_compute_bi = 4;
-  static constexpr int tile_size_transform_bi = 4;
+  static constexpr int tile_size_zero_beta = 8;
+  static constexpr int tile_size_compute_beta = 8;
   static constexpr int tile_size_compute_yi = 8;
   static constexpr int team_size_compute_fused_deidrj = 4;
 #else
@@ -115,7 +118,8 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_transform_ui = 4;
   static constexpr int tile_size_compute_zi = 8;
   static constexpr int tile_size_compute_bi = 4;
-  static constexpr int tile_size_transform_bi = 4;
+  static constexpr int tile_size_zero_beta = 4;
+  static constexpr int tile_size_compute_beta = 4;
   static constexpr int tile_size_compute_yi = 8;
   static constexpr int team_size_compute_fused_deidrj = sizeof(real_type) == 4 ? 4 : 2;
 #endif
@@ -160,9 +164,6 @@ class PairSNAPKokkos : public PairSNAP {
   void check_team_size_reduce(int, int&);
 
   // CPU and GPU backend
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPBeta, const int& ii) const;
-
   template<int NEIGHFLAG, int EVFLAG>
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeForce<NEIGHFLAG,EVFLAG>,const int& ii) const;
@@ -197,6 +198,12 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeBi,const int iatom_mod, const int idxb, const int iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPZeroBeta,const int iatom_mod, const int idxb, const int iatom_div) const;
+
+    KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBeta, const int iatom_mod, const int idxb, const int iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeYi,const int iatom_mod, const int idxz, const int iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
@@ -228,6 +235,12 @@ class PairSNAPKokkos : public PairSNAP {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeBi, const int& ii) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPZeroBeta, const int& ii) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBeta, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeYi, const int& ii) const;
