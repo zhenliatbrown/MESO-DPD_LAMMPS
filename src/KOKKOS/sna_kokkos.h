@@ -212,8 +212,10 @@ class SNAKokkos {
   void compute_yi_with_zlist(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_bi(const int&, const int&) const;    // ForceSNAP
+  KOKKOS_INLINE_FUNCTION
+  void compute_beta_linear(const int&, const int&, const int&) const;
   template <bool need_atomics> KOKKOS_INLINE_FUNCTION
-  void compute_beta(const int&, const int&, const int&) const;
+  void compute_beta_quadratic(const int&, const int&, const int&) const;
 
   // functions for derivatives, GPU only
   // version of the code with parallelism over j_bend

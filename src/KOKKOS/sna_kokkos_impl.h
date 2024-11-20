@@ -964,19 +964,28 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta_linear(const int& iatom, const int& idxb, const int& ielem) const
+{
+  auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
+
+  for (int itriple = 0; itriple < ntriples; itriple++) {
+    int icoeff = idxb + itriple * idxb_max;
+    d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
+  }
+}
+
+template<class DeviceType, typename real_type, int vector_length>
 template <bool need_atomics>
 KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta(const int& iatom, const int& idxb, const int& ielem) const
+void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta_quadratic(const int& iatom, const int& idxb, const int& ielem) const
 {
   auto d_coeffi = Kokkos::subview(d_coeffelem, ielem, Kokkos::ALL);
 
   // handle quadratic && chemflag as a special case
-  if (quadratic_flag && chem_flag) {
+  if (chem_flag) {
     if (idxb == 0) {
-      for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
-        d_beta(iatom, icoeff) = d_coeffi[icoeff+1];
-      }
-
+      // no need to use atomics, we're just serializing
       int k = ncoeff+1;
       for (int icoeff = 0; icoeff < ncoeff; icoeff++) {
         const auto idxb = icoeff % idxb_max;
@@ -995,37 +1004,35 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta(const int& ia
       }
     }
   } else {
-    for (int itriple = 0; itriple < ntriples; itriple++) {
-      int icoeff = idxb + itriple * idxb_max;
-      if constexpr (need_atomics)
-        Kokkos::atomic_add(&d_beta(iatom, icoeff), d_coeffi[icoeff+1]);
-      else
-        d_beta(iatom, icoeff) += d_coeffi[icoeff+1];
-    }
+    // Compute triangular partial sum via a closed form to get the starting offset
+    int k = (idxb * (1 + 2 * idxb_max - idxb)) / 2 + idxb_max + 1;
+    real_type bveci = blist(iatom, 0, idxb);
 
-    if (quadratic_flag) {
-      int k = (idxb * (1 + 2 * idxb_max - idxb)) / 2 + idxb_max + 1;
-      real_type bveci = blist(iatom, 0, idxb);
+    // Locally accumulate the contribution to d_beta(iatom, idxb)
+    real_type beta_idxb_accum = d_coeffi[k] * bveci;
+    k++;
+
+    for (int jdxb = idxb + 1; jdxb < idxb_max; jdxb++) {
+      real_type bvecj = blist(iatom, 0, jdxb);
+      real_type coeff_k = d_coeffi[k];
+      beta_idxb_accum += coeff_k * bvecj;
+
+      // Accumulate "half" contribution into d_beta(iatom, jdxb)
       if constexpr (need_atomics)
-        Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bveci);
+        Kokkos::atomic_add(&d_beta(iatom, jdxb), coeff_k * bveci);
       else
-        d_beta(iatom, idxb) += d_coeffi[k] * bveci;
+        d_beta(iatom, jdxb) += coeff_k * bveci;
+
       k++;
-
-      for (int jdxb = idxb + 1; jdxb < idxb_max; jdxb++) {
-        real_type bvecj = blist(iatom, 0, jdxb);
-        if constexpr (need_atomics) {
-          Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bvecj);
-          Kokkos::atomic_add(&d_beta(iatom, jdxb), d_coeffi[k] * bveci);
-        } else {
-          d_beta(iatom, idxb) += d_coeffi[k] * bvecj;
-          d_beta(iatom, jdxb) += d_coeffi[k] * bveci;
-        }
-        k++;
-      }
     }
+
+    if constexpr (need_atomics)
+      Kokkos::atomic_add(&d_beta(iatom, idxb), beta_idxb_accum);
+    else
+      d_beta(iatom, idxb) += beta_idxb_accum;
   }
 }
+
 
 /* ----------------------------------------------------------------------
    Compute Yi from Ui without storing Zi, looping over zlist indices.

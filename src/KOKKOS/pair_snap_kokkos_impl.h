@@ -292,7 +292,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     }
 
     {
-      // Expand ulisttot_re,_im -> ulisttot
+      // Expand ulisttot -> ulisttot
       // Zero out ylist
       auto policy_transform_ui = snap_get_policy<DeviceType, tile_size_transform_ui, TagPairSNAPTransformUi>(chunk_size_div, snaKK.idxu_max);
       Kokkos::parallel_for("TransformUi", policy_transform_ui, *this);
@@ -312,13 +312,15 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     }
 
     {
-      // Zero beta out
-      auto policy_zero_beta = snap_get_policy<DeviceType, tile_size_zero_beta, TagPairSNAPZeroBeta>(chunk_size_div, snaKK.idxb_max);
-      Kokkos::parallel_for("ZeroBeta",policy_zero_beta,*this);
+      //Compute beta = dE_i/dB_i for all i in list; linear portion only
+      auto policy_compute_beta_linear = snap_get_policy<DeviceType, tile_size_compute_beta, TagPairSNAPComputeBetaLinear>(chunk_size_div, snaKK.idxb_max);
+      Kokkos::parallel_for("ComputeBetaLinear", policy_compute_beta_linear, *this);
 
-      //Compute beta = dE_i/dB_i for all i in list
-      auto policy_compute_beta = snap_get_policy<DeviceType, tile_size_compute_beta, TagPairSNAPComputeBeta>(chunk_size_div, snaKK.idxb_max);
-      Kokkos::parallel_for("ComputeBeta", policy_compute_beta, *this);
+      if (quadraticflag) {
+        // Compute the quadratic correction
+        auto policy_compute_beta_quadratic = snap_get_policy<DeviceType, tile_size_compute_beta, TagPairSNAPComputeBetaQuadratic>(chunk_size_div, snaKK.idxb_max);
+        Kokkos::parallel_for("ComputeBetaQuadratic", policy_compute_beta_quadratic, *this);
+      }
 
       //Note zeroing `ylist` is fused into `TransformUi`.
       if (quadraticflag || eflag) {
@@ -450,8 +452,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
   // free duplicated memory
   if (need_dup) {
-    dup_f     = {};
-    dup_vatom = {};
+    dup_f     = decltype(dup_f)();
+    dup_vatom = decltype(dup_vatom)();
   }
 }
 
@@ -935,47 +937,14 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 }
 
 /* ----------------------------------------------------------------------
-  Zero out beta in advance of accumulating. CPU and GPU.
-------------------------------------------------------------------------- */
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPZeroBeta, const int& iatom_mod, const int& jjb, const int& iatom_div) const {
-  const int iatom = iatom_mod + iatom_div * vector_length;
-  if (iatom >= chunk_size) return;
-  if (jjb >= snaKK.idxb_max) return;
-  for (int itriple = 0; itriple < snaKK.ntriples; itriple++)
-    snaKK.d_beta(iatom, jjb + itriple * snaKK.idxb_max) = 0;
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPZeroBeta, const int& iatom, const int& jjb) const {
-  if (iatom >= chunk_size) return;
-  for (int itriple = 0; itriple < snaKK.ntriples; itriple++)
-    snaKK.d_beta(iatom, jjb + itriple * snaKK.idxb_max) = 0;
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPZeroBeta, const int& iatom) const {
-  if (iatom >= chunk_size) return;
-  for (int jjb = 0; jjb < snaKK.idxb_max; jjb++)
-    for (int itriple = 0; itriple < snaKK.ntriples; itriple++)
-      snaKK.d_beta(iatom, jjb + itriple * snaKK.idxb_max) = 0;
-}
-
-/* ----------------------------------------------------------------------
   Assemble the "beta" coefficients that enter the computation of the
-  adjoint matrices Y. For quadratic SNAP, this includes accumulating
-  energy triple products into an "effective" beta that encodes the
-  quadratic terms with otherwise linear compute work.
-  CPU and GPU.
+  adjoint matrices Y. This is just for a linear potential. A quadratic
+  contribution is added in a subsequent kernel. CPU and GPU.
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBeta, const int& iatom_mod, const int& idxb, const int& iatom_div) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBetaLinear, const int& iatom_mod, const int& idxb, const int& iatom_div) const {
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
   if (idxb >= snaKK.idxb_max) return;
@@ -984,24 +953,24 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   const int itype = type[i];
   const int ielem = d_map[itype];
 
-  snaKK.template compute_beta<true>(iatom, idxb, ielem);
+  snaKK.compute_beta_linear(iatom, idxb, ielem);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBeta, const int& iatom, const int& idxb) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBetaLinear, const int& iatom, const int& idxb) const {
   if (iatom >= chunk_size) return;
 
   const int i = d_ilist[iatom + chunk_offset];
   const int itype = type[i];
   const int ielem = d_map[itype];
 
-  snaKK.template compute_beta<true>(iatom, idxb, ielem);
+  snaKK.compute_beta_linear(iatom, idxb, ielem);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBeta, const int& iatom) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBetaLinear, const int& iatom) const {
   if (iatom >= chunk_size) return;
 
   const int i = d_ilist[iatom + chunk_offset];
@@ -1009,7 +978,53 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   const int ielem = d_map[itype];
 
   for (int idxb = 0; idxb < snaKK.idxb_max; idxb++)
-    snaKK.template compute_beta<false>(iatom, idxb, ielem);
+    snaKK.compute_beta_linear(iatom, idxb, ielem);
+}
+
+/* ----------------------------------------------------------------------
+  Accumulate the qudratic terms which includes accumulating
+  energy triple products into an "effective" beta that encodes the
+  quadratic terms with otherwise linear compute work.
+  CPU and GPU.
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom_mod, const int& idxb, const int& iatom_div) const {
+  const int iatom = iatom_mod + iatom_div * vector_length;
+  if (iatom >= chunk_size) return;
+  if (idxb >= snaKK.idxb_max) return;
+
+  const int i = d_ilist[iatom + chunk_offset];
+  const int itype = type[i];
+  const int ielem = d_map[itype];
+
+  snaKK.template compute_beta_quadratic<true>(iatom, idxb, ielem);
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom, const int& idxb) const {
+  if (iatom >= chunk_size) return;
+
+  const int i = d_ilist[iatom + chunk_offset];
+  const int itype = type[i];
+  const int ielem = d_map[itype];
+
+  snaKK.template compute_beta_quadratic<true>(iatom, idxb, ielem);
+}
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom) const {
+  if (iatom >= chunk_size) return;
+
+  const int i = d_ilist[iatom + chunk_offset];
+  const int itype = type[i];
+  const int ielem = d_map[itype];
+
+  for (int idxb = 0; idxb < snaKK.idxb_max; idxb++)
+    snaKK.template compute_beta_quadratic<false>(iatom, idxb, ielem);
 }
 
 /* ----------------------------------------------------------------------

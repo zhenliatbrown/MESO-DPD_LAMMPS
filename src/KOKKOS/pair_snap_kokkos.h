@@ -46,8 +46,8 @@ struct TagPairSNAPPreUi{};
 struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
 struct TagPairSNAPComputeZi{};
 struct TagPairSNAPComputeBi{};
-struct TagPairSNAPZeroBeta{};
-struct TagPairSNAPComputeBeta{};
+struct TagPairSNAPComputeBetaLinear{};
+struct TagPairSNAPComputeBetaQuadratic{};
 struct TagPairSNAPComputeYi{};
 struct TagPairSNAPComputeYiWithZlist{};
 template<int NEIGHFLAG, int EVFLAG>
@@ -94,7 +94,6 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_transform_ui = 2;
   static constexpr int tile_size_compute_zi = 2;
   static constexpr int tile_size_compute_bi = 2;
-  static constexpr int tile_size_zero_beta = 2;
   static constexpr int tile_size_compute_beta = 2;
   static constexpr int tile_size_compute_yi = 2;
   static constexpr int team_size_compute_fused_deidrj = 2;
@@ -106,7 +105,6 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_transform_ui = 8;
   static constexpr int tile_size_compute_zi = 4;
   static constexpr int tile_size_compute_bi = 4;
-  static constexpr int tile_size_zero_beta = 8;
   static constexpr int tile_size_compute_beta = 8;
   static constexpr int tile_size_compute_yi = 8;
   static constexpr int team_size_compute_fused_deidrj = 4;
@@ -118,7 +116,6 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_transform_ui = 4;
   static constexpr int tile_size_compute_zi = 8;
   static constexpr int tile_size_compute_bi = 4;
-  static constexpr int tile_size_zero_beta = 4;
   static constexpr int tile_size_compute_beta = 4;
   static constexpr int tile_size_compute_yi = 8;
   static constexpr int team_size_compute_fused_deidrj = sizeof(real_type) == 4 ? 4 : 2;
@@ -236,22 +233,22 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeBi, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPZeroBeta, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+  void operator() (TagPairSNAPComputeBetaLinear, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPZeroBeta, const int& iatom, const int& idxb) const;
+  void operator() (TagPairSNAPComputeBetaLinear, const int& iatom, const int& idxb) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPZeroBeta, const int& iatom) const;
+  void operator() (TagPairSNAPComputeBetaLinear, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBeta, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+  void operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBeta, const int& iatom, const int& idxb) const;
+  void operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom, const int& idxb) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBeta, const int& iatom) const;
+  void operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeYi, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
