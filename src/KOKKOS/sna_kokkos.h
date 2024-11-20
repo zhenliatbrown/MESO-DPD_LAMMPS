@@ -244,10 +244,6 @@ class SNAKokkos {
   void pre_ui_cpu(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_ui_cpu(const int&, const int&) const; // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
-  void compute_zi_cpu(const int&) const;    // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
-  void compute_yi_cpu(int) const; // ForceSNAP
 
   // functions for derivatives, CPU only
   KOKKOS_INLINE_FUNCTION

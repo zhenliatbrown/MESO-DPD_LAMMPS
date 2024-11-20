@@ -36,7 +36,12 @@ PairStyle(snap/kk/host,PairSNAPKokkosDevice<LMPHostType>);
 namespace LAMMPS_NS {
 
 // Routines for both the CPU and GPU backend
+struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
+struct TagPairSNAPComputeZi{};
+struct TagPairSNAPComputeYi{};
+struct TagPairSNAPComputeYiWithZlist{};
 struct TagPairSNAPBeta{};
+
 template<int NEIGHFLAG, int EVFLAG>
 struct TagPairSNAPComputeForce{};
 
@@ -46,11 +51,7 @@ struct TagPairSNAPComputeCayleyKlein{};
 struct TagPairSNAPPreUi{};
 struct TagPairSNAPComputeUiSmall{}; // more parallelism, more divergence
 struct TagPairSNAPComputeUiLarge{}; // less parallelism, no divergence
-struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
-struct TagPairSNAPComputeZi{};
 struct TagPairSNAPComputeBi{};
-struct TagPairSNAPComputeYi{};
-struct TagPairSNAPComputeYiWithZlist{};
 template<int dir>
 struct TagPairSNAPComputeFusedDeidrjSmall{}; // more parallelism, more divergence
 template<int dir>
@@ -60,9 +61,7 @@ struct TagPairSNAPComputeFusedDeidrjLarge{}; // less parallelism, no divergence
 struct TagPairSNAPComputeNeighCPU{};
 struct TagPairSNAPPreUiCPU{};
 struct TagPairSNAPComputeUiCPU{};
-struct TagPairSNAPComputeZiCPU{};
 struct TagPairSNAPComputeBiCPU{};
-struct TagPairSNAPZeroYiCPU{};
 struct TagPairSNAPComputeYiCPU{};
 struct TagPairSNAPComputeDuidrjCPU{};
 struct TagPairSNAPComputeDeidrjCPU{};
@@ -212,13 +211,16 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPTransformUi, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeZiCPU,const int& ii) const;
+  void operator() (TagPairSNAPComputeZi, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeBiCPU, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYiCPU,const int& ii) const;
+  void operator() (TagPairSNAPComputeYi, const int& ii) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeDuidrjCPU, const int& ii) const;

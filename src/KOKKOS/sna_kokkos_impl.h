@@ -828,30 +828,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi(const int& iato
   int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg;
   idxz(jjz).get_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg);
 
-  const real_type* cgblock = cglist.data() + idxcg;
-
-  int idouble = 0;
-
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-
-      zlist(iatom, idouble, jjz) = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
-
-      idouble++;
-    }
-  }
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi_cpu(const int& iter) const
-{
-  const int iatom = iter / idxz_max;
-  const int jjz = iter % idxz_max;
-
-  int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg;
-  idxz(jjz).get_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg);
-
   const real_type *cgblock = cglist.data() + idxcg;
 
   int idouble = 0;
@@ -1043,79 +1019,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iato
 
         Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
         Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
-      } // end loop over elem3
-    } // end loop over elem2
-  } // end loop over elem1
-}
-
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_cpu(int iter) const
-{
-  real_type betaj;
-  const int iatom = iter / idxz_max;
-  const int jjz = iter % idxz_max;
-
-  int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg;
-  idxz(jjz).get_yi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, jju_half, idxcg);
-
-  const real_type *cgblock = cglist.data() + idxcg;
-  //int mb = (2 * (mb1min+mb2max) - j1 - j2 + j) / 2;
-  //int ma = (2 * (ma1min+ma2max) - j1 - j2 + j) / 2;
-
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-
-      real_type ztmp_r = 0.0;
-      real_type ztmp_i = 0.0;
-
-      int jju1 = idxu_block[j1] + (j1 + 1) * mb1min;
-      int jju2 = idxu_block[j2] + (j2 + 1) * mb2max;
-      int icgb = mb1min * (j2 +1) + mb2max;
-
-      for (int ib = 0; ib < nb; ib++) {
-
-        real_type suma1_r = 0.0;
-        real_type suma1_i = 0.0;
-
-        int ma1 = ma1min;
-        int ma2 = ma2max;
-        int icga = ma1min*(j2+1) + ma2max;
-
-        for (int ia = 0; ia < na; ia++) {
-          suma1_r += cgblock[icga] * (ulisttot(iatom, elem1, jju1+ma1).re * ulisttot(iatom, elem2, jju2+ma2).re -
-                                      ulisttot(iatom, elem1, jju1+ma1).im * ulisttot(iatom, elem2, jju2+ma2).im);
-          suma1_i += cgblock[icga] * (ulisttot(iatom, elem1, jju1+ma1).re * ulisttot(iatom, elem2, jju2+ma2).im +
-                                      ulisttot(iatom, elem1, jju1+ma1).im * ulisttot(iatom, elem2, jju2+ma2).re);
-          ma1++;
-          ma2--;
-          icga += j2;
-        } // end loop over ia
-
-        ztmp_r += cgblock[icgb] * suma1_r;
-        ztmp_i += cgblock[icgb] * suma1_i;
-        jju1 += j1 + 1;
-        jju2 -= j2 + 1;
-        icgb += j2;
-      } // end loop over ib
-
-      if (bnorm_flag) {
-        const real_type scale = static_cast<real_type>(1) / static_cast<real_type>(j + 1);
-        ztmp_i *= scale;
-        ztmp_r *= scale;
-      }
-
-      // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
-      // find right y_list[jju] and beta(iatom,jjb) entries
-      // multiply and divide by j+1 factors
-      // account for multiplicity of 1, 2, or 3
-
-      // pick out right beta value
-      for (int elem3 = 0; elem3 < nelements; elem3++) {
-        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
-
-        Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj*ztmp_r);
-        Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj*ztmp_i);
       } // end loop over elem3
     } // end loop over elem2
   } // end loop over elem1
