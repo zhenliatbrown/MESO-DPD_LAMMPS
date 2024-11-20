@@ -292,7 +292,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     }
 
     {
-      // Expand ulisttot -> ulisttot
+      // Expand ulisttot_re,_im -> ulisttot
       // Zero out ylist
       auto policy_transform_ui = snap_get_policy<DeviceType, tile_size_transform_ui, TagPairSNAPTransformUi>(chunk_size_div, snaKK.idxu_max);
       Kokkos::parallel_for("TransformUi", policy_transform_ui, *this);
@@ -452,8 +452,8 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
   // free duplicated memory
   if (need_dup) {
-    dup_f     = decltype(dup_f)();
-    dup_vatom = decltype(dup_vatom)();
+    dup_f     = {};
+    dup_vatom = {};
   }
 }
 

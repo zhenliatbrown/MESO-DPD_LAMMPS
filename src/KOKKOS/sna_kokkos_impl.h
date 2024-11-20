@@ -897,66 +897,87 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
   for (int elem1 = 0; elem1 < nelements; elem1++) {
     for (int elem2 = 0; elem2 < nelements; elem2++) {
       for (int elem3 = 0; elem3 < nelements; elem3++) {
-
-        double sumzu = 0.0;
-        double sumzu_temp = 0.0;
-
-        for (int mb = 0; 2*mb < j; mb++) {
-          for (int ma = 0; ma <= j; ma++) {
-            const int jju_index = jju+mb*(j+1)+ma;
-            const int jjz_index = jjz+mb*(j+1)+ma;
-            if (2*mb == j) return; // I think we can remove this?
-            const complex utot = ulisttot(iatom, elem3, jju_index);
-            const complex zloc = zlist(iatom, idouble, jjz_index);
-            sumzu_temp += utot.re * zloc.re + utot.im * zloc.im;
-          }
-        }
-        sumzu += sumzu_temp;
-
-        // For j even, special treatment for middle column
-        if (j%2 == 0) {
-          sumzu_temp = 0.;
-
-          const int mb = j/2;
-          for (int ma = 0; ma < mb; ma++) {
-            const int jju_index = jju+(mb-1)*(j+1)+(j+1)+ma;
-            const int jjz_index = jjz+(mb-1)*(j+1)+(j+1)+ma;
-
-            const complex utot = ulisttot(iatom, elem3, jju_index);
-            const complex zloc = zlist(iatom, idouble, jjz_index);
-            sumzu_temp += utot.re * zloc.re + utot.im * zloc.im;
-
-          }
-          sumzu += sumzu_temp;
-
-          const int ma = mb;
-          const int jju_index = jju+(mb-1)*(j+1)+(j+1)+ma;
-          const int jjz_index = jjz+(mb-1)*(j+1)+(j+1)+ma;
-
-          const complex utot = ulisttot(iatom, elem3, jju_index);
-          const complex zloc = zlist(iatom, idouble, jjz_index);
-          sumzu += static_cast<real_type>(0.5) * (utot.re * zloc.re + utot.im * zloc.im);
-        } // end if jeven
-
-        sumzu *= static_cast<real_type>(2.0);
-        if (bzero_flag) {
-          if (!wselfall_flag) {
-            if (elem1 == elem2 && elem1 == elem3) {
-              sumzu -= bzero[j];
-            }
-          } else {
-            sumzu -= bzero[j];
-          }
-        }
-        blist(iatom, itriple, jjb) = sumzu;
-            //} // end loop over j
-          //} // end loop over j1, j2
+        blist(iatom, itriple, jjb) = evaluate_bi(j, jjz, jju, iatom, elem1, elem2, elem3);
         itriple++;
       } // end loop over elem3
       idouble++;
     } // end loop over elem2
   } // end loop over elem1
 }
+
+/* ----------------------------------------------------------------------
+   Core "evaluation" kernel that computes a single blist value.
+   This gets used in `compute_bi`
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+real_type SNAKokkos<DeviceType, real_type, vector_length>::evaluate_bi(const int& j, const int& jjz, const int& jju, const int& iatom, const int& elem1, const int& elem2, const int& elem3) const
+{
+  // this computes the:
+  //        b(j1,j2,j) = 0
+  //        for mb = 0,...,jmid
+  //          for ma = 0,...,j
+  //            b(j1,j2,j) +=
+  //              2*Conj(u(j,ma,mb))*z(j1,j2,j,ma,mb)
+  // portion
+
+  const int idouble = elem1 * nelements + elem2;
+  real_type sumzu = 0.0;
+  real_type sumzu_temp = 0.0;
+
+  for (int mb = 0; 2*mb < j; mb++) {
+    for (int ma = 0; ma <= j; ma++) {
+      const int jju_index = jju+mb*(j+1)+ma;
+      const int jjz_index = jjz+mb*(j+1)+ma;
+      if (2*mb == j) return 0; // I think we can remove this?
+      const complex utot = ulisttot(iatom, elem3, jju_index);
+      const complex zloc = zlist(iatom, idouble, jjz_index);
+      sumzu_temp += utot.re * zloc.re + utot.im * zloc.im;
+    }
+  }
+  sumzu += sumzu_temp;
+
+  // For j even, special treatment for middle column
+  if (j%2 == 0) {
+    sumzu_temp = 0.;
+
+    const int mb = j/2;
+    for (int ma = 0; ma < mb; ma++) {
+      const int jju_index = jju+(mb-1)*(j+1)+(j+1)+ma;
+      const int jjz_index = jjz+(mb-1)*(j+1)+(j+1)+ma;
+
+      const complex utot = ulisttot(iatom, elem3, jju_index);
+      const complex zloc = zlist(iatom, idouble, jjz_index);
+      sumzu_temp += utot.re * zloc.re + utot.im * zloc.im;
+
+    }
+    sumzu += sumzu_temp;
+
+    const int ma = mb;
+    const int jju_index = jju+(mb-1)*(j+1)+(j+1)+ma;
+    const int jjz_index = jjz+(mb-1)*(j+1)+(j+1)+ma;
+
+    const complex utot = ulisttot(iatom, elem3, jju_index);
+    const complex zloc = zlist(iatom, idouble, jjz_index);
+    sumzu += static_cast<real_type>(0.5) * (utot.re * zloc.re + utot.im * zloc.im);
+  } // end if jeven
+
+  sumzu *= static_cast<real_type>(2.0);
+  if (bzero_flag) {
+    if (!wselfall_flag) {
+      if (elem1 == elem2 && elem1 == elem3) {
+        sumzu -= bzero[j];
+      }
+    } else {
+      sumzu -= bzero[j];
+    }
+  }
+  return sumzu;
+      //} // end loop over j
+    //} // end loop over j1, j2
+}
+
 
 /* ----------------------------------------------------------------------
    compute beta by either appropriately copying it from d_coeffi
