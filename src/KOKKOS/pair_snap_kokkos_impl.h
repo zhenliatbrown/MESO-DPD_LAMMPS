@@ -235,7 +235,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
       //PreUi
       {
-        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPPreUiCPU> policy_preui_cpu(0, chunk_size);
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPPreUi> policy_preui_cpu(0, chunk_size * (twojmax + 1));
         Kokkos::parallel_for("PreUiCPU",policy_preui_cpu,*this);
       }
 
@@ -263,7 +263,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
         //ComputeBi
         int idxb_max = snaKK.idxb_max;
-        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPComputeBiCPU> policy_bi_cpu(0, chunk_size * idxb_max);
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPComputeBi> policy_bi_cpu(0, chunk_size * idxb_max);
         Kokkos::parallel_for("ComputeBiCPU",policy_bi_cpu,*this);
 
         //Compute beta = dE_i/dB_i for all i in list
@@ -807,11 +807,14 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUiCPU, const int& iatom) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPPreUi, const int& ii) const {
+  const int iatom = ii / (twojmax+1);
+  const int j = ii % (twojmax+1);
+
   const int itype = type(iatom);
   const int ielem = d_map[itype];
 
-  snaKK.pre_ui_cpu(iatom, ielem);
+  snaKK.pre_ui(iatom, j, ielem);
 }
 
 /* ----------------------------------------------------------------------
@@ -944,12 +947,12 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
   if (iatom >= chunk_size) return;
   if (jjb >= snaKK.idxb_max) return;
 
-  snaKK.compute_bi(iatom,jjb);
+  snaKK.compute_bi(iatom, jjb);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBiCPU, const int& ii) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi, const int& ii) const {
   const int iatom = ii / snaKK.idxb_max;
   const int jjb = ii % snaKK.idxb_max;
   snaKK.compute_bi(iatom, jjb);

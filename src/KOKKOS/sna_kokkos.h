@@ -241,8 +241,6 @@ class SNAKokkos {
 
   // functions for bispectrum coefficients, CPU only
   KOKKOS_INLINE_FUNCTION
-  void pre_ui_cpu(const int&, const int&) const; // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
   void compute_ui_cpu(const int&, const int&) const; // ForceSNAP
 
   // functions for derivatives, CPU only

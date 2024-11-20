@@ -466,30 +466,6 @@ void SNAKokkos<DeviceType, real_type, vector_length>::pre_ui(const int& iatom, c
   }
 }
 
-template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void SNAKokkos<DeviceType, real_type, vector_length>::pre_ui_cpu(const int& iatom, const int& ielem) const
-{
-  for (int jelem = 0; jelem < nelements; jelem++) {
-    for (int j = 0; j <= twojmax; j++) {
-      int jju = idxu_half_block(j); // removed "const" to work around GCC 7 bug
-
-      // Only diagonal elements get initialized
-      for (int m = 0; m < (j+1)*(j/2+1); m++) {
-        const int jjup = jju + m;
-
-        // if m is on the "diagonal", initialize it with the self energy.
-        // Otherwise zero it out
-        real_type init = 0;
-        if (m % (j+2) == 0 && (!chem_flag || ielem == jelem || wselfall_flag)) { init = wself; } //need to map iatom to element
-
-        ulisttot_re(iatom, jelem, jjup) = init;
-        ulisttot_im(iatom, jelem, jjup) = 0;
-      };
-    }
-  }
-}
-
 /* ----------------------------------------------------------------------
    compute Ui by computing Wigner U-functions for one neighbor and
    accumulating to the total. GPU only.
