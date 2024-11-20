@@ -137,12 +137,24 @@ class PairSNAPKokkos : public PairSNAP {
   template <class Device, int num_teams, class TagPairSNAP>
   using SnapAoSoATeamPolicy = typename Kokkos::TeamPolicy<Device, Kokkos::LaunchBounds<vector_length * num_teams>, TagPairSNAP>;
 
+  // Custom MDRangePolicy, Rank2, on the host, to reduce verbosity of kernel launches. The striding of this launch is intentionally
+  // different from the tiled 3D range policy on the device.
+  template <class Device, class TagPairSNAP>
+  using Snap2DHostRangePolicy = typename Kokkos::MDRangePolicy<Device, Kokkos::Schedule<Kokkos::Dynamic>, Kokkos::IndexType<int>, Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagPairSNAP>;
+
+  // Custom RangePolicy, Rank2, on the host, to reduce verbosity of kernel launches
+  template <class Device, class TagPairSNAP>
+  using Snap1DHostRangePolicy = typename Kokkos::RangePolicy<Device, Kokkos::Schedule<Kokkos::Dynamic>, TagPairSNAP>;
+
   // Helper routine that returns a CPU or a GPU policy as appropriate
   template <class Device, int num_teams, class TagPairSNAP>
   auto snap_get_policy(const int& chunk_size_div, const int& second_loop) {
-    if constexpr (host_flag)
-      return typename Kokkos::RangePolicy<Device, TagPairSNAP>(0, chunk_size_div * vector_length * second_loop);
-    else
+    if constexpr (host_flag) {
+      return Snap1DHostRangePolicy<Device, TagPairSNAP>(0, chunk_size_div * vector_length);
+
+      // the 2-d policy is still correct but it has atomics so it's slower on the CPU
+      //return Snap2DHostRangePolicy<Device, TagPairSNAP>({0, 0}, {chunk_size_div * vector_length, second_loop});
+    } else
       return Snap3DRangePolicy<Device, num_teams, TagPairSNAP>({0, 0, 0},
                                                                    {vector_length, second_loop, chunk_size_div},
                                                                    {vector_length, num_teams, 1});
@@ -176,11 +188,19 @@ class PairSNAPKokkos : public PairSNAP {
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagPairSNAPComputeNeigh>::member_type& team) const;
 
+  // GPU backend only
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeCayleyKlein, const int iatom_mod, const int jnbor, const int iatom_div) const;
 
+  // CPU and GPU
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPPreUi,const int iatom_mod, const int j, const int iatom_div) const;
+  void operator() (TagPairSNAPPreUi, const int& iatom_mod, const int& j, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPPreUi, const int& iatom, const int& j) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPPreUi, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeUiSmall,const typename Kokkos::TeamPolicy<DeviceType, TagPairSNAPComputeUiSmall>::member_type& team) const;
@@ -189,25 +209,67 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeUiLarge,const typename Kokkos::TeamPolicy<DeviceType, TagPairSNAPComputeUiLarge>::member_type& team) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPTransformUi,const int iatom_mod, const int j, const int iatom_div) const;
+  void operator() (TagPairSNAPTransformUi, const int& iatom_mod, const int& idxu, const int& iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeZi,const int iatom_mod, const int idxz, const int iatom_div) const;
+  void operator() (TagPairSNAPTransformUi, const int& iatom, const int& idxu) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBi,const int iatom_mod, const int idxb, const int iatom_div) const;
+  void operator() (TagPairSNAPTransformUi, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPZeroBeta,const int iatom_mod, const int idxb, const int iatom_div) const;
-
-    KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBeta, const int iatom_mod, const int idxb, const int iatom_div) const;
+  void operator() (TagPairSNAPComputeZi, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYi,const int iatom_mod, const int idxz, const int iatom_div) const;
+  void operator() (TagPairSNAPComputeZi, const int& iatom, const int& idxz) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYiWithZlist,const int iatom_mod, const int idxz, const int iatom_div) const;
+  void operator() (TagPairSNAPComputeZi, const int& iatom) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBi, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBi, const int& iatom, const int& idxb) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBi, const int& iatom) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPZeroBeta, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPZeroBeta, const int& iatom, const int& idxb) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPZeroBeta, const int& iatom) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBeta, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBeta, const int& iatom, const int& idxb) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBeta, const int& iatom) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYi, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYi, const int& iatom, const int& idxz) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYi, const int& iatom) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist, const int& iatom, const int& idxz) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist, const int& iatom) const;
 
   template<int dir>
   KOKKOS_INLINE_FUNCTION
@@ -222,37 +284,22 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeNeighCPU,const typename Kokkos::TeamPolicy<DeviceType, TagPairSNAPComputeNeighCPU>::member_type& team) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPPreUi, const int& ii) const;
+  void operator() (TagPairSNAPComputeUiCPU, const int& iatom, const int& jnbor) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeUiCPU, const int& ii) const;
+  void operator() (TagPairSNAPComputeUiCPU, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPTransformUi, const int& ii) const;
+  void operator() (TagPairSNAPComputeDuidrjCPU, const int& iatom, const int& jnbor) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeZi, const int& ii) const;
+  void operator() (TagPairSNAPComputeDuidrjCPU, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBi, const int& ii) const;
+  void operator() (TagPairSNAPComputeDeidrjCPU, const int& iatom, const int& jnbor) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPZeroBeta, const int& ii) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBeta, const int& ii) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYi, const int& ii) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYiWithZlist, const int& ii) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeDuidrjCPU, const int& ii) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeDeidrjCPU, const int& ii) const;
+  void operator() (TagPairSNAPComputeDeidrjCPU, const int& iatom) const;
 
   template<int NEIGHFLAG>
   KOKKOS_INLINE_FUNCTION

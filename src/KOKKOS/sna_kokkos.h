@@ -206,13 +206,13 @@ class SNAKokkos {
 
   KOKKOS_INLINE_FUNCTION
   void compute_zi(const int&, const int&) const;    // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
+  template <bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_yi(const int&, const int&) const; // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
+  template <bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_yi_with_zlist(const int&, const int&) const; // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_bi(const int&, const int&) const;    // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
+  template <bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_beta(const int&, const int&, const int&) const;
 
   // functions for derivatives, GPU only
@@ -244,7 +244,7 @@ class SNAKokkos {
                         const int&, const int&, const int&) const;
 
   // functions for bispectrum coefficients, CPU only
-  KOKKOS_INLINE_FUNCTION
+  template <bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_ui_cpu(const int&, const int&) const; // ForceSNAP
 
   // functions for derivatives, CPU only

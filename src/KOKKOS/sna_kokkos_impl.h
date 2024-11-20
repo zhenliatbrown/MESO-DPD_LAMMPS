@@ -638,7 +638,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::evaluate_ui_jbend(const Wi
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
+template <bool need_atomics> KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_cpu(const int& iatom, const int& jnbor) const
 {
   // utot(j,ma,mb) = 0 for all j,ma,ma
@@ -743,8 +743,13 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_cpu(const int& 
     int count = 0;
     for (int mb = 0; 2*mb <= j; mb++) {
       for (int ma = 0; ma <= j; ma++) {
-        Kokkos::atomic_add(&(ulisttot_re(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).re);
-        Kokkos::atomic_add(&(ulisttot_im(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).im);
+        if constexpr (need_atomics) {
+          Kokkos::atomic_add(&(ulisttot_re(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).re);
+          Kokkos::atomic_add(&(ulisttot_im(iatom, jelem, jju_half+count)), sfac * ulist_cpu(iatom, jnbor, jju_cache+count).im);
+        } else {
+          ulisttot_re(iatom, jelem, jju_half+count) += sfac * ulist_cpu(iatom, jnbor, jju_cache+count).re;
+          ulisttot_im(iatom, jelem, jju_half+count) += sfac * ulist_cpu(iatom, jnbor, jju_cache+count).im;
+        }
         count++;
       }
     }
@@ -959,6 +964,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
+template <bool need_atomics>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta(const int& iatom, const int& idxb, const int& ielem) const
 {
@@ -991,19 +997,30 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta(const int& ia
   } else {
     for (int itriple = 0; itriple < ntriples; itriple++) {
       int icoeff = idxb + itriple * idxb_max;
-      Kokkos::atomic_add(&d_beta(iatom, icoeff), d_coeffi[icoeff+1]);
+      if constexpr (need_atomics)
+        Kokkos::atomic_add(&d_beta(iatom, icoeff), d_coeffi[icoeff+1]);
+      else
+        d_beta(iatom, icoeff) += d_coeffi[icoeff+1];
     }
 
     if (quadratic_flag) {
       int k = (idxb * (1 + 2 * idxb_max - idxb)) / 2 + idxb_max + 1;
       real_type bveci = blist(iatom, 0, idxb);
-      Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bveci);
+      if constexpr (need_atomics)
+        Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bveci);
+      else
+        d_beta(iatom, idxb) += d_coeffi[k] * bveci;
       k++;
 
       for (int jdxb = idxb + 1; jdxb < idxb_max; jdxb++) {
         real_type bvecj = blist(iatom, 0, jdxb);
-        Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bvecj);
-        Kokkos::atomic_add(&d_beta(iatom, jdxb), d_coeffi[k] * bveci);
+        if constexpr (need_atomics) {
+          Kokkos::atomic_add(&d_beta(iatom, idxb), d_coeffi[k] * bvecj);
+          Kokkos::atomic_add(&d_beta(iatom, jdxb), d_coeffi[k] * bveci);
+        } else {
+          d_beta(iatom, idxb) += d_coeffi[k] * bvecj;
+          d_beta(iatom, jdxb) += d_coeffi[k] * bveci;
+        }
         k++;
       }
     }
@@ -1015,6 +1032,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta(const int& ia
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
+template <bool need_atomics>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iatom, const int& jjz) const
 {
@@ -1040,8 +1058,13 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iato
 
         const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
 
-        Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
-        Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
+        if constexpr (need_atomics) {
+          Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
+          Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
+        } else {
+          ylist_re(iatom, elem3, jju_half) += betaj * ztmp.re;
+          ylist_im(iatom, elem3, jju_half) += betaj * ztmp.im;
+        }
       } // end loop over elem3
     } // end loop over elem2
   } // end loop over elem1
@@ -1052,6 +1075,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iato
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
+template <bool need_atomics>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(const int& iatom, const int& jjz) const
 {
@@ -1071,8 +1095,13 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(cons
 
         const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
 
-        Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
-        Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
+        if constexpr (need_atomics) {
+          Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
+          Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
+        } else {
+          ylist_re(iatom, elem3, jju_half) += betaj * ztmp.re;
+          ylist_im(iatom, elem3, jju_half) += betaj * ztmp.im;
+        }
       } // end loop over elem3
       idouble++;
     } // end loop over elem2
