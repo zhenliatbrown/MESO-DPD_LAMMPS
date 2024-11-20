@@ -60,7 +60,6 @@ struct TagPairSNAPComputeFusedDeidrjLarge{}; // less parallelism, no divergence
 struct TagPairSNAPComputeNeighCPU{};
 struct TagPairSNAPPreUiCPU{};
 struct TagPairSNAPComputeUiCPU{};
-struct TagPairSNAPTransformUiCPU{};
 struct TagPairSNAPComputeZiCPU{};
 struct TagPairSNAPComputeBiCPU{};
 struct TagPairSNAPZeroYiCPU{};
@@ -210,7 +209,7 @@ class PairSNAPKokkos : public PairSNAP {
   void operator() (TagPairSNAPComputeUiCPU, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPTransformUiCPU, const int j, const int iatom) const;
+  void operator() (TagPairSNAPTransformUi, const int& ii) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeZiCPU,const int& ii) const;

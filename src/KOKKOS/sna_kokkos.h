@@ -198,6 +198,10 @@ class SNAKokkos {
   KOKKOS_INLINE_FUNCTION
   void compute_ui_large(const typename Kokkos::TeamPolicy<DeviceType>::member_type& team, const int, const int, const int) const; // ForceSNAP
 
+  // desymmetrize ulisttot
+  KOKKOS_INLINE_FUNCTION
+  void transform_ui(const int&, const int&) const;
+
   KOKKOS_INLINE_FUNCTION
   void compute_zi(const int&, const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION

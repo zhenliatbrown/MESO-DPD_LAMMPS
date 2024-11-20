@@ -785,6 +785,39 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_ui_cpu(const int& 
 }
 
 /* ----------------------------------------------------------------------
+  De-symmetrize ulisttot_re and _im and pack it into a unified ulisttot
+  structure, fused in with zeroing ylist
+------------------------------------------------------------------------- */
+
+template<class DeviceType, typename real_type, int vector_length>
+KOKKOS_INLINE_FUNCTION
+void SNAKokkos<DeviceType, real_type, vector_length>::transform_ui(const int& iatom, const int& idxu) const
+{
+  int elem_count = chem_flag ? nelements : 1;
+
+  for (int ielem = 0; ielem < elem_count; ielem++) {
+
+    const FullHalfMapper mapper = idxu_full_half[idxu];
+
+    auto utot_re = ulisttot_re(iatom, ielem, mapper.idxu_half);
+    auto utot_im = ulisttot_im(iatom, ielem, mapper.idxu_half);
+
+    if (mapper.flip_sign == 1) {
+      utot_im = -utot_im;
+    } else if (mapper.flip_sign == -1) {
+      utot_re = -utot_re;
+    }
+
+    ulisttot(iatom, ielem, idxu) = { utot_re, utot_im };
+
+    if (mapper.flip_sign == 0) {
+      ylist_re(iatom, ielem, mapper.idxu_half) = 0.;
+      ylist_im(iatom, ielem, mapper.idxu_half) = 0.;
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
    compute Zi by summing over products of Ui
 ------------------------------------------------------------------------- */
 

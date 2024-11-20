@@ -249,8 +249,9 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
       {
         // Expand ulisttot_re,_im -> ulisttot
         // Zero out ylist
-        typename Kokkos::MDRangePolicy<DeviceType, Kokkos::IndexType<int>, Kokkos::Rank<2, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, TagPairSNAPTransformUiCPU> policy_transform_ui_cpu({0,0},{twojmax+1,chunk_size});
-        Kokkos::parallel_for("TransformUiCPU",policy_transform_ui_cpu,*this);
+        int idxu_max = snaKK.idxu_max;
+        typename Kokkos::RangePolicy<DeviceType,TagPairSNAPTransformUi> policy_transform_ui_cpu(0, chunk_size * idxu_max);
+        Kokkos::parallel_for("TransformUi",policy_transform_ui_cpu,*this);
       }
 
       //Compute bispectrum
@@ -888,83 +889,19 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUi, const int iatom_mod, const int idxu, const int iatom_div) const {
-
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
   if (idxu > snaKK.idxu_max) return;
-
-  int elem_count = chemflag ? nelements : 1;
-
-  for (int ielem = 0; ielem < elem_count; ielem++) {
-
-    const FullHalfMapper mapper = snaKK.idxu_full_half[idxu];
-
-    auto utot_re = snaKK.ulisttot_re(iatom, ielem, mapper.idxu_half);
-    auto utot_im = snaKK.ulisttot_im(iatom, ielem, mapper.idxu_half);
-
-    if (mapper.flip_sign == 1) {
-      utot_im = -utot_im;
-    } else if (mapper.flip_sign == -1) {
-      utot_re = -utot_re;
-    }
-
-    snaKK.ulisttot(iatom, ielem, idxu) = { utot_re, utot_im };
-
-    if (mapper.flip_sign == 0) {
-      snaKK.ylist_re(iatom, ielem, mapper.idxu_half) = 0.;
-      snaKK.ylist_im(iatom, ielem, mapper.idxu_half) = 0.;
-    }
-  }
+  snaKK.transform_ui(iatom, idxu);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUiCPU, const int j, const int iatom) const {
-
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPTransformUi, const int& ii) const {
+  const int iatom = ii / snaKK.idxu_max;
+  const int idxu = ii % snaKK.idxu_max;
   if (iatom >= chunk_size) return;
-
-  if (j > twojmax) return;
-
-  int elem_count = chemflag ? nelements : 1;
-
-  // De-symmetrize ulisttot
-  for (int ielem = 0; ielem < elem_count; ielem++) {
-
-    const int jju_half = snaKK.idxu_half_block(j);
-    const int jju = snaKK.idxu_block(j);
-
-    for (int mb = 0; 2*mb <= j; mb++) {
-      for (int ma = 0; ma <= j; ma++) {
-        // Extract top half
-
-        const int idxu_shift = mb * (j + 1) + ma;
-        const int idxu_half = jju_half + idxu_shift;
-        const int idxu = jju + idxu_shift;
-
-        // Load ulist
-        complex utot = { snaKK.ulisttot_re(iatom, ielem, idxu_half), snaKK.ulisttot_im(iatom, ielem, idxu_half) };
-
-        // Store
-        snaKK.ulisttot(iatom, ielem, idxu) = utot;
-
-        // Zero Yi
-        snaKK.ylist_re(iatom, ielem, idxu_half) = 0;
-        snaKK.ylist_im(iatom, ielem, idxu_half) = 0;
-
-        // Symmetric term
-        const int sign_factor = (((ma+mb)%2==0)?1:-1);
-        const int idxu_flip = jju + (j + 1 - mb) * (j + 1) - (ma + 1);
-
-        if (sign_factor == 1) {
-          utot.im = -utot.im;
-        } else {
-          utot.re = -utot.re;
-        }
-
-        snaKK.ulisttot(iatom, ielem, idxu_flip) = utot;
-      }
-    }
-  }
+  snaKK.transform_ui(iatom, idxu);
 }
 
 /* ----------------------------------------------------------------------
@@ -986,7 +923,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 
 template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZiCPU,const int& ii) const {
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZiCPU, const int& ii) const {
   snaKK.compute_zi_cpu(ii);
 }
 
