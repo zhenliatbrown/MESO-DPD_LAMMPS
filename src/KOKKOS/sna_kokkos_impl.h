@@ -1067,7 +1067,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_beta_quadratic(con
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-template <bool need_atomics>
+template <bool chemsnap, bool need_atomics>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iatom, const int& jjz) const
 {
@@ -1078,31 +1078,44 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iato
   //int mb = (2 * (mb1min+mb2max) - j1 - j2 + j) / 2;
   //int ma = (2 * (ma1min+ma2max) - j1 - j2 + j) / 2;
 
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
+  if constexpr (chemsnap) {
+    for (int elem1 = 0; elem1 < nelements; elem1++) {
+      for (int elem2 = 0; elem2 < nelements; elem2++) {
 
-      const complex ztmp = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
+        const complex ztmp = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
 
-      // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
-      // find right y_list[jju] and beta(iatom,jjb) entries
-      // multiply and divide by j+1 factors
-      // account for multiplicity of 1, 2, or 3
+        // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
+        // find right y_list[jju] and beta(iatom,jjb) entries
+        // multiply and divide by j+1 factors
+        // account for multiplicity of 1, 2, or 3
 
-      // pick out right beta value
-      for (int elem3 = 0; elem3 < nelements; elem3++) {
+        // pick out right beta value
+        for (int elem3 = 0; elem3 < nelements; elem3++) {
 
-        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
+          const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
 
-        if constexpr (need_atomics) {
-          Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
-          Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
-        } else {
-          ylist_re(iatom, elem3, jju_half) += betaj * ztmp.re;
-          ylist_im(iatom, elem3, jju_half) += betaj * ztmp.im;
-        }
-      } // end loop over elem3
-    } // end loop over elem2
-  } // end loop over elem1
+          if constexpr (need_atomics) {
+            Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
+            Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
+          } else {
+            ylist_re(iatom, elem3, jju_half) += betaj * ztmp.re;
+            ylist_im(iatom, elem3, jju_half) += betaj * ztmp.im;
+          }
+        } // end loop over elem3
+      } // end loop over elem2
+    } // end loop over elem1
+  } else {
+    const complex ztmp = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, 0, 0, cgblock);
+    const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, 0, 0, 0);
+
+    if constexpr (need_atomics) {
+      Kokkos::atomic_add(&(ylist_re(iatom, 0, jju_half)), betaj * ztmp.re);
+      Kokkos::atomic_add(&(ylist_im(iatom, 0, jju_half)), betaj * ztmp.im);
+    } else {
+      ylist_re(iatom, 0, jju_half) += betaj * ztmp.re;
+      ylist_im(iatom, 0, jju_half) += betaj * ztmp.im;
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -1110,37 +1123,50 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi(const int& iato
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-template <bool need_atomics>
+template <bool chemsnap, bool need_atomics>
 KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_yi_with_zlist(const int& iatom, const int& jjz) const
 {
   int j1, j2, j, jju_half;
   idxz(jjz).get_yi_with_zlist(j1, j2, j, jju_half);
 
-  int idouble = 0;
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-      const complex ztmp = zlist(iatom, idouble, jjz);
-      // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
-      // find right y_list[jju] and beta(iatom,jjb) entries
-      // multiply and divide by j+1 factors
-      // account for multiplicity of 1, 2, or 3
-      // pick out right beta value
-      for (int elem3 = 0; elem3 < nelements; elem3++) {
+  if constexpr (chemsnap) {
+    int idouble = 0;
+    for (int elem1 = 0; elem1 < nelements; elem1++) {
+      for (int elem2 = 0; elem2 < nelements; elem2++) {
+        const complex ztmp = zlist(iatom, idouble, jjz);
+        // apply to z(j1,j2,j,ma,mb) to unique element of y(j)
+        // find right y_list[jju] and beta(iatom,jjb) entries
+        // multiply and divide by j+1 factors
+        // account for multiplicity of 1, 2, or 3
+        // pick out right beta value
+        for (int elem3 = 0; elem3 < nelements; elem3++) {
 
-        const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
+          const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, elem1, elem2, elem3);
 
-        if constexpr (need_atomics) {
-          Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
-          Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
-        } else {
-          ylist_re(iatom, elem3, jju_half) += betaj * ztmp.re;
-          ylist_im(iatom, elem3, jju_half) += betaj * ztmp.im;
-        }
-      } // end loop over elem3
-      idouble++;
-    } // end loop over elem2
-  } // end loop over elem1
+          if constexpr (need_atomics) {
+            Kokkos::atomic_add(&(ylist_re(iatom, elem3, jju_half)), betaj * ztmp.re);
+            Kokkos::atomic_add(&(ylist_im(iatom, elem3, jju_half)), betaj * ztmp.im);
+          } else {
+            ylist_re(iatom, elem3, jju_half) += betaj * ztmp.re;
+            ylist_im(iatom, elem3, jju_half) += betaj * ztmp.im;
+          }
+        } // end loop over elem3
+        idouble++;
+      } // end loop over elem2
+    } // end loop over elem1
+  } else {
+    const complex ztmp = zlist(iatom, 0, jjz);
+    const real_type betaj = evaluate_beta_scaled(j1, j2, j, iatom, 0, 0, 0);
+
+    if constexpr (need_atomics) {
+      Kokkos::atomic_add(&(ylist_re(iatom, 0, jju_half)), betaj * ztmp.re);
+      Kokkos::atomic_add(&(ylist_im(iatom, 0, jju_half)), betaj * ztmp.im);
+    } else {
+      ylist_re(iatom, 0, jju_half) += betaj * ztmp.re;
+      ylist_im(iatom, 0, jju_half) += betaj * ztmp.im;
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------

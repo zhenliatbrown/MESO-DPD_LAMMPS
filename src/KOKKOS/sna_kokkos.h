@@ -206,9 +206,9 @@ class SNAKokkos {
 
   template <bool chemsnap> KOKKOS_INLINE_FUNCTION
   void compute_zi(const int&, const int&) const;    // ForceSNAP
-  template <bool need_atomics> KOKKOS_INLINE_FUNCTION
+  template <bool chemsnap, bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_yi(const int&, const int&) const; // ForceSNAP
-  template <bool need_atomics> KOKKOS_INLINE_FUNCTION
+  template <bool chemsnap, bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_yi_with_zlist(const int&, const int&) const; // ForceSNAP
   template <bool chemsnap> KOKKOS_INLINE_FUNCTION
   void compute_bi(const int&, const int&) const;    // ForceSNAP

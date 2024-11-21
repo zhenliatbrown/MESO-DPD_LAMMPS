@@ -332,11 +332,21 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
 
       //Note zeroing `ylist` is fused into `TransformUi`.
       if (quadraticflag || eflag) {
-        auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYiWithZlist>(chunk_size_div, snaKK.idxz_max);
-        Kokkos::parallel_for("ComputeYiWithZlist", policy_compute_yi, *this);
+        if (nelements > 1) {
+          auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYiWithZlist<true>>(chunk_size_div, snaKK.idxz_max);
+          Kokkos::parallel_for("ComputeYiWithZlistChemsnap", policy_compute_yi, *this);
+        } else {
+          auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYiWithZlist<false>>(chunk_size_div, snaKK.idxz_max);
+          Kokkos::parallel_for("ComputeYiWithZlist", policy_compute_yi, *this);
+        }
       } else {
-        auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYi, min_blocks_compute_yi>(chunk_size_div, snaKK.idxz_max);
-        Kokkos::parallel_for("ComputeYi", policy_compute_yi, *this);
+        if (nelements > 1) {
+          auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYi<true>, min_blocks_compute_yi>(chunk_size_div, snaKK.idxz_max);
+          Kokkos::parallel_for("ComputeYiChemsnap", policy_compute_yi, *this);
+        } else {
+          auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYi<false>, min_blocks_compute_yi>(chunk_size_div, snaKK.idxz_max);
+          Kokkos::parallel_for("ComputeYi", policy_compute_yi, *this);
+        }
       }
     }
 
@@ -1041,27 +1051,27 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi, const int& iatom_mod, const int& jjz, const int& iatom_div) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi<chemsnap>, const int& iatom_mod, const int& jjz, const int& iatom_div) const {
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
   if (jjz >= snaKK.idxz_max) return;
-  snaKK.template compute_yi<true>(iatom, jjz);
+  snaKK.template compute_yi<chemsnap, true>(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi, const int& iatom, const int& jjz) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi<chemsnap>, const int& iatom, const int& jjz) const {
   if (iatom >= chunk_size) return;
-  snaKK.template compute_yi<true>(iatom, jjz);
+  snaKK.template compute_yi<chemsnap, true>(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi, const int& iatom) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYi<chemsnap>, const int& iatom) const {
   if (iatom >= chunk_size) return;
   for (int jjz = 0; jjz < snaKK.idxz_max; jjz++)
-    snaKK.template compute_yi<false>(iatom, jjz);
+    snaKK.template compute_yi<chemsnap, false>(iatom, jjz);
 }
 
 /* ----------------------------------------------------------------------
@@ -1070,27 +1080,27 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist, const int& iatom_mod, const int& jjz, const int& iatom_div) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist<chemsnap>, const int& iatom_mod, const int& jjz, const int& iatom_div) const {
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
   if (jjz >= snaKK.idxz_max) return;
-  snaKK.template compute_yi_with_zlist<true>(iatom, jjz);
+  snaKK.template compute_yi_with_zlist<chemsnap, true>(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist, const int& iatom, const int& jjz) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist<chemsnap>, const int& iatom, const int& jjz) const {
   if (iatom >= chunk_size) return;
-  snaKK.template compute_yi_with_zlist<true>(iatom, jjz);
+  snaKK.template compute_yi_with_zlist<chemsnap, true>(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist, const int& iatom) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeYiWithZlist<chemsnap>, const int& iatom) const {
   if (iatom >= chunk_size) return;
   for (int jjz = 0; jjz < snaKK.idxz_max; jjz++)
-    snaKK.template compute_yi_with_zlist<false>(iatom, jjz);
+    snaKK.template compute_yi_with_zlist<chemsnap, false>(iatom, jjz);
 }
 
 /* ----------------------------------------------------------------------

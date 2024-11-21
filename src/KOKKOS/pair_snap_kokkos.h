@@ -48,8 +48,8 @@ template <bool chemsnap> struct TagPairSNAPComputeZi{};
 template <bool chemsnap> struct TagPairSNAPComputeBi{};
 struct TagPairSNAPComputeBetaLinear{};
 struct TagPairSNAPComputeBetaQuadratic{};
-struct TagPairSNAPComputeYi{};
-struct TagPairSNAPComputeYiWithZlist{};
+template <bool chemsnap> struct TagPairSNAPComputeYi{};
+template <bool chemsnap> struct TagPairSNAPComputeYiWithZlist{};
 template<int NEIGHFLAG, int EVFLAG>
 struct TagPairSNAPComputeForce{};
 
@@ -258,23 +258,23 @@ class PairSNAPKokkos : public PairSNAP {
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeBetaQuadratic, const int& iatom) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYi, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYi<chemsnap>, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYi, const int& iatom, const int& idxz) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYi<chemsnap>, const int& iatom, const int& idxz) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYi, const int& iatom) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYi<chemsnap>, const int& iatom) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYiWithZlist, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist<chemsnap>, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYiWithZlist, const int& iatom, const int& idxz) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist<chemsnap>, const int& iatom, const int& idxz) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeYiWithZlist, const int& iatom) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeYiWithZlist<chemsnap>, const int& iatom) const;
 
   template<int dir>
   KOKKOS_INLINE_FUNCTION
