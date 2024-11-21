@@ -204,13 +204,13 @@ class SNAKokkos {
   KOKKOS_INLINE_FUNCTION
   void transform_ui(const int&, const int&) const;
 
-  KOKKOS_INLINE_FUNCTION
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
   void compute_zi(const int&, const int&) const;    // ForceSNAP
   template <bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_yi(const int&, const int&) const; // ForceSNAP
   template <bool need_atomics> KOKKOS_INLINE_FUNCTION
   void compute_yi_with_zlist(const int&, const int&) const; // ForceSNAP
-  KOKKOS_INLINE_FUNCTION
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
   void compute_bi(const int&, const int&) const;    // ForceSNAP
   KOKKOS_INLINE_FUNCTION
   void compute_beta_linear(const int&, const int&, const int&) const;

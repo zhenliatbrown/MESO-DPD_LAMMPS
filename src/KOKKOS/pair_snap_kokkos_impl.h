@@ -302,13 +302,21 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
     if (quadraticflag || eflag) {
       // team_size_[compute_zi, compute_bi, transform_bi] are defined in `pair_snap_kokkos.h`
 
-      //ComputeZi
-      auto policy_compute_zi = snap_get_policy<DeviceType, tile_size_compute_zi, TagPairSNAPComputeZi, min_blocks_compute_zi>(chunk_size_div, snaKK.idxz_max);
-      Kokkos::parallel_for("ComputeZi", policy_compute_zi, *this);
+      //ComputeZi and Bi
+      if (nelements > 1) {
+        auto policy_compute_zi = snap_get_policy<DeviceType, tile_size_compute_zi, TagPairSNAPComputeZi<true>, min_blocks_compute_zi>(chunk_size_div, snaKK.idxz_max);
+        Kokkos::parallel_for("ComputeZiChemsnap", policy_compute_zi, *this);
 
-      //ComputeBi
-      auto policy_compute_bi = snap_get_policy<DeviceType, tile_size_compute_bi, TagPairSNAPComputeBi>(chunk_size_div, snaKK.idxb_max);
-      Kokkos::parallel_for("ComputeBi", policy_compute_bi, *this);
+        auto policy_compute_bi = snap_get_policy<DeviceType, tile_size_compute_bi, TagPairSNAPComputeBi<true>>(chunk_size_div, snaKK.idxb_max);
+        Kokkos::parallel_for("ComputeBiChemsnap", policy_compute_bi, *this);
+      } else {
+        auto policy_compute_zi = snap_get_policy<DeviceType, tile_size_compute_zi, TagPairSNAPComputeZi<false>, min_blocks_compute_zi>(chunk_size_div, snaKK.idxz_max);
+        Kokkos::parallel_for("ComputeZi", policy_compute_zi, *this);
+
+        auto policy_compute_bi = snap_get_policy<DeviceType, tile_size_compute_bi, TagPairSNAPComputeBi<false>>(chunk_size_div, snaKK.idxb_max);
+        Kokkos::parallel_for("ComputeBi", policy_compute_bi, *this);
+      }
+
     }
 
     {
@@ -884,27 +892,27 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi, const int& iatom_mod, const int& jjz, const int& iatom_div) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi<chemsnap>, const int& iatom_mod, const int& jjz, const int& iatom_div) const {
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
   if (jjz >= snaKK.idxz_max) return;
-  snaKK.compute_zi(iatom, jjz);
+  snaKK.template compute_zi<chemsnap>(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi, const int& iatom, const int& jjz) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi<chemsnap>, const int& iatom, const int& jjz) const {
   if (iatom >= chunk_size) return;
-  snaKK.compute_zi(iatom, jjz);
+  snaKK.template compute_zi<chemsnap>(iatom, jjz);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi, const int& iatom) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeZi<chemsnap>, const int& iatom) const {
   if (iatom >= chunk_size) return;
   for (int jjz = 0; jjz < snaKK.idxz_max; jjz++)
-    snaKK.compute_zi(iatom, jjz);
+    snaKK.template compute_zi<chemsnap>(iatom, jjz);
 }
 
 /* ----------------------------------------------------------------------
@@ -913,27 +921,27 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSN
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi, const int& iatom_mod, const int& jjb, const int& iatom_div) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi<chemsnap>, const int& iatom_mod, const int& jjb, const int& iatom_div) const {
   const int iatom = iatom_mod + iatom_div * vector_length;
   if (iatom >= chunk_size) return;
   if (jjb >= snaKK.idxb_max) return;
-  snaKK.compute_bi(iatom, jjb);
+  snaKK.template compute_bi<chemsnap>(iatom, jjb);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi, const int& iatom, const int& jjb) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi<chemsnap>, const int& iatom, const int& jjb) const {
   if (iatom >= chunk_size) return;
-  snaKK.compute_bi(iatom, jjb);
+  snaKK.template compute_bi<chemsnap>(iatom, jjb);
 }
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
-void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi, const int& iatom) const {
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeBi<chemsnap>, const int& iatom) const {
   if (iatom >= chunk_size) return;
   for (int jjb = 0; jjb < snaKK.idxb_max; jjb++)
-    snaKK.compute_bi(iatom, jjb);
+    snaKK.template compute_bi<chemsnap>(iatom, jjb);
 }
 
 /* ----------------------------------------------------------------------

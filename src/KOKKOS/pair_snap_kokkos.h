@@ -44,8 +44,8 @@ namespace LAMMPS_NS {
 // Routines for both the CPU and GPU backend
 struct TagPairSNAPPreUi{};
 struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
-struct TagPairSNAPComputeZi{};
-struct TagPairSNAPComputeBi{};
+template <bool chemsnap> struct TagPairSNAPComputeZi{};
+template <bool chemsnap> struct TagPairSNAPComputeBi{};
 struct TagPairSNAPComputeBetaLinear{};
 struct TagPairSNAPComputeBetaQuadratic{};
 struct TagPairSNAPComputeYi{};
@@ -222,23 +222,23 @@ class PairSNAPKokkos : public PairSNAP {
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPTransformUi, const int& iatom) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeZi, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeZi<chemsnap>, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeZi, const int& iatom, const int& idxz) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeZi<chemsnap>, const int& iatom, const int& idxz) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeZi, const int& iatom) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeZi<chemsnap>, const int& iatom) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBi, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBi<chemsnap>, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBi, const int& iatom, const int& idxb) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBi<chemsnap>, const int& iatom, const int& idxb) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagPairSNAPComputeBi, const int& iatom) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagPairSNAPComputeBi<chemsnap>, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagPairSNAPComputeBetaLinear, const int& iatom_mod, const int& idxb, const int& iatom_div) const;

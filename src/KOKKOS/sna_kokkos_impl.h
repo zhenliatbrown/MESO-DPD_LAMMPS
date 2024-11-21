@@ -794,7 +794,7 @@ void SNAKokkos<DeviceType, real_type, vector_length>::transform_ui(const int& ia
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi(const int& iatom, const int& jjz) const
 {
   int j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, idxcg;
@@ -802,14 +802,17 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_zi(const int& iato
 
   const real_type *cgblock = cglist.data() + idxcg;
 
-  int idouble = 0;
-
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-      zlist(iatom, idouble, jjz) = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
-      idouble++;
-    } // end loop over elem2
-  } // end loop over elem1
+  if constexpr (chemsnap) {
+    int idouble = 0;
+    for (int elem1 = 0; elem1 < nelements; elem1++) {
+      for (int elem2 = 0; elem2 < nelements; elem2++) {
+        zlist(iatom, idouble, jjz) = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, elem1, elem2, cgblock);
+        idouble++;
+      } // end loop over elem2
+    } // end loop over elem1
+  } else {
+    zlist(iatom, 0, jjz) = evaluate_zi(j1, j2, j, ma1min, ma2max, mb1min, mb2max, na, nb, iatom, 0, 0, cgblock);
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -873,7 +876,7 @@ typename SNAKokkos<DeviceType, real_type, vector_length>::complex SNAKokkos<Devi
 ------------------------------------------------------------------------- */
 
 template<class DeviceType, typename real_type, int vector_length>
-KOKKOS_INLINE_FUNCTION
+template <bool chemsnap> KOKKOS_INLINE_FUNCTION
 void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iatom, const int& jjb) const
 {
   // for j1 = 0,...,twojmax
@@ -892,17 +895,21 @@ void SNAKokkos<DeviceType, real_type, vector_length>::compute_bi(const int& iato
   const int jjz = idxz_block(j1,j2,j);
   const int jju = idxu_block[j];
 
-  int itriple = 0;
-  int idouble = 0;
-  for (int elem1 = 0; elem1 < nelements; elem1++) {
-    for (int elem2 = 0; elem2 < nelements; elem2++) {
-      for (int elem3 = 0; elem3 < nelements; elem3++) {
-        blist(iatom, itriple, jjb) = evaluate_bi(j, jjz, jju, iatom, elem1, elem2, elem3);
-        itriple++;
-      } // end loop over elem3
-      idouble++;
-    } // end loop over elem2
-  } // end loop over elem1
+  if constexpr (chemsnap) {
+    int itriple = 0;
+    int idouble = 0;
+    for (int elem1 = 0; elem1 < nelements; elem1++) {
+      for (int elem2 = 0; elem2 < nelements; elem2++) {
+        for (int elem3 = 0; elem3 < nelements; elem3++) {
+          blist(iatom, itriple, jjb) = evaluate_bi(j, jjz, jju, iatom, elem1, elem2, elem3);
+          itriple++;
+        } // end loop over elem3
+        idouble++;
+      } // end loop over elem2
+    } // end loop over elem1
+  } else {
+    blist(iatom, 0, jjb) = evaluate_bi(j, jjz, jju, iatom, 0, 0, 0);
+  }
 }
 
 /* ----------------------------------------------------------------------
