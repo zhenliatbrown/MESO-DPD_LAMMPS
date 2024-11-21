@@ -241,7 +241,7 @@ class SNAKokkos {
   real_type evaluate_bi(const int&, const int&, const int&, const int&,
                           const int&, const int&, const int&) const;
   // plugged into compute_yi, compute_yi_with_zlist
-  KOKKOS_FORCEINLINE_FUNCTION
+  template <bool chemsnap> KOKKOS_FORCEINLINE_FUNCTION
   real_type evaluate_beta_scaled(const int&, const int&, const int&, const int&, const int&, const int&, const int&) const;
   // plugged into compute_fused_deidrj_small, compute_fused_deidrj_large
   KOKKOS_FORCEINLINE_FUNCTION
