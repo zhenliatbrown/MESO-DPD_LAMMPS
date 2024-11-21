@@ -93,9 +93,11 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int team_size_compute_ui = 2;
   static constexpr int tile_size_transform_ui = 2;
   static constexpr int tile_size_compute_zi = 2;
+  static constexpr int min_blocks_compute_zi = 0; // no minimum bound
   static constexpr int tile_size_compute_bi = 2;
   static constexpr int tile_size_compute_beta = 2;
   static constexpr int tile_size_compute_yi = 2;
+  static constexpr int min_blocks_compute_yi = 0; // no minimum bound
   static constexpr int team_size_compute_fused_deidrj = 2;
 #elif defined(KOKKOS_ENABLE_SYCL)
   static constexpr int team_size_compute_neigh = 4;
@@ -104,9 +106,11 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int team_size_compute_ui = 8;
   static constexpr int tile_size_transform_ui = 8;
   static constexpr int tile_size_compute_zi = 4;
+  static constexpr int min_blocks_compute_zi = 0; // no minimum bound
   static constexpr int tile_size_compute_bi = 4;
   static constexpr int tile_size_compute_beta = 8;
   static constexpr int tile_size_compute_yi = 8;
+  static constexpr int min_blocks_compute_yi = 0; // no minimum bound
   static constexpr int team_size_compute_fused_deidrj = 4;
 #else
   static constexpr int team_size_compute_neigh = 4;
@@ -119,14 +123,18 @@ class PairSNAPKokkos : public PairSNAP {
   static constexpr int tile_size_compute_beta = 4;
   static constexpr int tile_size_compute_yi = 8;
   static constexpr int team_size_compute_fused_deidrj = sizeof(real_type) == 4 ? 4 : 2;
+
+  // this empirically reduces perf fluctuations from compiler version to compiler version
+  static constexpr int min_blocks_compute_zi = 4;
+  static constexpr int min_blocks_compute_yi = 4;
 #endif
 
   // Custom MDRangePolicy, Rank3, to reduce verbosity of kernel launches
   // This hides the Kokkos::IndexType<int> and Kokkos::Rank<3...>
   // and reduces the verbosity of the LaunchBound by hiding the explicit
   // multiplication by vector_length
-  template <class Device, int num_tiles, class TagPairSNAP>
-  using Snap3DRangePolicy = typename Kokkos::MDRangePolicy<Device, Kokkos::IndexType<int>, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, Kokkos::LaunchBounds<vector_length * num_tiles>, TagPairSNAP>;
+  template <class Device, int num_tiles, class TagPairSNAP, int min_blocks = 0>
+  using Snap3DRangePolicy = typename Kokkos::MDRangePolicy<Device, Kokkos::IndexType<int>, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, Kokkos::LaunchBounds<vector_length * num_tiles, min_blocks>, TagPairSNAP>;
 
   // Custom SnapAoSoATeamPolicy to reduce the verbosity of kernel launches
   // This hides the LaunchBounds abstraction by hiding the explicit
@@ -144,7 +152,7 @@ class PairSNAPKokkos : public PairSNAP {
   using Snap1DHostRangePolicy = typename Kokkos::RangePolicy<Device, Kokkos::Schedule<Kokkos::Dynamic>, TagPairSNAP>;
 
   // Helper routine that returns a CPU or a GPU policy as appropriate
-  template <class Device, int num_teams, class TagPairSNAP>
+  template <class Device, int num_tiles, class TagPairSNAP, int min_blocks = 0>
   auto snap_get_policy(const int& chunk_size_div, const int& second_loop) {
     if constexpr (host_flag) {
       return Snap1DHostRangePolicy<Device, TagPairSNAP>(0, chunk_size_div * vector_length);
@@ -152,9 +160,9 @@ class PairSNAPKokkos : public PairSNAP {
       // the 2-d policy is still correct but it has atomics so it's slower on the CPU
       //return Snap2DHostRangePolicy<Device, TagPairSNAP>({0, 0}, {chunk_size_div * vector_length, second_loop});
     } else
-      return Snap3DRangePolicy<Device, num_teams, TagPairSNAP>({0, 0, 0},
+      return Snap3DRangePolicy<Device, num_tiles, TagPairSNAP, min_blocks>({0, 0, 0},
                                                                    {vector_length, second_loop, chunk_size_div},
-                                                                   {vector_length, num_teams, 1});
+                                                                   {vector_length, num_tiles, 1});
   }
 
   PairSNAPKokkos(class LAMMPS *);

@@ -303,7 +303,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
       // team_size_[compute_zi, compute_bi, transform_bi] are defined in `pair_snap_kokkos.h`
 
       //ComputeZi
-      auto policy_compute_zi = snap_get_policy<DeviceType, tile_size_compute_zi, TagPairSNAPComputeZi>(chunk_size_div, snaKK.idxz_max);
+      auto policy_compute_zi = snap_get_policy<DeviceType, tile_size_compute_zi, TagPairSNAPComputeZi, min_blocks_compute_zi>(chunk_size_div, snaKK.idxz_max);
       Kokkos::parallel_for("ComputeZi", policy_compute_zi, *this);
 
       //ComputeBi
@@ -327,7 +327,7 @@ void PairSNAPKokkos<DeviceType, real_type, vector_length>::compute(int eflag_in,
         auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYiWithZlist>(chunk_size_div, snaKK.idxz_max);
         Kokkos::parallel_for("ComputeYiWithZlist", policy_compute_yi, *this);
       } else {
-        auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYi>(chunk_size_div, snaKK.idxz_max);
+        auto policy_compute_yi = snap_get_policy<DeviceType, tile_size_compute_yi, TagPairSNAPComputeYi, min_blocks_compute_yi>(chunk_size_div, snaKK.idxz_max);
         Kokkos::parallel_for("ComputeYi", policy_compute_yi, *this);
       }
     }
