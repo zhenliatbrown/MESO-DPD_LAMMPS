@@ -58,7 +58,7 @@ equation of state with a particle pressure :math:`P` calculated as
 
 .. math::
 
-   P = c (\rho - \rho_0)
+   P = c^2 (\rho - \rho_0)
 
 where :math:`c` is the speed of sound, :math:`\rho_0` is the equilibrium density,
 and :math:`\rho` is the current density of a particle. The numerical values of
@@ -67,7 +67,7 @@ is a cubic equation of state which has an extra argument :math:`A_3`,
 
 .. math::
 
-   P = c ((\rho - \rho_0) + A_3 (\rho - \rho_0)^3) .
+   P = c^2 ((\rho - \rho_0) + A_3 (\rho - \rho_0)^3) .
 
 Style *tait/water* is Tait's equation of state:
 
