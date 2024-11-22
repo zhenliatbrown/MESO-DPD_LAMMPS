@@ -47,6 +47,7 @@ FixRHEOPressure::FixRHEOPressure(LAMMPS *lmp, int narg, char **arg) :
   comm_forward = 1;
   variable_csq = 0;
   invertable_pressure = 1;
+  background_flag = 0;
 
   // Currently can only have one instance of fix rheo/pressure
   if (igroup != 0) error->all(FLERR, "fix rheo/pressure command requires group all");
@@ -59,7 +60,10 @@ FixRHEOPressure::FixRHEOPressure(LAMMPS *lmp, int narg, char **arg) :
   memory->create(pbackground, n + 1, "rheo:pbackground");
   memory->create(gamma, n + 1, "rheo:gamma");
 
-  for (i = 1; i <= n; i++) pressure_style[i] = NONE;
+  for (i = 1; i <= n; i++) {
+    pressure_style[i] = NONE;
+    pbackground[i] = 0.0;
+  }
 
   int iarg = 3;
   while (iarg < narg) {
@@ -72,16 +76,14 @@ FixRHEOPressure::FixRHEOPressure(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg + 1], "tait/water") == 0) {
       for (i = nlo; i <= nhi; i++) pressure_style[i] = TAITWATER;
     } else if (strcmp(arg[iarg + 1], "tait/general") == 0) {
-      if (iarg + 3 >= narg) utils::missing_cmd_args(FLERR, "fix rheo/pressure tait/general", error);
+      if (iarg + 2 >= narg) utils::missing_cmd_args(FLERR, "fix rheo/pressure tait/general", error);
 
       double tpower_one = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
-      double pbackground_one = utils::numeric(FLERR, arg[iarg + 3], false, lmp);
-      iarg += 2;
+      iarg += 1;
 
       for (i = nlo; i <= nhi; i++) {
         pressure_style[i] = TAITGENERAL;
         tpower[i] = tpower_one;
-        pbackground[i] = pbackground_one;
       }
     } else if (strcmp(arg[iarg + 1], "cubic") == 0) {
       if (iarg + 2 >= narg) utils::missing_cmd_args(FLERR, "fix rheo/pressure cubic", error);
@@ -109,6 +111,15 @@ FixRHEOPressure::FixRHEOPressure(LAMMPS *lmp, int narg, char **arg) :
       variable_csq = 1;
       if (atom->esph_flag != 1)
         error->all(FLERR, "fix rheo/pressure ideal gas equation of state requires atom property esph");
+    } else if (strcmp(arg[iarg + 1], "background") == 0) {
+      if (iarg + 2 >= narg) utils::missing_cmd_args(FLERR, "fix rheo/pressure background", error);
+
+      double pbackground_one = utils::numeric(FLERR, arg[iarg + 2], false, lmp);
+      iarg += 1;
+
+      for (i = nlo; i <= nhi; i++)
+        pbackground[i] = pbackground_one;
+      background_flag = 1;
     } else {
       error->all(FLERR, "Illegal fix command, {}", arg[iarg]);
     }
@@ -236,10 +247,13 @@ double FixRHEOPressure::calc_pressure(double rho, int i)
   } else if (pressure_style[type] == TAITGENERAL) {
     rho_ratio = rho * rho0inv[type];
     p = csq[type] * rho0[type] * (pow(rho_ratio, tpower[type]) - 1.0) / tpower[type];
-    p += pbackground[type];
   } else if (pressure_style[type] == IDEAL) {
     p = (gamma[type] - 1.0) * rho * atom->esph[i] / atom->mass[type];
   }
+
+  if (background_flag)
+    p += pbackground[type];
+
   return p;
 }
 
@@ -249,6 +263,9 @@ double FixRHEOPressure::calc_rho(double p, int i)
 {
   double rho = 0.0;
   int type = atom->type[i];
+
+  if (background_flag)
+    p -= pbackground[type];
 
   if (pressure_style[type] == LINEAR) {
     rho = csqinv[type] * p + rho0[type];
@@ -260,7 +277,6 @@ double FixRHEOPressure::calc_rho(double p, int i)
     rho *= pow(rho0[type], 6.0 * SEVENTH);
     rho *= pow(csq[type], -SEVENTH);
   } else if (pressure_style[type] == TAITGENERAL) {
-    p -= pbackground[type];
     rho = pow(tpower[type] * p + csq[type] * rho0[type], 1.0 / tpower[type]);
     rho *= pow(rho0[type], 1.0 - 1.0 / tpower[type]);
     rho *= pow(csq[type], -1.0 / tpower[type]);

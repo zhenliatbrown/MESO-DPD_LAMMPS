@@ -14,15 +14,16 @@ Syntax
 * rheo/pressure = style name of this fix command
 * one or more types and pressure styles must be appended
 * types = lists of types (see below)
-* pstyle = *linear* or *taitwater* or *cubic*
+* pstyle = *linear* or *tait/water* or *tait/general* or *cubic* or *ideal/gas* or *background*
 
   .. parsed-literal::
 
        *linear* args = none
        *tait/water* args = none
-       *tait/general* args = exponent :math:`gamma` (unitless) and background pressure :math:`P[b]` (pressure)
+       *tait/general* args = exponent :math:`gamma` (unitless)
        *cubic* args = cubic prefactor :math:`A_3` (pressure/density\^2)
        *ideal/gas* args = heat capacity ratio :math:`gamma` (unitless)
+       *background* args = background pressure :math:`P[b]` (pressure)
 
 Examples
 """"""""
@@ -31,6 +32,7 @@ Examples
 
    fix 1 all rheo/pressure * linear
    fix 1 all rheo/pressure 1 linear 2 cubic 10.0
+   fix 1 all rheo/pressure * linear * background 0.1
 
 Description
 """""""""""
@@ -77,9 +79,9 @@ Style *tait/general* generalizes this equation of state
 
 .. math::
 
-   P = \frac{c^2 \rho_0}{\gamma} \biggl[\left(\frac{\rho}{\rho_0}\right)^{\gamma} - 1\biggr] + P[b].
+   P = \frac{c^2 \rho_0}{\gamma} \biggl[\left(\frac{\rho}{\rho_0}\right)^{\gamma} - 1\biggr].
 
-where :math:`\gamma` is an exponent and :math:`P[b]` is a constant background pressure.
+where :math:`\gamma` is an exponent.
 
 Style *ideal/gas* is the ideal gas equation of state
 
@@ -91,6 +93,12 @@ where :math:`\gamma` is the heat capacity ratio and :math:`e` is the internal en
 a particle per unit mass. This style is only compatible with atom style rheo/thermal.
 Note that when using this style, the speed of sound is no longer constant such that the
 value of :math:`c` specified in :doc:`fix rheo <fix_rheo>` is not used.
+
+The *background* style acts differently than the rest as it
+only adds a constant background pressure shift :math:`P[b]`
+to all atoms of the designated types. Therefore, this style
+must be used in conjunction with another style that specifies
+an equation of state.
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
