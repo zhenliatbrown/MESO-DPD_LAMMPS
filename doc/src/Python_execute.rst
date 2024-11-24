@@ -26,7 +26,7 @@ demonstrates the use of :py:func:`lammps.file()`, :py:func:`lammps.command()`,
    lmp.command('variable zpos index 1.0')
 
    # create 10 groups with 10 atoms each
-   cmds = ["group g{} id {}:{}".format(i,10*i+1,10*(i+1)) for i in range(10)]
+   cmds = [f"group g{i} id {10*i+1}:{10*(i+1)}" for i in range(10)]
    lmp.commands_list(cmds)
 
    # run commands from a multi-line string
@@ -38,10 +38,9 @@ demonstrates the use of :py:func:`lammps.file()`, :py:func:`lammps.command()`,
    """
    lmp.commands_string(block)
 
-   
-Unlike the lammps API, the PyLammps/IPyLammps APIs allow running LAMMPS
-commands by calling equivalent member functions of :py:class:`PyLammps <lammps.PyLammps>`
-and :py:class:`IPyLammps <lammps.IPyLammps>` instances.
+For convenience, the :py:class:`lammps <lammps.lammps>` class also provides a
+command wrapper ``cmd`` that turns any LAMMPS command into a regular function
+call.
 
 For instance, the following LAMMPS command
 
@@ -49,8 +48,7 @@ For instance, the following LAMMPS command
 
    region box block 0 10 0 5 -0.5 0.5
 
-can be executed using with the lammps API with the following Python code if ``lmp`` is an
-instance of :py:class:`lammps <lammps.lammps>`:
+would normally be executed with the following Python code:
 
 .. code-block:: python
 
@@ -59,7 +57,7 @@ instance of :py:class:`lammps <lammps.lammps>`:
    lmp = lammps()
    lmp.command("region box block 0 10 0 5 -0.5 0.5")
 
-With the PyLammps interface, any LAMMPS command can be split up into arbitrary parts.
+With the ``cmd`` wrapper, any LAMMPS command can be split up into arbitrary parts.
 These parts are then passed to a member function with the name of the :doc:`command <Commands_all>`.
 For the :doc:`region <region>` command that means the :code:`region()` method can be called.
 The arguments of the command can be passed as one string, or
@@ -82,25 +80,31 @@ member function takes the entire parameter list and transparently merges it to a
 string.
 
 The benefit of this approach is avoiding redundant command calls and easier
-parameterization. In the lammps API parameterization needed to be done
-manually by creating formatted command strings.
+parameterization. With `command`, `commands_list`, and `commands_string` the
+parameterization needed to be done manually by creating formatted command
+strings.
 
 .. code-block:: python
 
    lmp.command("region box block %f %f %f %f %f %f" % (xlo, xhi, ylo, yhi, zlo, zhi))
 
-In contrast, methods of PyLammps accept parameters directly and will convert
+In contrast, methods of the `cmd` wrapper accept parameters directly and will convert
 them automatically to a final command string.
 
 .. code-block:: python
 
    L.cmd.region("box block", xlo, xhi, ylo, yhi, zlo, zhi)
 
+.. note::
+
+   When running in IPython you can use Tab-completion after ``L.cmd.`` to see
+   all available LAMMPS commands.
+
 Using these facilities, the previous example shown above can be rewritten as follows:
 
 .. code-block:: python
 
-   from lammps import PyLammps
+   from lammps import lammps
    L = lammps()
 
    # read commands from file 'in.melt'

@@ -6,11 +6,10 @@ Creating or deleting a LAMMPS object
 ====================================
 
 With the Python interface the creation of a :cpp:class:`LAMMPS
-<LAMMPS_NS::LAMMPS>` instance is included in the constructors for the
-:py:class:`lammps <lammps.lammps>`, :py:class:`PyLammps <lammps.PyLammps>`,
-and :py:class:`IPyLammps <lammps.IPyLammps>` classes.
-Internally it will call either :cpp:func:`lammps_open` or :cpp:func:`lammps_open_no_mpi` from the C
-library API to create the class instance.
+<LAMMPS_NS::LAMMPS>` instance is included in the constructor for the
+:py:class:`lammps <lammps.lammps>` class. Internally it will call either
+:cpp:func:`lammps_open` or :cpp:func:`lammps_open_no_mpi` from the C library
+API to create the class instance.
 
 All arguments are optional.  The *name* argument allows loading a
 LAMMPS shared library that is named ``liblammps_machine.so`` instead of

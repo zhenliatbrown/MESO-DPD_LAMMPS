@@ -26,13 +26,29 @@ against invalid accesses.
    lmp = lammps()
    lmp.file("in.sysinit")
 
+
+   # Read/Write access via ctypes
    nlocal = lmp.extract_global("nlocal")
    x = lmp.extract_atom("x")
 
    for i in range(nlocal):
       print("(x,y,z) = (", x[i][0], x[i][1], x[i][2], ")")
 
+   # Read/Write access via NumPy arrays
+   atom_id = L.numpy.extract_atom("id")
+   atom_type = L.numpy.extract_atom("type")
+   x = L.numpy.extract_atom("x")
+   v = L.numpy.extract_atom("v")
+   f = L.numpy.extract_atom("f")
+
+   # set position in 2D simulation
+   x[0] = (1.0, 0.0)
+
+   # set position in 3D simulation
+   x[0] = (1.0, 0.0, 1.)
+
    lmp.close()
+
 
 **Methods**:
 
