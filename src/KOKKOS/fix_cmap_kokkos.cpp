@@ -850,7 +850,7 @@ void FixCMAPKokkos<DeviceType>::bc_interpol(double x1, double x2, int low1, int 
 
   // calculate the bicubic interpolation coefficients c_ij
 
-  static int wt[16][16] =
+  const int wt[16][16] =
     { {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
       {-3, 0, 0, 3, 0, 0, 0, 0,-2, 0, 0,-1, 0, 0, 0, 0},
