@@ -456,7 +456,7 @@ MPI_Datatype MPI_CommData;
 
 /***************************************************************
  * create class and parse arguments in LAMMPS script. Syntax:
- * fix ID group-ID imd <imd_trate> <imd_port> [version (2|3)] [unwrap (on|off)] [fscale <imd_fscale>] [time (on|off)] [box (on|off)] [coordinates (on|off)] [velocities (on|off)] [forces (on|off)]
+ * fix ID group-ID imd <imd_port> [trate <imd_trate>] [version (2|3)] [unwrap (on|off)] [fscale <imd_fscale>] [time (on|off)] [box (on|off)] [coordinates (on|off)] [velocities (on|off)] [forces (on|off)]
  ***************************************************************/
 FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
@@ -917,8 +917,10 @@ void FixIMD::ioworker()
       pthread_exit(nullptr);
     } else if (buf_has_data > 0) {
       /* send coordinate data, if client is able to accept */
-      if (clientsock && imdsock_selwrite(clientsock,0)) {
-        imd_writen(clientsock, msgdata, msglen);
+      if (imd_writen(clientsock, msgdata, msglen) != msglen) {
+        fprintf(screen,"Asynchronous I/O thread terminated on error in sending IMDFrame.\n");
+        pthread_mutex_unlock(&write_mutex);
+        pthread_exit(nullptr);
       }
       delete[] msgdata;
       buf_has_data=0;
@@ -1226,8 +1228,8 @@ void FixIMD::handle_step_v2() {
     pthread_mutex_unlock(&write_mutex);
 #else
     /* send coordinate data, if client is able to accept */
-    if (clientsock && imdsock_selwrite(clientsock,0)) {
-      imd_writen(clientsock, msgdata, msglen);
+    if (imd_writen(clientsock, msgdata, msglen) != msglen) {
+      error->all(FLERR, "LAMMPS terminated on error in sending IMDFrame");
     }
 #endif
 
@@ -1703,9 +1705,9 @@ void FixIMD::handle_output_v3() {
     pthread_cond_signal(&write_cond);
     pthread_mutex_unlock(&write_mutex);
 #else
-    /* send coordinate data, if client is able to accept */
-    if (clientsock && imdsock_selwrite(clientsock,0)) {
-      imd_writen(clientsock, msgdata, msglen);
+    /* send IMDFrame data, blocking until client accepts */
+    if (imd_writen(clientsock, msgdata, msglen) != msglen) {
+      error->all(FLERR, "LAMMPS terminated on error in sending IMDFrame");
     }
 #endif
 }
