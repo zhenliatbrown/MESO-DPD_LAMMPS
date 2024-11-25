@@ -173,9 +173,17 @@ stress/atom <compute_stress_atom>` commands.  The former can be
 accessed by :doc:`thermodynamic output <thermo_style>`.  The default
 setting for this fix is :doc:`fix_modify virial yes <fix_modify>`.
 
-This fix computes a global scalar which can be accessed by various
-:doc:`output commands <Howto_output>`.  The scalar is the potential
-energy discussed above.  The scalar stored by this fix is "extensive".
+This fix computes a global scalar, a global vector, and a per-atom array
+which can be accessed by various :doc:`output commands <Howto_output>`.
+The scalar is the potential energy discussed above.  The scalar stored
+by this fix is "extensive".  The vector is a custom vector set by the
+external program using the :cpp:func:`lammps_fix_external_set_vector()
+<lammps_fix_external_set_vector>` and
+:cpp:func:`lammps_fix_external_set_vector_length()
+<lammps_fix_external_set_vector_length>` calls of the LAMMPS library
+interface or the equivalent call of the Python or Fortran modules. The
+per-atom array has 3 column for each atom and is the applied external
+force.
 
 No parameter of this fix can be used with the *start/stop* keywords of
 the :doc:`run <run>` command.
