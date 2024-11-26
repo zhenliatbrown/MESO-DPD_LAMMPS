@@ -252,9 +252,10 @@ no error check is performed on this.
 
 The *coeff_restitution* model is useful when a specific normal coefficient of
 restitution :math:`e` is required. In these models, the normal coefficient of
-restitution :math:`e` is specified as an input. Following the approach of
+restitution :math:`e` is specified as an input in place of the usual :math:`\eta_{n0}`
+value in the normal model. Following the approach of
 :ref:`(Brilliantov et al) <Brill1996>`, when using the *hooke* normal model,
-*coeff_restitution* calculates the damping coefficient as:
+*coeff_restitution* then calculates the damping coefficient as:
 
 .. math::
 
