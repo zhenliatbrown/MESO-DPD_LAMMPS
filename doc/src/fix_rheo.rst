@@ -102,12 +102,12 @@ more uniform spatial distribution. By default, shifting does not consider the
 type of a particle and therefore may be inappropriate in systems consisting
 of multiple atom types representing multiple fluid phases. However, two
 optional subarguments can follow the *shift* keyword, *exclude/type* and
-*scale/cross/type*.
+*scale/cross/type* to adjust shifting at fluid interfaces.
 
 The *exclude/type* option lets the user specify a list of atom types which
 are not shifted, *types*. A wild-card asterisk can be used in place
-of or in conjunction with the *types* argument to set the coefficients for
-multiple pairs of atom types.  This takes the form "\*" or "\*n" or "m\*"
+of or in conjunction with the *types* argument to toggle shifting for
+multiple atom types.  This takes the form "\*" or "\*n" or "m\*"
 or "m\*n".  If :math:`N` is the number of atom types, then an asterisk with
 no numeric values means all types from 1 to :math:`N`.  A leading asterisk
 means all types from 1 to n (inclusive).  A trailing asterisk means all types
