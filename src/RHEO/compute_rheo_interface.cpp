@@ -97,7 +97,7 @@ void ComputeRHEOInterface::init()
   auto fixes = modify->get_fix_by_style("rheo/pressure");
   fix_pressure = dynamic_cast<FixRHEOPressure *>(fixes[0]);
 
-  if (!fix_pressure->invertable_pressure)
+  if (!fix_pressure->invertible_pressure)
     error->all(FLERR, "RHEO interface reconstruction incompatible with pressure equation of state");
 
   neighbor->add_request(this, NeighConst::REQ_DEFAULT);

@@ -46,7 +46,7 @@ FixRHEOPressure::FixRHEOPressure(LAMMPS *lmp, int narg, char **arg) :
 
   comm_forward = 1;
   variable_csq = 0;
-  invertable_pressure = 1;
+  invertible_pressure = 1;
   background_flag = 0;
 
   // Currently can only have one instance of fix rheo/pressure
@@ -96,7 +96,7 @@ FixRHEOPressure::FixRHEOPressure(LAMMPS *lmp, int narg, char **arg) :
         c_cubic[i] = c_cubic_one;
       }
 
-      invertable_pressure = 0;
+      invertible_pressure = 0;
     } else if (strcmp(arg[iarg + 1], "ideal/gas") == 0) {
       if (iarg + 2 >= narg) utils::missing_cmd_args(FLERR, "fix rheo/pressure ideal/gas", error);
 
