@@ -116,6 +116,8 @@ class FixIMD : public Fix {
   char *msgdata;
 
  private:
+  void setup_v2();
+  void setup_v3();
   void handle_step_v2();
   void handle_client_input_v3();
   void handle_output_v3();
