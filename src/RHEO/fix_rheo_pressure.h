@@ -38,7 +38,7 @@ class FixRHEOPressure : public Fix {
   double calc_rho(double, int);
   double calc_csq(double, int);
   int variable_csq;
-  int invertable_pressure;
+  int invertible_pressure;
 
  private:
   double *c_cubic, *csq, *csqinv, *rho0, *rho0inv, *tpower, *pbackground, *gamma;

@@ -123,7 +123,7 @@ zero implies there is no shifting in the normal direction and a value of
 *scaleshift* of one implies no change in behavior. This scaling is only applied
 to atoms with a color function value greater than *cmin*. To handle scenarios
 of a small inclusion of one fluid type (e.g. a single atom) inside another,
-the amount of same-type support is calculated
+the degree of same-type support is calculated
 
 .. math::
    W_{i,\mathrm{same}} = \sum_{j} W_{ij} \delta_{ij}
