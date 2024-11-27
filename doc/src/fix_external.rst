@@ -139,9 +139,9 @@ properties are:
    void set_vector_length(int n);
    void set_vector(int idx, double val);
 
-These allow to set per-atom energy contributions, per-atom stress
-contributions, the length and individual values of a global vector
-of properties that the caller code may want to communicate  to LAMMPS
+These enable setting per-atom energy and  per-atom stress contributions,
+the length and individual values of a global vector of properties that
+the caller code may want to communicate  to LAMMPS
 (e.g. for use in :doc:`fix ave/time <fix_ave_time>` or in
 :doc:`equal-style variables <variable>` or for
 :doc:`custom thermo output <thermo_style>`.
@@ -176,13 +176,15 @@ setting for this fix is :doc:`fix_modify virial yes <fix_modify>`.
 This fix computes a global scalar, a global vector, and a per-atom array
 which can be accessed by various :doc:`output commands <Howto_output>`.
 The scalar is the potential energy discussed above.  The scalar stored
-by this fix is "extensive".  The vector is a custom vector set by the
-external program using the :cpp:func:`lammps_fix_external_set_vector()
-<lammps_fix_external_set_vector>` and
-:cpp:func:`lammps_fix_external_set_vector_length()
-<lammps_fix_external_set_vector_length>` calls of the LAMMPS library
-interface or the equivalent call of the Python or Fortran modules. The
-per-atom array has 3 column for each atom and is the applied external
+by this fix is "extensive".
+The global vector has a custom length and needs to be set by the external
+program using the
+:cpp:func:`lammps_fix_external_set_vector() <lammps_fix_external_set_vector>`
+and :cpp:func:`lammps_fix_external_set_vector_length()
+<lammps_fix_external_set_vector_length>`
+calls of the LAMMPS library interface or the equivalent call of the Python
+or Fortran modules.
+The per-atom array has 3 values for each atom and is the applied external
 force.
 
 No parameter of this fix can be used with the *start/stop* keywords of
