@@ -1,8 +1,8 @@
 # LAMMPS Release Steps
 
 The following notes chronicle the current steps for preparing and publishing LAMMPS releases.  For
-definition of what LAMMPS versions and the different kinds of releases mean, please refer to [the
-corresponding section in the LAMMPS manual](https://docs.lammps.org/Manual_version.html).
+definitions of LAMMPS versions and releases mean, please refer to [the corresponding section in the
+LAMMPS manual](https://docs.lammps.org/Manual_version.html).
 
 ## LAMMPS Feature Release
 
