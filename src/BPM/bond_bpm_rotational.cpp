@@ -543,7 +543,7 @@ void BondBPMRotational::compute(int eflag, int vflag)
     // ------------------------------------------------------//
 
     MathExtra::scale3(smooth, force1on2);
-    
+
     if (newton_bond || i1 < nlocal) {
       f[i1][0] -= force1on2[0];
       f[i1][1] -= force1on2[1];
