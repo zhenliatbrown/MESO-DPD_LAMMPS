@@ -217,7 +217,6 @@ action fix_wall_region_kokkos.cpp
 action fix_wall_region_kokkos.h
 action grid3d_kokkos.cpp fft3d.h
 action grid3d_kokkos.h fft3d.h
-action group_kokkos.cpp
 action group_kokkos.h
 action improper_class2_kokkos.cpp improper_class2.cpp
 action improper_class2_kokkos.h improper_class2.h
