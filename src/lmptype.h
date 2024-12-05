@@ -44,7 +44,6 @@
 
 #include <cinttypes>    // IWYU pragma: export
 #include <climits>      // IWYU pragma: export
-#include <cstdint>      // IWYU pragma: export
 #include <cstdlib>      // IWYU pragma: export
 
 // grrr - IBM Power6 does not provide this def in their system header files
@@ -75,10 +74,8 @@ namespace LAMMPS_NS {
 
 #ifdef LAMMPS_LONGLONG_TO_LONG
 #define MPI_LL MPI_LONG
-#define ATOLL atoll
 #else
 #define MPI_LL MPI_LONG_LONG
-#define ATOLL atol
 #endif
 
 // for atomic problems that exceed 2 billion (2^31) atoms
@@ -103,9 +100,6 @@ typedef int64_t bigint;
 
 #define TAGINT_FORMAT "%d"
 #define BIGINT_FORMAT "%" PRId64
-
-#define ATOTAGINT atoi
-#define ATOBIGINT ATOLL
 
 #define LAMMPS_TAGINT LAMMPS_INT
 #define LAMMPS_TAGINT_2D LAMMPS_INT_2D
@@ -142,9 +136,6 @@ typedef int64_t bigint;
 #define TAGINT_FORMAT "%" PRId64
 #define BIGINT_FORMAT "%" PRId64
 
-#define ATOTAGINT ATOLL
-#define ATOBIGINT ATOLL
-
 #define LAMMPS_TAGINT LAMMPS_INT64
 #define LAMMPS_TAGINT_2D LAMMPS_INT64_2D
 #define LAMMPS_BIGINT LAMMPS_INT64
@@ -178,9 +169,6 @@ typedef int bigint;
 
 #define TAGINT_FORMAT "%d"
 #define BIGINT_FORMAT "%d"
-
-#define ATOTAGINT atoi
-#define ATOBIGINT atoi
 
 #define LAMMPS_TAGINT LAMMPS_INT
 #define LAMMPS_TAGINT_2D LAMMPS_INT_2D

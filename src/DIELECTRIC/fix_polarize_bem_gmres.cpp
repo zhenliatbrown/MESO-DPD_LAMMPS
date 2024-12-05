@@ -41,7 +41,6 @@
 #include "comm.h"
 #include "error.h"
 #include "force.h"
-#include "group.h"
 #include "kspace.h"
 #include "math_const.h"
 #include "memory.h"
@@ -350,7 +349,6 @@ void FixPolarizeBEMGMRES::compute_induced_charges()
   double *ed = atom->ed;
   double *em = atom->em;
   double *epsilon = atom->epsilon;
-  int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int eflag = 1;
   int vflag = 0;

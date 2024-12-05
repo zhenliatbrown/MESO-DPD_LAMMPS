@@ -6,7 +6,7 @@ fix pour command
 Syntax
 """"""
 
-.. parsed-literal::
+.. code-block:: LAMMPS
 
    fix ID group-ID pour N type seed keyword values ...
 
@@ -155,6 +155,22 @@ many timesteps until the desired # of particles has been inserted.
    the :doc:`compute_modify dynamic/dof yes <compute_modify>` command
    for the temperature compute you are using.
 
+.. admonition:: Implementation Notes
+  :class: Hint
+
+  The exact insertion procedure depends on many factors (e.g. the range of
+  diameters inserted or whether molecules are being inserted). However, in
+  the simplest scenario of monodisperse atoms, the procedure works as
+  follows. First, the number of timesteps between two insertion events is
+  calculated as the time for a particle to fall through the insertion region,
+  accounting for gravity and any region motion. Next, the target number of
+  particles inserted per event (assuming no failed insertions due to overlaps)
+  is calculated as the product of the volume fraction and the volume of the
+  insertion region divided by the volume of a particle (or area in 2D).
+  Events are repeated until all N particles have been inserted, where
+  the final event is likely interrupted upon reaching N. Estimates of this
+  process are printed to the log/screen at the start of a run.
+
 ----------
 
 All other keywords are optional with defaults as shown below.
@@ -245,8 +261,9 @@ produce the same behavior if you adjust the fix pour parameters
 appropriately.
 
 None of the :doc:`fix_modify <fix_modify>` options are relevant to this
-fix.  No global or per-atom quantities are stored by this fix for
-access by various :doc:`output commands <Howto_output>`.  No parameter
+fix.  This fix computes a global scalar, which can be accessed by various
+output commands.  The scalar is the cumulative number of insertions.  The
+scalar value calculated by this fix is "intensive".  No parameter
 of this fix can be used with the *start/stop* keywords of the
 :doc:`run <run>` command.  This fix is not invoked during :doc:`energy minimization <minimize>`.
 
