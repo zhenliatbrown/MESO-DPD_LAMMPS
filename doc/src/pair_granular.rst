@@ -269,7 +269,7 @@ coefficient is:
 
 .. math::
 
-   \eta_n = -2\sqrt{\frac{5}{6}}\frac{\log(e)}{\sqrt{\pi^2+(\log(e))^2}}(R_{eff} \delta_{ij})^{\frac{1}{4}}\sqrt{\frac{3}{2}k_{nd} m_{eff}} ,
+   \eta_n = -2\sqrt{\frac{5}{6}}\frac{\log(e)}{\sqrt{\pi^2+(\log(e))^2}}\sqrt{\frac{3}{2}k_{nd} m_{eff}} ,
 
 Since *coeff_restitution* accounts for the effective mass, effective radius,
 and pairwise overlaps (except when used with the *hooke* normal model) when calculating
