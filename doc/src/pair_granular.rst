@@ -240,7 +240,8 @@ given by:
 where :math:`k_{nd}` is an effective harmonic stiffness equal to the ratio of
 the normal force to the overlap. For example, :math:`k_{nd} = 4/3Ea` for a
 Hertz contact model based on material parameters with :math:`a` being
-the contact radius of :math:`\sqrt{\delta R}`. This damping model is not
+the contact radius of :math:`\sqrt{\delta R}`. For Hooke, :math:`k_{nd}`
+is simply the spring constant or :math:`k_{n}`. This damping model is not
 compatible with cohesive normal models such as *JKR* or *DMT*. The parameter
 :math:`\alpha` is related to the restitution coefficient *e* according to:
 
