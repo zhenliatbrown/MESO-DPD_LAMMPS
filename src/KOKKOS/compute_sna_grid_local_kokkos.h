@@ -240,7 +240,7 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
 
   typename AT::t_x_array_randomread x;
   typename AT::t_int_1d_randomread type;
-  
+
   DAT::tdual_float_2d k_alocal;
   typename AT::t_float_2d d_alocal;
 

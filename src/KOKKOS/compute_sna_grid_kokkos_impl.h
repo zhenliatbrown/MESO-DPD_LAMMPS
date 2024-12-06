@@ -104,7 +104,7 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
   }
 
   // In pair snap some things like `map` get allocated regardless of chem flag.
-  if (chemflag){ 
+  if (chemflag){
     for (int i = 1; i <= atom->ntypes; i++) {
       h_map(i) = map[i];
     }
@@ -168,7 +168,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
 
   ComputeGrid::set_grid_global();
   ComputeGrid::set_grid_local();
-  
+
   // allocate arrays
   memoryKK->create_kokkos(k_gridall, gridall, size_array_rows, size_array_cols, "grid:gridall");
 
@@ -206,14 +206,14 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   // max_neighs is defined here - think of more elaborate methods.
   max_neighs = 100;
 
-  // Pair snap/kk uses grow_ij with some max number of neighs but compute sna/grid uses total 
+  // Pair snap/kk uses grow_ij with some max number of neighs but compute sna/grid uses total
   // number of atoms.
 
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridKokkos:ninside",total_range);
 
-  // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
+  // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user
   // `total_range` is the number of grid points which may be larger than chunk size.
   //printf(">>> total_range: %d\n", total_range);
   chunk_size = MIN(chunksize, total_range);
@@ -222,7 +222,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   snaKK.grow_rij(chunk_size, max_neighs);
 
   //chunk_size = total_range;
- 
+
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
@@ -236,8 +236,8 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
     h1 = domain->h[1];
     h2 = domain->h[2];
     h3 = domain->h[3];
-    h4 = domain->h[4];   
-    h5 = domain->h[5];   
+    h4 = domain->h[4];
+    h5 = domain->h[5];
     lo0 = domain->boxlo[0];
     lo1 = domain->boxlo[1];
     lo2 = domain->boxlo[2];
@@ -250,11 +250,11 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
 
     //printf(">>> chunk_offset: %d\n", chunk_offset);
 
-    //ComputeNeigh 
+    //ComputeNeigh
     {
       int scratch_size = scratch_size_helper<int>(team_size_compute_neigh * max_neighs); //ntotal);
 
-      SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridComputeNeigh> 
+      SnapAoSoATeamPolicy<DeviceType, team_size_compute_neigh, TagCSNAGridComputeNeigh>
         policy_neigh(chunk_size, team_size_compute_neigh, vector_length);
       policy_neigh = policy_neigh.set_scratch_size(0, Kokkos::PerTeam(scratch_size));
       Kokkos::parallel_for("ComputeNeigh",policy_neigh,*this);
@@ -375,9 +375,9 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   // This function follows similar procedure as ComputeNeigh of PairSNAPKokkos.
   // Main difference is that we don't use the neighbor class or neighbor variables here.
   // This is because the grid points are not atoms and therefore do not get assigned
-  // neighbors in LAMMPS. 
-  // TODO: If we did make a neighborlist for each grid point, we could use current 
-  //       routines and avoid having to loop over all atoms (which limits us to 
+  // neighbors in LAMMPS.
+  // TODO: If we did make a neighborlist for each grid point, we could use current
+  //       routines and avoid having to loop over all atoms (which limits us to
   //       natoms = max team size).
 
   SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
@@ -468,7 +468,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // Compute the number of neighbors, store rsq
   int ninside = 0;
-  
+
   // Looping over ntotal for now.
   for (int j = 0; j < ntotal; j++){
     const F_FLOAT dx = x(j,0) - xtmp;
@@ -480,12 +480,12 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     // don't include atoms that share location with grid point
     if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
       jtype = -1; // use -1 to signal it's outside the radius
-    } 
+    }
 
     if (jtype >= 0)
       ninside++;
 
-  } 
+  }
 
   /*
   Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
@@ -500,7 +500,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     // don't include atoms that share location with grid point
     if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
       jtype = -1; // use -1 to signal it's outside the radius
-    } 
+    }
 
     type_cache[j] = jtype;
 
@@ -510,7 +510,7 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   }, ninside);
   */
 
-  d_ninside(ii) = ninside; 
+  d_ninside(ii) = ninside;
 
   // TODO: Adjust for multi-element, currently we set jelem = 0 regardless of type.
   int offset = 0;

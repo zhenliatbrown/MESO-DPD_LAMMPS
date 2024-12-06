@@ -183,16 +183,15 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   // max_neighs is defined here - think of more elaborate methods.
   max_neighs = 100;
 
-  // Pair snap/kk uses grow_ij with some max number of neighs but compute sna/grid uses total 
+  // Pair snap/kk uses grow_ij with some max number of neighs but compute sna/grid uses total
   // number of atoms.
-
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridKokkos:ninside",total_range);
 
-  // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user 
+  // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user
   // `total_range` is the number of grid points which may be larger than chunk size.
-  //printf(">>> total_range: %d\n", total_range);
+  // printf(">>> total_range: %d\n", total_range);
   chunksize = 32768; // 100*32768
   chunk_size = MIN(chunksize, total_range);
   chunk_offset = 0;
@@ -212,8 +211,8 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
     h1 = domain->h[1];
     h2 = domain->h[2];
     h3 = domain->h[3];
-    h4 = domain->h[4];   
-    h5 = domain->h[5];   
+    h4 = domain->h[4];
+    h5 = domain->h[5];
     lo0 = domain->boxlo[0];
     lo1 = domain->boxlo[1];
     lo2 = domain->boxlo[2];
@@ -332,7 +331,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
 
   // currently, all grid points are type 1
   // not clear what a better choice would be
-  
   const int itype = 1;
   int ielem = 0;
   ielem = d_map[itype];
@@ -340,10 +338,8 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
 
   // Compute the number of neighbors, store rsq
   int ninside = 0;
-  
 
   // Looping over ntotal for now.
-  
   for (int j = 0; j < ntotal; j++){
     const F_FLOAT dx = x(j,0) - xtmp;
     const F_FLOAT dy = x(j,1) - ytmp;
@@ -359,7 +355,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
   }
 
   //printf("%f\n", d_alocal(igrid, 6));
-  
 }
 
 /* ----------------------------------------------------------------------

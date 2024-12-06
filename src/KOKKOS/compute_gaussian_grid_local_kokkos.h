@@ -93,8 +93,8 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
   int host_flag;
   int total_range; // total number of loop iterations in grid
   int xlen, ylen, zlen;
-  int chunksize; 
-  int ntotal; 
+  int chunksize;
+  int ntotal;
 
   typename AT::t_x_array_randomread x;
   typename AT::t_int_1d_randomread type;
