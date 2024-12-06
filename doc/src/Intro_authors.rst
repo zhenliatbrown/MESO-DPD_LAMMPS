@@ -27,7 +27,7 @@ lammps.org".  General questions about LAMMPS should be posted in the
    * - `Steve Plimpton <sjp_>`_
      - SNL (retired)
      - sjplimp at gmail.com
-     - MD kernels, parallel algorithms & scalability, code structure and design
+     - Original author, MD kernels, parallel algorithms & scalability, code structure and design
    * - `Aidan Thompson <at_>`_
      - SNL
      - athomps at sandia.gov
