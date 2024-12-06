@@ -94,6 +94,7 @@ Dump::Dump(LAMMPS *lmp, int /*narg*/, char **arg) :
 
   maxbuf = maxids = maxsort = maxproc = 0;
   maxsbuf = 0;
+  sortcol = 0;
 
   maxpbc = -1;
 
