@@ -8,6 +8,8 @@ send an email to all of them at this address: "developers at
 lammps.org".  General questions about LAMMPS should be posted in the
 `LAMMPS forum on MatSci <https://matsci.org/lammps/>`_.
 
+.. We need to keep this file in sync with https://www.lammps.org/authors.html
+
 .. raw:: latex
 
    \small
