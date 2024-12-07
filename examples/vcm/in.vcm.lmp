@@ -1,0 +1,82 @@
+# Removing Binned Center-of-Mass Velocities from Stress Compute
+
+units		    metal
+boundary        p p p
+atom_style	    atomic
+lattice		    fcc 5.3589
+processors 		1 * *
+
+# Defining regions for box and atoms
+
+region		    box1 block -3 24 0 12 0 12 units lattice
+region		    box2 block 0 12 0 12 0 12 units lattice
+
+# Creating box and atoms
+
+create_box	    1 box1
+create_atoms    1 region box2
+
+mass		    1 40.00
+
+# Adding energy to the system
+
+velocity        all create 600.0 9999
+
+pair_style	    lj/cut 10 
+pair_coeff	    1 1 0.04 3.405
+
+# Begin time integration
+
+timestep        2e-3
+
+fix	            fix_nve all nve
+
+thermo		    100
+
+run             500
+
+# Chunk and stress along x direction
+
+variable        nbins index 20
+variable        fraction equal 1.0/v_nbins
+variable        volfrac equal 1/(vol*${fraction})
+
+compute         ch_id all chunk/atom bin/1d x lower ${fraction} units reduced
+compute         ch_temp_vcm all temp/chunk ch_id com yes
+compute         atom_stress_vcm all stress/atom ch_temp_vcm
+variable        stress atom -(c_atom_stress_vcm[1])/(vol*${fraction})
+compute         ch_stress_vcm all reduce/chunk ch_id sum v_stress
+
+# Output stress profile in x direction
+
+# fix             ave_stress_vcm all ave/time 5 20 100 c_ch_stress_vcm mode vector file stress_xx.out
+
+# Piston compressing along x direction
+
+region 			piston block -1 1 INF INF INF INF units lattice
+group          	piston region piston
+fix 			fix_piston piston move linear 5 0 0 units box # strain rate ~ 8e10 1/s 
+
+thermo_style    custom step temp ke pe lx ly lz pxx pyy pzz econserve 
+
+# Atom dump
+
+# dump		    atom_dump all atom 50 dump.vcm
+
+# # Image dumps
+
+# dump		    2 all image 250 image.*.jpg type type &
+# 		        axes yes 0.8 0.02 view 60 -30
+# dump_modify	    2 pad 1
+
+# # Movie dump
+
+# dump		    3 all movie 125 movie.avi type type &
+# 		        axes yes 0.8 0.02 view 60 -30
+# dump_modify	    3 pad 1
+
+run	            500
+
+unfix           fix_piston
+
+run             1500
