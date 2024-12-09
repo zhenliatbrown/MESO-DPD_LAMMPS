@@ -90,7 +90,7 @@ Related commands
 
 .. _Ellis2021:
 
-**(Ellis)** Ellis, Fiedler, Popoola, Modine, Stephens, Thompson, Cangi, Rajamanickam,  Phys Rev B, 104, 035120, (2021)
+**(Ellis)** Ellis, Fiedler, Popoola, Modine, Stephens, Thompson, Cangi, Rajamanickam, `Phys. Rev. B, 104, 035120, (2021) <https://doi.org/10.1103/PhysRevB.104.035120>`_
 
 .. _Fiedler2023:
 
