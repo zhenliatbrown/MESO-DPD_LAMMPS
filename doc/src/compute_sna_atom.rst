@@ -20,8 +20,14 @@ compute snap command
 compute sna/grid command
 ========================
 
+compute sna/grid/kk command
+===========================
+
 compute sna/grid/local command
 ==============================
+
+compute sna/grid/local/kk command
+=================================
 
 Syntax
 """"""
@@ -252,7 +258,8 @@ for finite-temperature Kohn-Sham density functional theory (:ref:`Ellis
 et al. <Ellis2021>`) Neighbor atoms not in the group do not contribute
 to the bispectrum components of the grid points. The distance cutoff
 :math:`R_{ii'}` assumes that *i* has the same type as the neighbor atom
-*i'*.
+*i'*. Both computes can be hardware accelerated with Kokkos by using the
+*sna/grid/kk* and *sna/grid/local/kk* coammnds, respectively.
 
 Compute *sna/grid* calculates a global array containing bispectrum
 components for a regular grid of points.
