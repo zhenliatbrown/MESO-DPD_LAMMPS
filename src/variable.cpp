@@ -77,7 +77,7 @@ enum{DONE,ADD,SUBTRACT,MULTIPLY,DIVIDE,CARAT,MODULO,UNARY,
      SQRT,EXP,LN,LOG,ABS,SIN,COS,TAN,ASIN,ACOS,ATAN,ATAN2,
      RANDOM,NORMAL,CEIL,FLOOR,ROUND,TERNARY,
      RAMP,STAGGER,LOGFREQ,LOGFREQ2,LOGFREQ3,STRIDE,STRIDE2,
-     VDISPLACE,SWIGGLE,CWIGGLE,GMASK,RMASK,
+     VDISPLACE,SWIGGLE,CWIGGLE,SIGN,GMASK,RMASK,
      GRMASK,IS_ACTIVE,IS_DEFINED,IS_AVAILABLE,IS_FILE,EXTRACT_SETTING,
      VALUE,ATOMARRAY,TYPEARRAY,INTARRAY,BIGINTARRAY,VECTORARRAY};
 
@@ -2575,7 +2575,7 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
      atan2(y,x),random(x,y,z),normal(x,y,z),ceil(),floor(),round(),ternary(x,y,z),
      ramp(x,y),stagger(x,y),logfreq(x,y,z),logfreq2(x,y,z),
      logfreq3(x,y,z),stride(x,y,z),stride2(x,y,z,a,b,c),vdisplace(x,y),swiggle(x,y,z),
-     cwiggle(x,y,z),gmask(x),rmask(x),grmask(x,y)
+     cwiggle(x,y,z),sign(x),gmask(x),rmask(x),grmask(x,y)
 ---------------------------------------------------------------------- */
 
 double Variable::collapse_tree(Tree *tree)
@@ -3125,6 +3125,14 @@ double Variable::collapse_tree(Tree *tree)
     return tree->value;
   }
 
+  if (tree->type == SIGN) {
+    arg1 = collapse_tree(tree->first);
+    if (tree->first->type != VALUE) return 0.0;
+    tree->type = VALUE;
+    tree->value = (arg1 >= 0.0) ? 1.0 : -1.0; // sign(arg1);
+    return tree->value;
+  }
+
   // mask functions do not become a single collapsed value
 
   if (tree->type == GMASK) return 0.0;
@@ -3143,7 +3151,7 @@ double Variable::collapse_tree(Tree *tree)
      atan2(y,x),random(x,y,z),normal(x,y,z),ceil(),floor(),round(),ternary(x,y,z),
      ramp(x,y),stagger(x,y),logfreq(x,y,z),logfreq2(x,y,z),
      logfreq3(x,y,z),stride(x,y,z),stride2(x,y,z,a,b,c),vdisplace(x,y),
-     swiggle(x,y,z),cwiggle(x,y,z),gmask(x),rmask(x),grmask(x,y)
+     swiggle(x,y,z),cwiggle(x,y,z),sign(x),gmask(x),rmask(x),grmask(x,y)
 ---------------------------------------------------------------------- */
 
 double Variable::eval_tree(Tree *tree, int i)
@@ -3459,6 +3467,9 @@ double Variable::eval_tree(Tree *tree, int i)
     return arg;
   }
 
+  if (tree->type == SIGN)
+    return (eval_tree(tree->first,i) >= 0.0) ? 1.0 : -1.0; // sign(eval_tree(tree->first,i));
+
   if (tree->type == GMASK) {
     if (atom->mask[i] & tree->ivalue) return 1.0;
     else return 0.0;
@@ -3650,7 +3661,7 @@ int Variable::math_function(char *word, char *contents, Tree **tree, Tree **tree
       strcmp(word,"logfreq") != 0 && strcmp(word,"logfreq2") != 0 &&
       strcmp(word,"logfreq3") != 0 && strcmp(word,"stride") != 0 &&
       strcmp(word,"stride2") != 0 && strcmp(word,"vdisplace") != 0 &&
-      strcmp(word,"swiggle") != 0 && strcmp(word,"cwiggle") != 0)
+      strcmp(word,"swiggle") != 0 && strcmp(word,"cwiggle") != 0 && strcmp(word,"sign") != 0) 
     return 0;
 
   // parse contents for comma-separated args
@@ -4045,6 +4056,11 @@ int Variable::math_function(char *word, char *contents, Tree **tree, Tree **tree
       double value = value1 + value2*(1.0-cos(omega*delta*update->dt));
       argstack[nargstack++] = value;
     }
+  } else if (strcmp(word,"sign") == 0) {
+    if (narg != 1)
+      print_var_error(FLERR,"Invalid math function in variable formula",ivar);
+    if (tree) newtree->type = SIGN;
+    else argstack[nargstack++] = (value1 >= 0.0) ? 1.0 : -1.0; // sign(value1);
   }
 
   // delete stored args

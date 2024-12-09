@@ -282,7 +282,7 @@ void Verlet::run(int n)
       }
       timer->stamp();
       comm->exchange();
-      if (sortflag && ntimestep >= atom->nextsort) atom->sort();
+      //if (sortflag && ntimestep >= atom->nextsort) atom->sort();
       comm->borders();
       if (triclinic) domain->lamda2x(atom->nlocal+atom->nghost);
       timer->stamp(Timer::COMM);

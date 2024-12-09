@@ -74,6 +74,9 @@ class GranularModel : protected Pointers {
   int beyond_contact, limit_damping, history_update;
   ContactType contact_type;
 
+  // Particle indices
+  int i, j, itype, jtype;
+
   // History variables
   int size_history, nondefault_history_transfer;
   double *transfer_history_factor;

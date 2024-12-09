@@ -17,6 +17,7 @@
 #include "gran_sub_mod_normal.h"
 #include "granular_model.h"
 #include "math_extra.h"
+#include <iostream>
 
 #include <cmath>
 
@@ -46,7 +47,7 @@ GranSubModRollingNone::GranSubModRollingNone(GranularModel *gm, LAMMPS *lmp) :
 ------------------------------------------------------------------------- */
 
 GranSubModRollingSDS::GranSubModRollingSDS(GranularModel *gm, LAMMPS *lmp) :
-    GranSubModRolling(gm, lmp)
+    GranSubModRolling(gm, lmp), k{0.0}, mu{0.0}, gamma{0.0}
 {
   num_coeffs = 3;
   size_history = 3;
@@ -80,6 +81,8 @@ void GranSubModRollingSDS::calculate_forces()
   hist_temp[0] = gm->history[rhist0];
   hist_temp[1] = gm->history[rhist1];
   hist_temp[2] = gm->history[rhist2];
+
+  //std::cout << "Frcrit rolling is: " << Frcrit << std::endl;
 
   if (gm->history_update) {
     rolldotn = dot3(hist_temp, gm->nx);

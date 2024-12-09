@@ -50,13 +50,14 @@ class FixWallGran : public Fix {
   int maxsize_restart() override;
   void reset_dt() override;
 
+  // for granular model choices
+  class Granular_NS::GranularModel *model; // MOVED HERE FROM PROTECTED FOR MDR MODEL
+  void clear_stored_contacts(); // MOVED HERE FROM PROTECTED FOR MDR MODEL
+
  protected:
   int wallstyle, wiggle, wshear, axis;
   int nlevels_respa;
   bigint time_origin;
-
-  // for granular model choices
-  class Granular_NS::GranularModel *model;
 
   double lo, hi, cylradius;
   double amplitude, period, omega, vshear;
@@ -86,7 +87,7 @@ class FixWallGran : public Fix {
 
   int store;
 
-  void clear_stored_contacts();
+  
 };
 
 }    // namespace LAMMPS_NS
