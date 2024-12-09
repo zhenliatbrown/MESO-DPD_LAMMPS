@@ -331,9 +331,6 @@ void BondBPM::settings(int narg, char **arg)
 
 double BondBPM::equilibrium_distance(int /*i*/)
 {
-  if (!break_flag)
-    return r0_max_estimate;
-
   // Ghost atoms may not yet be communicated, this may only be an estimate
   if (r0_max_estimate == 0) {
     if (!fix_bond_history->restart_reset) {
@@ -380,8 +377,13 @@ double BondBPM::equilibrium_distance(int /*i*/)
     r0_max_estimate = temp;
   }
 
-  // Divide out heuristic prefactor added in comm class
-  return max_stretch * r0_max_estimate / 1.5;
+  double dist = r0_max_estimate;
+
+  // Add stretch and remove heuristic prefactor (added in comm class)
+  if (break_flag)
+    dist *= max_stretch / 1.5;
+
+  return dist;
 }
 
 /* ----------------------------------------------------------------------
