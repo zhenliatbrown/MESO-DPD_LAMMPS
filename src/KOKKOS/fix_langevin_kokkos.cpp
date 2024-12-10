@@ -60,11 +60,13 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
 
   // optional args
   for (int i = 1; i <= ntypes; i++) ratio[i] = 1.0;
-  k_ratio.template modify<LMPHostType>();
+  k_ratio.modify_host();
 
   if (gjfflag) {
     grow_arrays(atomKK->nmax);
     atom->add_callback(Atom::GROW);
+    k_franprev.sync_host();
+    k_lv.sync_host();
     // initialize franprev to zero
     for (int i = 0; i < atomKK->nlocal; i++) {
       franprev[i][0] = 0.0;
@@ -74,8 +76,8 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
       lv[i][1] = 0.0;
       lv[i][2] = 0.0;
     }
-    k_franprev.template modify<LMPHostType>();
-    k_lv.template modify<LMPHostType>();
+    k_franprev.modify_host();
+    k_lv.modify_host();
   }
   if (zeroflag) {
     k_fsumall = tdual_double_1d_3n("langevin:fsumall");
@@ -118,8 +120,8 @@ void FixLangevinKokkos<DeviceType>::init()
     error->warning(FLERR,"Fix langevin gjf + kokkos is not implemented with random gaussians");
 
   // prefactors are modified in the init
-  k_gfactor1.template modify<LMPHostType>();
-  k_gfactor2.template modify<LMPHostType>();
+  k_gfactor1.modify_host();
+  k_gfactor2.modify_host();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -550,7 +552,7 @@ void FixLangevinKokkos<DeviceType>::post_force(int /*vflag*/)
     h_fsumall(0) = fsumall[0]/count;
     h_fsumall(1) = fsumall[1]/count;
     h_fsumall(2) = fsumall[2]/count;
-    k_fsumall.template modify<LMPHostType>();
+    k_fsumall.modify_host();
     k_fsumall.template sync<DeviceType>();
     // set total force zero in parallel on the device
     FixLangevinKokkosZeroForceFunctor<DeviceType> zero_functor(this);
@@ -740,7 +742,7 @@ void FixLangevinKokkos<DeviceType>::reset_dt()
         force->ftm2v;
       h_gfactor2[i] *= 1.0/sqrt(h_ratio[i]);
     }
-    k_gfactor2.template modify<LMPHostType>();
+    k_gfactor2.modify_host();
   }
 
 }
@@ -891,6 +893,9 @@ void FixLangevinKokkos<DeviceType>::end_of_step_rmass_item(int i) const
 template<class DeviceType>
 void FixLangevinKokkos<DeviceType>::copy_arrays(int i, int j, int /*delflag*/)
 {
+  k_franprev.sync_host();
+  k_lv.sync_host();
+
   h_franprev(j,0) = h_franprev(i,0);
   h_franprev(j,1) = h_franprev(i,1);
   h_franprev(j,2) = h_franprev(i,2);
@@ -898,8 +903,8 @@ void FixLangevinKokkos<DeviceType>::copy_arrays(int i, int j, int /*delflag*/)
   h_lv(j,1) = h_lv(i,1);
   h_lv(j,2) = h_lv(i,2);
 
-  k_franprev.template modify<LMPHostType>();
-  k_lv.template modify<LMPHostType>();
+  k_franprev.modify_host();
+  k_lv.modify_host();
 
 }
 
