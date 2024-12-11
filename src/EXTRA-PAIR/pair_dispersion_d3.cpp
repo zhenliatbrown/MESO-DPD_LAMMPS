@@ -12,7 +12,7 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Contributing authors: 
+   Contributing authors:
       Sonia Salomoni^1,^2
       Arthur France-Lanord^1
 
@@ -20,14 +20,8 @@
       ^2: SCAI, Sorbonne Universite, Paris, France
 ------------------------------------------------------------------------- */
 
-#include "pair_d3.h"
-#include "pair_d3_pars.h"
-
-#include <cmath>
-#include <iostream>
-#include <string>
-#include <algorithm>
-#include <unordered_map>
+#include "pair_dispersion_d3.h"
+#include "d3_parameters.h"
 
 #include "atom.h"
 #include "comm.h"
@@ -37,11 +31,14 @@
 #include "neigh_list.h"
 #include "neighbor.h"
 
+#include <cmath>
+#include <algorithm>
+#include <unordered_map>
+
 using namespace LAMMPS_NS;
 
 // global ad hoc parameters
 static constexpr double K1 = 16.0;
-static constexpr double K2 = 4.0/3.0;
 static constexpr double K3 = -4.0;
 
 /*  reasonable choices for k3 are between 3 and 5 :
@@ -56,7 +53,6 @@ static constexpr double K3 = -4.0;
 static constexpr int NUM_ELEMENTS = 94;         // maximum element number
 static constexpr int N_PARS_COLS = 5;           // number of columns in C6 table
 static constexpr int N_PARS_ROWS = 32385;       // number of rows in C6 table
-static constexpr int MAX_CN_ELEM = 5;           // maximun coordination number for each element
 
 static constexpr double autoang = 0.52917725 ;  // atomic units (Bohr) to Angstrom
 static constexpr double autoev = 27.21140795 ;  // atomic units (Hartree) to eV
@@ -65,7 +61,7 @@ static constexpr double autoev = 27.21140795 ;  // atomic units (Hartree) to eV
    Constructor (Required)
 ------------------------------------------------------------------------- */
 
-PairD3::PairD3(LAMMPS *lmp) : Pair(lmp)
+PairDispersionD3::PairDispersionD3(LAMMPS *lmp) : Pair(lmp)
 {
   nmax = 0;
   comm_forward = 2;
@@ -74,13 +70,14 @@ PairD3::PairD3(LAMMPS *lmp) : Pair(lmp)
   restartinfo = 0;
   manybody_flag = 1;
   one_coeff = 1;
+  single_enable = 0;
 }
 
 /* ----------------------------------------------------------------------
    Destructor (Required)
 ------------------------------------------------------------------------- */
 
-PairD3::~PairD3()
+PairDispersionD3::~PairDispersionD3()
 {
   if (allocated) {
     memory->destroy(setflag);
@@ -103,7 +100,7 @@ PairD3::~PairD3()
    Allocate all arrays (Required)
 ------------------------------------------------------------------------- */
 
-void PairD3::allocate()
+void PairDispersionD3::allocate()
 {
   allocated = 1;
   int n = atom->ntypes;
@@ -128,17 +125,9 @@ void PairD3::allocate()
              pair_style   d3 rthr cn_thr damping_type
 ------------------------------------------------------------------------- */
 
-void PairD3::settings(int narg, char **arg) {
+void PairDispersionD3::settings(int narg, char **arg) {
 
-  if (narg != 4) {
-      error->all(FLERR,
-              "Pair_style d3 needs 4 arguments:\n"
-              "\t damping_type : type of the damping\n"
-              "\t functional_name : name of the functional\n"
-              "\t rthr : threshold for dispersion interaction\n"
-              "\t cn_thr : threshold for coordination number calculation\n"
-              );
-  }
+  if (narg != 4) error->all(FLERR, "Pair_style dispersion/d3 needs 4 arguments");
 
   damping_type = arg[0];
   std::string functional_name = arg[1];
@@ -154,10 +143,10 @@ void PairD3::settings(int narg, char **arg) {
 }
 
 /* ----------------------------------------------------------------------
-   finds atomic number (used in PairD3::coeff)
+   finds atomic number (used in PairDispersionD3::coeff)
 ------------------------------------------------------------------------- */
 
-int PairD3::find_atomic_number(std::string& key) {
+int PairDispersionD3::find_atomic_number(std::string& key) {
 
     std::transform(key.begin(), key.end(), key.begin(), ::tolower);
     if (key.length() == 1) { key += " "; }
@@ -189,10 +178,10 @@ int PairD3::find_atomic_number(std::string& key) {
 }
 
 /* ----------------------------------------------------------------------
-   Check whether an integer value in an integer array (used in PairD3::coeff)
+   Check whether an integer value in an integer array (used in PairDispersionD3::coeff)
 ------------------------------------------------------------------------- */
 
-std::vector<int> PairD3::is_int_in_array(int array[], int size, int value) {
+std::vector<int> PairDispersionD3::is_int_in_array(int array[], int size, int value) {
     std::vector<int> indices;
     for (int i = 0; i < size; ++i) {
         if (array[i] == value) {
@@ -204,11 +193,11 @@ std::vector<int> PairD3::is_int_in_array(int array[], int size, int value) {
 
 
 /* ----------------------------------------------------------------------
-   Read r0ab values from r0ab.csv (used in PairD3::coeff)
+   Read r0ab values from r0ab.csv (used in PairDispersionD3::coeff)
 ------------------------------------------------------------------------- */
 
-void PairD3::read_r0ab(int* atomic_numbers, int ntypes) {
-  
+void PairDispersionD3::read_r0ab(int* atomic_numbers, int ntypes) {
+
   const double r0ab_table[NUM_ELEMENTS][NUM_ELEMENTS] = R0AB_TABLE;
 
   for (int i = 1; i <= ntypes; i++) {
@@ -219,10 +208,10 @@ void PairD3::read_r0ab(int* atomic_numbers, int ntypes) {
 }
 
 /* ----------------------------------------------------------------------
-   Get atom pair indices and grid indices (used in PairD3::read_c6ab)
+   Get atom pair indices and grid indices (used in PairDispersionD3::read_c6ab)
 ------------------------------------------------------------------------- */
 
-void PairD3::set_limit_in_pars_array(int& idx_atom_1, int& idx_atom_2, int& idx_i, int& idx_j) {
+void PairDispersionD3::set_limit_in_pars_array(int& idx_atom_1, int& idx_atom_2, int& idx_i, int& idx_j) {
 
   idx_i = 0;
   idx_j = 0;
@@ -240,10 +229,10 @@ void PairD3::set_limit_in_pars_array(int& idx_atom_1, int& idx_atom_2, int& idx_
 }
 
 /* ----------------------------------------------------------------------
-   Read c6ab values from c6ab.csv (used in PairD3::coeff)
+   Read c6ab values from c6ab.csv (used in PairDispersionD3::coeff)
 ------------------------------------------------------------------------- */
 
-void PairD3::read_c6ab(int* atomic_numbers, int ntypes) {
+void PairDispersionD3::read_c6ab(int* atomic_numbers, int ntypes) {
 
   for (int i = 0; i <= ntypes; i++) { mxci[i] = 0; }
   int grid_i = 0, grid_j = 0;
@@ -292,7 +281,7 @@ void PairD3::read_c6ab(int* atomic_numbers, int ntypes) {
           pair_coeff * * path_r0ab.csv path_c6ab.csv functional element1 element2 ...
 ------------------------------------------------------------------------- */
 
-void PairD3::coeff(int narg, char **arg) {
+void PairDispersionD3::coeff(int narg, char **arg) {
 
     int ntypes = atom->ntypes;
     if (narg != ntypes + 2) { error->all(FLERR, "Pair_coeff * * needs: element1 element2 ..."); }
@@ -391,7 +380,7 @@ void PairD3::coeff(int narg, char **arg) {
    Calculate coordination number of atoms
 ------------------------------------------------------------------------- */
 
-void PairD3::calc_coordination_number() {
+void PairDispersionD3::calc_coordination_number() {
 
   double **x = atom->x;
   int *type  = atom->type;
@@ -433,14 +422,14 @@ void PairD3::calc_coordination_number() {
       delrj[0] = x[i][0] - x[j][0];
       delrj[1] = x[i][1] - x[j][1];
       delrj[2] = x[i][2] - x[j][2];
-        
+
       double rsq = delrj[0]*delrj[0] + delrj[1]*delrj[1] + delrj[2]*delrj[2];
 
       // if the atoms are too far away don't consider the contribution
       if (rsq > cn_thr) continue;
 
       double rr = sqrt(rsq);
-      double rcov_ij = (rcov[itype] + rcov[jtype]) * autoang;    
+      double rcov_ij = (rcov[itype] + rcov[jtype]) * autoang;
       double cn_ij = 1.0f / (1.0f + expf(-K1*((rcov_ij/rr)-1.0f)));
 
       // update coordination number
@@ -460,18 +449,18 @@ void PairD3::calc_coordination_number() {
    Get derivative of C6
 ------------------------------------------------------------------------- */
 
-double* PairD3::get_dC6(int iat, int jat, double cni, double cnj){
+double* PairDispersionD3::get_dC6(int iat, int jat, double cni, double cnj){
 
   static double c6_res[3] = {};
-  double c6_ref, itype, jtype, cni_ref, cnj_ref;
+  double c6_ref, cni_ref, cnj_ref;
   double c6mem, r_save, r;
   double expterm, term;
   double num, den, d_num_i, d_num_j, d_den_i, d_den_j;
 
   c6mem = -1.0e20f, r_save = 1.0e20f;
-  num = 0 ; den = 0 ; d_num_i = 0 ; d_num_j = 0; d_den_i = 0; d_den_j = 0; 
+  num = 0 ; den = 0 ; d_num_i = 0 ; d_num_j = 0; d_den_i = 0; d_den_j = 0;
 
-  for (int ci = 0; ci <= mxci[iat]; ci++){ 
+  for (int ci = 0; ci <= mxci[iat]; ci++){
     for (int cj = 0; cj <= mxci[jat]; cj++){
 
     c6_ref = c6ab[iat][jat][ci][cj][0];
@@ -489,7 +478,7 @@ double* PairD3::get_dC6(int iat, int jat, double cni, double cnj){
       }
 
       expterm = exp(static_cast<double>(K3) * static_cast<double>(r));
- 
+
       num += c6_ref*expterm;
       den += expterm;
 
@@ -512,7 +501,7 @@ double* PairD3::get_dC6(int iat, int jat, double cni, double cnj){
     c6_res[2] = ((d_num_j*den)-(d_den_j*num)) / (den*den);
   } else {
     c6_res[0] = c6mem; c6_res[1] = 0; c6_res[2] = 0;
-  }  
+  }
   return c6_res;
 }
 
@@ -520,7 +509,7 @@ double* PairD3::get_dC6(int iat, int jat, double cni, double cnj){
    Compute : energy, force, and stress (Required)
 ------------------------------------------------------------------------- */
 
-void PairD3::compute(int eflag, int vflag) {
+void PairDispersionD3::compute(int eflag, int vflag) {
 
   std::unordered_map<std::string, int> dampingMap = {
     {"zero", 1},  {"zerom", 2},  {"bj", 3}, {"bjm", 4}
@@ -537,10 +526,10 @@ void PairD3::compute(int eflag, int vflag) {
   int *type  = atom->type;
   int nlocal = atom->nlocal;
 
-  double *special_lj = force->special_lj;   
+  double *special_lj = force->special_lj;
   int newton_pair = force->newton_pair;
 
-  int   inum       = list->inum;  
+  int   inum       = list->inum;
   int*  ilist      = list->ilist;
   int*  numneigh   = list->numneigh;
   int** firstneigh = list->firstneigh;
@@ -556,7 +545,7 @@ void PairD3::compute(int eflag, int vflag) {
 
     int  jnum = numneigh[i];
     int* jlist = firstneigh[i];
-  
+
     // fprintf(stderr, "> i, type[i], CN[i], C6[i,i] :  %d, %d, %f, %f\n", atom->tag[i], type[i], cn[i], get_dC6(type[i],type[i],cn[i],cn[i])[0]/(autoev*pow(autoang,6)));
 
     for (int jj = 0; jj < jnum; jj++) {
@@ -570,7 +559,7 @@ void PairD3::compute(int eflag, int vflag) {
       double delz = ztmp - x[j][2];
 
       double rsq = delx*delx + dely*dely + delz*delz;
-    
+
       if (rsq < cutsq[type[i]][type[j]]) {
 
         double r = sqrt(rsq);
@@ -650,7 +639,7 @@ void PairD3::compute(int eflag, int vflag) {
             t6 = r6+pow((a1*r0+a2),6);
             t8 = r8+pow((a1*r0+a2),8);
 
-            e6 = C6/t6; 
+            e6 = C6/t6;
             e8 = C8/t8;
 
             tmp6 = 6.0*s6*C6*r4/(t6*t6);
@@ -658,7 +647,7 @@ void PairD3::compute(int eflag, int vflag) {
 
             fpair = -(tmp6+tmp8) ;
             fpair *= factor_lj;
-          }       
+          }
           break;
           case 4:{ // bjm
 
@@ -671,7 +660,7 @@ void PairD3::compute(int eflag, int vflag) {
             t6 = r6+pow((a1*r0+a2),6);
             t8 = r8+pow((a1*r0+a2),8);
 
-            e6 = C6/t6; 
+            e6 = C6/t6;
             e8 = C8/t8;
 
             tmp6 = 6.0*s6*C6*r4/(t6*t6);
@@ -701,7 +690,7 @@ void PairD3::compute(int eflag, int vflag) {
           f[j][2] -= delz*fpair;
         }
 
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,evdwl,0.0,fpair,delx,dely,delz);  
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,evdwl,0.0,fpair,delx,dely,delz);
       }
     }
   }
@@ -712,7 +701,7 @@ void PairD3::compute(int eflag, int vflag) {
   comm->forward_comm(this);
 
   // After calculating all derivatives dE/dr_ij w.r.t. distances,
-  // the grad w.r.t. the coordinates is calculated dE/dr_ij * dr_ij/dxyz_i  
+  // the grad w.r.t. the coordinates is calculated dE/dr_ij * dr_ij/dxyz_i
   for (int ii = 0; ii < inum; ii++) {
 
     int i = ilist[ii];
@@ -720,10 +709,10 @@ void PairD3::compute(int eflag, int vflag) {
     double xtmp = x[i][0];
     double ytmp = x[i][1];
     double ztmp = x[i][2];
-  
+
     int  jnum = numneigh[i];
     int* jlist = firstneigh[i];
-  
+
     for (int jj = 0; jj < jnum; jj++) {
 
       int j = jlist[jj];
@@ -735,7 +724,7 @@ void PairD3::compute(int eflag, int vflag) {
       double delz = ztmp - x[j][2];
 
       double rsq = delx*delx + dely*dely + delz*delz;
-      
+
       if (rsq < cutsq[type[i]][type[j]]) {
 
         double r = sqrt(rsq);
@@ -762,7 +751,7 @@ void PairD3::compute(int eflag, int vflag) {
           f[j][1] -= dely*fpair;
           f[j][2] -= delz*fpair;
         }
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,0.0,0.0,fpair,delx,dely,delz);  
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,0.0,0.0,fpair,delx,dely,delz);
       }
     }
   }
@@ -770,7 +759,7 @@ void PairD3::compute(int eflag, int vflag) {
 }
 
 
-void PairD3::set_funcpar(std::string& functional_name) {
+void PairDispersionD3::set_funcpar(std::string& functional_name) {
 
   std::unordered_map<std::string, int> dampingMap = {
     {"zero", 1},  {"zerom", 2},  {"bj", 3}, {"bjm", 4}
@@ -882,7 +871,7 @@ void PairD3::set_funcpar(std::string& functional_name) {
         case 3: rs6 = 1.151808; s8 = 1.020078; rs8 = 0.035964; break;
         case 4: rs6 = 1.279637; s8 = 1.841686; rs8 = 0.014370; break;
         case 5: rs6 = 1.233460; s8 = 1.945174; rs8 = 0.000000; break;
-        case 6: rs6 = 2.340218; s8 = 0.000000; rs8 = 0.129434; break;      
+        case 6: rs6 = 2.340218; s8 = 0.000000; rs8 = 0.129434; break;
         case 7: rs6 = 2.077949; s8 = 0.000081; rs8 = 0.116755; break;
         case 8: rs6 = 1.366361; s8 = 1.280619; rs8 = 0.003160; break;
         default:
@@ -993,7 +982,7 @@ void PairD3::set_funcpar(std::string& functional_name) {
       //fprintf(stderr,"alpha : %f\n", alpha);
 
       a2 = a2*autoang;
-    } 
+    }
     break;
 
     case 4:{ // bjm
@@ -1041,7 +1030,7 @@ void PairD3::set_funcpar(std::string& functional_name) {
    init for one type pair i,j and corresponding j,i
 ------------------------------------------------------------------------- */
 
-double PairD3::init_one(int i, int j) {
+double PairDispersionD3::init_one(int i, int j) {
 
   if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
 
@@ -1050,7 +1039,7 @@ double PairD3::init_one(int i, int j) {
   return std::sqrt(rthr);
 }
 
-void PairD3::init_style()
+void PairDispersionD3::init_style()
 {
   if (atom->tag_enable == 0)
     error->all(FLERR,"Pair style D3 requires atom IDs");
@@ -1065,7 +1054,7 @@ void PairD3::init_style()
    Communication
 ------------------------------------------------------------------------- */
 
-int PairD3::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/, int * /*pbc*/)
+int PairDispersionD3::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/, int * /*pbc*/)
 {
   int i,j,m;
 
@@ -1079,14 +1068,14 @@ int PairD3::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/, i
   if (communicationStage == 2) {
     for (i = 0; i < n; i ++) {
       j = list[i];
-      buf[m++] = dc6[j]; 
+      buf[m++] = dc6[j];
     }
   }
 
   return m;
 }
 
-void PairD3::unpack_forward_comm(int n, int first, double *buf)
+void PairDispersionD3::unpack_forward_comm(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -1104,7 +1093,7 @@ void PairD3::unpack_forward_comm(int n, int first, double *buf)
   }
 }
 
-int PairD3::pack_reverse_comm(int n, int first, double *buf)
+int PairDispersionD3::pack_reverse_comm(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -1123,7 +1112,7 @@ int PairD3::pack_reverse_comm(int n, int first, double *buf)
   return m;
 }
 
-void PairD3::unpack_reverse_comm(int n, int *list, double *buf)
+void PairDispersionD3::unpack_reverse_comm(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -1139,5 +1128,5 @@ void PairD3::unpack_reverse_comm(int n, int *list, double *buf)
       j = list[i];
       dc6[j] += buf[m++];
     }
-  }  
+  }
 }

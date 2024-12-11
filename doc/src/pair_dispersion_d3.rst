@@ -1,21 +1,17 @@
-.. index:: pair_style d3
-..    
-    .. index:: pair_style d3/kk
+.. index:: pair_style dispersion/d3
 
-pair_style d3 command
-=====================
-..
-    Accelerator Variants: *d3/kk*
+pair_style dispersion/d3 command
+================================
 
 Syntax
 """"""
 
 .. code-block:: LAMMPS
 
-   pair_style d3 damping functional cutoff cn_cutoff
+   pair_style dispersion/d3 damping functional cutoff cn_cutoff
 
 * damping = damping function: *zero*, *zerom*, *bj*, or *bjm*
-* functional = XC functional form: *pbe*, *pbe0*, etc.
+* functional = XC functional form: *pbe*, *pbe0*, ... (see list below)
 * cutoff = global cutoff (distance units)
 * cn_cutoff = coordination number cutoff (distance units)
 
@@ -24,14 +20,19 @@ Examples
 
 .. code-block:: LAMMPS
 
-   pair_style d3 zero pbe 30.0 20.0
+   pair_style dispersion/d3 zero pbe 30.0 20.0
    pair_coeff * * C
 
 Description
 """""""""""
 
-Style *d3* computes the dispersion energy-correction used in the DFT-D3
-method of Grimme :ref:`(Grimme1) <Grimme1>`. 
+.. versionadded:: TBD
+
+Style *dispersion/d3* computes the dispersion energy-correction used in
+the DFT-D3 method of Grimme :ref:`(Grimme1) <Grimme1>`.  It would
+typically be used with a machine learning potential that was trained
+with results from plain DFT calculations without the dispersion
+correction through pair_style hybrid/overlay.
 
 The energy contribution :math:`E_i` for an atom :math:`i` is given by:
 
@@ -41,19 +42,22 @@ The energy contribution :math:`E_i` for an atom :math:`i` is given by:
                 s_6 \frac{C_{6,ij}}{r^6_{ij}} f_6^{damp}(r_{ij}) +
                 s_8 \frac{C_{8,ij}}{r^8_{ij}} f_8^{damp}(r_{ij}) \big)
 
-where :math:`C_n` is the averaged, geometry-dependent nth-order dispersion 
-coefficient for atom pair :math:`ij`, :math:`r_{ij}` their internuclear distance, 
+where :math:`C_n` is the averaged, geometry-dependent nth-order dispersion
+coefficient for atom pair :math:`ij`, :math:`r_{ij}` their internuclear distance,
 :math:`s_n` are XC functional-dependent scaling factor, and :math:`f_n^{damp}` are
 damping functions.
 
-N.B.: in the current version of the code, it is *not* possible to calculate three-body
-dispersion contributions, according for example to the Axilrod-Teller-Muto model.
+.. note::
 
-Available damping functions are the original "zero-damping" :ref:`(Grimme1) <Grimme1>`, 
-Becke-Johnson damping :ref:`(Grimme2) <Grimme2>`, and their revised forms :ref:`(Sherrill) <Sherrill>`.
+   It is currently *not* possible to calculate three-body dispersion
+   contributions, according for example to the Axilrod-Teller-Muto model.
 
-Available XC functional scaling factors are listed in the table  below, and depend on 
-the selected damping function. 
+Available damping functions are the original "zero-damping"
+:ref:`(Grimme1) <Grimme1>`, Becke-Johnson damping :ref:`(Grimme2)
+<Grimme2>`, and their revised forms :ref:`(Sherrill) <Sherrill>`.
+
+Available XC functional scaling factors are listed in the table below,
+and depend on the selected damping function.
 
 +------------------+--------------------------------------------------------------------------------+
 | Damping function | XC functional                                                                  |
@@ -77,39 +81,45 @@ the selected damping function.
 +------------------+--------------------------------------------------------------------------------+
 
 
-This style is primarly supposed to be used combined with a machine-learned
-interatomic potential trained on a DFT dataset (the selected XC functional 
-should be chosen accordingly) via the *pair_style hybrid* command.
+This style is primarly supposed to be used combined with a
+machine-learned interatomic potential trained on a DFT dataset (the
+selected XC functional should be chosen accordingly) via the *pair_style
+hybrid* command.
 
 Coefficients
 """"""""""""
 
-All the required coefficients are already stored internally, in the pair_d3_pars.h file. 
-The only information to provide are the chemical symbols of the atoms.
-The number of chemical symbols given must be equal to the number of atom types
-used and should match their ordering.
+All the required coefficients are already stored internally, in the
+d3_paramerters.h file.  The only information to provide are the chemical
+symbols of the atoms.  The number of chemical symbols given must be
+equal to the number of atom types used and should match their ordering.
 
 
 Mixing, shift, table, tail correction, restart, rRESPA info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-This pair style does not support mixing since all parameters are explicit for each pair.
+This pair style does not support mixing since all parameters are
+explicit for each pair of atom types.
 
-This pair style does not support the :doc:`pair_modify` shift, table, and tail options.
+This pair style does not support the :doc:`pair_modify` shift, table,
+and tail options.
 
-This pair style does not write its information to :doc:`binary restart files <restart>`.
+This pair style does not write its information to :doc:`binary restart
+files <restart>`.
 
 This pair style can only be used via the *pair* keyword of the
 :doc:`run_style respa <run_style>` command.  It does not support the
 *inner*, *middle*, *outer* keywords.
 
-
 Restrictions
 """"""""""""
 
-Style *d3* is part of the EXTRA-PAIR package. It is only enabled if LAMMPS
-was built with that package. 
-See the :doc:`Build package <Build_package>` page for more info.
+Style *dispersion/d3* is part of the EXTRA-PAIR package. It is only
+enabled if LAMMPS was built with that package.  See the :doc:`Build
+package <Build_package>` page for more info.
+
+It is currently *not* possible to calculate three-body dispersion
+contributions, ccording for example to the Axilrod-Teller-Muto model.
 
 Related commands
 """"""""""""""""
@@ -125,16 +135,12 @@ none
 
 .. _Grimme1:
 
-**(Grimme1)** S. Grimme, J. Antony, S. Ehrlich, and H. Krieg, 
-J. Chem. Phys. 132, 154104 (2010).
-.
+**(Grimme1)** S. Grimme, J. Antony, S. Ehrlich, and H. Krieg, J. Chem. Phys. 132, 154104 (2010).
 
 .. _Grimme2:
 
-**(Grimme2)** S. Grimme, S. Ehrlich and L. Goerigk,  
-J. Comput. Chem. 32, 1456 (2011); DOI:10.1002/jcc.21759.
+**(Grimme2)** S. Grimme, S. Ehrlich and L. Goerigk,  J. Comput. Chem. 32, 1456 (2011); DOI:10.1002/jcc.21759.
 
 .. _Sherrill:
 
-**(Sherrill)** D. G. A. Smith, L. A. Burns, K. Patkowski, and C. D. Sherrill,
-J. Phys. Chem. Lett., 7, 2197, (2016); DOI: 10.1021/acs.jpclett.6b00780.
+**(Sherrill)** D. G. A. Smith, L. A. Burns, K. Patkowski, and C. D. Sherrill, J. Phys. Chem. Lett., 7, 2197, (2016); DOI: 10.1021/acs.jpclett.6b00780.

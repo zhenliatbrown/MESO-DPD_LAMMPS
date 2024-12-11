@@ -9,34 +9,27 @@
    the GNU General Public License.
 
    See the README file in the top-level LAMMPS directory.
-  -------------------------------------------------------------------------
-   Contributing authors: 
-      Sonia Salomoni^1,^2
-      Arthur France-Lanord^1
-
-      ^1: IMPMC, CNRS, Sorbonne Universite, Paris, France
-      ^2: SCAI, Sorbonne Universite, Paris, France
 ------------------------------------------------------------------------- */
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(d3,PairD3);
+PairStyle(dispersion/d3,PairDispersionD3);
 // clang-format on
 #else
 
-#ifndef LMP_PAIR_D3_H
-#define LMP_PAIR_D3_H
+#ifndef LMP_PAIR_DISPERSION_D3_H
+#define LMP_PAIR_DISPERSION_D3_H
 
 #include "pair.h"
 
 namespace LAMMPS_NS {
 
-class PairD3 : public Pair {
+class PairDispersionD3 : public Pair {
 
  public:
 
-  PairD3(class LAMMPS *);
-  ~PairD3() override;
+  PairDispersionD3(class LAMMPS *);
+  ~PairDispersionD3() override;
 
   void compute(int, int) override;
 
@@ -74,7 +67,7 @@ class PairD3 : public Pair {
   double* dc6 = nullptr;                // dC6i(iat) saves dE_dsp/dCN(iat)
 
   int communicationStage;               // communication stage
-  
+
   void allocate();
   virtual void set_funcpar(std::string&);
 
@@ -82,7 +75,7 @@ class PairD3 : public Pair {
 
   int find_atomic_number(std::string&);
   std::vector<int> is_int_in_array(int*, int, int);
-  
+
   void read_r0ab(int*, int);
   void set_limit_in_pars_array(int&, int&, int&, int&);
   void read_c6ab(int*, int);
