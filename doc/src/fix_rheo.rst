@@ -64,7 +64,7 @@ Description
 
 Perform time integration for RHEO particles, updating positions, velocities,
 and densities. For a detailed breakdown of the integration timestep and
-numerical details, see :ref:`(Palermo) <rheo_palermo>`. For an overview
+numerical details, see :ref:`(Palermo) <fix_rheo_palermo>`. For an overview
 and list of other features available in the RHEO package, see
 :doc:`the RHEO howto <Howto_rheo>`.
 
@@ -218,11 +218,11 @@ Default
 
 ----------
 
-.. _rheo_palermo:
+.. _fix_rheo_palermo:
 
 **(Palermo)** Palermo, Wolf, Clemmer, O'Connor, Phys. Fluids, 36, 113337 (2024).
 
-.. _rheo_yang:
+.. _fix_rheo_yang:
 
 **(Yang)** Yang, Rakhsha, Hu, Negrut, J. Comp. Physics, 458, 111079 (2022).
 
