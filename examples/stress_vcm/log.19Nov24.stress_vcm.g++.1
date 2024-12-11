@@ -1,7 +1,20 @@
 LAMMPS (19 Nov 2024)
 OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:99)
   using 1 OpenMP thread(s) per MPI task
-# Removing Binned Center-of-Mass Velocities from Stress Compute
+# Removing Binned Velocities of Center of Mass (VCM) from Stress
+
+# This example shows how to remove rigid body motion from
+# binned stress calculations. This uses a combination of commands
+# from compute chunk/atom, compute temp/chunk, compute
+# stress/atom and fix ave/time. We'll show how these commands
+# work in the context of a shockwave experiment on a cube of
+# atoms. To shock the cube, a rectangular region of atoms is
+# frozen, moved into the cube with a constant velocity along the
+# x direction, and then unfrozen. As the shockwave begins
+# propagating, the body of the cube also moves along the x
+# direction. To better understand the stress dynamics of the
+# cube we remove the velocity component belonging to the overall
+# motion of each bin.
 
 units		    metal
 boundary        p p p
@@ -10,7 +23,10 @@ lattice		    fcc 5.3589
 Lattice spacing in x,y,z = 5.3589 5.3589 5.3589
 processors 		1 * *
 
-# Defining regions for box and atoms
+# Defining regions for box and atoms.
+# In this experiment an elongated simulation cell is
+# defined in the x direction to allow for non-periodic
+# motion of the atoms.
 
 region		    box1 block -3 24 0 12 0 12 units lattice
 region		    box2 block 0 12 0 12 0 12 units lattice
@@ -23,7 +39,7 @@ Created orthogonal box = (-16.0767 0 0) to (128.6136 64.3068 64.3068)
 create_atoms    1 region box2
 Created 7200 atoms
   using lattice units in orthogonal box = (-16.0767 0 0) to (128.6136 64.3068 64.3068)
-  create_atoms CPU = 0.003 seconds
+  create_atoms CPU = 0.002 seconds
 
 mass		    1 40.00
 
@@ -64,20 +80,20 @@ Per MPI rank memory allocation (min/avg/max) = 5.721 | 5.721 | 5.721 Mbytes
        300   304.28012     -1993.2958      0             -1710.1498      1498.3794    
        400   296.76492     -1985.1364      0             -1708.9836      1259.9474    
        500   295.00895     -1982.4224      0             -1707.9036      964.9526     
-Loop time of 3.07247 on 1 procs for 500 steps with 7200 atoms
+Loop time of 3.01696 on 1 procs for 500 steps with 7200 atoms
 
-Performance: 28.121 ns/day, 0.853 hours/ns, 162.736 timesteps/s, 1.172 Matom-step/s
-99.7% CPU use with 1 MPI tasks x 1 OpenMP threads
+Performance: 28.638 ns/day, 0.838 hours/ns, 165.730 timesteps/s, 1.193 Matom-step/s
+99.4% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 2.8976     | 2.8976     | 2.8976     |   0.0 | 94.31
-Neigh   | 0.11531    | 0.11531    | 0.11531    |   0.0 |  3.75
-Comm    | 0.015167   | 0.015167   | 0.015167   |   0.0 |  0.49
-Output  | 0.003809   | 0.003809   | 0.003809   |   0.0 |  0.12
-Modify  | 0.025306   | 0.025306   | 0.025306   |   0.0 |  0.82
-Other   |            | 0.01525    |            |       |  0.50
+Pair    | 2.8439     | 2.8439     | 2.8439     |   0.0 | 94.26
+Neigh   | 0.11212    | 0.11212    | 0.11212    |   0.0 |  3.72
+Comm    | 0.015585   | 0.015585   | 0.015585   |   0.0 |  0.52
+Output  | 0.003747   | 0.003747   | 0.003747   |   0.0 |  0.12
+Modify  | 0.026097   | 0.026097   | 0.026097   |   0.0 |  0.87
+Other   |            | 0.01551    |            |       |  0.51
 
 Nlocal:           7200 ave        7200 max        7200 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -91,24 +107,39 @@ Ave neighs/atom = 85.429861
 Neighbor list builds = 9
 Dangerous builds = 0
 
-# Chunk and stress along x direction
+#------------------------------------#
+# Chunk, Stress, and VCM removal steps
+#------------------------------------#
 
+# 1. Create 20 equispaced bins sliced along the x direction.
+# "units reduced" normalizes the distance from 0 to 1
 variable        nbins index 20
 variable        fraction equal 1.0/v_nbins
 variable        volfrac equal 1/(vol*${fraction})
 variable        volfrac equal 1/(vol*0.05)
-
 compute         ch_id all chunk/atom bin/1d x lower ${fraction} units reduced
 compute         ch_id all chunk/atom bin/1d x lower 0.05 units reduced
+
+# 2. Calculate temperature bins with VCM aka COM velocities removed.
 compute         ch_temp_vcm all temp/chunk ch_id com yes
+
+# 3. Compute per atom stress with VCM removed via temp-ID.
+# The velocities from specified temp-ID are used to compute stress
+# Stress/atom units are pressure*volume! Optionally handled next step.
 compute         atom_stress_vcm all stress/atom ch_temp_vcm
+
+# 4. Divide out bin volume from xx stress component.
 variable        stress atom -(c_atom_stress_vcm[1])/(vol*${fraction})
 variable        stress atom -(c_atom_stress_vcm[1])/(vol*0.05)
+
+# 5. Sum the per atom stresses in each bin.
 compute         ch_stress_vcm all reduce/chunk ch_id sum v_stress
 
-# Output stress profile in x direction
-
+# 6. Average and output to file.
+# The average output is every 100 steps with samples collected 20 times with 5 step intervals
 # fix             ave_stress_vcm all ave/time 5 20 100 c_ch_stress_vcm mode vector file stress_xx.out
+
+#------------------------------------#
 
 # Piston compressing along x direction
 
@@ -144,20 +175,20 @@ Per MPI rank memory allocation (min/avg/max) = 6.975 | 6.975 | 6.975 Mbytes
        800   484.96279      451.27911     -1875.379       144.6903       64.3068        64.3068        5362.254       4174.4201      4166.0818     -1424.0999    
        900   587.78954      546.96391     -1871.217       144.6903       64.3068        64.3068        6481.4714      4875.705       4676.6083     -1324.2531    
       1000   684.07997      636.56636     -1868.1639      144.6903       64.3068        64.3068        7734.6158      5271.3524      5272.1276     -1231.5975    
-Loop time of 3.32746 on 1 procs for 500 steps with 7200 atoms
+Loop time of 3.09383 on 1 procs for 500 steps with 7200 atoms
 
-Performance: 25.966 ns/day, 0.924 hours/ns, 150.265 timesteps/s, 1.082 Matom-step/s
+Performance: 27.927 ns/day, 0.859 hours/ns, 161.612 timesteps/s, 1.164 Matom-step/s
 100.0% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 3.0701     | 3.0701     | 3.0701     |   0.0 | 92.27
-Neigh   | 0.20567    | 0.20567    | 0.20567    |   0.0 |  6.18
-Comm    | 0.010313   | 0.010313   | 0.010313   |   0.0 |  0.31
-Output  | 0.002649   | 0.002649   | 0.002649   |   0.0 |  0.08
-Modify  | 0.029567   | 0.029567   | 0.029567   |   0.0 |  0.89
-Other   |            | 0.009157   |            |       |  0.28
+Pair    | 2.8485     | 2.8485     | 2.8485     |   0.0 | 92.07
+Neigh   | 0.18767    | 0.18767    | 0.18767    |   0.0 |  6.07
+Comm    | 0.011533   | 0.011533   | 0.011533   |   0.0 |  0.37
+Output  | 0.003323   | 0.003323   | 0.003323   |   0.0 |  0.11
+Modify  | 0.031777   | 0.031777   | 0.031777   |   0.0 |  1.03
+Other   |            | 0.01107    |            |       |  0.36
 
 Nlocal:           7200 ave        7200 max        7200 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -193,20 +224,20 @@ Per MPI rank memory allocation (min/avg/max) = 6.6 | 6.6 | 6.6 Mbytes
       2300   563.20394      524.08593     -1733.6036      144.6903       64.3068        64.3068       -220.99189     -810.90513     -774.65084     -1209.5176    
       2400   540.44236      502.90528     -1711.3384      144.6903       64.3068        64.3068       -358.01508     -962.31635     -977.3253      -1208.4332    
       2500   523.5718       487.20648     -1694.7088      144.6903       64.3068        64.3068       -521.87444     -1152.8386     -1231.7615     -1207.5023    
-Loop time of 9.89185 on 1 procs for 1500 steps with 7200 atoms
+Loop time of 9.34327 on 1 procs for 1500 steps with 7200 atoms
 
-Performance: 26.203 ns/day, 0.916 hours/ns, 151.640 timesteps/s, 1.092 Matom-step/s
-98.7% CPU use with 1 MPI tasks x 1 OpenMP threads
+Performance: 27.742 ns/day, 0.865 hours/ns, 160.543 timesteps/s, 1.156 Matom-step/s
+98.5% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 8.9768     | 8.9768     | 8.9768     |   0.0 | 90.75
-Neigh   | 0.78114    | 0.78114    | 0.78114    |   0.0 |  7.90
-Comm    | 0.035178   | 0.035178   | 0.035178   |   0.0 |  0.36
-Output  | 0.009593   | 0.009593   | 0.009593   |   0.0 |  0.10
-Modify  | 0.057521   | 0.057521   | 0.057521   |   0.0 |  0.58
-Other   |            | 0.0316     |            |       |  0.32
+Pair    | 8.4692     | 8.4692     | 8.4692     |   0.0 | 90.65
+Neigh   | 0.7512     | 0.7512     | 0.7512     |   0.0 |  8.04
+Comm    | 0.031189   | 0.031189   | 0.031189   |   0.0 |  0.33
+Output  | 0.010584   | 0.010584   | 0.010584   |   0.0 |  0.11
+Modify  | 0.053052   | 0.053052   | 0.053052   |   0.0 |  0.57
+Other   |            | 0.02803    |            |       |  0.30
 
 Nlocal:           7200 ave        7200 max        7200 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -219,4 +250,4 @@ Total # of neighbors = 515773
 Ave neighs/atom = 71.635139
 Neighbor list builds = 57
 Dangerous builds = 0
-Total wall time: 0:00:16
+Total wall time: 0:00:15
