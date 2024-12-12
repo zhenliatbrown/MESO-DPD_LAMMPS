@@ -49,6 +49,7 @@ AngleMWLC::~AngleMWLC()
     memory->destroy(k1);
     memory->destroy(k2);
     memory->destroy(mu);
+    memory->destroy(temp);
   }
 }
 
@@ -71,12 +72,15 @@ void AngleMWLC::compute(int eflag, int vflag)
   int nanglelist = neighbor->nanglelist;
   int nlocal = atom->nlocal;
   int newton_bond = force->newton_bond;
+  double kbt, v_min;
 
   for (n = 0; n < nanglelist; n++) {
     i1 = anglelist[n][0];
     i2 = anglelist[n][1];
     i3 = anglelist[n][2];
     type = anglelist[n][3];
+    kbt = temp[type]*force->boltz;
+    v_min = -kbt * log(1 + exp(-mu[type] / kbt));
 
     // 1st bond
 
@@ -105,11 +109,11 @@ void AngleMWLC::compute(int eflag, int vflag)
 
     // force & energy
 
-    q = exp(-k1[type] * (1.0 + c));
-    qm = exp(-k2[type] * (1.0 + c) - mu[type]);
+    q = exp(-k1[type] * (1.0 + c) / kbt);
+    qm = exp((-k2[type] * (1.0 + c) - mu[type]) / kbt);
     Q = q + qm;
 
-    if (eflag) eangle = -log(Q);
+    if (eflag) eangle = -kbt*log(Q) - v_min;
 
     a = (k1[type] * q + k2[type] * qm) / Q;
     a11 = a * c / rsq1;
@@ -159,6 +163,7 @@ void AngleMWLC::allocate()
   memory->create(k1, np1, "angle:k1");
   memory->create(k2, np1, "angle:k2");
   memory->create(mu, np1, "angle:mu");
+  memory->create(temp, np1, "angle:temp");
   memory->create(setflag, np1, "angle:setflag");
   for (int i = 1; i < np1; i++) setflag[i] = 0;
 }
@@ -169,7 +174,7 @@ void AngleMWLC::allocate()
 
 void AngleMWLC::coeff(int narg, char **arg)
 {
-  if (narg != 4) error->all(FLERR, "Incorrect args for angle coefficients");
+  if (narg != 5) error->all(FLERR, "Incorrect args for angle coefficients");
   if (!allocated) allocate();
 
   int ilo, ihi;
@@ -178,12 +183,14 @@ void AngleMWLC::coeff(int narg, char **arg)
   double k1_one = utils::numeric(FLERR, arg[1], false, lmp);
   double k2_one = utils::numeric(FLERR, arg[2], false, lmp);
   double mu_one = utils::numeric(FLERR, arg[3], false, lmp);
+  double temp_one = utils::numeric(FLERR, arg[4], false, lmp);
 
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
     k1[i] = k1_one;
     k2[i] = k2_one;
     mu[i] = mu_one;
+    temp[i] = temp_one;
     setflag[i] = 1;
     count++;
   }
@@ -207,6 +214,7 @@ void AngleMWLC::write_restart(FILE *fp)
   fwrite(&k1[1], sizeof(double), atom->nangletypes, fp);
   fwrite(&k2[1], sizeof(double), atom->nangletypes, fp);
   fwrite(&mu[1], sizeof(double), atom->nangletypes, fp);
+  fwrite(&temp[1], sizeof(double), atom->nangletypes, fp);
 }
 
 /* ----------------------------------------------------------------------
@@ -221,10 +229,12 @@ void AngleMWLC::read_restart(FILE *fp)
     utils::sfread(FLERR, &k1[1], sizeof(double), atom->nangletypes, fp, nullptr, error);
     utils::sfread(FLERR, &k2[1], sizeof(double), atom->nangletypes, fp, nullptr, error);
     utils::sfread(FLERR, &mu[1], sizeof(double), atom->nangletypes, fp, nullptr, error);
+    utils::sfread(FLERR, &temp[1], sizeof(double), atom->nangletypes, fp, nullptr, error);
   }
   MPI_Bcast(&k1[1], atom->nangletypes, MPI_DOUBLE, 0, world);
   MPI_Bcast(&k2[1], atom->nangletypes, MPI_DOUBLE, 0, world);
   MPI_Bcast(&mu[1], atom->nangletypes, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&temp[1], atom->nangletypes, MPI_DOUBLE, 0, world);
 
   for (int i = 1; i <= atom->nangletypes; i++) setflag[i] = 1;
 }
@@ -235,7 +245,7 @@ void AngleMWLC::read_restart(FILE *fp)
 
 void AngleMWLC::write_data(FILE *fp)
 {
-  for (int i = 1; i <= atom->nangletypes; i++) fprintf(fp, "%d %g %g %g\n", i, k1[i], k2[i], mu[i]);
+  for (int i = 1; i <= atom->nangletypes; i++) fprintf(fp, "%d %g %g %g %g\n", i, k1[i], k2[i], mu[i], temp[i]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -244,6 +254,8 @@ double AngleMWLC::single(int type, int i1, int i2, int i3)
 {
   double **x = atom->x;
 
+  double kbt = temp[type]*force->boltz;
+  double v_min = -kbt * log(1 + exp(-mu[type] / kbt));
   double delx1 = x[i1][0] - x[i2][0];
   double dely1 = x[i1][1] - x[i2][1];
   double delz1 = x[i1][2] - x[i2][2];
@@ -261,9 +273,9 @@ double AngleMWLC::single(int type, int i1, int i2, int i3)
   if (c > 1.0) c = 1.0;
   if (c < -1.0) c = -1.0;
 
-  double q = exp(-k1[type] * (1.0 + c));
-  double qm = exp(-k2[type] * (1.0 + c) - mu[type]);
-  return -log(q + qm);
+  double q = exp(-k1[type] * (1.0 + c) / kbt);
+  double qm = exp((-k2[type] * (1.0 + c) - mu[type]) / kbt);
+  return -kbt * log(q + qm) - v_min;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -271,6 +283,7 @@ double AngleMWLC::single(int type, int i1, int i2, int i3)
 void AngleMWLC::born_matrix(int type, int i1, int i2, int i3, double &du, double &du2)
 {
   double **x = atom->x;
+  double kbt = temp[type]*force->boltz;
 
   double delx1 = x[i1][0] - x[i2][0];
   double dely1 = x[i1][1] - x[i2][1];
@@ -288,13 +301,13 @@ void AngleMWLC::born_matrix(int type, int i1, int i2, int i3, double &du, double
   if (c > 1.0) c = 1.0;
   if (c < -1.0) c = -1.0;
 
-  const double q = exp(-k1[type] * (1.0 + c));
-  const double qm = exp(-k2[type] * (1.0 + c) - mu[type]);
+  const double q = exp(-k1[type] * (1.0 + c) / kbt);
+  const double qm = exp((-k2[type] * (1.0 + c) - mu[type]) / kbt);
   const double Q = q + qm;
 
   du = (k1[type] * q + k2[type] * qm) / Q;
   du2 = (k1[type] - k2[type]) / Q;
-  du2 *= -du2 * q * qm;
+  du2 *= -du2 * q * qm / kbt;
 }
 
 /* ----------------------------------------------------------------------
@@ -307,5 +320,6 @@ void *AngleMWLC::extract(const char *str, int &dim)
   if (strcmp(str, "k1") == 0) return (void *) k1;
   if (strcmp(str, "k2") == 0) return (void *) k2;
   if (strcmp(str, "mu") == 0) return (void *) mu;
+  if (strcmp(str, "temp") == 0) return (void *) temp;
   return nullptr;
 }

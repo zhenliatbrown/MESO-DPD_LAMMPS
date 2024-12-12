@@ -42,6 +42,7 @@ namespace LAMMPS_NS {
         double *k1;
         double *k2;
         double *mu;
+        double *temp;
 
         virtual void allocate();
     };

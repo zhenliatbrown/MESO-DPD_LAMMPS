@@ -16,7 +16,7 @@ Examples
 .. code-block:: LAMMPS
 
    angle_style mwlc
-   angle_coeff * 25.0 1.0 10.0
+   angle_coeff * 25 1 10 1
 
 Description
 """""""""""
@@ -26,16 +26,17 @@ a non-melted and a melted state :ref:`(Farrell) <Farrell>`,
 
 .. math::
 
-    \beta E = -\log [q + q^{m}],
+    E = -k_{B}T\,\log [q + q^{m}] + E_{0},
 
 where
 
 .. math::
-    q = \exp [-l_{p}(1-\cos{\theta})/\sigma], \\
-    q^{m} = \exp [-\beta\mu-l_{p}^{m}(1-\cos{\theta})/\sigma],
+    q = \exp [-k_{1}(1+\cos{\theta})/k_{B}T], \\
+    q^{m} = \exp [-(\mu+k_{2}(1+\cos{\theta}))/k_{B}T], \\
+    E_{0} = -k_{B}T\,\log [1 + \exp[-\mu/k_{B}T]],
 
-:math:`l_{p}` is the persistence length of the non-melted state,
-:math:`l_{p}^{m}` is the persistence length of the melted state,
+:math:`k_1` is the bending force constant of the non-melted state,
+:math:`k_2` is the bending force constant of the melted state,
 and :math:`\mu` is the melting energy.
 
 This potential is a continuous version of the two-state potential
@@ -46,10 +47,10 @@ The following coefficients must be defined for each angle type via the
 the data file or restart files read by the :doc:`read_data <read_data>`
 or :doc:`read_restart <read_restart>` commands:
 
-* :math:`l_{p}` (distance)
-* :math:`l_{p}^{m}` (distance)
+* :math:`k_1` (energy)
+* :math:`k_2` (energy)
 * :math:`\mu` (energy)
-
+* :math:`T` (temperature)
 ----------
 
 
@@ -74,8 +75,8 @@ none
 
 .. _Farrell:
 
-**(Farrell)** Farrell, Dobnikar, Podgornik, Curk, Phys Rev Lett, in production.
+**(Farrell)** `Farrell, Dobnikar, Podgornik, Curk, Phys Rev Lett, 133, 148101 (2024). <https://doi.org/10.1103/PhysRevLett.133.148101>`_
 
 .. _Yan:
 
-**(Yan)** Yan, Marko, Phys Rev Lett, 93, 108108 (2004).
+**(Yan)** `Yan, Marko, Phys Rev Lett, 93, 108108 (2004). <https://doi.org/10.1103/PhysRevLett.93.108108>`_
