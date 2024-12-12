@@ -68,6 +68,7 @@ namespace LAMMPS_NS {
 
     void cleanup_copy();
     void init() override;
+    void setup(int) override;
     void initial_integrate(int) override;
     void fused_integrate(int) override;
     void post_force(int) override;
