@@ -639,6 +639,7 @@ cstyle
 csvr
 ctest
 ctilde
+ctip
 ctrl
 ctrn
 ctypes
@@ -815,6 +816,7 @@ dipoleflag
 dir
 Direc
 dirname
+Dirkmann
 discoverable
 discretization
 discretized
@@ -976,6 +978,7 @@ elaplong
 elastance
 Electroneg
 electronegative
+electronegativities
 electronegativity
 electroneutral
 electroneutrality
@@ -1286,12 +1289,14 @@ gcc
 gcmc
 gdot
 GeC
+Geesthacht
 Geier
 gencode
 Geocomputing
 georg
 Georg
 Geotechnica
+Gergs
 germain
 Germann
 Germano
@@ -1304,6 +1309,7 @@ gettimeofday
 geturl
 gewald
 Gezelter
+gfile
 Gflop
 gfortran
 ghostneigh
@@ -1711,6 +1717,7 @@ Jewett
 jgissing
 ji
 Jiang
+Jiahao
 Jiao
 jik
 JIK
@@ -2367,6 +2374,7 @@ mui
 Mukherjee
 Mulders
 Müller
+Mulliken
 mult
 multi
 multibody
@@ -2391,6 +2399,7 @@ Murdick
 Murtola
 Murty
 Muser
+Mussenbrock
 mutexes
 Muto
 muVT
@@ -3076,6 +3085,7 @@ qqr
 qqrd
 Qsb
 qtb
+qtpie
 quadratically
 quadrupolar
 quadrupole
@@ -3669,6 +3679,7 @@ Tanmoy
 Tartakovsky
 taskset
 taubi
+Tavenner
 taylor
 tb
 tchain
@@ -4224,6 +4235,7 @@ zeeman
 Zeeman
 Zemer
 zenodo
+Zentrum
 Zepeda
 zflag
 Zhang
