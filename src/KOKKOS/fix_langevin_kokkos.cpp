@@ -831,7 +831,6 @@ void FixLangevinKokkos<DeviceType>::zero_force_item(int i) const
     f(i,1) -= d_fsumall[1];
     f(i,2) -= d_fsumall[2];
   }
-
 }
 
 /* ----------------------------------------------------------------------
@@ -934,9 +933,15 @@ KOKKOS_INLINE_FUNCTION
 double FixLangevinKokkos<DeviceType>::compute_energy_item(int i) const
 {
   double my_energy = 0.0;
-  if (mask[i] & groupbit)
+  if (mask[i] & groupbit) {
+    if (gjfflag) {
+    my_energy = d_flangevin(i,0)*d_lv(i,0) + d_flangevin(i,1)*d_lv(i,1) +
+      d_flangevin(i,2)*d_lv(i,2);
+    } else {
     my_energy = d_flangevin(i,0)*v(i,0) + d_flangevin(i,1)*v(i,1) +
       d_flangevin(i,2)*v(i,2);
+    }
+  }
   return my_energy;
 }
 
@@ -949,16 +954,18 @@ void FixLangevinKokkos<DeviceType>::end_of_step()
 {
   if (!tallyflag && !gjfflag) return;
 
+  dt = update->dt;
+  ftm2v = force->ftm2v;
   v = atomKK->k_v.template view<DeviceType>();
-  f = atomKK->k_f.template view<DeviceType>();
   mask = atomKK->k_mask.template view<DeviceType>();
-
-  atomKK->sync(execution_space,V_MASK | MASK_MASK);
   int nlocal = atomKK->nlocal;
 
   energy_onestep = 0.0;
 
+  atomKK->sync(execution_space,V_MASK | MASK_MASK);
+  if (gjfflag) k_lv.template sync<DeviceType>();
   k_flangevin.template sync<DeviceType>();
+
   FixLangevinKokkosTallyEnergyFunctor<DeviceType> tally_functor(this);
   Kokkos::parallel_reduce(nlocal,tally_functor,energy_onestep);
 
@@ -973,6 +980,9 @@ void FixLangevinKokkos<DeviceType>::end_of_step()
     }
   }
 
+  atomKK->modified(execution_space,V_MASK);
+  k_lv.template modify<DeviceType>();
+
   energy += energy_onestep*update->dt;
 }
 
@@ -981,7 +991,7 @@ KOKKOS_INLINE_FUNCTION
 void FixLangevinKokkos<DeviceType>::end_of_step_item(int i) const {
   double tmp[3];
   if (mask[i] & groupbit) {
-    const double dtfm = force->ftm2v * 0.5 * dt / mass[type[i]];
+    const double dtfm = ftm2v * 0.5 * dt / mass[type[i]];
     tmp[0] = v(i,0);
     tmp[1] = v(i,1);
     tmp[2] = v(i,2);
@@ -1012,7 +1022,7 @@ void FixLangevinKokkos<DeviceType>::end_of_step_rmass_item(int i) const
 {
   double tmp[3];
   if (mask[i] & groupbit) {
-    const double dtfm = force->ftm2v * 0.5 * dt / rmass[i];
+    const double dtfm = ftm2v * 0.5 * dt / rmass[i];
     tmp[0] = v(i,0);
     tmp[1] = v(i,1);
     tmp[2] = v(i,2);
