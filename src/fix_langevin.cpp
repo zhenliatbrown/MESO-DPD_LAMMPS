@@ -499,7 +499,7 @@ void FixLangevin::post_force(int /*vflag*/)
             else          post_force_templated<1,0,0,0,0,0>();
   else
     if (gjfflag)
-      if (tallyflag  || osflag)
+      if (tallyflag || osflag)
         if (tbiasflag == BIAS)
           if (rmass)
             if (zeroflag) post_force_templated<0,1,1,1,1,1>();

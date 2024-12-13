@@ -52,11 +52,11 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
   memoryKK->create_kokkos(k_gfactor2,gfactor2,ntypes+1,"langevin:gfactor2");
   memoryKK->create_kokkos(k_ratio,ratio,ntypes+1,"langevin:ratio");
   d_gfactor1 = k_gfactor1.template view<DeviceType>();
-  h_gfactor1 = k_gfactor1.template view<LMPHostType>();
+  h_gfactor1 = k_gfactor1.h_view;
   d_gfactor2 = k_gfactor2.template view<DeviceType>();
-  h_gfactor2 = k_gfactor2.template view<LMPHostType>();
+  h_gfactor2 = k_gfactor2.h_view;
   d_ratio = k_ratio.template view<DeviceType>();
-  h_ratio = k_ratio.template view<LMPHostType>();
+  h_ratio = k_ratio.h_view;
 
   // optional args
   for (int i = 1; i <= ntypes; i++) ratio[i] = 1.0;
@@ -75,7 +75,7 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
 
   if (zeroflag) {
     k_fsumall = tdual_double_1d_3n("langevin:fsumall");
-    h_fsumall = k_fsumall.template view<LMPHostType>();
+    h_fsumall = k_fsumall.h_view;
     d_fsumall = k_fsumall.template view<DeviceType>();
   }
 
@@ -281,10 +281,10 @@ void FixLangevinKokkos<DeviceType>::grow_arrays(int nmax)
 {
   memoryKK->grow_kokkos(k_franprev,franprev,nmax,3,"langevin:franprev");
   d_franprev = k_franprev.template view<DeviceType>();
-  h_franprev = k_franprev.template view<LMPHostType>();
+  h_franprev = k_franprev.h_view;
   memoryKK->grow_kokkos(k_lv,lv,nmax,3,"langevin:lv");
   d_lv = k_lv.template view<DeviceType>();
-  h_lv = k_lv.template view<LMPHostType>();
+  h_lv = k_lv.h_view;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -373,7 +373,7 @@ void FixLangevinKokkos<DeviceType>::post_force(int /*vflag*/)
       maxatom1 = atomKK->nmax;
       memoryKK->create_kokkos(k_flangevin,flangevin,maxatom1,3,"langevin:flangevin");
       d_flangevin = k_flangevin.template view<DeviceType>();
-      h_flangevin = k_flangevin.template view<LMPHostType>();
+      h_flangevin = k_flangevin.h_view;
     }
   }
 
@@ -935,11 +935,11 @@ double FixLangevinKokkos<DeviceType>::compute_energy_item(int i) const
   double my_energy = 0.0;
   if (mask[i] & groupbit) {
     if (gjfflag) {
-    my_energy = d_flangevin(i,0)*d_lv(i,0) + d_flangevin(i,1)*d_lv(i,1) +
-      d_flangevin(i,2)*d_lv(i,2);
+      my_energy = d_flangevin(i,0)*d_lv(i,0) + d_flangevin(i,1)*d_lv(i,1) +
+        d_flangevin(i,2)*d_lv(i,2);
     } else {
-    my_energy = d_flangevin(i,0)*v(i,0) + d_flangevin(i,1)*v(i,1) +
-      d_flangevin(i,2)*v(i,2);
+      my_energy = d_flangevin(i,0)*v(i,0) + d_flangevin(i,1)*v(i,1) +
+        d_flangevin(i,2)*v(i,2);
     }
   }
   return my_energy;
@@ -966,8 +966,10 @@ void FixLangevinKokkos<DeviceType>::end_of_step()
   if (gjfflag) k_lv.template sync<DeviceType>();
   k_flangevin.template sync<DeviceType>();
 
-  FixLangevinKokkosTallyEnergyFunctor<DeviceType> tally_functor(this);
-  Kokkos::parallel_reduce(nlocal,tally_functor,energy_onestep);
+  if (tallyflag) {
+    FixLangevinKokkosTallyEnergyFunctor<DeviceType> tally_functor(this);
+    Kokkos::parallel_reduce(nlocal,tally_functor,energy_onestep);
+  }
 
   if (gjfflag) {
     if (rmass.data()) {
