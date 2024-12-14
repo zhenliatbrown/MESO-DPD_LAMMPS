@@ -43,6 +43,6 @@ directory. The opened file provides an overview of the available examples.
 - Example 5: Validating a dihedral potential (``dihedrals/dihedral.ipynb``)
 - Example 6: Running a Monte Carlo relaxation (``montecarlo/mc.ipynb``)
 
-.. note:: 
+.. note::
 
    Typically clicking a link in Jupyter will open a new tab, which might be blocked by your pop-up blocker.

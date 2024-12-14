@@ -3,7 +3,7 @@ System properties
 
 Similar to what is described in :doc:`Library_properties`, the instances of
 :py:class:`lammps <lammps.lammps>` can be used to extract different kinds
-of information about the active LAMMPS instance and also to modify some of it. 
+of information about the active LAMMPS instance and also to modify some of it.
 
 In some cases the data returned is a direct reference to the original data
 inside LAMMPS cast to ``ctypes`` pointers. Where possible, the wrappers will
