@@ -231,7 +231,7 @@ void FixWallGranRegion::post_force(int /*vflag*/)
       model->radi = radius[i];
       model->radj = region->contact[ic].radius;
       model->r = region->contact[ic].r;
-      model->i = i; // Added for MDR 
+      model->i = i; // Added for MDR
       model->j = ic; // Added for MDR
 
       if (model->beyond_contact) model->touch = history_many[i][c2r[ic]][0];

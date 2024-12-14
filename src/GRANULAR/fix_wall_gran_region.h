@@ -53,20 +53,20 @@ class FixWallGranRegion : public FixWallGran {
   int tmax;                  // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
 
  private:
-  
+
   int nregion;
 
   // shear history for multiple contacts per particle
 
-  
-  
-  
+
+
+
                              // c2r[i] = index of Ith contact in
                              //   region-contact[] list of contacts
   int motion_resetflag;      // used by restart to indicate that region
                              //    vel info is to be reset
 
-  
+
 };
 
 }    // namespace LAMMPS_NS

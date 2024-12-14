@@ -504,7 +504,7 @@ void PairGranular::init_style()
     index_vq = atom->find_custom("viscous_heat",tmp1,tmp2);
     index_vt = atom->find_custom("viscous_temp",tmp1,tmp2);
     fix_flag = 1;
-  } 
+  }
   */
 
  if (model->normal_model->name == "mdr") {
@@ -521,22 +521,22 @@ void PairGranular::init_style()
     index_Ro = atom->find_custom("Ro",tmp1,tmp2);                                 // initial radius
     index_Vcaps = atom->find_custom("Vcaps",tmp1,tmp2);                           // spherical cap volume from intersection of apparent radius particle and contact planes
     index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);                             // geometric particle volume of apparent particle after removing spherical cap volume
-    index_Velas = atom->find_custom("Velas",tmp1,tmp2);                           // particle volume from linear elasticity  
+    index_Velas = atom->find_custom("Velas",tmp1,tmp2);                           // particle volume from linear elasticity
     index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);                       // volume-averaged infinitesimal strain tensor
     index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);               // summation of numerator terms in calculation of dR
     index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2);           // summation of denominator terms in calculation of dR
-    index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);                           // total area involved in contacts: Acon^{n} 
+    index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);                           // total area involved in contacts: Acon^{n}
     index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);                           // total area involved in contacts: Acon^{n+1}
-    index_Atot = atom->find_custom("Atot",tmp1,tmp2);                             // total particle area 
+    index_Atot = atom->find_custom("Atot",tmp1,tmp2);                             // total particle area
     index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);                     // running sum of contact area minus cap area
     index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);                 // change in mean surface displacement
     index_psi = atom->find_custom("psi",tmp1,tmp2);                               // ratio of free surface area to total surface area
     index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);                           // TEMPORARY, SINCE PSI_B IS ALREADY DEFINED IN THE INPUT SCRIPT
-    index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2); // flag to check if history variables have been initialized 
+    index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2); // flag to check if history variables have been initialized
     index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);                       // xx-component of the stress tensor, not necessary for force calculation
-    index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);                       // yy-component of the stress tensor, not necessary for force calculation  
-    index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);                       // zz-component of the stress tensor, not necessary for force calculation 
-    index_contacts = atom->find_custom("contacts",tmp1,tmp2);                     // total contacts on particle 
+    index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);                       // yy-component of the stress tensor, not necessary for force calculation
+    index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);                       // zz-component of the stress tensor, not necessary for force calculation
+    index_contacts = atom->find_custom("contacts",tmp1,tmp2);                     // total contacts on particle
     index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);       // total contacts on particle
 
      std::cout << "MDR history variables have been initialized 2" << ", " << index_Ro << std::endl;
@@ -548,7 +548,7 @@ void PairGranular::init_style()
     modify->add_fix("fix_mdr_mean_surf_disp all mdr/mean/surf/disp");
 
     fix_flag = 1;
-  }  
+  }
  }
 
   // check for FixFreeze and set freeze_group_bit

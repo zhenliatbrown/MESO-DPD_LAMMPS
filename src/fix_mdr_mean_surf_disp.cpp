@@ -63,9 +63,9 @@ int FixMDRmeanSurfDisp::setmask()
 void FixMDRmeanSurfDisp::setup_pre_force(int /*vflag*/)
 {
   int tmp1, tmp2;
-  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);                 
-  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);             
-  Acon0 = atom->dvector[index_Acon0]; 
+  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);
+  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);
+  Acon0 = atom->dvector[index_Acon0];
   ddelta_bar = atom->dvector[index_ddelta_bar];
 
   pre_force(0);
@@ -97,9 +97,9 @@ void FixMDRmeanSurfDisp::pre_force(int)
   FixNeighHistory * fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
   PairGranular * pair = dynamic_cast<PairGranular *>(force->pair_match("granular",1));
   NeighList * list = pair->list;
-  
+
   const int size_history = pair->get_size_history();
-  
+
   //std::cout << " " << std::endl;
   //std::cout << "New Step" << std::endl;
 
@@ -135,14 +135,14 @@ void FixMDRmeanSurfDisp::pre_force(int)
     const double ytmp = x[i][1];
     const double ztmp = x[i][2];
     allhistory = firsthistory[i];
-    double radi = radius[i]; 
+    double radi = radius[i];
     jlist = firstneigh[i];
     jnum = numneigh[i];
       for (int jj = 0; jj < jnum; jj++) {
         j = jlist[jj];
         j &= NEIGHMASK;
         jtype = type[j];
-        double radj = radius[j];        
+        double radj = radius[j];
         const double delx_ij = x[j][0] - xtmp;
         const double dely_ij = x[j][1] - ytmp;
         const double delz_ij = x[j][2] - ztmp;
@@ -153,7 +153,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
         const double deltan_ij = radsum_ij - r_ij;
         if (deltan_ij >= 0.0) {
           for (int kk = jj; kk < jnum; kk++) {
-            k = jlist[kk]; 
+            k = jlist[kk];
             k &= NEIGHMASK;
             ktype = type[k];
             if (kk != jj) {
@@ -175,7 +175,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
               const double radsum_jk = radj + radk;
               const double deltan_jk = radsum_jk - r_jk;
               if (deltan_ik >= 0.0 && deltan_jk >= 0.0) {
-                
+
                 // pull ij history
                 history_ij = &allhistory[size_history * jj];
                 double * pij = &history_ij[22]; // penalty for contact i and j
@@ -186,7 +186,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
 
                 // we don't know if who owns the contact ahead of time, k might be in j's neigbor list or vice versa, so we need to manually search to figure out the owner
                 // check if k is in the neighbor list of j
-                double * pjk = NULL; 
+                double * pjk = NULL;
                 int * const jklist = firstneigh[j];
                 const int jknum = numneigh[j];
                 for (int jk = 0; jk < jknum; jk++) {
@@ -219,7 +219,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                       //std::cout << "Print 198 pjk[0]: " << rank << ", " << pjk[0] << std::endl;
                       break;
                     }
-                  }         
+                  }
                 }
 
                 //std::cout << "Print: " << __LINE__ << std::endl;
@@ -234,8 +234,8 @@ void FixMDRmeanSurfDisp::pre_force(int)
                   const double enx_kj = -delx_jk * rinv_jk;
                   const double eny_kj = -dely_jk * rinv_jk;
                   const double enz_kj = -delz_jk * rinv_jk;
-                  const double alpha = std::acos(enx_ki*enx_kj + eny_ki*eny_kj + enz_ki*enz_kj); 
-                  pij[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) ); 
+                  const double alpha = std::acos(enx_ki*enx_kj + eny_ki*eny_kj + enz_ki*enz_kj);
+                  pij[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) );
                 } else if (maxIndex == 1) { // the central particle is j
                   const double enx_ji = -delx_ij * rinv_ij;
                   const double eny_ji = -dely_ij * rinv_ij;
@@ -243,7 +243,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                   const double enx_jk = delx_jk * rinv_jk;
                   const double eny_jk = dely_jk * rinv_jk;
                   const double enz_jk = delz_jk * rinv_jk;
-                  const double alpha = std::acos(enx_ji*enx_jk + eny_ji*eny_jk + enz_ji*enz_jk); 
+                  const double alpha = std::acos(enx_ji*enx_jk + eny_ji*eny_jk + enz_ji*enz_jk);
                   pik[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) );
                 } else { // the central particle is i
                   if (j < atom->nlocal || k < atom->nlocal) {
@@ -253,7 +253,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                     const double enx_ik = delx_ik * rinv_ik;
                     const double eny_ik = dely_ik * rinv_ik;
                     const double enz_ik = delz_ik * rinv_ik;
-                    const double alpha = std::acos(enx_ij*enx_ik + eny_ij*eny_ik + enz_ij*enz_ik); 
+                    const double alpha = std::acos(enx_ij*enx_ik + eny_ij*eny_ik + enz_ij*enz_ik);
                     //std::cout << "Print: " << __LINE__ << std::endl;
                     pjk[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) );
                     //std::cout << "Print: " << __LINE__ << std::endl;
@@ -264,7 +264,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
           }
         }
       }
-  } 
+  }
   }
 
 
@@ -286,7 +286,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
 
-  
+
   inum = list->inum;
   ilist = list->ilist;
   numneigh = list->numneigh;
@@ -336,8 +336,8 @@ void FixMDRmeanSurfDisp::pre_force(int)
       //const double wij = std::max(1.0-pij,0.0);
       const double delta = model->radsum - sqrt(model->rsq);
 
-      const int delta_offset_0 = 0;           // apparent overlap 
-      const int delta_offset_1 = 1;           
+      const int delta_offset_0 = 0;           // apparent overlap
+      const int delta_offset_1 = 1;
       const int Ac_offset_0 = 18;             // contact area
       const int Ac_offset_1 = 19;
       const int deltamax_offset_ = 23;
@@ -347,7 +347,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
       double deltamax = history[deltamax_offset_];
       double deltap0 = history[deltap_offset_0];
       double deltap1 = history[deltap_offset_1];
-    
+
       if (delta > deltamax) deltamax = delta;
 
       double delta0old = history[delta_offset_0];
@@ -511,13 +511,13 @@ void FixMDRmeanSurfDisp::pre_force(int)
         if (Acon0[i] != 0.0) {
           const double delta = model->radsum - model->r;
           const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
-          const double ddelta = delta - delta_offset0; 
+          const double ddelta = delta - delta_offset0;
           const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
           ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta; // Multiply by 0.5 since displacement is shared equally between deformable particles.
           //std::cout << delta << ", " << delta_offset0 << " || " << Ac_offset0 << ", " << Acon0[i] << ", " << ddelta << ", " << ddelta_bar[i] << std::endl;
         }
       }
-    } 
+    }
     }
   }
 

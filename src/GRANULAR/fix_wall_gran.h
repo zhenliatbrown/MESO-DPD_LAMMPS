@@ -87,7 +87,7 @@ class FixWallGran : public Fix {
 
   int store;
 
-  
+
 };
 
 }    // namespace LAMMPS_NS

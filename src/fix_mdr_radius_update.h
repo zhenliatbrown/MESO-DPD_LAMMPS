@@ -31,7 +31,7 @@ class FixMDRradiusUpdate : public Fix {
   double * Velas;
   double * Vcaps;
   double * eps_bar;
-  double * dRnumerator; 
+  double * dRnumerator;
   double * dRdenominator;
   double * Acon0;
   double * Acon1;
@@ -43,10 +43,10 @@ class FixMDRradiusUpdate : public Fix {
   double * sigmaxx;
   double * sigmayy;
   double * sigmazz;
-  double * history_setup_flag; 
+  double * history_setup_flag;
   double * contacts;
   double * adhesive_length;
-  
+
   FixMDRradiusUpdate(class LAMMPS *, int, char **);
   int setmask() override;
   void setup(int) override;

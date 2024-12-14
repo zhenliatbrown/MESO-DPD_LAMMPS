@@ -35,7 +35,7 @@
 #include "gran_sub_mod_normal.h"
 #include "update.h"
 #include "comm.h"
-#include <iomanip> 
+#include <iomanip>
 #include <sstream>
 
 using namespace LAMMPS_NS;
@@ -69,19 +69,19 @@ void FixMDRradiusUpdate::setup_pre_force(int /*vflag*/)
   int index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);
   int index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);
   int index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2);
-  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);                 
-  int index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);        
-  int index_Atot = atom->find_custom("Atot",tmp1,tmp2);                   
-  int index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);   
-  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);       
+  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);
+  int index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);
+  int index_Atot = atom->find_custom("Atot",tmp1,tmp2);
+  int index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);
+  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);
   int index_psi = atom->find_custom("psi",tmp1,tmp2);
-  int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2); 
-  int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);             
-  int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);               
+  int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
+  int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
+  int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
   int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
-  int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);    
-  int index_contacts = atom->find_custom("contacts",tmp1,tmp2);    
-  int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);      
+  int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
+  int index_contacts = atom->find_custom("contacts",tmp1,tmp2);
+  int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
   Ro = atom->dvector[index_Ro];
   Vgeo = atom->dvector[index_Vgeo];
   Velas = atom->dvector[index_Velas];
@@ -89,9 +89,9 @@ void FixMDRradiusUpdate::setup_pre_force(int /*vflag*/)
   eps_bar = atom->dvector[index_eps_bar];
   dRnumerator = atom->dvector[index_dRnumerator];
   dRdenominator = atom->dvector[index_dRdenominator];
-  Acon0 = atom->dvector[index_Acon0]; 
+  Acon0 = atom->dvector[index_Acon0];
   Acon1 = atom->dvector[index_Acon1];
-  Atot = atom->dvector[index_Atot]; 
+  Atot = atom->dvector[index_Atot];
   Atot_sum = atom->dvector[index_Atot_sum];
   ddelta_bar = atom->dvector[index_ddelta_bar];
   psi = atom->dvector[index_psi];
@@ -116,19 +116,19 @@ void FixMDRradiusUpdate::setup(int /*vflag*/)
   int index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);
   int index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);
   int index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2);
-  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);                 
-  int index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);        
-  int index_Atot = atom->find_custom("Atot",tmp1,tmp2);                   
-  int index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);   
-  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);       
+  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);
+  int index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);
+  int index_Atot = atom->find_custom("Atot",tmp1,tmp2);
+  int index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);
+  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);
   int index_psi = atom->find_custom("psi",tmp1,tmp2);
-  int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2); 
-  int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);             
-  int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);               
+  int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
+  int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
+  int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
   int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
-  int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);    
-  int index_contacts = atom->find_custom("contacts",tmp1,tmp2);    
-  int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);      
+  int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
+  int index_contacts = atom->find_custom("contacts",tmp1,tmp2);
+  int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
   Ro = atom->dvector[index_Ro];
   Vgeo = atom->dvector[index_Vgeo];
   Velas = atom->dvector[index_Velas];
@@ -136,9 +136,9 @@ void FixMDRradiusUpdate::setup(int /*vflag*/)
   eps_bar = atom->dvector[index_eps_bar];
   dRnumerator = atom->dvector[index_dRnumerator];
   dRdenominator = atom->dvector[index_dRdenominator];
-  Acon0 = atom->dvector[index_Acon0]; 
+  Acon0 = atom->dvector[index_Acon0];
   Acon1 = atom->dvector[index_Acon1];
-  Atot = atom->dvector[index_Atot]; 
+  Atot = atom->dvector[index_Atot];
   Atot_sum = atom->dvector[index_Atot_sum];
   ddelta_bar = atom->dvector[index_ddelta_bar];
   psi = atom->dvector[index_psi];
@@ -170,20 +170,20 @@ void FixMDRradiusUpdate::pre_force(int)
 
   //std::cout << "Preforce was called radius update" << std::endl;
 
-  // assign correct value to initially non-zero MDR particle history variables 
+  // assign correct value to initially non-zero MDR particle history variables
   //int tmp1, tmp2;
   //int index_Ro = atom->find_custom("Ro",tmp1,tmp2);
   //int index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);
   //int index_Velas = atom->find_custom("Velas",tmp1,tmp2);
-  //int index_Atot = atom->find_custom("Atot",tmp1,tmp2);                   
+  //int index_Atot = atom->find_custom("Atot",tmp1,tmp2);
   //int index_psi = atom->find_custom("psi",tmp1,tmp2);
   //int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
-  //int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);             
-  //int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);               
-  //int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);   
-  //int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2); 
-  //int index_contacts = atom->find_custom("contacts",tmp1,tmp2);    
-  //int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);         
+  //int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
+  //int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
+  //int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
+  //int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
+  //int index_contacts = atom->find_custom("contacts",tmp1,tmp2);
+  //int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
   //double * Ro = atom->dvector[index_Ro];
   //double * Vgeo = atom->dvector[index_Vgeo];
   //double * Velas = atom->dvector[index_Velas];
@@ -196,13 +196,13 @@ void FixMDRradiusUpdate::pre_force(int)
   //double * history_setup_flag = atom->dvector[index_history_setup_flag];
   //double * contacts = atom->dvector[index_contacts];
   //double * adhesive_length = atom->dvector[index_adhesive_length];
-  
+
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
 
   //std::cout << "ntotal " << ntotal << ", nlocal " << atom->nlocal << ", nghost " << atom->nghost << std::endl;
 
-  for (int i = 0; i < nlocal; i++) { 
+  for (int i = 0; i < nlocal; i++) {
     if (history_setup_flag[i] < 1e-16) {
       Ro[i] = radius[i];
       Vgeo[i] = 4.0/3.0*M_PI*pow(Ro[i],3.0);
@@ -232,7 +232,7 @@ int FixMDRradiusUpdate::pack_forward_comm(int n, int *list, double *buf, int /*p
     buf[m++] = Vgeo[j];               // 2
     buf[m++] = Velas[j];              // 3
     buf[m++] = Vcaps[j];              // 4
-    buf[m++] = eps_bar[j];            // 5 
+    buf[m++] = eps_bar[j];            // 5
     buf[m++] = dRnumerator[j];        // 6
     buf[m++] = dRdenominator[j];      // 7
     buf[m++] = Acon0[j];              // 8
@@ -261,7 +261,7 @@ void FixMDRradiusUpdate::unpack_forward_comm(int n, int first, double *buf)
     Vgeo[i] = buf[m++];               // 2
     Velas[i] = buf[m++];              // 3
     Vcaps[i] = buf[m++];              // 4
-    eps_bar[i] = buf[m++];            // 5 
+    eps_bar[i] = buf[m++];            // 5
     dRnumerator[i] = buf[m++];        // 6
     dRdenominator[i] = buf[m++];      // 7
     Acon0[i] = buf[m++];              // 8
@@ -282,7 +282,7 @@ void FixMDRradiusUpdate::unpack_forward_comm(int n, int first, double *buf)
 
 void FixMDRradiusUpdate::end_of_step()
 {
-  
+
   //comm->forward_comm(this);
 
   //std::cout << "end_of_step() was called radius update" << std::endl;
@@ -293,13 +293,13 @@ void FixMDRradiusUpdate::end_of_step()
   int nlocal = atom->nlocal;
   double sigmaxx_sum = 0.0;
   double sigmayy_sum = 0.0;
-  double sigmazz_sum = 0.0; 
+  double sigmazz_sum = 0.0;
   double Vparticles = 0.0;
 
   //std::cout << "New step" << std::endl;
 
   for (int i = 0; i < nlocal; i++) {
-  
+
     const double R = radius[i];
     Atot[i] = 4.0*M_PI*pow(R,2.0) + Atot_sum[i];
 
@@ -316,7 +316,7 @@ void FixMDRradiusUpdate::end_of_step()
     //}
 
     const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*M_PI*pow(R,2.0)),0.0);
-    if (psi_b[i] < psi[i]) { 
+    if (psi_b[i] < psi[i]) {
       if ((radius[i] + dR) < (1.5*Ro[i])) radius[i] += dR;
       //radius[i] += dR;
     }
@@ -327,10 +327,10 @@ void FixMDRradiusUpdate::end_of_step()
    //if (atom->tag[i] == 9){
    //   std::cout << i << ", radius: " << radius[i] << ", dR: " << dR << ", dRnum: " << dRnumerator[i] << ", dRdenom " << dRdenominator[i] << ", dRdem_full " << dRdenominator[i] - 4.0*M_PI*pow(R,2.0)  << std::endl;
    //}
-      
-      
+
+
       //std::cout << i << ", " << radius[i] << " | " << psi_b[i] << ", " << psi[i] << " | " << Acon1[i] << ", " << Atot[i] << std::endl;
-    
+
 
     Velas[i] = Vo*(1.0 + eps_bar[i]);
     Vcaps[i] = 0.0;
@@ -339,7 +339,7 @@ void FixMDRradiusUpdate::end_of_step()
     dRdenominator[i] = 0.0;
     Acon0[i] = Acon1[i];
     Acon1[i] = 0.0;
-    //std::cout << "Acon reset: " << Acon0[i] << ", " << Acon1[i] << std::endl; 
+    //std::cout << "Acon reset: " << Acon0[i] << ", " << Acon1[i] << std::endl;
     Atot_sum[i] = 0.0;
     ddelta_bar[i] = 0.0;
     //adhesive_length[i] = adhesive_length[i]/contacts[i]; // convert adhesive length to average aAdh for each particle

@@ -74,7 +74,7 @@ class PairGranular : public Pair {
   int index_Ro;
   int index_Vcaps;
   int index_Vgeo;
-  int index_Velas;  
+  int index_Velas;
   int index_eps_bar;
   int index_dRnumerator;
   int index_dRdenominator;
