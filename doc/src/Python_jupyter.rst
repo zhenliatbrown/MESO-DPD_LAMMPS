@@ -14,7 +14,7 @@ The easiest way to install it is via ``pip``:
 
 .. code-block:: bash
 
-   pip install jupyter
+   pip install --user jupyter
 
 To launch an instance of Jupyter simply run the following command inside your
 Python environment:
@@ -22,9 +22,6 @@ Python environment:
 .. code-block:: bash
 
    jupyter notebook
-
-.. _ipython: https://ipython.org/
-.. _jupyter: https://jupyter.org/
 
 Interactive Python Examples
 ---------------------------

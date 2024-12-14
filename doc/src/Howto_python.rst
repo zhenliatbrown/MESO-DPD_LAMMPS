@@ -76,7 +76,7 @@ Next install the LAMMPS Python package into your current Python installation wit
 Installation inside of a virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can use virtual environemnts to create a custom Python environment
+You can use virtual environments to create a custom Python environment
 specifically tuned for your workflow.
 
 Benefits of using a virtualenv
