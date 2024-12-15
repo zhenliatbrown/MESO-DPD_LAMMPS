@@ -24,6 +24,7 @@
 #include "error.h"
 #include "force.h"
 #include "input.h"
+#include "math_const.h"
 #include "memory.h"
 #include "modify.h"
 #include "variable.h"
@@ -42,6 +43,7 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace Granular_NS;
+using MathConst::MY_PI;
 
 /* ---------------------------------------------------------------------- */
 
@@ -235,7 +237,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                   const double eny_kj = -dely_jk * rinv_jk;
                   const double enz_kj = -delz_jk * rinv_jk;
                   const double alpha = std::acos(enx_ki*enx_kj + eny_ki*eny_kj + enz_ki*enz_kj);
-                  pij[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) );
+                  pij[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)) );
                 } else if (maxIndex == 1) { // the central particle is j
                   const double enx_ji = -delx_ij * rinv_ij;
                   const double eny_ji = -dely_ij * rinv_ij;
@@ -244,7 +246,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                   const double eny_jk = dely_jk * rinv_jk;
                   const double enz_jk = delz_jk * rinv_jk;
                   const double alpha = std::acos(enx_ji*enx_jk + eny_ji*eny_jk + enz_ji*enz_jk);
-                  pik[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) );
+                  pik[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)) );
                 } else { // the central particle is i
                   if (j < atom->nlocal || k < atom->nlocal) {
                     const double enx_ij = delx_ij * rinv_ij;
@@ -255,7 +257,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                     const double enz_ik = delz_ik * rinv_ik;
                     const double alpha = std::acos(enx_ij*enx_ik + eny_ij*eny_ik + enz_ij*enz_ik);
                     //std::cout << "Print: " << __LINE__ << std::endl;
-                    pjk[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/M_PI - 1.0/2.0)) );
+                    pjk[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)) );
                     //std::cout << "Print: " << __LINE__ << std::endl;
                   }
                 }
@@ -534,6 +536,6 @@ void FixMDRmeanSurfDisp::pre_force(int)
 
 }
 
-//std::cout << radius[i] << ", " << dR << ", " << dRnumerator[i] << ", " << dRdenominator[i] << ", " << dRdenominator[i] - 4.0*M_PI*pow(R,2.0)  << std::endl;
+//std::cout << radius[i] << ", " << dR << ", " << dRnumerator[i] << ", " << dRdenominator[i] << ", " << dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)  << std::endl;
 //std::cout << "Fix radius update setup has been entered !!!" << std::endl;
 //std::cout << Ro[0] << ", " << Vgeo[0] << ", " << Velas[0] << std::endl;

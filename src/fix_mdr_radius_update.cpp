@@ -24,10 +24,10 @@
 #include "error.h"
 #include "force.h"
 #include "input.h"
+#include "math_const.h"
 #include "memory.h"
 #include "modify.h"
 #include "variable.h"
-#include <iostream>
 #include "csv_writer.h"
 #include "granular_model.h"
 #include "pair_granular.h"
@@ -35,12 +35,14 @@
 #include "gran_sub_mod_normal.h"
 #include "update.h"
 #include "comm.h"
+#include <iostream>
 #include <iomanip>
 #include <sstream>
 
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
 using namespace FixConst;
+using MathConst::MY_PI;
 
 /* ---------------------------------------------------------------------- */
 
@@ -205,9 +207,9 @@ void FixMDRradiusUpdate::pre_force(int)
   for (int i = 0; i < nlocal; i++) {
     if (history_setup_flag[i] < 1e-16) {
       Ro[i] = radius[i];
-      Vgeo[i] = 4.0/3.0*M_PI*pow(Ro[i],3.0);
-      Velas[i] = 4.0/3.0*M_PI*pow(Ro[i],3.0);
-      Atot[i] = 4.0*M_PI*pow(Ro[i],2.0);
+      Vgeo[i] = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
+      Velas[i] = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
+      Atot[i] = 4.0*MY_PI*pow(Ro[i],2.0);
       psi[i] = 1.0;
       psi_b[i] = norm_model->psi_b;
       history_setup_flag[i] = 1.0;
@@ -301,10 +303,10 @@ void FixMDRradiusUpdate::end_of_step()
   for (int i = 0; i < nlocal; i++) {
 
     const double R = radius[i];
-    Atot[i] = 4.0*M_PI*pow(R,2.0) + Atot_sum[i];
+    Atot[i] = 4.0*MY_PI*pow(R,2.0) + Atot_sum[i];
 
-    const double Vo = 4.0/3.0*M_PI*pow(Ro[i],3.0);
-    const double Vgeoi = 4.0/3.0*M_PI*pow(R,3.0) - Vcaps[i];
+    const double Vo = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
+    const double Vgeoi = 4.0/3.0*MY_PI*pow(R,3.0) - Vcaps[i];
     Vgeo[i] = std::min(Vgeoi,Vo);
     //(Vgeoi < Vo) ? Vgeo[i] = Vgeoi : Vgeo[i] = Vo;
 
@@ -315,7 +317,7 @@ void FixMDRradiusUpdate::end_of_step()
     //  std::cout << "psi is: " << psi[i] << std::endl;
     //}
 
-    const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*M_PI*pow(R,2.0)),0.0);
+    const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)),0.0);
     if (psi_b[i] < psi[i]) {
       if ((radius[i] + dR) < (1.5*Ro[i])) radius[i] += dR;
       //radius[i] += dR;
@@ -325,7 +327,7 @@ void FixMDRradiusUpdate::end_of_step()
       //  std::cout << "big dR change" << std::endl;
       //}
    //if (atom->tag[i] == 9){
-   //   std::cout << i << ", radius: " << radius[i] << ", dR: " << dR << ", dRnum: " << dRnumerator[i] << ", dRdenom " << dRdenominator[i] << ", dRdem_full " << dRdenominator[i] - 4.0*M_PI*pow(R,2.0)  << std::endl;
+   //   std::cout << i << ", radius: " << radius[i] << ", dR: " << dR << ", dRnum: " << dRnumerator[i] << ", dRdenom " << dRdenominator[i] << ", dRdem_full " << dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)  << std::endl;
    //}
 
 
@@ -379,6 +381,6 @@ void FixMDRradiusUpdate::end_of_step()
   comm->forward_comm(this);
 }
 
-//std::cout << radius[i] << ", " << dR << ", " << dRnumerator[i] << ", " << dRdenominator[i] << ", " << dRdenominator[i] - 4.0*M_PI*pow(R,2.0)  << std::endl;
+//std::cout << radius[i] << ", " << dR << ", " << dRnumerator[i] << ", " << dRdenominator[i] << ", " << dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)  << std::endl;
 //std::cout << "Fix radius update setup has been entered !!!" << std::endl;
 //std::cout << Ro[0] << ", " << Vgeo[0] << ", " << Velas[0] << std::endl;
