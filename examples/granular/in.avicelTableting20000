@@ -13,7 +13,7 @@ processors 2 2 1
 ######################### SIMULATION BOUNDING BOX, INTEGRATION, AND, GRAVITY ###########################
 
 boundary f f f
-read_data spheres.data
+read_data spheres20000.data
 
 ######################################### ADD DIE AND ATOM PARAMETERIZATION ##############################################
 
