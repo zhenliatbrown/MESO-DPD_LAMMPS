@@ -3643,7 +3643,7 @@ tagint Variable::int_between_brackets(char *&ptr, int varallow)
      atan2(y,x),random(x,y,z),normal(x,y,z),ceil(),floor(),round(),ternary(),
      ramp(x,y),stagger(x,y),logfreq(x,y,z),logfreq2(x,y,z),
      logfreq3(x,y,z),stride(x,y,z),stride2(x,y,z,a,b,c),vdisplace(x,y),
-     swiggle(x,y,z),cwiggle(x,y,z)
+     swiggle(x,y,z),cwiggle(x,y,z),sign(x)
 ------------------------------------------------------------------------- */
 
 int Variable::math_function(char *word, char *contents, Tree **tree, Tree **treestack,
