@@ -560,7 +560,7 @@ void RegPrism::shape_update()
     extent_xhi = MAX(extent_xhi, extent_xhi + xz);
     extent_yhi = MAX(yhi, yhi + yz);
     extent_zhi = zhi;
-  } 
+  }
 
   // h = transformation matrix from tilt coords (0-1) to box coords (xyz)
 
