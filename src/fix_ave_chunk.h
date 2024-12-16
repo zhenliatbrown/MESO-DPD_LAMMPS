@@ -31,7 +31,7 @@ class FixAveChunk : public Fix {
   int setmask() override;
   void init() override;
   void setup(int) override;
-  void end_of_step() override; // FOR MDR
+  void end_of_step() override;
   double compute_array(int, int) override;
   double memory_usage() override;
 
