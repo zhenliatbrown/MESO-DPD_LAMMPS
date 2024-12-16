@@ -20,18 +20,20 @@ PairStyle(hbond/dreiding/morse/angleoffset,PairHbondDreidingMorseAngleoffset);
 #ifndef LMP_PAIR_HBOND_DREIDING_MORSE_ANGLEOFFSET_H
 #define LMP_PAIR_HBOND_DREIDING_MORSE_ANGLEOFFSET_H
 
-#include "pair_hbond_dreiding_lj_angleoffset.h"
+#include "pair_hbond_dreiding_lj.h"
+// #include "pair_hbond_dreiding_morse.h"
 
 namespace LAMMPS_NS {
 
-class PairHbondDreidingMorseAngleoffset : public PairHbondDreidingLJangleoffset {
+class PairHbondDreidingMorseAngleoffset : public PairHbondDreidingLJ {
+
  public:
   PairHbondDreidingMorseAngleoffset(class LAMMPS *);
-
-  void compute(int, int) override;
+  void settings(int, char **) override;
   void coeff(int, char **) override;
-  void init_style() override;
-  double single(int, int, int, int, double, double, double, double &) override;
+
+ protected:
+  double angle_offset_global, angle_offset_one, cut_angle_one; 
 };
 
 }    // namespace LAMMPS_NS

@@ -148,6 +148,14 @@ void PairHbondDreidingMorse::compute(int eflag, int vflag)
           if (c < -1.0) c = -1.0;
           ac = acos(c);
 
+          if (angle_offset_flag){
+            ac = ac + pm.angle_offset;
+            c = cos(ac);
+            if (c > 1.0) c = 1.0;
+            if (c < -1.0) c = -1.0;
+          }
+
+
           if (ac > pm.cut_angle && ac < (2.0*MY_PI - pm.cut_angle)) {
             s = sqrt(1.0 - c*c);
             if (s < SMALL) s = SMALL;
@@ -295,6 +303,7 @@ void PairHbondDreidingMorse::coeff(int narg, char **arg)
     (params[nparams].cut_outersq-params[nparams].cut_innersq) *
     (params[nparams].cut_outersq-params[nparams].cut_innersq) *
     (params[nparams].cut_outersq-params[nparams].cut_innersq);
+  // if (angle_offset_flag) params[nparams].angle_offset = angle_offset_one;
 
   // flag type2param with either i,j = D,A or j,i = D,A
 
@@ -442,6 +451,13 @@ double PairHbondDreidingMorse::single(int i, int j, int itype, int jtype,
     if (c > 1.0) c = 1.0;
     if (c < -1.0) c = -1.0;
     ac = acos(c);
+
+    if (angle_offset_flag){
+      ac = ac + pm.angle_offset;
+      c = cos(ac);
+      if (c > 1.0) c = 1.0;
+      if (c < -1.0) c = -1.0;
+    }
 
     if (ac < pm.cut_angle || ac > (2.0*MY_PI - pm.cut_angle)) return 0.0;
     s = sqrt(1.0 - c*c);

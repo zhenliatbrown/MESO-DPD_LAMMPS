@@ -13,52 +13,27 @@
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(hbond/dreiding/lj/angleoffset,PairHbondDreidingLJangleoffset);
+PairStyle(hbond/dreiding/lj/angleoffset,PairHbondDreidingLJAngleoffset);
 // clang-format on
 #else
 
 #ifndef LMP_PAIR_HBOND_DREIDING_LJ_ANGLEOFFSET_H
 #define LMP_PAIR_HBOND_DREIDING_LJ_ANGLEOFFSET_H
 
-#include "pair.h"
+#include "pair_hbond_dreiding_lj.h"
 
 namespace LAMMPS_NS {
 
-class PairHbondDreidingLJangleoffset : public Pair {
- public:
-  PairHbondDreidingLJangleoffset(class LAMMPS *);
-  ~PairHbondDreidingLJangleoffset() override;
-  void compute(int, int) override;
-  void settings(int, char **) override;
-  void coeff(int, char **) override;
-  void init_style() override;
-  double init_one(int, int) override;
-  double single(int, int, int, int, double, double, double, double &) override;
+  class PairHbondDreidingLJAngleoffset : public PairHbondDreidingLJ {
 
- protected:
-  double cut_inner_global, cut_outer_global, cut_angle_global, angle_offset_global;
-  int ap_global;
+  public:
+   PairHbondDreidingLJAngleoffset(class LAMMPS *);
+   void settings(int, char **) override;
+   void coeff(int, char **) override;
 
-  struct Param {
-    double epsilon, sigma;
-    double lj1, lj2, lj3, lj4;
-    double d0, alpha, r0;
-    double morse1;
-    double denom_vdw;
-    double cut_inner, cut_outer, cut_innersq, cut_outersq, cut_angle, offset, angle_offset;
-    int ap;
+  protected:
+    double angle_offset_global, angle_offset_one, cut_angle_one; 
   };
-
-  Param *params;    // parameter set for an I-J-K interaction
-  int nparams;      // number of parameters read
-  int maxparam;
-
-  int *donor;           // 1 if this type is ever a donor, else 0
-  int *acceptor;        // 1 if this type is ever an acceptor, else 0
-  int ***type2param;    // mapping from D,A,H to params, -1 if no map
-
-  void allocate();
-};
 
 }    // namespace LAMMPS_NS
 

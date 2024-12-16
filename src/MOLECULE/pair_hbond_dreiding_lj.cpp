@@ -13,13 +13,14 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Contributing author: Tod A Pascal (Caltech)
+   Contributing authors: Tod A Pascal (Caltech), Don Xu/EiPi Fun
 ------------------------------------------------------------------------- */
 
 #include "pair_hbond_dreiding_lj.h"
 
 #include "atom.h"
 #include "atom_vec.h"
+#include "comm.h"
 #include "domain.h"
 #include "error.h"
 #include "force.h"
@@ -55,6 +56,8 @@ PairHbondDreidingLJ::PairHbondDreidingLJ(LAMMPS *lmp) : Pair(lmp)
 
   nextra = 2;
   pvector = new double[2];
+
+  angle_offset_flag = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -177,6 +180,13 @@ void PairHbondDreidingLJ::compute(int eflag, int vflag)
           if (c > 1.0) c = 1.0;
           if (c < -1.0) c = -1.0;
           ac = acos(c);
+
+          if (angle_offset_flag){
+            ac = ac + pm.angle_offset;
+            c = cos(ac);
+            if (c > 1.0) c = 1.0;
+            if (c < -1.0) c = -1.0;
+          }
 
           if (ac > pm.cut_angle && ac < (2.0*MY_PI - pm.cut_angle)) {
             s = sqrt(1.0 - c*c);
@@ -314,8 +324,14 @@ void PairHbondDreidingLJ::settings(int narg, char **arg)
 
 void PairHbondDreidingLJ::coeff(int narg, char **arg)
 {
-  if (narg < 6 || narg > 10)
+  // account for angleoffset variant in EXTRA-MOLECULE
+  int maxarg = 10;
+  if (angle_offset_flag == 1) maxarg = 11;
+
+  // check settings
+  if (narg < 6 || narg > maxarg)
     error->all(FLERR,"Incorrect args for pair coefficients");
+
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi,klo,khi;
@@ -343,8 +359,14 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
     error->all(FLERR,"Pair inner cutoff >= Pair outer cutoff");
   double cut_angle_one = cut_angle_global;
   if (narg == 10) cut_angle_one = utils::numeric(FLERR, arg[9], false, lmp) * MY_PI/180.0;
+
+   if (comm->me == 0)
+      utils::logmesg(lmp,"---> DEBUG BASECLASS cut_angle_one {} \n", cut_angle_one);
+  
   // grow params array if necessary
 
+   if (comm->me == 0)
+      utils::logmesg(lmp,"---> DEBUG BASECLASS coeff nparams {} maxparam {}\n", nparams, maxparam);
   if (nparams == maxparam) {
     maxparam += CHUNK;
     params = (Param *) memory->srealloc(params, maxparam*sizeof(Param),
@@ -352,9 +374,11 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
 
     // make certain all addional allocated storage is initialized
     // to avoid false positives when checking with valgrind
-
     memset(params + nparams, 0, CHUNK*sizeof(Param));
   }
+
+   if (comm->me == 0)
+      utils::logmesg(lmp,"---> DEBUG BASECLASS coeff POST MEM nparams {} maxparam {}\n", nparams, maxparam);
 
   params[nparams].epsilon = epsilon_one;
   params[nparams].sigma = sigma_one;
@@ -369,6 +393,9 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
     (params[nparams].cut_outersq-params[nparams].cut_innersq) *
     (params[nparams].cut_outersq-params[nparams].cut_innersq);
 
+   if (comm->me == 0)
+      utils::logmesg(lmp,"BASECLASS PARAMS angle_offset_flag {}\n eps {}\n sigma {}\n ap {}\n cin {}\n cout {}\n cangle {}\n denom_vdw {}\n ",angle_offset_flag, params[nparams].epsilon,params[nparams].sigma, params[nparams].ap,params[nparams].cut_inner, params[nparams].cut_outer, params[nparams].cut_angle, params[nparams].denom_vdw);
+
   // flag type2param with either i,j = D,A or j,i = D,A
 
   int count = 0;
@@ -380,6 +407,9 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
         count++;
       }
   nparams++;
+
+   if (comm->me == 0)
+      utils::logmesg(lmp,"---> DEBUG BASECLASS coeff END nparams {} count {}\n", nparams, count);
 
   if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
 }
@@ -539,6 +569,13 @@ double PairHbondDreidingLJ::single(int i, int j, int itype, int jtype,
     if (c > 1.0) c = 1.0;
     if (c < -1.0) c = -1.0;
     ac = acos(c);
+
+    if (angle_offset_flag){
+      ac = ac + pm.angle_offset;
+      c = cos(ac);
+      if (c > 1.0) c = 1.0;
+      if (c < -1.0) c = -1.0;
+    }
 
     if (ac < pm.cut_angle || ac > (2.0*MY_PI - pm.cut_angle)) return 0.0;
     s = sqrt(1.0 - c*c);
