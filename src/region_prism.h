@@ -30,7 +30,7 @@ class RegPrism : public Region {
  public:
   RegPrism(class LAMMPS *, int, char **);
   ~RegPrism() override;
-  void init() override;  
+  void init() override;
   int inside(double, double, double) override;
   int surface_interior(double *, double) override;
   int surface_exterior(double *, double) override;
