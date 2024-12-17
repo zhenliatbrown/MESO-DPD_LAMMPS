@@ -41,7 +41,7 @@ Syntax
        *velocities* arg = *on* or *off*
           off = atomic velocities are not transmitted (default)
           on = atomic velocities are transmitted.
-        *forces* arg = *on* or *off*
+       *forces* arg = *on* or *off*
           off = atomic forces are not transmitted (default)
           on = atomic forces are transmitted.
 
