@@ -17,11 +17,10 @@
 #include "granular_model.h"
 #include "math_const.h"
 #include "atom.h"
-#include "csv_writer.h"
 #include "update.h"
+#include "citeme.h"
 
 #include <cmath>
-#include <iostream>
 #include <iomanip>
 #include <sstream>
 
@@ -37,6 +36,17 @@ static constexpr double SIXROOT6 = 14.69693845669906728801;     // 6*sqrt(6)
 static constexpr double INVROOT6 = 0.40824829046386307274;      // 1/sqrt(6)
 static constexpr double FOURTHIRDS = (4.0 / 3.0);               // 4/3
 static constexpr double JKRPREFIX = 1.2277228507842888;         // cbrt(3*PI**2/16)
+
+static const char cite_mdr[] =
+    "MDR contact model command: \n\n"
+    "@Article\n"
+    " author = \n"
+    " title =   \n"
+    " journal = ,\n"
+    " year =    ,\n"
+    " volume =  ,\n"
+    " pages =  \n"
+    "}\n\n";
 
 /* ----------------------------------------------------------------------
    Default normal model
@@ -399,6 +409,8 @@ void GranSubModNormalJKR::set_fncrit()
 GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
     GranSubModNormal(gm, lmp)
 {
+  if (lmp->citeme) lmp->citeme->add(cite_mdr);
+  
   num_coeffs = 6; // Young's Modulus, Poisson's ratio, yield stress, effective surface energy, psi_b, coefficent of restitution
   contact_radius_flag = 1;
   size_history = 26;
@@ -441,14 +453,15 @@ double GranSubModNormalMDR::calculate_forces()
   // The MDR contact model was developed by imagining individual particles being
   // squished between a number of rigid flats (references below). To allow
   // for many interacting particles, we extend the idea of isolated particles surrounded
-  // by rigid flats. In particular, we imagine placing rigid flats at the overlap
-  // midpoints between particles. The force is calculated seperately on both sides
+  // by rigid flats. In particular, we imagine placing rigid flats at the overlaps 
+  // between particles. The force is calculated seperately on both sides
   // of the contact assuming interaction with a rigid flat. The two forces are then
   // averaged on either side of the contact to determine the final force. If the
   // contact is between a particle and wall then only one force evaluation is required.
   //
   // Zunker and Kamrin, 2024, Part I: https://doi.org/10.1016/j.jmps.2023.105492
   // Zunker and Kamrin, 2024, Part II: https://doi.org/10.1016/j.jmps.2023.105493
+  // Zunker, Dunatunga, Thakur, Tang, and Kamrin, 2025: 
 
   const int itag_true = atom->tag[gm->i]; // true i particle tag
   const int jtag_true = atom->tag[gm->j]; // true j particle tag
@@ -457,18 +470,14 @@ double GranSubModNormalMDR::calculate_forces()
   const double radi_true = gm->radi;      // true i particle initial radius
   const double radj_true = gm->radj;      // true j particle initial radius
 
-  F = 0.0;                               // average force
-  double F0 = 0.0;                              // force on contact side 0
-  double F1 = 0.0;                              // force on contact side 1
+  F = 0.0;                                // average force
+  double F0 = 0.0;                        // force on contact side 0
+  double F1 = 0.0;                        // force on contact side 1
   double R0 = 0.0;
   double R1 = 0.0;
   int i0 = 0;
   int i1 = 0;
   double delta = gm->delta;               // apparent overlap
-
-  //if (gm->contact_type == PAIR) delta = gm->delta/2.0; // half displacement to imagine interaction with rigid flat
-  //std::cout << "Normal force is called for: " << i_true << ", " << j_true << std::endl;
-  //std::cout << "Contact model has been entered " << gm->contact_type << ", " << PAIR << ", " << WALL << ", " << WALLREGION << ", " << gm->itype << ", " << gm->jtype << ", " << gm->delta << std::endl;
 
   // initialize indexing in history array of different constact history variables
   const int delta_offset_0 = 0;           // apparent overlap
@@ -538,7 +547,6 @@ double GranSubModNormalMDR::calculate_forces()
   double * contacts = atom->dvector[index_contacts];
   double * adhesive_length = atom->dvector[index_adhesive_length];
 
-
   double * history = & gm->history[history_index]; // load in all history variables
 
   // Rigid flat placement scheme
@@ -604,7 +612,6 @@ double GranSubModNormalMDR::calculate_forces()
         double deltap = deltap0 + deltap1;
         delta = delta_geo + (deltap0 - delta_geo)/(deltap - deltamax)*(gm->delta-deltamax);
 
-      //std::cout << "CS 0: " << gm->radi << ", " << gm->radj << ", gm->delta " << gm->delta << ", delta " << delta << ", deltamax " << deltamax << ", delta_geo " << delta_geo << ", delta_geo_alt " << delta_geo_alt << ", delta_geo/Ri " << delta_geo/gm->radi << ", delta_geo_alt/Rj " << delta_geo_alt/gm->radj  << ", delta_geoOpt1 " << delta_geoOpt1 << ", delta_geoOpt2 " << delta_geoOpt2 << ", deltamax-delta " << (deltamax-gm->delta) << std::endl;
       }
       delta_offset = & history[delta_offset_0];
       deltao_offset = & history[deltao_offset_0];
@@ -648,8 +655,6 @@ double GranSubModNormalMDR::calculate_forces()
       double deltap = deltap0 + deltap1;
       delta = delta_geo + (deltap1 - delta_geo)/(deltap - deltamax)*(gm->delta-deltamax);
 
-      //std::cout << "CS 1: " << gm->radi << ", " << gm->radj << ", gm->delta " << gm->delta << ", delta " << delta << ", deltamax " << deltamax << ", delta_geo " << delta_geo << ", delta_geo_alt " << delta_geo_alt << ", delta_geo/Ri " << delta_geo/gm->radi << ", delta_geo_alt/Rj " << delta_geo_alt/gm->radj  << ", delta_geoOpt1 " << delta_geoOpt1 << ", delta_geoOpt2 " << delta_geoOpt2 << ", deltamax-delta " << (deltamax-gm->delta) << std::endl;
-
       delta_offset = & history[delta_offset_1];
       deltao_offset = & history[deltao_offset_1];
       delta_MDR_offset = & history[delta_MDR_offset_1];
@@ -667,8 +672,6 @@ double GranSubModNormalMDR::calculate_forces()
     // temporary i and j indices
     const int i = gm->i;
     const int j = gm->j;
-
-    //std::cout << lmp->update->ntimestep << std::endl;
 
     // material and geometric property definitions
     // E, nu, Y gamma , psi_b, and CoR are already defined.
@@ -714,12 +717,6 @@ double GranSubModNormalMDR::calculate_forces()
       }
     }
 
-    //if (i_true == 167 && j_true == 204) {
-    //std::cout << "i " << i << " | j " << j << " | delta_BULK: " << delta_BULK << " | delta_MDR " << delta_MDR << " | ddelta_BULK " << ddelta_BULK << " | ddelta_MDR " << ddelta_MDR << std::endl;
-    //}
-
-    //std::cout << "Yield Flag: " << *Yflag_offset << ", " << R << std::endl;
-
     // MDR force calculation
     double F_MDR;
     double A;                     // height of elliptical indenter
@@ -746,11 +743,7 @@ double GranSubModNormalMDR::calculate_forces()
 
       // added for rigid flat placement
       *deltap_offset = deltamax_MDR - (deltae1Dmax + deltaR);
-      //std::cout << *deltap_offset << std::endl;
     }
-
-    //std::cout << psi_b << ", " << psi[i] << ", " << A << ", " << B << ", " << pY << ", " << amax << " || " << deltao << ", " << delta << ", " << ddelta << ", " << *delta_offset << ", " << ddelta_bar[i] << " || " << delta_MDR << ", " << ddelta_MDR << ", " << *delta_MDR_offset << ", " << deltamax_MDR << " || " << delta_BULK << ", " << ddelta_BULK << ", " << *delta_BULK_offset << " || " << R << std::endl;
-    //std::cout << i << ", " << j << ", " << A << ", " << B << " || " << deltao << ", " << delta << ", " << ddelta << ", " << R <<  ", " << MY_PI*pow(amax,2.0) << std::endl;
 
     double a_na;
     double a_fac = 0.99;
@@ -758,20 +751,13 @@ double GranSubModNormalMDR::calculate_forces()
     double aAdh = *aAdh_offset;
     if (aAdh > a_fac*amax) aAdh = a_fac*amax;
 
-    //if (i_true == 4 && j_true == 52){
-    //std::cout << "CS: " << contactSide << ", aAdh: " << aAdh << ", deltae1D: " << deltae1D << ", A: " << A << ", B:" << B << ", amax: " << amax << ", deltae1D: " << deltae1D << ", R: " << R << std::endl;
-    //}
-
     if ( gamma > 0.0  ) { // adhesive contact
     double g_aAdh;
 
       if (delta_MDR == deltamax_MDR || a_na >= aAdh ) { // case 1: no tensile springs, purely compressive contact
         (deltae1D <= 0.0) ? F_MDR = 0.0 : F_MDR = Eeff*(A*B/4.0)*(acos(1.0 - 2.0*deltae1D/A) - (1.0 - 2.0*deltae1D/A)*sqrt(4.0*deltae1D/A - 4.0*pow(deltae1D,2.0)/pow(A,2.0)));
         if ( std::isnan(F_MDR) ) {
-           std::cout << "F_MDR is NaN, case 1: no tensile springs" << std::endl;
-           //std::cout << "Normal model: " << gm->delta << ", " << ddelta << ", " << gm->radi << ", " << gm->radj << " | delta: " << delta0 << ", " << delta1 << " | delta2_offset: " << *delta2_offset0 << ", " << *delta2_offset1 << "| dde: " << dde0 << ", " << dde1 << "| Fold: " << F0old << ", " << F1old << " | a: " << a0 << ", " << a1 << " | k_BULK: " << k_BULK0 << ", " << k_BULK1 << " | h_BULK: " << h_BULK0 << ", " << h_BULK1 << std::endl;
-           std::cout << "i_true: " << i_true << ", j_true: " << j_true << ", i_tag: " << atom->tag[i_true] << ", j_tag: " << atom->tag[j_true] << ", contact type: " << gm->contact_type << ", deltae1D: " << deltae1D << ", A: " << A << ", B: " << B << ", amax: " << amax << ", deltamax_MDR: " << deltamax_MDR << ", R: " << R << std::endl;
-           std::exit(1);
+           error->one(FLERR, "F_MDR is NaN, case 1: no tensile springs");
         }
         *aAdh_offset = a_fac*a_na;
       } else {
@@ -784,27 +770,19 @@ double GranSubModNormalMDR::calculate_forces()
                             pow(Eeff,2),0.3333333333333333))/pow(A,2))/6;
 
         if ( (deltae1D + lmax - g_aAdh) >= 0.0) { // case 2: tensile springs, but not exceeding critical length --> deltae + lmax - g(aAdhes) >= 0
-        //if (contactSide == 0) {
-          //std::cout << "Case 2 tensile springs not exceeding critical length, R " << R <<  "deltae1D " << deltae1D << " , lmax " << lmax << " , g_adh" << g_aAdh << " sum " << (deltae1D + lmax - g_aAdh) << std::endl;
-        //}
           const double deltaeAdh = g_aAdh;
           const double F_na = Eeff*(A*B/4.0)*(acos(1.0 - 2.0*deltaeAdh/A) - (1.0 - 2.0*deltaeAdh/A)*sqrt(4.0*deltaeAdh/A - 4.0*pow(deltaeAdh,2.0)/pow(A,2.0)));
           const double F_Adhes = 2.0*Eeff*(deltae1D - deltaeAdh)*aAdh;
           F_MDR = F_na + F_Adhes;
-          if ( std::isnan(F_MDR) ) std::cout << "F_MDR is NaN, case 2: tensile springs, but not exceeding critical length" << std::endl;
-
+          if ( std::isnan(F_MDR) ) error->one(FLERR, "F_MDR is NaN, case 2: tensile springs, but not exceeding critical length");
         } else { // case 3: tensile springs exceed critical length --> deltae + lmax - g(aAdhes) = 0
-          //if (contactSide == 0) {
-            //std::cout << "Case 3 tensile springs exceed critical length, R " << R << " deltae1D " << deltae1D << " , lmax " << lmax << " , g_adh " << g_aAdh << " sum " << (deltae1D + lmax - g_aAdh) << std::endl;
-          //}
-
           if ( aAdh < acrit ) {
             aAdh = 0.0;
             F_MDR = 0.0;
           } else {
             // newton-raphson to find aAdh
             const double maxIterations = 100;
-            const double error = 1e-10;
+            const double error1 = 1e-10;
             const double error2 = 1e-16;
             double aAdh_tmp = aAdh;
             double fa;
@@ -812,7 +790,7 @@ double GranSubModNormalMDR::calculate_forces()
             double dfda;
             for (int lv1 = 0; lv1 < maxIterations; ++lv1) {
               fa = deltae1D + sqrt(2.0*MY_PI*aAdh_tmp*gamma/Eeff) - ( A/2 - A/B*sqrt(pow(B,2.0)/4 - pow(aAdh_tmp,2.0)) );
-              if (abs(fa) < error) {
+              if (abs(fa) < error1) {
                 break;
               }
               dfda = -((aAdh_tmp*A)/(B*sqrt(-pow(aAdh_tmp,2.0) + pow(B,2.0)/4.0))) + (gamma*sqrt(MY_PI/2.0))/(Eeff*sqrt((aAdh_tmp*gamma)/Eeff));
@@ -832,7 +810,7 @@ double GranSubModNormalMDR::calculate_forces()
             const double F_na = Eeff*(A*B/4.0)*(acos(1.0 - 2.0*deltaeAdh/A) - (1.0 - 2.0*deltaeAdh/A)*sqrt(4.0*deltaeAdh/A - 4.0*pow(deltaeAdh,2.0)/pow(A,2.0)));
             const double F_Adhes = 2.0*Eeff*(deltae1D - deltaeAdh)*aAdh;
             F_MDR = F_na + F_Adhes;
-            if ( std::isnan(F_MDR) ) std::cout << "F_MDR is NaN, case 3: tensile springs exceed critical length" << std::endl;
+            if ( std::isnan(F_MDR) ) error->one(FLERR, "F_MDR is NaN, case 3: tensile springs exceed critical length");
           }
           *aAdh_offset = aAdh;
         }
@@ -841,14 +819,9 @@ double GranSubModNormalMDR::calculate_forces()
       *aAdh_offset = a_na;
       (deltae1D <= 0.0) ? F_MDR = 0.0 : F_MDR = Eeff*(A*B/4.0)*(acos(1.0 - 2.0*deltae1D/A) - (1.0 - 2.0*deltae1D/A)*sqrt(4.0*deltae1D/A - 4.0*pow(deltae1D,2.0)/pow(A,2.0)));
       if ( std::isnan(F_MDR) ) {
-        std::cout << "F_MDR is NaN, non-adhesive case" << std::endl;
-        //std::cout << "Normal model: " << gm->delta << ", " << ddelta << ", " << gm->radi << ", " << gm->radj << " | delta: " << delta0 << ", " << delta1 << " | delta2_offset: " << *delta2_offset0 << ", " << *delta2_offset1 << "| dde: " << dde0 << ", " << dde1 << "| Fold: " << F0old << ", " << F1old << " | a: " << a0 << ", " << a1 << " | k_BULK: " << k_BULK0 << ", " << k_BULK1 << " | h_BULK: " << h_BULK0 << ", " << h_BULK1 << std::endl;
-        std::cout << "i_true: " << i_true << ", j_true: " << j_true << ", i_tag: " << atom->tag[i_true] << ", j_tag: " << atom->tag[j_true] << ", deltae1D: " << deltae1D << ", A: " << A << ", B: " << B << ", amax: " << amax << ", deltamax_MDR: " << deltamax_MDR << ", R: " << R << std::endl;
-        std::exit(1);
+        error->one(FLERR, "F_MDR is NaN, non-adhesive case");
       }
     }
-
-    //std::cout << gm->i << ", " << gm->j << ", aAdh_offset: " << *aAdh_offset << ", aAdh: " << aAdh << ", a_na: " << a_na << std::endl;
 
     contacts[i] += 1;
     adhesive_length[i] += aAdh;
@@ -857,8 +830,6 @@ double GranSubModNormalMDR::calculate_forces()
     penalty_offset = & history[penalty_offset_];
     double pij = *penalty_offset;
     const double wij = std::max(1.0-pij,0.0);
-
-    //std::cout << gm->i << ", " << gm->j << ", " << gm->contact_type << ", " << *gm->xi[1] << ", " << *gm->xj[1] << std::endl;
 
     // area related calculations
     double Ac;
@@ -871,79 +842,8 @@ double GranSubModNormalMDR::calculate_forces()
     double F_BULK;
     (delta_BULK <= 0.0) ? F_BULK = 0.0 : F_BULK = (1.0/Vgeo[i])*Acon0[i]*delta_BULK*kappa*Ac;
 
-    //if (atom->tag[i_true] == 4135 && lmp->update->ntimestep > 10935000 && gm->contact_type == 2) {
-    //  std::cout << "CS: " << contactSide << ", i_true: " << i_true << ", j_true: " << j_true << ", i_tag: " << atom->tag[i_true] << ", j_tag: " << atom->tag[j_true] << ", deltae1D: " << deltae1D << ", A: " << A << ", B: " << B << ", amax: " << amax << ", deltamax_MDR: " << deltamax_MDR << ", R: " << R << ", F_MDR: " << F_MDR << ", F_BULK: " << F_BULK << ", wij: " << wij << ", gm->delta: " << gm->delta << ", delta: " << delta << ", delmax: " << deltamax << ", deltap: " << *deltap_offset << std::endl;
-    //}
-
-    //if (i == 35 && lmp->update->ntimestep % 1000 == 0) {
-      //double **x = atom->x;
-      //const double xi = x[i_true][0];
-    //  std::cout << "i: " << i << ", j: " << j <<  "i_true: " << i_true << ", i_tag: " << atom->tag[i_true] << ", j_true: " << j_true << ", j_tag " << atom->tag[j_true] << ", radi_true: " << radi_true << ", radj_true " << radj_true << ", gm->radi: " << gm->radi << ", gm->radj: " << gm->radj << ", R: " << R << ", Ro: " << Ro << std::endl;
-    //}
-
-    //if (i_true == 35 && lmp->update->ntimestep >= 736002 && lmp->update->ntimestep <= 736005) {
-    //  //double **x = atom->x;
-    //  //const double xi = x[i_true][0];
-    //  std::cout << "i_true: " << i_true << ", i_tag: " << atom->tag[i_true] << ", R: " << R << ", Ro: " << Ro << std::endl;
-    //}
-
-    //if ( ((atom->tag[i_true] == 4 && atom->tag[j_true] == 11) || (atom->tag[i_true] == 11 && atom->tag[j_true] == 4)) && lmp->update->ntimestep == 45000) {
-    //  std::cout << "CS: " << contactSide << ", contact_type: " << gm->contact_type << ", pair: " << PAIR << ", wall: " << WALL << ", WALLREGION " << WALLREGION  << ", itag_true: " << atom->tag[i_true] << ", jtag_true: " << atom->tag[j_true] << ", F_MDR: " << F_MDR << ", F_BULK: " << F_BULK << ", wij: " << wij << ", gm->delta: " << gm->delta << ", delta: " << delta << ", delmax: " << deltamax << ", deltap: " << *deltap_offset << std::endl;
-    //}
-
-    //if ( ((atom->tag[i_true] == 4301) || (atom->tag[j_true] == 4076)) && lmp->update->ntimestep > 1016700) {
-    //  std::cout << "i: " << i << ", j: " << j <<  "i_true: " << i_true << ", i_tag: " << atom->tag[i_true] << ", j_true: " << j_true << ", j_tag " << atom->tag[j_true] << ", radi_true: " << radi_true << ", radj_true " << radj_true << ", gm->radi: " << gm->radi << ", gm->radj: " << gm->radj << ", R: " << R << ", Ro: " << Ro << ", F_MDR: " << F_MDR << ", F_BULK: " << F_BULK << ", wij: " << wij << ", gm->delta: " << gm->delta << ", delta: " << delta << ", delmax: " << deltamax << ", deltap: " << *deltap_offset << std::endl;
-    //}
-
-    //if ( ((atom->tag[i_true] == 4) || (atom->tag[j_true] == 4)) && lmp->update->ntimestep == 45000) {
-    //  int rank = 0;
-    //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    //  double **x = atom->x;
-    //  const double xi = x[i][0];
-    //  const double xj = x[j][0];
-    //  const double yi = x[i][1];
-    //  const double yj = x[j][1];
-    //  const double zi = x[i][2];
-    //  const double zj = x[j][2];
-    //  std::cout << "CS: " << contactSide << ", rank, " << rank << ", CT: " << gm->contact_type << ", itag_true: " << atom->tag[i_true] << ", jtag_true: " << atom->tag[j_true] << ", i: " << i << ", j: " << j << ", nlocal: " << atom->nlocal << ", nghost: " << atom->nghost << ", wij: " << wij << ", gm->delta: " << gm->delta << ", delta: " << delta << ", delmax: " << deltamax << ", deltap: " << *deltap_offset << ", R: " << R << ", xi: " << xi << ", xj: " << xj << ", yi: " << yi << ", yj: " << yj << ", zi: " << zi << ", zj: " << zj << std::endl;
-    //}
-
-    //int rank = 0;
-    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    //double **x = atom->x;
-    //const double xi = x[i][0];
-    //const double xj = x[j][0];
-    //const double yi = x[i][1];
-    //const double yj = x[j][1];
-    //const double zi = x[i][2];
-    //const double zj = x[j][2];
-    //const double dis = sqrt(pow((xi-xj),2.0) + pow((yi-yj),2.0) + pow((zi-zj),2.0));
-    //const double delta_test = gm->radi + gm->radj - dis;
-    //if (delta_test < 0.0 && gm->contact_type != 2) {
-    //  std::cout << "Particles are not touching but a force is evaluated, CS: " << contactSide << ", rank, " << rank << ", contact_type: " << gm->contact_type << ", pair: " << PAIR << ", wall: " << WALL << ", WALLREGION " << WALLREGION << ", itag_true: " << atom->tag[i_true] << ", jtag_true: " << atom->tag[j_true] << ", i: " << i << ", j: " << j << ", nlocal: " << atom->nlocal << ", nghost: " << atom->nghost << ", wij: " << wij << ", gm->delta: " << gm->delta << ", delta: " << delta << ", delmax: " << deltamax << ", deltap: " << *deltap_offset << ", R: " << R << ", xi: " << xi << ", xj: " << xj << ", yi: " << yi << ", yj: " << yj << ", zi: " << zi << ", zj: " << zj << std::endl;
-    //  std::exit(1);
-    //}
-
-    //if (F_BULK > 0.0) {
-    //  std::cout << "F_BULK is: " << F_BULK << std::endl;
-    //}
-
-    //std::cout << delta_BULK << ", " << F_BULK << ", " << (1.0/Vgeo[i])*Acon0[i]*delta_BULK*kappa*Ac << std::endl;
-
-    //int rank = 0;
-    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    //std::cout << "Step: " << lmp->update->ntimestep << ", CS: " << contactSide << ", itag: " << atom->tag[i] << ", jtag: " << atom->tag[j] << ", rank: " << rank << ", gm->delta: " << gm->delta << ", delta: " << delta << ", ddelta: " << ddelta << ", delta_bar: " << ddelta_bar[i] << ", R: " << R << ", F_MDR: " << F_MDR << ", F_BULK: " << F_BULK << std::endl;
-
-    //std::cout << gm->i << ", " << gm->j << ", " << Vgeo[i] << ", " << Acon0[i] << ", " << Acon1[i] << ", " << Ac << ", " << kappa << " || " << psi[i] << ", " << ddelta_bar[i] << ", " << ddelta << ", " << ddelta_MDR << ", " << ddelta_BULK << ", " << delta << ", " << delta_MDR << ", " << delta_BULK << ", " << F_MDR << ", " << F_BULK << ", " << R << " || " << deltae1D << ", " << A << ", " << B << std::endl;
-
-    //std::cout << gm->i << ", " << gm->j << ", " << (1.0/Vgeo[i])*Acon0[i]*delta_BULK*kappa*Ac << std::endl;
-
     // total force calculation
     (contactSide == 0) ? F0 = F_MDR + F_BULK : F1 = F_MDR + F_BULK;
-
-
-
-    //std::cout << gm->i << ", " << gm->j << " | " << deltao << ", " << ddelta_bar[i] << ", " << R << ", " << psi[i] << ", " << psi_b << ", " << Ac << " | " << pij << ", " << wij << std::endl;
 
     // mean surface dipslacement calculation
      *Ac_offset = wij*Ac;
@@ -961,64 +861,17 @@ double GranSubModNormalMDR::calculate_forces()
     const double eps_bar_contact = (1.0/(3*kappa*Velas[i]))*(fx*bx + fy*by + fz*bz);
     eps_bar[i] += eps_bar_contact;
 
-    //double **x = atom->x;
-    //const double xi = x[i_true][0];
-    //const double xj = x[j_true][0];
-    //std::cout << i_true << ", " << j_true << ", " << xi << ", " << xj << ", " << gm->nx[0] << ", " << gm->nx[1] << ", " << gm->nx[2] << std::endl;
-
-      //if ( (i == 0 && j == 2 && gm->contact_type == 0) || (i == 2 && j == 0 && gm->contact_type == 0)) {
-      //std::cout << i << ", " << j << ", " << gm->contact_type << " || " << delta << ", " << *delta_offset << ", " << (uintptr_t)(delta_offset) << " || " << deltao << ", " << *deltao_offset << ", " << (uintptr_t)(deltao_offset) << " || " << delta_MDR << ", " << *delta_MDR_offset << ", " << (uintptr_t)(delta_MDR_offset) << " || " << *Yflag_offset << ", " << (uintptr_t)(Yflag_offset) << " || " << R << std::endl;
-      //std::cout << i << ", " << j << ", " << gm->contact_type << " || " << fx << ", " << fy << ", " << fz << " || " << bx << ", " << by << ", " << bz << ", " << Velas[i] << std::endl;
-      //std::cout << i << ", " << j << ", " << gm->contact_type << " || " << eps_bar_contact << ", " << *eps_bar_offset << ", " << (uintptr_t)(eps_bar_offset) << " || " << wij << ", " << ddeltao << ", " << deltao << ", " << delta << ", " << *delta_offset << " || " << Ro << ", " << R << std::endl;
-      //}
-
-      //if () {
-      //  std::cout << j << ", " << -Vo*(eps_bar_contact - *eps_bar_offset) - wij*MY_PI*ddeltao*( 2.0*deltao*Ro - pow(deltao,2.0) + pow(R,2.0) - pow(Ro,2.0) ) << ", " << -Vo*(eps_bar_contact - *eps_bar_offset) << ", " << wij*MY_PI*ddeltao*( 2.0*deltao*Ro - pow(deltao,2.0) + pow(R,2.0) - pow(Ro,2.0) ) << std::endl;
-      //std::cout << i << ", " << j << ", " << gm->contact_type << " || " << eps_bar_contact << ", " << *eps_bar_offset << ", " << (uintptr_t)(eps_bar_offset) << " || " << wij << ", " << ddeltao << ", " << deltao << " || " << Ro << ", " << R << std::endl;
-      //}
-
-
-    double desp_bar_contact = eps_bar_contact - *eps_bar_offset; // && desp_bar_contact < 0.0
+    double desp_bar_contact = eps_bar_contact - *eps_bar_offset; 
     if(delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
       const double Vo = (4.0/3.0)*MY_PI*pow(Ro,3.0);
       dRnumerator[i] += -Vo*(eps_bar_contact - *eps_bar_offset) - wij*MY_PI*ddeltao*( 2.0*deltao*Ro - pow(deltao,2.0) + pow(R,2.0) - pow(Ro,2.0) );
       dRdenominator[i] += wij*2.0*MY_PI*R*(deltao + R - Ro);
-
-      //if ( (atom->tag[i] == 9) ) {
-      // std::cout << "CT: " << gm->contact_type << ", " << PAIR << "i_tag: " << atom->tag[i] << ", j_tag: " << atom->tag[j] << ", deltae1D: " << deltae1D << ", R: " << R << ", Ro: " << Ro << ", F_MDR: " << F_MDR << ", F_BULK: " << F_BULK << ", wij: " << wij << ", deltao: " << deltao << ", ddeltao: " << ddeltao << ", desp_bar: " << eps_bar_contact - *eps_bar_offset << std::endl;
-      //}
     }
     *eps_bar_offset = eps_bar_contact;
 
     sigmaxx[i] += (1.0/Velas[i])*(fx*bx);
     sigmayy[i] += (1.0/Velas[i])*(fy*by);
     sigmazz[i] += (1.0/Velas[i])*(fz*bz);
-    //std::cout << psi_b << ", " << psi[i] << ", " << A << ", " << B << ", " << pY << ", " << amax << " || " << deltao << ", " << delta << ", " << ddelta << ", " << *delta_offset << ", " << ddelta_bar[i] << " || " << delta_MDR << ", " << ddelta_MDR << ", " << *delta_MDR_offset << ", " << deltamax_MDR << " || " << delta_BULK << ", " << ddelta_BULK << ", " << *delta_BULK_offset << " || " << R << " || " << Ac << ", " << *Ac_offset << ", " << Acon0[i] << ", " << Acon1[i] << " || " << F_MDR << ", " << F_BULK << ", " << Vgeo[i] << std::endl;
-
-    //std::cout << gm->i << ", " << gm->j << ", " << gm->radi << ", " << gm->radj << " | " << delta << ", " << F_MDR << " | " << deltae1D << ", " << A << ", " << B << std::endl;
-
-  //if (atom->tag[i] == 1 && lmp->update->ntimestep == 45000) {
-  //  double nx;
-  //  double ny;
-  //  double nz;
-  //  if (i == j_true) {
-  //    nx = gm->nx[0];
-  //    ny = gm->nx[1];
-  //    nz = gm->nx[2];
-  //  } else {
-  //    nx = -gm->nx[0];
-  //    ny = -gm->nx[1];
-  //    nz = -gm->nx[2];
-  //  }
-  //  double deltae = deltamax_MDR - *deltap_offset;
-  //  CSVWriter csvWriter("/Users/willzunker/lammps_mdr_develop/sims/MPFEM/deformed_particle_shape_data.csv");
-  //  std::stringstream rowDataStream;
-  //  rowDataStream << std::scientific << std::setprecision(8); // Set the format and precision
-  //  rowDataStream << nx << ", " << ny << ", " << nz << ", " << Ro << ", " << R << ", " << delta << ", " << deltae << ", " << A << ", " << B << ", " << a_na;
-  //  std::string rowData = rowDataStream.str();
-  //  csvWriter.writeRow(rowData);
-  //}
-
   }
 
   gm->i = i_true;
@@ -1031,23 +884,12 @@ double GranSubModNormalMDR::calculate_forces()
   const double wij = std::max(1.0-pij,0.0);
   *penalty_offset = 0.0;
 
-  //std::cout << gm->i << ", " << gm->j  << ", " << xi << ", " << xj << std::endl;
-
-  // force magnifiers to prevent over penetration
-  double * deltao_offset = & history[deltao_offset_0];
-  //const double wallForceMagnifer = std::exp(10.0*(*deltao_offset)/Rinitial[gm->i] - 10.0) + 1.0;
-  const double wallForceMagnifer = 1.0;
-
   // assign final force
-  //(gm->contact_type != PAIR) ? F = wij*F0*wallForceMagnifer : F = wij*(F0 + F1)/2;  // F = 2*wij*pow(1/F0 + 1/F1,-1);
-
   if (gm->contact_type != PAIR) {
-    F = wij*F0*wallForceMagnifer;
+    F = wij*F0;
   } else {
     F = wij*(F0 + F1)/2.0;
   }
-
-  //std::cout << F << ", " << F0 << ", " << F1 << " | " << R0 << ", " << R1 << std::endl;
 
   // calculate damping force
   if (F > 0.0) {
@@ -1065,52 +907,8 @@ double GranSubModNormalMDR::calculate_forces()
     const double damp_prefactor = beta*sqrt(gm->meff*kn);
     const double F_DAMP = -damp_prefactor*(gm->vnnr);
 
-    //std:: cout << gm->contact_type << ", " << Eeff << " , " << Reff << ", " << gm->radi << ", " << gm->radj << " || " << kn << ", " << beta << ", " << gm->meff << " || " << F_DAMP << ", " << F << std::endl;
     F += wij*F_DAMP;
   }
-
-  //double **x = atom->x;
-  //const double xi = x[gm->i][0];
-  //const double xj = x[gm->j][0];
-  //const double del = 20.0 - abs(xi-xj);
-
-  //if (i_true == 146 && j_true == 152) {
-  //  CSVWriter csvWriter("/Users/willzunker/lammps_mdr_develop/sims/avicelTableting/rigid_flat_output.csv");
-  //  std::stringstream rowDataStream;
-  //  rowDataStream << std::scientific << std::setprecision(6); // Set the format and precision
-  //  rowDataStream << gm->delta << ", " << delta0 << ", " << delta1 << ", " << dde0 << ", " << dde1 << ", " << (dde0 + dde1) << ", " << F0old << ", " << F1old << ", " << a0 << ", " << a1 << ", " << h0 << ", " << h1 << ", " << k_BULK0 << ", " << k_BULK1 << ", " << h_BULK0 << ", " << h_BULK1;
-  //  std::string rowData = rowDataStream.str();
-  //  csvWriter.writeRow(rowData);
-  //}
-
-  //if (i_true == 0 && j_true == 1) {
-  //  CSVWriter csvWriter("/Users/willzunker/lammps_mdr_develop/sims/twoParticleDifferingRadii/rigid_flat_output.csv");
-  //  std::stringstream rowDataStream;
-  //  rowDataStream << std::scientific << std::setprecision(6); // Set the format and precision
-  //  rowDataStream << gm->delta << ", " << delta0 << ", " << delta1 << ", " << dde0 << ", " << dde1 << ", " << (dde0 + dde1) << ", " << F0old << ", " << F1old << ", " << a0 << ", " << a1 << ", " << h0 << ", " << h1 << ", " << k_BULK0 << ", " << k_BULK1 << ", " << h_BULK0 << ", " << h_BULK1 << ", " << R0 << ", " << R1;
-  //  std::string rowData = rowDataStream.str();
-  //  csvWriter.writeRow(rowData);
-  //}
-
-  //if (i_true == 0 && j_true == 1) {
-  //  CSVWriter csvWriter("/Users/willzunker/lammps_mdr_develop/sims/twoParticleDifferingRadii/rigid_flat_output_fit.csv");
-  //  std::stringstream rowDataStream;
-  //  rowDataStream << std::scientific << std::setprecision(6); // Set the format and precision
-  //  rowDataStream << gm->delta << ", " << delta0 << ", " << delta1 << ", " << delta01;
-  //  std::string rowData = rowDataStream.str();
-  //  csvWriter.writeRow(rowData);
-  //}
-
-  //if (gm->i == 0 && gm->j == 2) {
-  //  CSVWriter csvWriter("/Users/willzunker/lammps/sims/compressionSleeve/pairContactsBotCen.csv");
-  //  std::stringstream rowDataStream;
-  //  rowDataStream << std::scientific << std::setprecision(4); // Set the format and precision
-  //  rowDataStream << del << ", " << F;
-  //  std::string rowData = rowDataStream.str();
-  //  csvWriter.writeRow(rowData);
-  //}
-
-  //std:: cout << "The force F is: " << F  << std::endl;
 
   return F;
 }
@@ -1121,33 +919,3 @@ void GranSubModNormalMDR::set_fncrit()
 {
   Fncrit = fabs(F);
 }
-
-//std::cout << sidata.i << ", " << sidata.j << ", " << R << ", " << deltan << ", " << deltao << ", " << dRsums_i[0] << ", " << dRsums_i[1] << ", " << numQuant << std::endl;
-//std::cout << gm->i << ", " << gm->j << " | " << gm->nx[0] << ", " << gm->nx[1] << ", " << gm->nx[2] << std::endl;
-//std::cout << "F is: " << F << std::endl;
-//std::cout << "Ro from particle history is: " << Ro[gm->i] << std::endl;
-//std::cout << "MDR contact model has been entered." << std::endl;
-// std::cout << "F is: " << F << std::endl;
-//std::cout << "gamma > 0.0: " << F_MDR << ", " << gm->i << ", " << gm->j << std::endl;
-//std::cout << "deltae1D <= 0.0: " << F_MDR << ", " << gm->i << ", " << gm->j << std::endl;
-//std::cout << "F_MDR should be > 0: " << F_MDR << ", " << gm->i << ", " << gm->j << std::endl;
-//std::cout << gm->i << ", " << gm->j << " || " << delta << ", " << delta_MDR << ", " << deltamax_MDR << ", " << deltae1D << " || " << A << ", " << B << std::endl;
-
-//std::cout << i_true << ", " << j_true << std::endl;
-
-      //std::cout << history_index << ", " << history[0] << ", " << history[1] << ", " << history[2] << std::endl;
-
-      // initialize all history variables
-      //double delta_offset;
-      //double deltao_offset;
-      //double delta_MDR_offset;
-      //double delta_BULK_offset;
-      //double deltamax_MDR_offset;
-      //double Yflag;
-      //double deltaY_offset;
-      //double Ac_offset;
-      //double aAdh_offset;
-      //double deltap_offset;
-      //double cA_offset;
-      //double eps_bar_offset;
-      //double wall_contact_flag_offset;

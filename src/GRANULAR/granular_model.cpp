@@ -243,7 +243,11 @@ void GranularModel::init()
 
   // Must have valid normal, damping, and tangential models
   if (normal_model->name == "none") error->all(FLERR, "Must specify normal granular model");
-  //if (damping_model->name == "none") error->all(FLERR, "Must specify damping granular model"); TURNED OFF FOR MDR
+  if (normal_model->name == "mdr") {
+     if (damping_model->name != "none") error->all(FLERR, "Damping model must be set to 'none' for the MDR contact model. Specify a coefficient of restitution CoR < 1 if normal damping is desired.");
+  } else {
+    if (damping_model->name == "none") error->all(FLERR, "Must specify damping granular model");
+  }
   if (tangential_model->name == "none") error->all(FLERR, "Must specify tangential granular model");
 
   // Twisting, rolling, and heat are optional

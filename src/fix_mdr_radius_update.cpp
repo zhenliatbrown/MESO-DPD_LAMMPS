@@ -1,4 +1,3 @@
-// clang-format off
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
@@ -28,14 +27,12 @@
 #include "memory.h"
 #include "modify.h"
 #include "variable.h"
-#include "csv_writer.h"
 #include "granular_model.h"
 #include "pair_granular.h"
 #include "pair.h"
 #include "gran_sub_mod_normal.h"
 #include "update.h"
 #include "comm.h"
-#include <iostream>
 #include <iomanip>
 #include <sstream>
 
@@ -51,8 +48,6 @@ FixMDRradiusUpdate::FixMDRradiusUpdate(LAMMPS *lmp, int narg, char **arg) :
 {
  comm_forward = 20; // value needs to match number of values you communicate
 }
-
-// FOR MDR
 
 int FixMDRradiusUpdate::setmask()
 {
@@ -167,42 +162,9 @@ void FixMDRradiusUpdate::pre_force(int)
     if (model->normal_model->name == "mdr") norm_model = dynamic_cast<GranSubModNormalMDR *>(model->normal_model);
   }
   if (norm_model == nullptr) error->all(FLERR, "Did not find mdr model");
-  //model = models_list[0];
-  //class GranSubModNormalMDR* norm_model = dynamic_cast<GranSubModNormalMDR *>(model->normal_model);
-
-  //std::cout << "Preforce was called radius update" << std::endl;
-
-  // assign correct value to initially non-zero MDR particle history variables
-  //int tmp1, tmp2;
-  //int index_Ro = atom->find_custom("Ro",tmp1,tmp2);
-  //int index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);
-  //int index_Velas = atom->find_custom("Velas",tmp1,tmp2);
-  //int index_Atot = atom->find_custom("Atot",tmp1,tmp2);
-  //int index_psi = atom->find_custom("psi",tmp1,tmp2);
-  //int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
-  //int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
-  //int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
-  //int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
-  //int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
-  //int index_contacts = atom->find_custom("contacts",tmp1,tmp2);
-  //int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
-  //double * Ro = atom->dvector[index_Ro];
-  //double * Vgeo = atom->dvector[index_Vgeo];
-  //double * Velas = atom->dvector[index_Velas];
-  //double * Atot = atom->dvector[index_Atot];
-  //double * psi = atom->dvector[index_psi];
-  //double * psi_b = atom->dvector[index_psi_b];
-  //double * sigmaxx = atom->dvector[index_sigmaxx];
-  //double * sigmayy = atom->dvector[index_sigmayy];
-  //double * sigmazz = atom->dvector[index_sigmazz];
-  //double * history_setup_flag = atom->dvector[index_history_setup_flag];
-  //double * contacts = atom->dvector[index_contacts];
-  //double * adhesive_length = atom->dvector[index_adhesive_length];
 
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
-
-  //std::cout << "ntotal " << ntotal << ", nlocal " << atom->nlocal << ", nghost " << atom->nghost << std::endl;
 
   for (int i = 0; i < nlocal; i++) {
     if (history_setup_flag[i] < 1e-16) {
@@ -220,9 +182,7 @@ void FixMDRradiusUpdate::pre_force(int)
     contacts[i] = 0.0;
     adhesive_length[i] = 0.0;
   }
-
   comm->forward_comm(this);
-
 }
 
 int FixMDRradiusUpdate::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/,int * /*pbc*/)
@@ -284,21 +244,9 @@ void FixMDRradiusUpdate::unpack_forward_comm(int n, int first, double *buf)
 
 void FixMDRradiusUpdate::end_of_step()
 {
-
-  //comm->forward_comm(this);
-
-  //std::cout << "end_of_step() was called radius update" << std::endl;
-
   // update the apparent radius of every particle
-
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
-  double sigmaxx_sum = 0.0;
-  double sigmayy_sum = 0.0;
-  double sigmazz_sum = 0.0;
-  double Vparticles = 0.0;
-
-  //std::cout << "New step" << std::endl;
 
   for (int i = 0; i < nlocal; i++) {
 
@@ -308,31 +256,14 @@ void FixMDRradiusUpdate::end_of_step()
     const double Vo = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
     const double Vgeoi = 4.0/3.0*MY_PI*pow(R,3.0) - Vcaps[i];
     Vgeo[i] = std::min(Vgeoi,Vo);
-    //(Vgeoi < Vo) ? Vgeo[i] = Vgeoi : Vgeo[i] = Vo;
 
     const double Afree = Atot[i] - Acon1[i];
     psi[i] = Afree/Atot[i];
 
-    //if (psi[i] < 0.08) {
-    //  std::cout << "psi is: " << psi[i] << std::endl;
-    //}
-
     const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)),0.0);
     if (psi_b[i] < psi[i]) {
       if ((radius[i] + dR) < (1.5*Ro[i])) radius[i] += dR;
-      //radius[i] += dR;
     }
-
-      //if (dR > 1e-7) {
-      //  std::cout << "big dR change" << std::endl;
-      //}
-   //if (atom->tag[i] == 9){
-   //   std::cout << i << ", radius: " << radius[i] << ", dR: " << dR << ", dRnum: " << dRnumerator[i] << ", dRdenom " << dRdenominator[i] << ", dRdem_full " << dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)  << std::endl;
-   //}
-
-
-      //std::cout << i << ", " << radius[i] << " | " << psi_b[i] << ", " << psi[i] << " | " << Acon1[i] << ", " << Atot[i] << std::endl;
-
 
     Velas[i] = Vo*(1.0 + eps_bar[i]);
     Vcaps[i] = 0.0;
@@ -341,46 +272,8 @@ void FixMDRradiusUpdate::end_of_step()
     dRdenominator[i] = 0.0;
     Acon0[i] = Acon1[i];
     Acon1[i] = 0.0;
-    //std::cout << "Acon reset: " << Acon0[i] << ", " << Acon1[i] << std::endl;
     Atot_sum[i] = 0.0;
     ddelta_bar[i] = 0.0;
-    //adhesive_length[i] = adhesive_length[i]/contacts[i]; // convert adhesive length to average aAdh for each particle
-
-
-    //if (lmp->update->ntimestep == 487500) {
-    //  double **x = atom->x;
-    //  CSVWriter csvWriter("/Users/willzunker/lammps_mdr_develop/sims/avicelTableting/atom_stresses_at_mid_compression.csv");
-    //  std::stringstream rowDataStream;
-    //  rowDataStream << std::scientific << std::setprecision(4); // Set the format and precision
-    //  rowDataStream << sigmaxx[i] << ", " << sigmayy[i] << ", " << sigmazz[i] << ", " << Velas[i] << ", " << x[i][2];
-    //  std::string rowData = rowDataStream.str();
-    //  csvWriter.writeRow(rowData);
-    //}
-//
-    //if (lmp->update->ntimestep == 595750) {
-    //  double **x = atom->x;
-    //  CSVWriter csvWriter("/Users/willzunker/lammps_mdr_develop/sims/avicelTableting/atom_stresses_at_max_compression.csv");
-    //  std::stringstream rowDataStream;
-    //  rowDataStream << std::scientific << std::setprecision(4); // Set the format and precision
-    //  rowDataStream << sigmaxx[i] << ", " << sigmayy[i] << ", " << sigmazz[i] << ", " << Velas[i] << ", " << x[i][2];
-    //  std::string rowData = rowDataStream.str();
-    //  csvWriter.writeRow(rowData);
-    //}
-
-
-    //sigmaxx_sum += sigmaxx[i];
-    //sigmayy_sum += sigmayy[i];
-    //sigmazz_sum += sigmazz[i];
-    //Vparticles += Velas[i];
   }
-
-  //double sigmaxx_avg = sigmaxx_sum/nlocal;
-  //double sigmayy_avg = sigmayy_sum/nlocal;
-  //double sigmazz_avg = sigmazz_sum/nlocal;
-
   comm->forward_comm(this);
 }
-
-//std::cout << radius[i] << ", " << dR << ", " << dRnumerator[i] << ", " << dRdenominator[i] << ", " << dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)  << std::endl;
-//std::cout << "Fix radius update setup has been entered !!!" << std::endl;
-//std::cout << Ro[0] << ", " << Vgeo[0] << ", " << Velas[0] << std::endl;

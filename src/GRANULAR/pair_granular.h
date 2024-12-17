@@ -49,7 +49,6 @@ class PairGranular : public Pair {
   size_t get_size_history() const;
 
   // granular models
-  // MOVED HERE FROM PRIVATE FOR MDR MODEL
   class Granular_NS::GranularModel** models_list;
   int **types_indices;
   int nmodels, maxmodels;

@@ -44,21 +44,19 @@ class FixWallGranRegion : public FixWallGran {
   int size_restart(int) override;
   int maxsize_restart() override;
 
-  class Region *region; // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
-  void update_contacts(int, int); // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
-  int *ncontact;             // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
-  int **walls;               // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
-  int *c2r;                  // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
-  double ***history_many;    // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
-  int tmax;                  // MOVED FROM PRIVATE TO PUBLIC FOR MDR MODEL
+  class Region *region; 
+  void update_contacts(int, int); 
+  int tmax;                  // max # of region walls one particle can touch
+  int *ncontact;             // # of shear contacts per particle
+  int **walls;               // which wall each contact is with
+  double ***history_many;    // history per particle per contact
+  int *c2r;                  // contact to region mapping
 
  private:
 
   int nregion;
 
   // shear history for multiple contacts per particle
-
-
 
 
                              // c2r[i] = index of Ith contact in

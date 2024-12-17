@@ -39,7 +39,6 @@
 #include "gran_sub_mod_normal.h"
 
 #include <cstring>
-#include <iostream>
 
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
@@ -490,28 +489,7 @@ void PairGranular::init_style()
     if (!fix_history) error->all(FLERR,"Could not find pair fix neigh history ID");
   }
 
-  /*
-  // Example
-  //Store persistent per atom quantities
-  if (! fix_flag) {
-    int tmp1, tmp2;
-    id_fix = "BOND_BPM_PLASTIC_FIX_PROP_ATOM";
-      modify->add_fix(
-        fmt::format("{} all property/atom d_plastic d_plastic_temp d_viscous_temp d_plastic_heat d_viscous_heat ghost yes", id_fix));
-    index_plastic = atom->find_custom("plastic",tmp1,tmp2);
-    index_pq = atom->find_custom("plastic_heat",tmp1,tmp2);
-    index_pt = atom->find_custom("plastic_temp",tmp1,tmp2);
-    index_vq = atom->find_custom("viscous_heat",tmp1,tmp2);
-    index_vt = atom->find_custom("viscous_temp",tmp1,tmp2);
-    fix_flag = 1;
-  }
-  */
-
  if (model->normal_model->name == "mdr") {
-
-  std::cout << "MDR history variables have been initialized" << std::endl;
-
-  // FOR MDR CONTACT MODEL
   //Store persistent per atom quantities
   if (! fix_flag) {
     int tmp1, tmp2;
@@ -537,11 +515,7 @@ void PairGranular::init_style()
     index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);                       // yy-component of the stress tensor, not necessary for force calculation
     index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);                       // zz-component of the stress tensor, not necessary for force calculation
     index_contacts = atom->find_custom("contacts",tmp1,tmp2);                     // total contacts on particle
-    index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);       // total contacts on particle
-
-     std::cout << "MDR history variables have been initialized 2" << ", " << index_Ro << std::endl;
-
-    //index_volSums = atom->find_custom("volSums",tmp1,tmp2);
+    index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);       // total length of adhesive contact on a particle
 
     // Initiate MDR radius update fix
     modify->add_fix("fix_mdr_radius_update all mdr/radius/update");

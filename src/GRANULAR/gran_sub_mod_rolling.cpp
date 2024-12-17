@@ -17,7 +17,6 @@
 #include "gran_sub_mod_normal.h"
 #include "granular_model.h"
 #include "math_extra.h"
-#include <iostream>
 
 #include <cmath>
 
@@ -81,8 +80,6 @@ void GranSubModRollingSDS::calculate_forces()
   hist_temp[0] = gm->history[rhist0];
   hist_temp[1] = gm->history[rhist1];
   hist_temp[2] = gm->history[rhist2];
-
-  //std::cout << "Frcrit rolling is: " << Frcrit << std::endl;
 
   if (gm->history_update) {
     rolldotn = dot3(hist_temp, gm->nx);

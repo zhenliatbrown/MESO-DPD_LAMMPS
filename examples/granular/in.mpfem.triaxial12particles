@@ -12,7 +12,7 @@ timestep        1e-6
 ######################### SIMULATION BOUNDING BOX, INTEGRATION, AND, GRAVITY ###########################
 
 boundary        f f f
-read_data spheres.data
+read_data spheres12.data
 fix             integr all nve/sphere
 
 ########################### PARTICLE MATERIAL PROPERTIES AND FORCE MODEL ###############################

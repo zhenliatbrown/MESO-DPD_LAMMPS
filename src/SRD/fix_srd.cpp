@@ -40,7 +40,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <iostream>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -55,7 +54,7 @@ enum { SHIFT_NO, SHIFT_YES, SHIFT_POSSIBLE };
 
 static constexpr double EINERTIA = 0.2;    // moment of inertia prefactor for ellipsoid
 
-static constexpr int ATOMPERBIN = 100;
+static constexpr int ATOMPERBIN = 30;
 static constexpr double BIG = 1.0e20;
 static constexpr int VBINSIZE = 5;
 static constexpr double TOLERANCE = 0.00001;
@@ -1322,7 +1321,6 @@ void FixSRD::collisions_single()
 #endif
 
           if (t_remain > dt) {
-            print_collision(i, j, ibounce, t_remain, dt, xscoll, xbcoll, norm, type);
             ninside++;
             if (insideflag == INSIDE_ERROR || insideflag == INSIDE_WARN) {
               std::string mesg;
@@ -2605,17 +2603,14 @@ void FixSRD::parameterize()
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
       if (rmass) {
-        if (mass_srd == 0.0) {
+        if (mass_srd == 0.0)
           mass_srd = rmass[i];
-          std::cout << "mass if #1: " << rmass[i] << std::endl;
-          std::cout << "srd radius is: " << radius[i] << std::endl;
-        } else if (rmass[i] != mass_srd)
+        else if (rmass[i] != mass_srd)
           flag = 1;
       } else {
-        if (mass_srd == 0.0) {
+        if (mass_srd == 0.0)
           mass_srd = mass[type[i]];
-          std::cout << "mass if #2: " << mass[type[i]] << std::endl;
-        } else if (mass[type[i]] != mass_srd)
+        else if (mass[type[i]] != mass_srd)
           flag = 1;
       }
     }
@@ -2717,7 +2712,6 @@ void FixSRD::parameterize()
   if (dimension == 3) {
     volsrd = (domain->xprd * domain->yprd * domain->zprd) - volbig;
     density_srd = nsrd * mass_srd / (domain->xprd * domain->yprd * domain->zprd - volbig);
-    std::cout << nsrd << ", " << mass_srd << ", " << domain->xprd << ", " << domain->yprd << ", " << domain->zprd << ", " << volbig << std::endl;
   } else {
     volsrd = (domain->xprd * domain->yprd) - volbig;
     density_srd = nsrd * mass_srd / (domain->xprd * domain->yprd - volbig);
@@ -2779,7 +2773,7 @@ void FixSRD::parameterize()
                         gridsrd, binsize3x, binsize3y, binsize3z);
     mesg += fmt::format("  SRD per actual grid cell = {:.8}\n", srd_per_cell);
     mesg += fmt::format("  SRD viscosity = {:.8}\n", viscosity);
-    mesg += fmt::format("  big/SRD mass density ratio = {:.8} | big density = {:.8}, small density = {:.8}\n", mdratio,density_big,density_srd);
+    mesg += fmt::format("  big/SRD mass density ratio = {:.8}\n", mdratio);
     utils::logmesg(lmp, mesg);
   }
 

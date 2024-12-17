@@ -496,7 +496,6 @@ void FixWallGran::post_force(int /*vflag*/)
     model->dx[2] = dz;
     model->radi = radius[i];
     model->radj = rwall;
-
     if (model->beyond_contact) model->touch = history_one[i][0];
 
     touchflag = model->check_contact();

@@ -1,4 +1,3 @@
-// clang-format off
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
@@ -37,7 +36,6 @@
 #include "update.h"
 #include "fix_wall_gran_region.h"
 #include "comm.h"
-#include <iostream>
 #include <algorithm>
 
 using namespace LAMMPS_NS;
@@ -52,8 +50,6 @@ FixMDRmeanSurfDisp::FixMDRmeanSurfDisp(LAMMPS *lmp, int narg, char **arg) :
 {
  comm_forward = 1; // value needs to match number of values you communicate
 }
-
-// FOR MDR
 
 int FixMDRmeanSurfDisp::setmask()
 {
@@ -79,7 +75,6 @@ int FixMDRmeanSurfDisp::pack_forward_comm(int n, int *list, double *buf, int /*p
   for (int i = 0; i < n; i++) {
     int j = list[i];
     buf[m++] = ddelta_bar[j];
-    //buf[m++] = Acon0[j];
   }
   return m;
 }
@@ -90,7 +85,6 @@ void FixMDRmeanSurfDisp::unpack_forward_comm(int n, int first, double *buf)
   int last = first + n;
   for (int i = first; i < last; i++) {
     ddelta_bar[i] = buf[m++];
-    //Acon0[i] = buf[m++];
   }
 }
 
@@ -102,9 +96,6 @@ void FixMDRmeanSurfDisp::pre_force(int)
 
   const int size_history = pair->get_size_history();
 
-  //std::cout << " " << std::endl;
-  //std::cout << "New Step" << std::endl;
-
   {
   int i,j,k,lv1,ii,jj,inum,jnum,itype,jtype,ktype;
 
@@ -113,10 +104,6 @@ void FixMDRmeanSurfDisp::pre_force(int)
   double *history_ij,*history_ik,*history_jk,*history_kj,*allhistory,*allhistory_j,*allhistory_k,**firsthistory;
 
   bool touchflag = false;
-
-  //class GranularModel* model;
-  //class GranularModel** models_list = pair->models_list;
-  //int ** types_indices = pair->types_indices;
 
   double **x = atom->x;
   int *type = atom->type;
@@ -186,8 +173,8 @@ void FixMDRmeanSurfDisp::pre_force(int)
                 history_ik = &allhistory[size_history * kk];
                 double * pik = &history_ik[22]; // penalty for contact i and k
 
-                // we don't know if who owns the contact ahead of time, k might be in j's neigbor list or vice versa, so we need to manually search to figure out the owner
-                // check if k is in the neighbor list of j
+                // we don't know if who owns the contact ahead of time, k might be in j's neigbor list or vice versa, 
+                // so we need to manually search to figure out the owner check if k is in the neighbor list of j
                 double * pjk = NULL;
                 int * const jklist = firstneigh[j];
                 const int jknum = numneigh[j];
@@ -197,10 +184,6 @@ void FixMDRmeanSurfDisp::pre_force(int)
                     allhistory_j = firsthistory[j];
                     history_jk = &allhistory_j[size_history * jk];
                     pjk = &history_jk[22]; // penalty for contact j and k
-                    //int rank = 0;
-                    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-                    //std::cout << "Print 183 pjk: " << rank << ", " << pjk << std::endl;
-                    //std::cout << "Print 183 pjk[0]: " << rank << ", " << pjk[0] << std::endl;
                     break;
                   }
                 }
@@ -215,16 +198,11 @@ void FixMDRmeanSurfDisp::pre_force(int)
                       allhistory_k = firsthistory[k];
                       history_kj = &allhistory_k[size_history * kj];
                       pjk = &history_kj[22]; // penalty for contact j and k
-                      //int rank = 0;
-                      //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-                      //std::cout << "Print 198 pjk: " << rank << ", " << pjk << std::endl;
-                      //std::cout << "Print 198 pjk[0]: " << rank << ", " << pjk[0] << std::endl;
                       break;
                     }
                   }
                 }
 
-                //std::cout << "Print: " << __LINE__ << std::endl;
                 std::vector<double> distances = {r_ij,r_ik,r_jk};
                 auto maxElement = std::max_element(distances.begin(), distances.end());
                 double maxValue = *maxElement;
@@ -256,9 +234,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                     const double eny_ik = dely_ik * rinv_ik;
                     const double enz_ik = delz_ik * rinv_ik;
                     const double alpha = std::acos(enx_ij*enx_ik + eny_ij*eny_ik + enz_ij*enz_ik);
-                    //std::cout << "Print: " << __LINE__ << std::endl;
                     pjk[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)) );
-                    //std::cout << "Print: " << __LINE__ << std::endl;
                   }
                 }
               }
@@ -334,8 +310,6 @@ void FixMDRmeanSurfDisp::pre_force(int)
       history = &allhistory[size_history * jj];
       model->history = history;
 
-      //const double pij = history[22];
-      //const double wij = std::max(1.0-pij,0.0);
       const double delta = model->radsum - sqrt(model->rsq);
 
       const int delta_offset_0 = 0;           // apparent overlap
@@ -365,18 +339,6 @@ void FixMDRmeanSurfDisp::pre_force(int)
         i1 = i;
       }
 
-      int rank = 0;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      int i_ghost;
-      int j_ghost;
-      (i >= atom->nlocal) ? i_ghost = 1 : i_ghost = 0;
-      (j >= atom->nlocal) ? j_ghost = 1 : j_ghost = 0;
-      if (i_ghost == 1) {
-        std::cout << "rank: " << rank << ", i: " << i << ", j: " << j << ", i is ghost? " << i_ghost << ", j is ghost? " << j_ghost << ", nlocal: " << atom->nlocal << ", itag: " << atom->tag[i] << ", jtag: " << atom->tag[j] << std::endl;
-      }
-
-      //int i0 = std::max(i,j);
-      //int i1 = std::min(i,j);
       double R0 = radius[i0];
       double R1 = radius[i1];
 
@@ -407,32 +369,13 @@ void FixMDRmeanSurfDisp::pre_force(int)
 
       if (Acon0[i0] != 0.0) {
         const double Ac_offset0 = history[Ac_offset_0];
-        ddelta_bar[i0] += Ac_offset0/Acon0[i0]*ddel0; // Multiply by 0.5 since displacement is shared equally between deformable particles.
+        ddelta_bar[i0] += Ac_offset0/Acon0[i0]*ddel0; 
       }
 
       if (Acon0[i1] != 0.0) {
         const double Ac_offset1 = history[Ac_offset_1];
         ddelta_bar[i1] += Ac_offset1/Acon0[i1]*ddel1;
       }
-
-      //int rank = 0;
-      //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      //std::cout << "delta_bar calc: Step: " << lmp->update->ntimestep << ", itag: " << atom->tag[i] << ", jtag: " << atom->tag[j] << ", i: " << i << ", j: " << j << ", rank: " << rank << ", Ac_offset0: " << history[Ac_offset_0] << ", Ac_offset1: " << history[Ac_offset_1] << ", Acon[i0]: " << Acon0[i0] << ", Acon[i1]: " << Acon0[i1] << ", ddel0: " << ddel0 << ", ddel1: " << ddel1 << ", ddelta_bar[i0]: " << ddelta_bar[i0] << ", ddelta_bar[i1]: " << ddelta_bar[i1] << std::endl;
-
-      //if (Acon0[j] != 0.0) {
-      //  const double delta_offset0 = history[0];
-      //  const double ddelta = delta/2.0 - delta_offset0; // Divide by 2.0 since we are storing 1/2 deltan in main MDR script
-      //  const double Ac_offset0 = history[18];
-      //  ddelta_bar[j] += Ac_offset0/Acon0[j]*ddelta; // Multiply by 0.5 since displacement is shared equally between deformable particles.
-      //}
-//
-      //if (Acon0[i] != 0.0) {
-      //  const double delta_offset1 = history[1];
-      //  const double ddelta = delta/2.0 - delta_offset1; // Divide by 2.0 since we are storing 1/2 deltan in main MDR script
-      //  const double Ac_offset1 = history[19];
-      //  ddelta_bar[i] += Ac_offset1/Acon0[i]*ddelta;
-      //}
-
     }
   }
 }
@@ -515,27 +458,11 @@ void FixMDRmeanSurfDisp::pre_force(int)
           const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
           const double ddelta = delta - delta_offset0;
           const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
-          ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta; // Multiply by 0.5 since displacement is shared equally between deformable particles.
-          //std::cout << delta << ", " << delta_offset0 << " || " << Ac_offset0 << ", " << Acon0[i] << ", " << ddelta << ", " << ddelta_bar[i] << std::endl;
+          ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta; 
         }
       }
     }
     }
   }
-
   comm->forward_comm(this);
-
-//and the function delcarations in the header:
-
-//int pack_forward_comm(int, int *, double *, int, int *) override;
-//void unpack_forward_comm(int, int, double *) override;
-
-//Then the methods would look like::
-
-//where comm_stage is a public flag to control hich quantity is being communicated
-
 }
-
-//std::cout << radius[i] << ", " << dR << ", " << dRnumerator[i] << ", " << dRdenominator[i] << ", " << dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)  << std::endl;
-//std::cout << "Fix radius update setup has been entered !!!" << std::endl;
-//std::cout << Ro[0] << ", " << Vgeo[0] << ", " << Velas[0] << std::endl;
