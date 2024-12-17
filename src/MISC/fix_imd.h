@@ -77,6 +77,7 @@ class FixIMD : public Fix {
   double memory_usage() override;
   // Fix nevery at 1, use trate to skip in 'end_of_step`
   int nevery = 1;
+  int imd_version;    // version of the IMD protocol to be used.
 
  protected:
   int imd_port;
@@ -91,8 +92,6 @@ class FixIMD : public Fix {
   void *force_data;     // communication buffer for forces
   void *idmap;          // hash for mapping atom indices to consistent order.
   tagint *rev_idmap;    // list of the hash keys for reverse mapping.
-
-  int imd_version;    // version of the IMD protocol to be used.
 
   int imd_forces;          // number of forces communicated via IMD.
   void *recv_force_buf;    // force data buffer

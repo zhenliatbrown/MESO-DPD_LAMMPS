@@ -1004,7 +1004,7 @@ void FixIMD::ioworker()
         pthread_mutex_unlock(&write_mutex);
         pthread_exit(nullptr);
       }
-      delete[] msgdata;
+      /* Don't delete msgdata- allow memory to persist. */
       buf_has_data=0;
       pthread_mutex_unlock(&write_mutex);
     } else {
