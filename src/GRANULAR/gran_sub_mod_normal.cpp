@@ -410,7 +410,7 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
     GranSubModNormal(gm, lmp)
 {
   if (lmp->citeme) lmp->citeme->add(cite_mdr);
-  
+
   num_coeffs = 6; // Young's Modulus, Poisson's ratio, yield stress, effective surface energy, psi_b, coefficent of restitution
   contact_radius_flag = 1;
   size_history = 26;
@@ -453,7 +453,7 @@ double GranSubModNormalMDR::calculate_forces()
   // The MDR contact model was developed by imagining individual particles being
   // squished between a number of rigid flats (references below). To allow
   // for many interacting particles, we extend the idea of isolated particles surrounded
-  // by rigid flats. In particular, we imagine placing rigid flats at the overlaps 
+  // by rigid flats. In particular, we imagine placing rigid flats at the overlaps
   // between particles. The force is calculated seperately on both sides
   // of the contact assuming interaction with a rigid flat. The two forces are then
   // averaged on either side of the contact to determine the final force. If the
@@ -461,7 +461,7 @@ double GranSubModNormalMDR::calculate_forces()
   //
   // Zunker and Kamrin, 2024, Part I: https://doi.org/10.1016/j.jmps.2023.105492
   // Zunker and Kamrin, 2024, Part II: https://doi.org/10.1016/j.jmps.2023.105493
-  // Zunker, Dunatunga, Thakur, Tang, and Kamrin, 2025: 
+  // Zunker, Dunatunga, Thakur, Tang, and Kamrin, 2025:
 
   const int itag_true = atom->tag[gm->i]; // true i particle tag
   const int jtag_true = atom->tag[gm->j]; // true j particle tag
@@ -861,7 +861,7 @@ double GranSubModNormalMDR::calculate_forces()
     const double eps_bar_contact = (1.0/(3*kappa*Velas[i]))*(fx*bx + fy*by + fz*bz);
     eps_bar[i] += eps_bar_contact;
 
-    double desp_bar_contact = eps_bar_contact - *eps_bar_offset; 
+    double desp_bar_contact = eps_bar_contact - *eps_bar_offset;
     if(delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
       const double Vo = (4.0/3.0)*MY_PI*pow(Ro,3.0);
       dRnumerator[i] += -Vo*(eps_bar_contact - *eps_bar_offset) - wij*MY_PI*ddeltao*( 2.0*deltao*Ro - pow(deltao,2.0) + pow(R,2.0) - pow(Ro,2.0) );

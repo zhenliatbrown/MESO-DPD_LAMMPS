@@ -173,7 +173,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
                 history_ik = &allhistory[size_history * kk];
                 double * pik = &history_ik[22]; // penalty for contact i and k
 
-                // we don't know if who owns the contact ahead of time, k might be in j's neigbor list or vice versa, 
+                // we don't know if who owns the contact ahead of time, k might be in j's neigbor list or vice versa,
                 // so we need to manually search to figure out the owner check if k is in the neighbor list of j
                 double * pjk = NULL;
                 int * const jklist = firstneigh[j];
@@ -369,7 +369,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
 
       if (Acon0[i0] != 0.0) {
         const double Ac_offset0 = history[Ac_offset_0];
-        ddelta_bar[i0] += Ac_offset0/Acon0[i0]*ddel0; 
+        ddelta_bar[i0] += Ac_offset0/Acon0[i0]*ddel0;
       }
 
       if (Acon0[i1] != 0.0) {
@@ -458,7 +458,7 @@ void FixMDRmeanSurfDisp::pre_force(int)
           const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
           const double ddelta = delta - delta_offset0;
           const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
-          ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta; 
+          ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta;
         }
       }
     }

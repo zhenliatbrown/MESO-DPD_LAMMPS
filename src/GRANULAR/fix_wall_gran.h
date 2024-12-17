@@ -51,8 +51,8 @@ class FixWallGran : public Fix {
   void reset_dt() override;
 
   // for granular model choices
-  class Granular_NS::GranularModel *model; 
-  void clear_stored_contacts(); 
+  class Granular_NS::GranularModel *model;
+  void clear_stored_contacts();
 
  protected:
   int wallstyle, wiggle, wshear, axis;
