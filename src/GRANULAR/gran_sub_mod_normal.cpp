@@ -730,7 +730,7 @@ double GranSubModNormalMDR::calculate_forces()
       A = 4.0*R;
       B = 2.0*R;
       deltae1D = delta_MDR;
-      (deltae1D > 0) ?  amax = sqrt(deltae1D*R) : amax = 0.0;
+      amax = sqrt(deltamax_MDR*R);
     } else { // plastic contact
       amax = sqrt((2.0*deltamax_MDR*R - pow(deltamax_MDR,2.0)) + cA/MY_PI);
       A = 4.0*pY/Eeff*amax;
