@@ -73,6 +73,7 @@ Dump::Dump(LAMMPS *lmp, int /*narg*/, char **arg) :
 
   clearstep = 0;
   sort_flag = 0;
+  sortcol = 0;
   balance_flag = 0;
   append_flag = 0;
   buffer_allow = 0;
@@ -94,7 +95,6 @@ Dump::Dump(LAMMPS *lmp, int /*narg*/, char **arg) :
 
   maxbuf = maxids = maxsort = maxproc = 0;
   maxsbuf = 0;
-  sortcol = 0;
 
   maxpbc = -1;
 
