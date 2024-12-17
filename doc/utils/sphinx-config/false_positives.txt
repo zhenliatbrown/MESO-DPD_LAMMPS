@@ -25,6 +25,7 @@ Ackland
 acks
 acolor
 acos
+acs
 Acta
 actinide
 activationfunctions
@@ -255,6 +256,7 @@ bcc
 bcolor
 bdiam
 bdw
+Becke
 Beckman
 Becton
 Behler
@@ -313,6 +315,7 @@ bitrate
 bitrates
 Bitzek
 Bjerrum
+bjm
 Bkappa
 blabel
 Blaise
@@ -1342,6 +1345,7 @@ gmres
 gname
 gneb
 GNEB
+Goerigk
 Goga
 Goldfarb
 Gompper
@@ -1707,6 +1711,7 @@ Jaramillo
 Jarzynski
 jatempl
 javascript
+jcc
 jcp
 jea
 jec
@@ -1728,6 +1733,7 @@ Jonsson
 Jorgensen
 jp
 jparam
+jpclett
 jpeg
 jpeglib
 jpg
@@ -1844,6 +1850,7 @@ Krass
 Kraus
 Kremer
 Kress
+Krieg
 Kronik
 ksh
 kspace
@@ -1916,6 +1923,7 @@ lB
 lbfgs
 lbl
 LBtype
+lc
 lcbop
 ld
 lda
@@ -2062,6 +2070,7 @@ ly
 Lybrand
 Lykotrafitis
 lyon
+lyp
 Lysogorskiy
 Lyulin
 lz
@@ -2824,12 +2833,14 @@ pathangle
 pathname
 pathnames
 Patera
+Patkowski
 Patomtrans
 Pattnaik
 Pavese
 Pavia
 Paxton
 pbc
+pbe
 pc
 pcg
 pchain
@@ -2920,6 +2931,7 @@ ploop
 PloS
 plt
 plumedfile
+plyp
 pmb
 pmcmoves
 pme
@@ -3428,6 +3440,7 @@ Shardlow
 shawn
 Shen
 Shenderova
+Sherrill
 Shi
 Shiga
 Shinoda
@@ -4113,6 +4126,7 @@ workflow
 workflows
 Workum
 Worley
+wpbe
 Wriggers
 writedata
 Wuppertal
@@ -4232,6 +4246,7 @@ Zemer
 zenodo
 Zentrum
 Zepeda
+zerom
 zflag
 Zhang
 Zhao

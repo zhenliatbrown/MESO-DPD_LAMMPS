@@ -44,7 +44,7 @@ The energy contribution :math:`E_i` for an atom :math:`i` is given by:
 
 where :math:`C_n` is the averaged, geometry-dependent nth-order
 dispersion coefficient for atom pair :math:`ij`, :math:`r_{ij}` their
-internuclear distance, :math:`s_n` are XC functional-dependent scaling
+inter-nuclear distance, :math:`s_n` are XC functional-dependent scaling
 factor, and :math:`f_n^{damp}` are damping functions.
 
 .. note::
@@ -82,7 +82,7 @@ and depend on the selected damping function.
 +------------------+--------------------------------------------------------------------------------+
 
 
-This style is primarly supposed to be used combined with a
+This style is primarily supposed to be used combined with a
 machine-learned interatomic potential trained on a DFT dataset (the
 selected XC functional should be chosen accordingly) via the
 :doc:`pair_style hybrid <pair_hybrid>` command.
