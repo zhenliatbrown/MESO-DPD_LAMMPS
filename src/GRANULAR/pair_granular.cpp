@@ -198,8 +198,6 @@ void PairGranular::compute(int eflag, int vflag)
       jtype = type[j];
       model = models_list[types_indices[itype][jtype]];
 
-      //std::cout << "Pair Granular: " << i << ", " << j << std::endl;
-
       // Reset model and copy initial geometric data
       model->xi = x[i];
       model->xj = x[j];
@@ -209,16 +207,6 @@ void PairGranular::compute(int eflag, int vflag)
       model->j = j;
       model->itype = itype;
       model->jtype = jtype;
-
-      /*
-      if (radius[i] < 0.00065 || radius[j] < 0.00065) {
-        std::cout << "Pair Granular: " << i << ", " << j << " || " << radius[i] << ", " << radius[j] << std::endl;
-      }
-
-      if (std::isnan(radius[i]) || std::isnan(radius[j])) {
-        std::cout << "Pair Granular: " << i << ", " << j << " || " << radius[i] << ", " << radius[j] << std::endl;
-      }
-      */
 
       if (use_history) model->touch = touch[jj];
 
