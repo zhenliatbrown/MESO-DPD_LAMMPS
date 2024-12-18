@@ -32,11 +32,9 @@
 #include "math_extra.h"
 #include "memory.h"
 #include "modify.h"
-#include "group.h"
 #include "neigh_list.h"
 #include "neighbor.h"
 #include "update.h"
-#include "gran_sub_mod_normal.h"
 
 #include <cstring>
 
@@ -477,7 +475,7 @@ void PairGranular::init_style()
     if (!fix_history) error->all(FLERR,"Could not find pair fix neigh history ID");
   }
 
- if (model->normal_model->name == "mdr") {
+ if (model->sub_models[NORMAL]->name == "mdr") {
   //Store persistent per atom quantities
   if (! fix_flag) {
     int tmp1, tmp2;
