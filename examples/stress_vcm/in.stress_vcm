@@ -78,7 +78,7 @@ compute         ch_stress_vcm all reduce/chunk ch_id sum v_stress
 
 # 6. Average and output to file.
 # -The average output is every 100 steps with samples collected 20 times with 5 step intervals.
-# fix             ave_stress_vcm all ave/time 5 20 100 c_ch_stress_vcm mode vector file stress_xx.out
+fix             ave_stress_vcm all ave/time 5 20 100 c_ch_stress_vcm mode vector file stress_xx.out
 
 #--------------------------------------#
 
