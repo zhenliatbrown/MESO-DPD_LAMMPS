@@ -504,8 +504,7 @@ void PairGranular::init_style()
     index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);       // total length of adhesive contact on a particle
 
     // Initiate MDR radius update fix
-    modify->add_fix("fix_mdr_radius_update all mdr/radius/update");
-    modify->add_fix("fix_mdr_mean_surf_disp all mdr/mean/surf/disp");
+    modify->add_fix("fix_mdr all GRANULAR/MDR");
 
     fix_flag = 1;
   }

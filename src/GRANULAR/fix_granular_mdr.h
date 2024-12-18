@@ -13,31 +13,54 @@
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(mdr/mean/surf/disp,FixMDRmeanSurfDisp);
+FixStyle(GRANULAR/MDR,FixGranularMDR);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_MDR_MEAN_SURF_DISP_H
-#define LMP_FIX_MDR_MEAN_SURF_DISP_H
+#ifndef LMP_FIX_GRANULAR_MDR_H
+#define LMP_FIX_GRANULAR_MDR_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixMDRmeanSurfDisp : public Fix {
+class FixGranularMDR : public Fix {
  public:
+  double * Ro;
+  double * Vgeo;
+  double * Velas;
+  double * Vcaps;
+  double * eps_bar;
+  double * dRnumerator;
+  double * dRdenominator;
   double * Acon0;
+  double * Acon1;
+  double * Atot;
+  double * Atot_sum;
   double * ddelta_bar;
+  double * psi;
+  double * psi_b;
+  double * sigmaxx;
+  double * sigmayy;
+  double * sigmazz;
+  double * history_setup_flag;
+  double * contacts;
+  double * adhesive_length;
 
-  FixMDRmeanSurfDisp(class LAMMPS *, int, char **);
+  FixGranularMDR(class LAMMPS *, int, char **);
   int setmask() override;
+  void setup(int) override;
   void setup_pre_force(int) override;
-  void pre_force(int) override; // FOR MDR
+  void pre_force(int) override;
+  void end_of_step() override; // FOR MDR
   int pack_forward_comm(int, int *, double *, int, int *) override;
   void unpack_forward_comm(int, int, double *) override;
 
  private:
+  int comm_stage;
 
+  void radius_update();
+  void mean_surf_disp();
 };
 
 }    // namespace LAMMPS_NS
