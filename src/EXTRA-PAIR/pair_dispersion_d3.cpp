@@ -21,7 +21,6 @@
 ------------------------------------------------------------------------- */
 
 #include "pair_dispersion_d3.h"
-#include "d3_parameters.h"
 
 #include "atom.h"
 #include "comm.h"
@@ -57,6 +56,7 @@ static constexpr int N_PARS_ROWS = 32385;       // number of rows in C6 table
 static constexpr double autoang = 0.52917725 ;  // atomic units (Bohr) to Angstrom
 static constexpr double autoev = 27.21140795 ;  // atomic units (Hartree) to eV
 
+#include "d3_parameters.h"
 /* ----------------------------------------------------------------------
    Constructor (Required)
 ------------------------------------------------------------------------- */
@@ -196,10 +196,8 @@ std::vector<int> PairDispersionD3::is_int_in_array(int array[], int size, int va
    Read r0ab values from r0ab.csv (used in PairDispersionD3::coeff)
 ------------------------------------------------------------------------- */
 
-void PairDispersionD3::read_r0ab(int* atomic_numbers, int ntypes) {
-
-  const double r0ab_table[NUM_ELEMENTS][NUM_ELEMENTS] = R0AB_TABLE;
-
+void PairDispersionD3::read_r0ab(int* atomic_numbers, int ntypes)
+{
   for (int i = 1; i <= ntypes; i++) {
       for (int j = 1; j <= ntypes; j++) {
           r0ab[i][j] = r0ab_table[atomic_numbers[i-1]-1][atomic_numbers[j-1]-1];
@@ -239,7 +237,6 @@ void PairDispersionD3::read_c6ab(int* atomic_numbers, int ntypes) {
 
   // fprintf(stderr, "> atomic numbers : %d, %d, %d", atomic_numbers[0], atomic_numbers[1], atomic_numbers[2]);
 
-  const double c6ab_table[N_PARS_ROWS][N_PARS_COLS] = C6AB_TABLE;
 
   for (int i = 0; i < N_PARS_ROWS; i++) {
 
