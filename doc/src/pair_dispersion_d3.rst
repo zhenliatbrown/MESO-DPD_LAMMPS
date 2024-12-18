@@ -42,15 +42,16 @@ The energy contribution :math:`E_i` for an atom :math:`i` is given by:
                 s_6 \frac{C_{6,ij}}{r^6_{ij}} f_6^{damp}(r_{ij}) +
                 s_8 \frac{C_{8,ij}}{r^8_{ij}} f_8^{damp}(r_{ij}) \big)
 
-where :math:`C_n` is the averaged, geometry-dependent nth-order dispersion
-coefficient for atom pair :math:`ij`, :math:`r_{ij}` their internuclear distance,
-:math:`s_n` are XC functional-dependent scaling factor, and :math:`f_n^{damp}` are
-damping functions.
+where :math:`C_n` is the averaged, geometry-dependent nth-order
+dispersion coefficient for atom pair :math:`ij`, :math:`r_{ij}` their
+internuclear distance, :math:`s_n` are XC functional-dependent scaling
+factor, and :math:`f_n^{damp}` are damping functions.
 
 .. note::
 
    It is currently *not* possible to calculate three-body dispersion
-   contributions, according for example to the Axilrod-Teller-Muto model.
+   contributions, according to, for example, the Axilrod-Teller-Muto
+   model.
 
 Available damping functions are the original "zero-damping"
 :ref:`(Grimme1) <Grimme1>`, Becke-Johnson damping :ref:`(Grimme2)
@@ -83,16 +84,17 @@ and depend on the selected damping function.
 
 This style is primarly supposed to be used combined with a
 machine-learned interatomic potential trained on a DFT dataset (the
-selected XC functional should be chosen accordingly) via the *pair_style
-hybrid* command.
+selected XC functional should be chosen accordingly) via the
+:doc:`pair_style hybrid <pair_hybrid>` command.
 
 Coefficients
 """"""""""""
 
-All the required coefficients are already stored internally, in the
-d3_paramerters.h file.  The only information to provide are the chemical
-symbols of the atoms.  The number of chemical symbols given must be
-equal to the number of atom types used and should match their ordering.
+All the required coefficients are already stored internally (in the
+``src/EXTRA-PAIR/d3_parameters.h`` file).  The only information to
+provide are the chemical symbols of the atoms.  The number of chemical
+symbols given must be equal to the number of atom types used and must
+match their ordering as atom types.
 
 
 Mixing, shift, table, tail correction, restart, rRESPA info
@@ -119,7 +121,7 @@ enabled if LAMMPS was built with that package.  See the :doc:`Build
 package <Build_package>` page for more info.
 
 It is currently *not* possible to calculate three-body dispersion
-contributions, ccording for example to the Axilrod-Teller-Muto model.
+contributions according to, for example, the Axilrod-Teller-Muto model.
 
 Related commands
 """"""""""""""""
