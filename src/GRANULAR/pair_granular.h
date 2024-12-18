@@ -55,7 +55,6 @@ class PairGranular : public Pair {
 
   class FixStoreAtom * fix_store;
 
-
  protected:
   int freeze_group_bit;
   int use_history;

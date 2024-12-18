@@ -61,6 +61,9 @@ class FixGranularMDR : public Fix {
 
   void radius_update();
   void mean_surf_disp();
+  void calculate_contact_penalty();
+  void update_fix_gran_wall(Fix*);
+
 };
 
 }    // namespace LAMMPS_NS

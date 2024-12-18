@@ -57,12 +57,16 @@ FixGranularMDR::FixGranularMDR(LAMMPS *lmp, int narg, char **arg) :
  comm_forward = 20; // value needs to match number of values you communicate
 }
 
+/* ---------------------------------------------------------------------- */
+
 int FixGranularMDR::setmask()
 {
   int mask = 0;
   mask |= PRE_FORCE | END_OF_STEP;
   return mask;
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixGranularMDR::setup_pre_force(int /*vflag*/)
 {
@@ -111,6 +115,8 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
   pre_force(0);
 }
 
+/* ---------------------------------------------------------------------- */
+
 void FixGranularMDR::setup(int /*vflag*/)
 {
   int tmp1, tmp2;
@@ -158,11 +164,146 @@ void FixGranularMDR::setup(int /*vflag*/)
   end_of_step();
 }
 
+/* ---------------------------------------------------------------------- */
+
 void FixGranularMDR::pre_force(int)
 {
   radius_update();
+
+  comm_stage = RADIUS_UPDATE;
+  comm->forward_comm(this, 20);
+
+  calculate_contact_penalty();
   mean_surf_disp();
+
+  auto fix_list = modify->get_fix_by_style("wall/gran/region");
+
+  for (int w = 0; w < fix_list.size(); w++) {
+    update_fix_gran_wall(fix_list[w]);
+  }
+
+  comm_stage = MEAN_SURF_DISP;
+  comm->forward_comm(this, 1);
 }
+
+/* ---------------------------------------------------------------------- */
+
+int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/,int * /*pbc*/)
+{
+  int m = 0;
+  if (comm_stage == RADIUS_UPDATE) {
+    for (int i = 0; i < n; i++) {
+      int j = list[i];
+      buf[m++] = Ro[j];                 // 1
+      buf[m++] = Vgeo[j];               // 2
+      buf[m++] = Velas[j];              // 3
+      buf[m++] = Vcaps[j];              // 4
+      buf[m++] = eps_bar[j];            // 5
+      buf[m++] = dRnumerator[j];        // 6
+      buf[m++] = dRdenominator[j];      // 7
+      buf[m++] = Acon0[j];              // 8
+      buf[m++] = Acon1[j];              // 9
+      buf[m++] = Atot[j];               // 10
+      buf[m++] = Atot_sum[j];           // 11
+      buf[m++] = ddelta_bar[j];         // 12
+      buf[m++] = psi[j];                // 13
+      buf[m++] = psi_b[j];              // 14
+      buf[m++] = sigmaxx[j];            // 15
+      buf[m++] = sigmayy[j];            // 16
+      buf[m++] = sigmazz[j];            // 17
+      buf[m++] = history_setup_flag[j]; // 18
+      buf[m++] = contacts[j];           // 19
+      buf[m++] = adhesive_length[j];    // 20
+    }
+  } else {
+    for (int i = 0; i < n; i++) {
+      int j = list[i];
+      buf[m++] = ddelta_bar[j];
+    }
+  }
+  return m;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
+{
+  int m = 0;
+  int last = first + n;
+
+  if (comm_stage == RADIUS_UPDATE) {
+    for (int i = first; i < last; i++) {
+      Ro[i] = buf[m++];                 // 1
+      Vgeo[i] = buf[m++];               // 2
+      Velas[i] = buf[m++];              // 3
+      Vcaps[i] = buf[m++];              // 4
+      eps_bar[i] = buf[m++];            // 5
+      dRnumerator[i] = buf[m++];        // 6
+      dRdenominator[i] = buf[m++];      // 7
+      Acon0[i] = buf[m++];              // 8
+      Acon1[i] = buf[m++];              // 9
+      Atot[i] = buf[m++];               // 10
+      Atot_sum[i] = buf[m++];           // 11
+      ddelta_bar[i] = buf[m++];         // 12
+      psi[i] = buf[m++];                // 13
+      psi_b[i] = buf[m++];              // 14
+      sigmaxx[i] = buf[m++];            // 15
+      sigmayy[i] = buf[m++];            // 16
+      sigmazz[i] = buf[m++];            // 17
+      history_setup_flag[i] = buf[m++]; // 18
+      contacts[i] = buf[m++];           // 19
+      adhesive_length[i] = buf[m++];    // 20
+    }
+  } else {
+    for (int i = first; i < last; i++) {
+      ddelta_bar[i] = buf[m++];
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixGranularMDR::end_of_step()
+{
+  // update the apparent radius of every particle
+  double *radius = atom->radius;
+  int nlocal = atom->nlocal;
+
+  for (int i = 0; i < nlocal; i++) {
+
+    const double R = radius[i];
+    Atot[i] = 4.0*MY_PI*pow(R,2.0) + Atot_sum[i];
+
+    const double Vo = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
+    const double Vgeoi = 4.0/3.0*MY_PI*pow(R,3.0) - Vcaps[i];
+    Vgeo[i] = std::min(Vgeoi,Vo);
+
+    const double Afree = Atot[i] - Acon1[i];
+    psi[i] = Afree/Atot[i];
+
+    const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)),0.0);
+    if (psi_b[i] < psi[i]) {
+      if ((radius[i] + dR) < (1.5*Ro[i])) radius[i] += dR;
+    }
+
+    Velas[i] = Vo*(1.0 + eps_bar[i]);
+    Vcaps[i] = 0.0;
+    eps_bar[i] = 0.0;
+    dRnumerator[i] = 0.0;
+    dRdenominator[i] = 0.0;
+    Acon0[i] = Acon1[i];
+    Acon1[i] = 0.0;
+    Atot_sum[i] = 0.0;
+    ddelta_bar[i] = 0.0;
+  }
+  comm_stage = RADIUS_UPDATE;
+  comm->forward_comm(this, 20);
+}
+
+
+/* ----------------------------------------------------------------------
+   calculate updated radius for atoms
+------------------------------------------------------------------------- */
 
 void FixGranularMDR::radius_update()
 {
@@ -195,11 +336,13 @@ void FixGranularMDR::radius_update()
     contacts[i] = 0.0;
     adhesive_length[i] = 0.0;
   }
-  comm_stage = RADIUS_UPDATE;
-  comm->forward_comm(this, 20);
 }
 
-void FixGranularMDR::mean_surf_disp()
+/* ----------------------------------------------------------------------
+   ...
+------------------------------------------------------------------------- */
+
+void FixGranularMDR::calculate_contact_penalty()
 {
   FixNeighHistory * fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
   PairGranular * pair = dynamic_cast<PairGranular *>(force->pair_match("granular",1));
@@ -207,7 +350,7 @@ void FixGranularMDR::mean_surf_disp()
 
   const int size_history = pair->get_size_history();
 
-  {
+
   int i,j,k,lv1,ii,jj,inum,jnum,itype,jtype,ktype;
 
   int *ilist,*jlist,*numneigh,**firstneigh;
@@ -354,10 +497,22 @@ void FixGranularMDR::mean_surf_disp()
         }
       }
   }
-  }
+}
 
 
-  {
+/* ----------------------------------------------------------------------
+   ...
+------------------------------------------------------------------------- */
+
+void FixGranularMDR::mean_surf_disp()
+{
+  FixNeighHistory * fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
+  PairGranular * pair = dynamic_cast<PairGranular *>(force->pair_match("granular",1));
+  NeighList * list = pair->list;
+
+  const int size_history = pair->get_size_history();
+
+
   int i,j,k,ii,jj,inum,jnum,itype,jtype;
 
   int *ilist,*jlist,*numneigh,**firstneigh;
@@ -491,200 +646,89 @@ void FixGranularMDR::mean_surf_disp()
   }
 }
 
-  auto fix_list = modify->get_fix_by_style("wall/gran/region");
+/* ----------------------------------------------------------------------
+   Update instance of fix gran/wall
+------------------------------------------------------------------------- */
 
-  for (int w = 0; w < fix_list.size(); w++) {
-
-    FixWallGranRegion* fix = dynamic_cast<FixWallGranRegion*>(fix_list[w]);
-    GranularModel * model = fix->model;
-    Region * region = fix->region;
-
-    {
-    int i, m, nc, iwall;
-    double vwall[3];
-    bool touchflag = false;
-
-    int history_update = 1;
-    model->history_update = history_update;
-
-    int regiondynamic = region->dynamic_check();
-    if (!regiondynamic) vwall[0] = vwall[1] = vwall[2] = 0.0;
-
-    double **x = atom->x;
-    double *radius = atom->radius;
-    int *mask = atom->mask;
-    int nlocal = atom->nlocal;
-
-    if (regiondynamic) {
-      region->prematch();
-      region->set_velocity();
-    }
-
-    if (fix->peratom_flag) fix->clear_stored_contacts();
-
-    model->radj = 0.0;
-
-    for (i = 0; i < nlocal; i++) {
-      if (!(mask[i] & groupbit)) continue;
-      if (! region->match(x[i][0], x[i][1], x[i][2])) continue;
-
-      nc = region->surface(x[i][0], x[i][1], x[i][2], radius[i] + model->pulloff_distance(radius[i], 0.0));
-
-        if (nc == 0) {
-          fix->ncontact[i] = 0;
-          continue;
-        }
-        if (nc == 1) {
-          fix->c2r[0] = 0;
-          iwall = region->contact[0].iwall;
-          if (fix->ncontact[i] == 0) {
-            fix->ncontact[i] = 1;
-            fix->walls[i][0] = iwall;
-            for (m = 0; m < size_history; m++) fix->history_many[i][0][m] = 0.0;
-          } else if (fix->ncontact[i] > 1 || iwall != fix->walls[i][0])
-            fix->update_contacts(i, nc);
-        } else
-          fix->update_contacts(i, nc);
-
-
-      // process current contacts
-      for (int ic = 0; ic < nc; ic++) {
-
-        // Reset model and copy initial geometric data
-        model->dx[0] = region->contact[ic].delx;
-        model->dx[1] = region->contact[ic].dely;
-        model->dx[2] = region->contact[ic].delz;
-        model->radi = radius[i];
-        model->radj = region->contact[ic].radius;
-        model->r = region->contact[ic].r;
-
-        if (model->beyond_contact) model->touch = fix->history_many[i][fix->c2r[ic]][0];
-
-        touchflag = model->check_contact();
-
-        const double wij = 1.0;
-
-        if (Acon0[i] != 0.0) {
-          const double delta = model->radsum - model->r;
-          const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
-          const double ddelta = delta - delta_offset0;
-          const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
-          ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta;
-        }
-      }
-    }
-    }
-  }
-
-  comm_stage = MEAN_SURF_DISP;
-  comm->forward_comm(this, 1);
-}
-
-
-int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/,int * /*pbc*/)
+void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
 {
-  int m = 0;
-  if (comm_stage == RADIUS_UPDATE) {
-    for (int i = 0; i < n; i++) {
-      int j = list[i];
-      buf[m++] = Ro[j];                 // 1
-      buf[m++] = Vgeo[j];               // 2
-      buf[m++] = Velas[j];              // 3
-      buf[m++] = Vcaps[j];              // 4
-      buf[m++] = eps_bar[j];            // 5
-      buf[m++] = dRnumerator[j];        // 6
-      buf[m++] = dRdenominator[j];      // 7
-      buf[m++] = Acon0[j];              // 8
-      buf[m++] = Acon1[j];              // 9
-      buf[m++] = Atot[j];               // 10
-      buf[m++] = Atot_sum[j];           // 11
-      buf[m++] = ddelta_bar[j];         // 12
-      buf[m++] = psi[j];                // 13
-      buf[m++] = psi_b[j];              // 14
-      buf[m++] = sigmaxx[j];            // 15
-      buf[m++] = sigmayy[j];            // 16
-      buf[m++] = sigmazz[j];            // 17
-      buf[m++] = history_setup_flag[j]; // 18
-      buf[m++] = contacts[j];           // 19
-      buf[m++] = adhesive_length[j];    // 20
-    }
-  } else {
-    for (int i = 0; i < n; i++) {
-      int j = list[i];
-      buf[m++] = ddelta_bar[j];
-    }
-  }
-  return m;
-}
+  FixWallGranRegion* fix = dynamic_cast<FixWallGranRegion*>(fix_in);
+  GranularModel * model = fix->model;
+  Region * region = fix->region;
 
-void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
-{
-  int m = 0;
-  int last = first + n;
+  const int size_history = model->size_history;
 
-  if (comm_stage == RADIUS_UPDATE) {
-    for (int i = first; i < last; i++) {
-      Ro[i] = buf[m++];                 // 1
-      Vgeo[i] = buf[m++];               // 2
-      Velas[i] = buf[m++];              // 3
-      Vcaps[i] = buf[m++];              // 4
-      eps_bar[i] = buf[m++];            // 5
-      dRnumerator[i] = buf[m++];        // 6
-      dRdenominator[i] = buf[m++];      // 7
-      Acon0[i] = buf[m++];              // 8
-      Acon1[i] = buf[m++];              // 9
-      Atot[i] = buf[m++];               // 10
-      Atot_sum[i] = buf[m++];           // 11
-      ddelta_bar[i] = buf[m++];         // 12
-      psi[i] = buf[m++];                // 13
-      psi_b[i] = buf[m++];              // 14
-      sigmaxx[i] = buf[m++];            // 15
-      sigmayy[i] = buf[m++];            // 16
-      sigmazz[i] = buf[m++];            // 17
-      history_setup_flag[i] = buf[m++]; // 18
-      contacts[i] = buf[m++];           // 19
-      adhesive_length[i] = buf[m++];    // 20
-    }
-  } else {
-    for (int i = first; i < last; i++) {
-      ddelta_bar[i] = buf[m++];
-    }
-  }
-}
+  int i, m, nc, iwall;
+  double vwall[3];
+  bool touchflag = false;
 
-void FixGranularMDR::end_of_step()
-{
-  // update the apparent radius of every particle
+  int history_update = 1;
+  model->history_update = history_update;
+
+  int regiondynamic = region->dynamic_check();
+  if (!regiondynamic) vwall[0] = vwall[1] = vwall[2] = 00;
+
+  double **x = atom->x;
   double *radius = atom->radius;
+  int *mask = atom->mask;
   int nlocal = atom->nlocal;
 
-  for (int i = 0; i < nlocal; i++) {
-
-    const double R = radius[i];
-    Atot[i] = 4.0*MY_PI*pow(R,2.0) + Atot_sum[i];
-
-    const double Vo = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
-    const double Vgeoi = 4.0/3.0*MY_PI*pow(R,3.0) - Vcaps[i];
-    Vgeo[i] = std::min(Vgeoi,Vo);
-
-    const double Afree = Atot[i] - Acon1[i];
-    psi[i] = Afree/Atot[i];
-
-    const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)),0.0);
-    if (psi_b[i] < psi[i]) {
-      if ((radius[i] + dR) < (1.5*Ro[i])) radius[i] += dR;
-    }
-
-    Velas[i] = Vo*(1.0 + eps_bar[i]);
-    Vcaps[i] = 0.0;
-    eps_bar[i] = 0.0;
-    dRnumerator[i] = 0.0;
-    dRdenominator[i] = 0.0;
-    Acon0[i] = Acon1[i];
-    Acon1[i] = 0.0;
-    Atot_sum[i] = 0.0;
-    ddelta_bar[i] = 0.0;
+  if (regiondynamic) {
+    region->prematch();
+    region->set_velocity();
   }
-  comm_stage = RADIUS_UPDATE;
-  comm->forward_comm(this, 20);
+
+  if (fix->peratom_flag) fix->clear_stored_contacts();
+
+  model->radj = 0.0;
+
+  for (i = 0; i < nlocal; i++) {
+    if (!(mask[i] & groupbit)) continue;
+    if (! region->match(x[i][0], x[i][1], x[i][2])) continue;
+
+    nc = region->surface(x[i][0], x[i][1], x[i][2], radius[i] + model->pulloff_distance(radius[i], 0.0));
+
+      if (nc == 0) {
+        fix->ncontact[i] = 0;
+        continue;
+      }
+      if (nc == 1) {
+        fix->c2r[0] = 0;
+        iwall = region->contact[0].iwall;
+        if (fix->ncontact[i] == 0) {
+          fix->ncontact[i] = 1;
+          fix->walls[i][0] = iwall;
+          for (m = 0; m < size_history; m++) fix->history_many[i][0][m] = 0.0;
+        } else if (fix->ncontact[i] > 1 || iwall != fix->walls[i][0])
+          fix->update_contacts(i, nc);
+      } else
+        fix->update_contacts(i, nc);
+
+
+    // process current contacts
+    for (int ic = 0; ic < nc; ic++) {
+
+      // Reset model and copy initial geometric data
+      model->dx[0] = region->contact[ic].delx;
+      model->dx[1] = region->contact[ic].dely;
+      model->dx[2] = region->contact[ic].delz;
+      model->radi = radius[i];
+      model->radj = region->contact[ic].radius;
+      model->r = region->contact[ic].r;
+
+      if (model->beyond_contact) model->touch = fix->history_many[i][fix->c2r[ic]][0];
+
+      touchflag = model->check_contact();
+
+      const double wij = 1.0;
+
+      if (Acon0[i] != 0.0) {
+        const double delta = model->radsum - model->r;
+        const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
+        const double ddelta = delta - delta_offset0;
+        const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
+        ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta;
+      }
+    }
+  }
 }
