@@ -352,8 +352,11 @@ void FixBoxRelax::init()
     error->all(FLERR,"Temperature compute ID {} for fix box/relax does not exist", id_temp);
 
   pressure = modify->get_compute_by_id(id_press);
-  if (!pressure)
+  if (!pressure) {
     error->all(FLERR,"Pressure compute ID {} for fix box/relax does not exist", id_press);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
+  }
 
   pv2e = 1.0 / force->nktv2p;
 

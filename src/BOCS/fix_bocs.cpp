@@ -476,8 +476,9 @@ void FixBocs::init()
     pressure = modify->get_compute_by_id(id_press);
     if (!pressure)
       error->all(FLERR,"Pressure compute ID {} for fix bocs does not exist", id_press);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
   }
-
 
   if (pstat_flag)
   {

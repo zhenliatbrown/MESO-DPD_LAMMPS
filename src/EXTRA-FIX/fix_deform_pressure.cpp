@@ -438,6 +438,8 @@ void FixDeformPressure::init()
     pressure = modify->get_compute_by_id(id_press);
     if (!pressure)
       error->all(FLERR, "Pressure ID {} for fix deform/pressure does not exist", id_press);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
   }
 
   // if yz [3] changes and will cause box flip, then xy [5] cannot be changing

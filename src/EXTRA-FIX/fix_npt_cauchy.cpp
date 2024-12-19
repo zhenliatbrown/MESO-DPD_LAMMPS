@@ -662,6 +662,8 @@ void FixNPTCauchy::init()
   if (pstat_flag) {
     pressure = modify->get_compute_by_id(id_press);
     if (!pressure) error->all(FLERR,"Pressure ID {} for fix npt/cauchy does not exist", id_press);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
   }
 
   // set timesteps and frequencies

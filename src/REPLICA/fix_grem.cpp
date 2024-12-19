@@ -117,11 +117,11 @@ FixGrem::~FixGrem()
   modify->delete_compute(id_press);
   modify->delete_compute(id_ke);
   modify->delete_compute(id_pe);
-  delete [] id_temp;
-  delete [] id_press;
-  delete [] id_ke;
-  delete [] id_pe;
-  delete [] id_nh;
+  delete[] id_temp;
+  delete[] id_press;
+  delete[] id_ke;
+  delete[] id_pe;
+  delete[] id_nh;
 }
 
 /* ---------------------------------------------------------------------- */
