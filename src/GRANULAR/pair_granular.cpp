@@ -708,8 +708,6 @@ double PairGranular::single(int i, int j, int itype, int jtype,
 
   class GranularModel* model = models_list[types_indices[itype][jtype]];
 
-
-
   // Reset model and copy initial geometric data
   double **x = atom->x;
   double *radius = atom->radius;
@@ -931,9 +929,4 @@ void PairGranular::prune_models()
     models_list[nmodels-1] = nullptr;
     nmodels -= 1;
   }
-}
-
-size_t PairGranular::get_size_history() const
-{
-  return size_history;
 }

@@ -86,8 +86,6 @@ class FixWallGran : public Fix {
   // store particle interactions
 
   int store;
-
-
 };
 
 }    // namespace LAMMPS_NS

@@ -46,7 +46,7 @@ GranSubModRollingNone::GranSubModRollingNone(GranularModel *gm, LAMMPS *lmp) :
 ------------------------------------------------------------------------- */
 
 GranSubModRollingSDS::GranSubModRollingSDS(GranularModel *gm, LAMMPS *lmp) :
-    GranSubModRolling(gm, lmp), k{0.0}, mu{0.0}, gamma{0.0}
+    GranSubModRolling(gm, lmp)
 {
   num_coeffs = 3;
   size_history = 3;

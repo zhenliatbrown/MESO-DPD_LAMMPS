@@ -46,7 +46,7 @@ class PairGranular : public Pair {
   double memory_usage() override;
   double atom2cut(int) override;
   double radii2cut(double, double) override;
-  size_t get_size_history() const;
+  int get_size_history() const { return size_history; }
 
   // granular models
   class Granular_NS::GranularModel** models_list;

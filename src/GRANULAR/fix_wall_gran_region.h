@@ -46,25 +46,21 @@ class FixWallGranRegion : public FixWallGran {
 
   class Region *region;
   void update_contacts(int, int);
+
+  // shear history for multiple contacts per particle
+
   int tmax;                  // max # of region walls one particle can touch
   int *ncontact;             // # of shear contacts per particle
   int **walls;               // which wall each contact is with
   double ***history_many;    // history per particle per contact
   int *c2r;                  // contact to region mapping
-
+                             // c2r[i] = index of Ith contact in
+                             //   region-contact[] list of contacts
  private:
 
   int nregion;
-
-  // shear history for multiple contacts per particle
-
-
-                             // c2r[i] = index of Ith contact in
-                             //   region-contact[] list of contacts
   int motion_resetflag;      // used by restart to indicate that region
                              //    vel info is to be reset
-
-
 };
 
 }    // namespace LAMMPS_NS

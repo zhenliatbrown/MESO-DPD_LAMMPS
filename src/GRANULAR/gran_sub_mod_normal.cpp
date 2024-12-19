@@ -491,7 +491,6 @@ void GranSubModNormalMDR::init()
 /* ---------------------------------------------------------------------- */
 
 double GranSubModNormalMDR::calculate_forces()
-
 {
   // To understand the structure of the overall code it is important to consider
   // the following:
