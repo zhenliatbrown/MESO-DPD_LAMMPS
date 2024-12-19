@@ -55,6 +55,8 @@ FixGranularMDR::FixGranularMDR(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
   comm_forward = 20; // value needs to match number of values you communicate
+  create_attribute = 1;
+
   id_fix = nullptr;
 }
 
@@ -82,47 +84,26 @@ void FixGranularMDR::post_constructor()
   id_fix = utils::strdup("MDR_PARTICLE_HISTORY_VARIABLES");
   modify->add_fix(fmt::format("{} all property/atom d_Ro d_Vcaps d_Vgeo d_Velas d_eps_bar d_dRnumerator d_dRdenominator d_Acon0 d_Acon1 d_Atot d_Atot_sum d_ddelta_bar d_psi d_psi_b d_history_setup_flag d_sigmaxx d_sigmayy d_sigmazz d_contacts d_adhesive_length ghost yes", id_fix));
 
-  int index_Ro = atom->find_custom("Ro",tmp1,tmp2);
-  int index_Vcaps = atom->find_custom("Vcaps",tmp1,tmp2);
-  int index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);
-  int index_Velas = atom->find_custom("Velas",tmp1,tmp2);
-  int index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);
-  int index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);
-  int index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2);
-  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);
-  int index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);
-  int index_Atot = atom->find_custom("Atot",tmp1,tmp2);
-  int index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);
-  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);
-  int index_psi = atom->find_custom("psi",tmp1,tmp2);
-  int index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
-  int index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
-  int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
-  int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
-  int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
-  int index_contacts = atom->find_custom("contacts",tmp1,tmp2);
-  int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
-
-  Ro = atom->dvector[index_Ro];
-  Vgeo = atom->dvector[index_Vgeo];
-  Velas = atom->dvector[index_Velas];
-  Vcaps = atom->dvector[index_Vcaps];
-  eps_bar = atom->dvector[index_eps_bar];
-  dRnumerator = atom->dvector[index_dRnumerator];
-  dRdenominator = atom->dvector[index_dRdenominator];
-  Acon0 = atom->dvector[index_Acon0];
-  Acon1 = atom->dvector[index_Acon1];
-  Atot = atom->dvector[index_Atot];
-  Atot_sum = atom->dvector[index_Atot_sum];
-  ddelta_bar = atom->dvector[index_ddelta_bar];
-  psi = atom->dvector[index_psi];
-  psi_b = atom->dvector[index_psi_b];
-  sigmaxx = atom->dvector[index_sigmaxx];
-  sigmayy = atom->dvector[index_sigmayy];
-  sigmazz = atom->dvector[index_sigmazz];
-  history_setup_flag = atom->dvector[index_history_setup_flag];
-  contacts = atom->dvector[index_contacts];
-  adhesive_length = atom->dvector[index_adhesive_length];
+  index_Ro = atom->find_custom("Ro",tmp1,tmp2);
+  index_Vcaps = atom->find_custom("Vcaps",tmp1,tmp2);
+  index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);
+  index_Velas = atom->find_custom("Velas",tmp1,tmp2);
+  index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);
+  index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);
+  index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2);
+  index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);
+  index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);
+  index_Atot = atom->find_custom("Atot",tmp1,tmp2);
+  index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);
+  index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);
+  index_psi = atom->find_custom("psi",tmp1,tmp2);
+  index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
+  index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
+  index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
+  index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
+  index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
+  index_contacts = atom->find_custom("contacts",tmp1,tmp2);
+  index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -165,35 +146,36 @@ void FixGranularMDR::pre_force(int)
 
 int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/,int * /*pbc*/)
 {
+  double **dvector = atom->dvector;
   int m = 0;
   if (comm_stage == RADIUS_UPDATE) {
     for (int i = 0; i < n; i++) {
       int j = list[i];
-      buf[m++] = Ro[j];                 // 1
-      buf[m++] = Vgeo[j];               // 2
-      buf[m++] = Velas[j];              // 3
-      buf[m++] = Vcaps[j];              // 4
-      buf[m++] = eps_bar[j];            // 5
-      buf[m++] = dRnumerator[j];        // 6
-      buf[m++] = dRdenominator[j];      // 7
-      buf[m++] = Acon0[j];              // 8
-      buf[m++] = Acon1[j];              // 9
-      buf[m++] = Atot[j];               // 10
-      buf[m++] = Atot_sum[j];           // 11
-      buf[m++] = ddelta_bar[j];         // 12
-      buf[m++] = psi[j];                // 13
-      buf[m++] = psi_b[j];              // 14
-      buf[m++] = sigmaxx[j];            // 15
-      buf[m++] = sigmayy[j];            // 16
-      buf[m++] = sigmazz[j];            // 17
-      buf[m++] = history_setup_flag[j]; // 18
-      buf[m++] = contacts[j];           // 19
-      buf[m++] = adhesive_length[j];    // 20
+      buf[m++] = dvector[index_Ro][j];                 // 1
+      buf[m++] = dvector[index_Vgeo][j];               // 2
+      buf[m++] = dvector[index_Velas][j];              // 3
+      buf[m++] = dvector[index_Vcaps][j];              // 4
+      buf[m++] = dvector[index_eps_bar][j];            // 5
+      buf[m++] = dvector[index_dRnumerator][j];        // 6
+      buf[m++] = dvector[index_dRdenominator][j];      // 7
+      buf[m++] = dvector[index_Acon0][j];              // 8
+      buf[m++] = dvector[index_Acon1][j];              // 9
+      buf[m++] = dvector[index_Atot][j];               // 10
+      buf[m++] = dvector[index_Atot_sum][j];           // 11
+      buf[m++] = dvector[index_ddelta_bar][j];         // 12
+      buf[m++] = dvector[index_psi][j];                // 13
+      buf[m++] = dvector[index_psi_b][j];              // 14
+      buf[m++] = dvector[index_sigmaxx][j];            // 15
+      buf[m++] = dvector[index_sigmayy][j];            // 16
+      buf[m++] = dvector[index_sigmazz][j];            // 17
+      buf[m++] = dvector[index_history_setup_flag][j]; // 18
+      buf[m++] = dvector[index_contacts][j];           // 19
+      buf[m++] = dvector[index_adhesive_length][j];    // 20
     }
   } else {
     for (int i = 0; i < n; i++) {
       int j = list[i];
-      buf[m++] = ddelta_bar[j];
+      buf[m++] = dvector[index_ddelta_bar][j];
     }
   }
   return m;
@@ -203,35 +185,36 @@ int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_f
 
 void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
 {
+  double **dvector = atom->dvector;
   int m = 0;
   int last = first + n;
 
   if (comm_stage == RADIUS_UPDATE) {
     for (int i = first; i < last; i++) {
-      Ro[i] = buf[m++];                 // 1
-      Vgeo[i] = buf[m++];               // 2
-      Velas[i] = buf[m++];              // 3
-      Vcaps[i] = buf[m++];              // 4
-      eps_bar[i] = buf[m++];            // 5
-      dRnumerator[i] = buf[m++];        // 6
-      dRdenominator[i] = buf[m++];      // 7
-      Acon0[i] = buf[m++];              // 8
-      Acon1[i] = buf[m++];              // 9
-      Atot[i] = buf[m++];               // 10
-      Atot_sum[i] = buf[m++];           // 11
-      ddelta_bar[i] = buf[m++];         // 12
-      psi[i] = buf[m++];                // 13
-      psi_b[i] = buf[m++];              // 14
-      sigmaxx[i] = buf[m++];            // 15
-      sigmayy[i] = buf[m++];            // 16
-      sigmazz[i] = buf[m++];            // 17
-      history_setup_flag[i] = buf[m++]; // 18
-      contacts[i] = buf[m++];           // 19
-      adhesive_length[i] = buf[m++];    // 20
+      dvector[index_Ro][i] = buf[m++];                 // 1
+      dvector[index_Vgeo][i] = buf[m++];               // 2
+      dvector[index_Velas][i] = buf[m++];              // 3
+      dvector[index_Vcaps][i] = buf[m++];              // 4
+      dvector[index_eps_bar][i] = buf[m++];            // 5
+      dvector[index_dRnumerator][i] = buf[m++];        // 6
+      dvector[index_dRdenominator][i] = buf[m++];      // 7
+      dvector[index_Acon0][i] = buf[m++];              // 8
+      dvector[index_Acon1][i] = buf[m++];              // 9
+      dvector[index_Atot][i] = buf[m++];               // 10
+      dvector[index_Atot_sum][i] = buf[m++];           // 11
+      dvector[index_ddelta_bar][i] = buf[m++];         // 12
+      dvector[index_psi][i] = buf[m++];                // 13
+      dvector[index_psi_b][i] = buf[m++];              // 14
+      dvector[index_sigmaxx][i] = buf[m++];            // 15
+      dvector[index_sigmayy][i] = buf[m++];            // 16
+      dvector[index_sigmazz][i] = buf[m++];            // 17
+      dvector[index_history_setup_flag][i] = buf[m++]; // 18
+      dvector[index_contacts][i] = buf[m++];           // 19
+      dvector[index_adhesive_length][i] = buf[m++];    // 20
     }
   } else {
     for (int i = first; i < last; i++) {
-      ddelta_bar[i] = buf[m++];
+      dvector[index_ddelta_bar][i] = buf[m++];
     }
   }
 }
@@ -243,6 +226,21 @@ void FixGranularMDR::end_of_step()
   // update the apparent radius of every particle
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
+
+  double *Ro = atom->dvector[index_Ro];
+  double *Vgeo = atom->dvector[index_Vgeo];
+  double *Velas = atom->dvector[index_Velas];
+  double *Vcaps = atom->dvector[index_Vcaps];
+  double *eps_bar = atom->dvector[index_eps_bar];
+  double *dRnumerator = atom->dvector[index_dRnumerator];
+  double *dRdenominator = atom->dvector[index_dRdenominator];
+  double *Acon0 = atom->dvector[index_Acon0];
+  double *Acon1 = atom->dvector[index_Acon1];
+  double *Atot = atom->dvector[index_Atot];
+  double *Atot_sum = atom->dvector[index_Atot_sum];
+  double *ddelta_bar = atom->dvector[index_ddelta_bar];
+  double *psi = atom->dvector[index_psi];
+  double *psi_b = atom->dvector[index_psi_b];
 
   for (int i = 0; i < nlocal; i++) {
 
@@ -277,6 +275,34 @@ void FixGranularMDR::end_of_step()
 
 
 /* ----------------------------------------------------------------------
+   initialize values to zero, called when atom is created
+------------------------------------------------------------------------- */
+
+void FixGranularMDR::set_arrays(int i)
+{
+  atom->dvector[index_Ro][i] = 0.0;
+  atom->dvector[index_Vgeo][i] = 0.0;
+  atom->dvector[index_Velas][i] = 0.0;
+  atom->dvector[index_Vcaps][i] = 0.0;
+  atom->dvector[index_eps_bar][i] = 0.0;
+  atom->dvector[index_dRnumerator][i] = 0.0;
+  atom->dvector[index_dRdenominator][i] = 0.0;
+  atom->dvector[index_Acon0][i] = 0.0;
+  atom->dvector[index_Acon1][i] = 0.0;
+  atom->dvector[index_Atot][i] = 0.0;
+  atom->dvector[index_Atot_sum][i] = 0.0;
+  atom->dvector[index_ddelta_bar][i] = 0.0;
+  atom->dvector[index_psi][i] = 0.0;
+  atom->dvector[index_psi_b][i] = 0.0;
+  atom->dvector[index_sigmaxx][i] = 0.0;
+  atom->dvector[index_sigmayy][i] = 0.0;
+  atom->dvector[index_sigmazz][i] = 0.0;
+  atom->dvector[index_history_setup_flag][i] = 0.0;
+  atom->dvector[index_contacts][i] = 0.0;
+  atom->dvector[index_adhesive_length][i] = 0.0;
+}
+
+/* ----------------------------------------------------------------------
    calculate updated radius for atoms
 ------------------------------------------------------------------------- */
 
@@ -294,6 +320,19 @@ void FixGranularMDR::radius_update()
 
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
+
+  double *Ro = atom->dvector[index_Ro];
+  double *Vgeo = atom->dvector[index_Vgeo];
+  double *Velas = atom->dvector[index_Velas];
+  double *Atot = atom->dvector[index_Atot];
+  double *psi = atom->dvector[index_psi];
+  double *psi_b = atom->dvector[index_psi_b];
+  double *sigmaxx = atom->dvector[index_sigmaxx];
+  double *sigmayy = atom->dvector[index_sigmayy];
+  double *sigmazz = atom->dvector[index_sigmazz];
+  double *contacts = atom->dvector[index_contacts];
+  double *adhesive_length = atom->dvector[index_adhesive_length];
+  double *history_setup_flag = atom->dvector[index_history_setup_flag];
 
   for (int i = 0; i < nlocal; i++) {
     if (history_setup_flag[i] < 1e-16) {
@@ -501,6 +540,9 @@ void FixGranularMDR::mean_surf_disp()
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
 
+  double *Acon0 = atom->dvector[index_Acon0];
+  double *ddelta_bar = atom->dvector[index_ddelta_bar];
+
   inum = list->inum;
   ilist = list->ilist;
   numneigh = list->numneigh;
@@ -640,6 +682,9 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
   double *radius = atom->radius;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
+
+  double *Acon0 = atom->dvector[index_Acon0];
+  double *ddelta_bar = atom->dvector[index_ddelta_bar];
 
   if (regiondynamic) {
     region->prematch();

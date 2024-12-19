@@ -149,9 +149,9 @@ namespace Granular_NS {
    protected:
     double E, nu, Y, gamma, CoR, F;
 
-    double *Rinitial, *Vgeo, *Velas, *Vcaps, *eps_bar, *dRnumerator;
-    double *dRdenominator, *Acon0, *Acon1, *Atot, *Atot_sum, *ddelta_bar;
-    double *psi, *sigmaxx, *sigmayy, *sigmazz, *contacts, *adhesive_length;
+    int index_Ro, index_Vgeo, index_Velas, index_Vcaps, index_eps_bar, index_dRnumerator;
+    int index_dRdenominator, index_Acon0, index_Acon1, index_Atot, index_Atot_sum, index_ddelta_bar;
+    int index_psi, index_sigmaxx, index_sigmayy, index_sigmazz, index_contacts, index_adhesive_length;
     int fix_mdr_flag;
   };
 
