@@ -416,6 +416,7 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
   contact_radius_flag = 1;
   size_history = 26;
   fix_mdr_flag = 0;
+  id_fix = nullptr;
 
   nondefault_history_transfer = 1;
   transfer_history_factor = new double[size_history];
@@ -429,8 +430,9 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
 
 GranSubModNormalMDR::~GranSubModNormalMDR()
 {
-  if (fix_mdr_flag)
-    modify->delete_fix("MDR");
+  if (id_fix && modify->nfix)
+    modify->delete_fix(id_fix);
+  delete[] id_fix;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -457,8 +459,10 @@ void GranSubModNormalMDR::coeffs_to_local()
 void GranSubModNormalMDR::init()
 {
   if (!fix_mdr_flag) {
-    if (modify->get_fix_by_style("MDR").size() == 0)
-      modify->add_fix("MDR all GRANULAR/MDR");
+    if (modify->get_fix_by_style("GRANULAR/MDR").size() == 0) {
+      id_fix = utils::strdup("MDR");
+      modify->add_fix(fmt::format("{} all GRANULAR/MDR", id_fix));
+    }
     fix_mdr_flag = 1;
   }
 

@@ -153,6 +153,8 @@ namespace Granular_NS {
     int index_dRdenominator, index_Acon0, index_Acon1, index_Atot, index_Atot_sum, index_ddelta_bar;
     int index_psi, index_sigmaxx, index_sigmayy, index_sigmazz, index_contacts, index_adhesive_length;
     int fix_mdr_flag;
+
+    char *id_fix;
   };
 
 }    // namespace Granular_NS
