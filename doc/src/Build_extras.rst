@@ -232,7 +232,7 @@ option in preparations to run on Aurora system at Argonne.
 
 .. code:: bash
 
-   # CUDA target (not recommended, use GPU_ARCH=cuda)
+   # CUDA target (not recommended, use GPU_API=cuda)
    # !!! DO NOT set CMAKE_CXX_COMPILER !!!
    export HIP_PLATFORM=nvcc
    export HIP_PATH=/path/to/HIP/install
