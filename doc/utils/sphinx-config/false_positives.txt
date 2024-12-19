@@ -249,6 +249,7 @@ basename
 Bashford
 bashrc
 Baskes
+Batatia
 Batra
 Bayly
 bb
@@ -3073,6 +3074,7 @@ qE
 qeff
 qelectron
 qeq
+Qamar
 QeQ
 QEq
 qfactor

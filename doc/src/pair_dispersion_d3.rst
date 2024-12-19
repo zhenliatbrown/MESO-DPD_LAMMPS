@@ -32,7 +32,9 @@ Style *dispersion/d3* computes the dispersion energy-correction used in
 the DFT-D3 method of Grimme :ref:`(Grimme1) <Grimme1>`.  It would
 typically be used with a machine learning potential that was trained
 with results from plain DFT calculations without the dispersion
-correction through pair_style hybrid/overlay.
+correction through pair_style hybrid/overlay. ML potentials are often
+combined *a posteriori* with dispersion energy-correction schemes (see
+*e.g.* :ref:`(Qamar) <Qamar>` and :ref:`(Batatia) <Batatia>`).
 
 The energy contribution :math:`E_i` for an atom :math:`i` is given by:
 
@@ -139,10 +141,18 @@ none
 
 **(Grimme1)** S. Grimme, J. Antony, S. Ehrlich, and H. Krieg, J. Chem. Phys. 132, 154104 (2010).
 
+.. _Qamar:
+
+**(Qamar)** M. Qamar, M. Mrovec, T. Lysogorskiy, A. Bochkarev, and R. Drautz, J. Chem. Theory Comput. 19, 5151 (2023).
+
+.. _Batatia:
+
+**(Batatia)** I. Batatia, *et al.*, arXiv:2401.0096 (2023).
+
 .. _Grimme2:
 
-**(Grimme2)** S. Grimme, S. Ehrlich and L. Goerigk,  J. Comput. Chem. 32, 1456 (2011); DOI:10.1002/jcc.21759.
+**(Grimme2)** S. Grimme, S. Ehrlich and L. Goerigk,  J. Comput. Chem. 32, 1456 (2011).
 
 .. _Sherrill:
 
-**(Sherrill)** D. G. A. Smith, L. A. Burns, K. Patkowski, and C. D. Sherrill, J. Phys. Chem. Lett., 7, 2197, (2016); DOI: 10.1021/acs.jpclett.6b00780.
+**(Sherrill)** D. G. A. Smith, L. A. Burns, K. Patkowski, and C. D. Sherrill, J. Phys. Chem. Lett., 7, 2197, (2016).
