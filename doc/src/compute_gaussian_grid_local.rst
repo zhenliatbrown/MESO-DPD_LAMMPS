@@ -56,7 +56,7 @@ and *z* coordinates of the grid point, followed by the values of the Gaussians
 
 .. include:: accel_styles.rst
 
-	     
+
 
 ----------
 

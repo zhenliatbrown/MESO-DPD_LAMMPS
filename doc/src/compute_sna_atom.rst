@@ -476,7 +476,7 @@ al. :ref:`(Lafourcade) <Lafourcade2023_2>`.
 
 .. include:: accel_styles.rst
 
-	     
+
 ----------
 
 Output info
