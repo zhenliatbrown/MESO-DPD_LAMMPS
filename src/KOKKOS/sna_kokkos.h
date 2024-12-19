@@ -29,7 +29,9 @@
 #endif
 
 namespace LAMMPS_NS {
-
+// copied from pair_snap_kokkos.h
+// pre-declare so sna_kokkos.h can refer to it
+template<class DeviceType, typename real_type_, int vector_length_> class PairSNAPKokkos;
 template<typename real_type_, int vector_length_>
 struct WignerWrapper {
   using real_type = real_type_;
