@@ -13,12 +13,13 @@
 
 #include "gran_sub_mod_normal.h"
 
+#include "atom.h"
 #include "error.h"
+#include "citeme.h"
 #include "granular_model.h"
 #include "math_const.h"
-#include "atom.h"
+#include "modify.h"
 #include "update.h"
-#include "citeme.h"
 
 #include <cmath>
 #include <iomanip>
@@ -414,6 +415,7 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
   num_coeffs = 6; // Young's Modulus, Poisson's ratio, yield stress, effective surface energy, psi_b, coefficent of restitution
   contact_radius_flag = 1;
   size_history = 26;
+  fix_mdr_flag = 0;
 
   nondefault_history_transfer = 1;
   transfer_history_factor = new double[size_history];
@@ -421,6 +423,14 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
   for (int i = 0; i < size_history; i++) {
     transfer_history_factor[i] = +1;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+GranSubModNormalMDR::~GranSubModNormalMDR()
+{
+  if (fix_mdr_flag)
+    modify->delete_fix("MDR");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -440,6 +450,57 @@ void GranSubModNormalMDR::coeffs_to_local()
   if (gamma < 0.0) error->all(FLERR, "Illegal MDR normal model, effective surface energy must be greater than or equal to 0");
   if (psi_b < 0.0 || psi_b > 1.0) error->all(FLERR, "Illegal MDR normal model, psi_b must be between 0 and 1.0");
   if (CoR < 0.0 || CoR > 1.0) error->all(FLERR, "Illegal MDR normal model, coefficent of restitution must be between 0 and 1.0");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void GranSubModNormalMDR::init()
+{
+  if (!fix_mdr_flag) {
+    if (modify->get_fix_by_style("MDR").size() == 0)
+      modify->add_fix("MDR all GRANULAR/MDR");
+    fix_mdr_flag = 1;
+  }
+
+  // initialize particle history variables
+  int tmp1, tmp2;
+  int index_Ro = atom->find_custom("Ro", tmp1, tmp2);                       // initial radius
+  int index_Vcaps = atom->find_custom("Vcaps", tmp1, tmp2);                 // spherical cap volume from intersection of apparent radius particle and contact planes
+  int index_Vgeo = atom->find_custom("Vgeo", tmp1, tmp2);                   // geometric particle volume of apparent particle after removing spherical cap volume
+  int index_Velas = atom->find_custom("Velas", tmp1, tmp2);                 // particle volume from linear elasticity
+  int index_eps_bar = atom->find_custom("eps_bar", tmp1, tmp2);             // volume-averaged infinitesimal strain tensor
+  int index_dRnumerator = atom->find_custom("dRnumerator", tmp1, tmp2);     // summation of numerator terms in calculation of dR
+  int index_dRdenominator = atom->find_custom("dRdenominator", tmp1, tmp2); // summation of denominator terms in calculation of dR
+  int index_Acon0 = atom->find_custom("Acon0", tmp1, tmp2);                 // total area involved in contacts: Acon^{n}
+  int index_Acon1 = atom->find_custom("Acon1", tmp1, tmp2);                 // total area involved in contacts: Acon^{n+1}
+  int index_Atot = atom->find_custom("Atot", tmp1, tmp2);                   // total particle area
+  int index_Atot_sum = atom->find_custom("Atot_sum", tmp1, tmp2);           // running sum of contact area minus cap area
+  int index_ddelta_bar = atom->find_custom("ddelta_bar", tmp1, tmp2);       // change in mean surface displacement
+  int index_psi = atom->find_custom("psi", tmp1, tmp2);                     // ratio of free surface area to total surface area
+  int index_sigmaxx = atom->find_custom("sigmaxx", tmp1, tmp2);             // xx-component of the stress tensor, not necessary for force calculation
+  int index_sigmayy = atom->find_custom("sigmayy", tmp1, tmp2);             // yy-component of the stress tensor, not necessary for force calculation
+  int index_sigmazz = atom->find_custom("sigmazz", tmp1, tmp2);             // zz-component of the stress tensor, not necessary for force calculation
+  int index_contacts = atom->find_custom("contacts", tmp1, tmp2);                     // total contacts on particle
+  int index_adhesive_length = atom->find_custom("adhesive_length", tmp1, tmp2);       // total contacts on particle
+
+  Rinitial = atom->dvector[index_Ro];
+  Vgeo = atom->dvector[index_Vgeo];
+  Velas = atom->dvector[index_Velas];
+  Vcaps = atom->dvector[index_Vcaps];
+  eps_bar = atom->dvector[index_eps_bar];
+  dRnumerator = atom->dvector[index_dRnumerator];
+  dRdenominator = atom->dvector[index_dRdenominator];
+  Acon0 = atom->dvector[index_Acon0];
+  Acon1 = atom->dvector[index_Acon1];
+  Atot = atom->dvector[index_Atot];
+  Atot_sum = atom->dvector[index_Atot_sum];
+  ddelta_bar = atom->dvector[index_ddelta_bar];
+  psi = atom->dvector[index_psi];
+  sigmaxx = atom->dvector[index_sigmaxx];
+  sigmayy = atom->dvector[index_sigmayy];
+  sigmazz = atom->dvector[index_sigmazz];
+  contacts = atom->dvector[index_contacts];
+  adhesive_length = atom->dvector[index_adhesive_length];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -506,46 +567,6 @@ double GranSubModNormalMDR::calculate_forces()
   const int deltamax_offset_ = 23;
   const int deltap_offset_0 = 24;
   const int deltap_offset_1 = 25;
-
-
-  // initialize particle history variables
-  int tmp1, tmp2;
-  int index_Ro = atom->find_custom("Ro",tmp1,tmp2);                       // initial radius
-  int index_Vcaps = atom->find_custom("Vcaps",tmp1,tmp2);                 // spherical cap volume from intersection of apparent radius particle and contact planes
-  int index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);                   // geometric particle volume of apparent particle after removing spherical cap volume
-  int index_Velas = atom->find_custom("Velas",tmp1,tmp2);                 // particle volume from linear elasticity
-  int index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);             // volume-averaged infinitesimal strain tensor
-  int index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);     // summation of numerator terms in calculation of dR
-  int index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2); // summation of denominator terms in calculation of dR
-  int index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);                 // total area involved in contacts: Acon^{n}
-  int index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);                 // total area involved in contacts: Acon^{n+1}
-  int index_Atot = atom->find_custom("Atot",tmp1,tmp2);                   // total particle area
-  int index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);           // running sum of contact area minus cap area
-  int index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);       // change in mean surface displacement
-  int index_psi = atom->find_custom("psi",tmp1,tmp2);                     // ratio of free surface area to total surface area
-  int index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);             // xx-component of the stress tensor, not necessary for force calculation
-  int index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);             // yy-component of the stress tensor, not necessary for force calculation
-  int index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);             // zz-component of the stress tensor, not necessary for force calculation
-  int index_contacts = atom->find_custom("contacts",tmp1,tmp2);                     // total contacts on particle
-  int index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);       // total contacts on particle
-  double * Rinitial = atom->dvector[index_Ro];
-  double * Vgeo = atom->dvector[index_Vgeo];
-  double * Velas = atom->dvector[index_Velas];
-  double * Vcaps = atom->dvector[index_Vcaps];
-  double * eps_bar = atom->dvector[index_eps_bar];
-  double * dRnumerator = atom->dvector[index_dRnumerator];
-  double * dRdenominator = atom->dvector[index_dRdenominator];
-  double * Acon0 = atom->dvector[index_Acon0];
-  double * Acon1 = atom->dvector[index_Acon1];
-  double * Atot = atom->dvector[index_Atot];
-  double * Atot_sum = atom->dvector[index_Atot_sum];
-  double * ddelta_bar = atom->dvector[index_ddelta_bar];
-  double * psi = atom->dvector[index_psi];
-  double * sigmaxx = atom->dvector[index_sigmaxx];
-  double * sigmayy = atom->dvector[index_sigmayy];
-  double * sigmazz = atom->dvector[index_sigmazz];
-  double * contacts = atom->dvector[index_contacts];
-  double * adhesive_length = atom->dvector[index_adhesive_length];
 
   double * history = & gm->history[history_index]; // load in all history variables
 

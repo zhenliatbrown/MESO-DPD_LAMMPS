@@ -139,13 +139,20 @@ namespace Granular_NS {
   class GranSubModNormalMDR : public GranSubModNormal {
    public:
     GranSubModNormalMDR(class GranularModel *, class LAMMPS *);
+    ~GranSubModNormalMDR() override;
     void coeffs_to_local() override;
+    void init() override;
     double calculate_forces() override;
     void set_fncrit() override;
     double psi_b;
 
    protected:
     double E, nu, Y, gamma, CoR, F;
+
+    double *Rinitial, *Vgeo, *Velas, *Vcaps, *eps_bar, *dRnumerator;
+    double *dRdenominator, *Acon0, *Acon1, *Atot, *Atot_sum, *ddelta_bar;
+    double *psi, *sigmaxx, *sigmayy, *sigmazz, *contacts, *adhesive_length;
+    int fix_mdr_flag;
   };
 
 }    // namespace Granular_NS

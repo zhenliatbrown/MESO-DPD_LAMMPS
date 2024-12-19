@@ -53,8 +53,6 @@ class PairGranular : public Pair {
   int **types_indices;
   int nmodels, maxmodels;
 
-  class FixStoreAtom * fix_store;
-
  protected:
   int freeze_group_bit;
   int use_history;
@@ -66,29 +64,6 @@ class PairGranular : public Pair {
 
   class FixDummy *fix_dummy;
   class FixNeighHistory *fix_history;
-
-  // MDR particle history variables
-  int fix_flag;
-  int index_Ro;
-  int index_Vcaps;
-  int index_Vgeo;
-  int index_Velas;
-  int index_eps_bar;
-  int index_dRnumerator;
-  int index_dRdenominator;
-  int index_Acon0;
-  int index_Acon1;
-  int index_Atot;
-  int index_Atot_sum;
-  int index_ddelta_bar;
-  int index_psi;
-  int index_psi_b;
-  int index_history_setup_flag;
-  int index_sigmaxx;
-  int index_sigmayy;
-  int index_sigmazz;
-  int index_contacts;
-  int index_adhesive_length;
 
   // storage of rigid body masses for use in granular interactions
 
