@@ -551,8 +551,6 @@ template<class DeviceType, typename real_type, int vector_length>
 KOKKOS_INLINE_FUNCTION
 void PairSNAPKokkos<DeviceType, real_type, vector_length>::operator() (TagPairSNAPComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType,TagPairSNAPComputeNeigh>::member_type& team) const {
 
-  SNAKokkos<DeviceType, real_type, vector_length> my_sna = snaKK;
-
   // extract atom number
   int ii = team.team_rank() + team.league_rank() * team.team_size();
   if (ii >= chunk_size) return;
