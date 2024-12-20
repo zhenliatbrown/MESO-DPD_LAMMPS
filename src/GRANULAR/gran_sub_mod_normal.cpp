@@ -27,15 +27,14 @@
 
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
-
-using MathConst::MY_2PI;
-using MathConst::MY_PI;
+using namespace MathConst;
 
 static constexpr double PI27SQ = 266.47931882941264802866;      // 27*PI**2
 static constexpr double THREEROOT3 = 5.19615242270663202362;    // 3*sqrt(3)
 static constexpr double SIXROOT6 = 14.69693845669906728801;     // 6*sqrt(6)
 static constexpr double INVROOT6 = 0.40824829046386307274;      // 1/sqrt(6)
 static constexpr double FOURTHIRDS = (4.0 / 3.0);               // 4/3
+static constexpr double FIVETHIRDS = (5.0 / 3.0);               // 5/3
 static constexpr double JKRPREFIX = 1.2277228507842888;         // cbrt(3*PI**2/16)
 
 static const char cite_mdr[] =
@@ -412,7 +411,7 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
 {
   if (lmp->citeme) lmp->citeme->add(cite_mdr);
 
-  num_coeffs = 6; // Young's Modulus, Poisson's ratio, yield stress, effective surface energy, psi_b, coefficent of restitution
+  num_coeffs = 6;
   contact_radius_flag = 1;
   size_history = 26;
   fix_mdr_flag = 0;
@@ -420,7 +419,6 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
 
   nondefault_history_transfer = 1;
   transfer_history_factor = new double[size_history];
-  //transfer_history_factor[0] = +1;
   for (int i = 0; i < size_history; i++) {
     transfer_history_factor[i] = +1;
   }
@@ -452,6 +450,10 @@ void GranSubModNormalMDR::coeffs_to_local()
   if (gamma < 0.0) error->all(FLERR, "Illegal MDR normal model, effective surface energy must be greater than or equal to 0");
   if (psi_b < 0.0 || psi_b > 1.0) error->all(FLERR, "Illegal MDR normal model, psi_b must be between 0 and 1.0");
   if (CoR < 0.0 || CoR > 1.0) error->all(FLERR, "Illegal MDR normal model, coefficent of restitution must be between 0 and 1.0");
+
+  G = E / (2.0 * (1.0 + nu));            // shear modulus
+  kappa = E / (3.0 * (1.0 - 2.0 * nu));  // bulk modulus
+  Eeff = E / (1.0 - pow(nu, 2.0));       // composite plane strain modulus
 }
 
 /* ---------------------------------------------------------------------- */
@@ -584,23 +586,12 @@ double GranSubModNormalMDR::calculate_forces()
   if (gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
   deltamax = *deltamax_offset;
 
+  double overlap_limit = 0.75;
   for (int contactSide = 0; contactSide < 2; contactSide++) {
 
-    double * delta_offset;
-    double * deltao_offset;
-    double * delta_MDR_offset;
-    double * delta_BULK_offset;
-    double * deltamax_MDR_offset;
-    double * Yflag_offset;
-    double * deltaY_offset;
-    double * cA_offset;
-    double * aAdh_offset;
-    double * Ac_offset;
-    double * eps_bar_offset;
-    double * penalty_offset;
-    double * deltap_offset;
-
-    double overlap_limit = 0.75;
+    double *delta_offset, *deltao_offset, *delta_MDR_offset, *delta_BULK_offset;
+    double *deltamax_MDR_offset, *Yflag_offset, *deltaY_offset, *cA_offset, *aAdh_offset;
+    double *Ac_offset, *eps_bar_offset, *penalty_offset, *deltap_offset;
 
     if (contactSide == 0) {
       if (gm->contact_type == PAIR) {
@@ -620,12 +611,11 @@ double GranSubModNormalMDR::calculate_forces()
         i0 = gm->i;
         i1 = gm->j;
 
-        double delta_geo;
-        double delta_geo_alt;
-        double delta_geoOpt1 = deltamax*(deltamax - 2.0*R1)/(2.0*(deltamax - R0 - R1));
-        double delta_geoOpt2 = deltamax*(deltamax - 2.0*R0)/(2.0*(deltamax - R0 - R1));
-        (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1,delta_geoOpt2);
-        (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1,delta_geoOpt2);
+        double delta_geo, delta_geo_alt;
+        double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
+        double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
+        (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
+        (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1, delta_geoOpt2);
 
         if (delta_geo/gm->radi > overlap_limit) {
           delta_geo = gm->radi*overlap_limit;
@@ -697,12 +687,7 @@ double GranSubModNormalMDR::calculate_forces()
     const int i = gm->i;
     const int j = gm->j;
 
-    // material and geometric property definitions
-    // E, nu, Y gamma , psi_b, and CoR are already defined.
-    const double G = E/(2.0*(1.0+nu));          // shear modulus
-    const double kappa = E/(3.0*(1.0-2.0*nu));  // bulk modulus
-    const double Eeff = E/(1.0-pow(nu,2.0));    // composite plane strain modulus
-
+    // geometric property definitions
     const double Ro = Rinitial[i];              // initial radius
     const double R = gm->radi;                  // apparent radius
 
@@ -787,11 +772,11 @@ double GranSubModNormalMDR::calculate_forces()
       } else {
         const double lmax = sqrt(2.0*MY_PI*aAdh*gamma/Eeff);
         g_aAdh = A/2 - A/B*sqrt(pow(B,2.0)/4 - pow(aAdh,2.0));
-        const double acrit = (-((pow(B,2)*gamma*MY_PI)/(pow(A,2)*Eeff)) + (pow(2,0.3333333333333333)*pow(B,4)*pow(gamma,2)*pow(MY_PI,1.6666666666666667))/
+        const double acrit = (-((pow(B,2)*gamma*MY_PI)/(pow(A,2)*Eeff)) + (pow(2,THIRD)*pow(B,4)*pow(gamma,2)*pow(MY_PI,FIVETHIRDS))/
                             (pow(A,2)*pow(Eeff,2)*pow((27*pow(A,4)*pow(B,4)*gamma)/Eeff - (2*pow(B,6)*pow(gamma,3)*pow(MY_PI,2))/pow(Eeff,3) + (3*sqrt(3)*sqrt(27*pow(A,8)*pow(B,8)*pow(Eeff,2)*pow(gamma,2) -
-                              4*pow(A,4)*pow(B,10)*pow(gamma,4)*pow(MY_PI,2)))/pow(Eeff,2),0.3333333333333333)) + (pow(MY_PI/2.,0.3333333333333333)*pow((27*pow(A,4)*pow(B,4)*gamma)/Eeff -
+                              4*pow(A,4)*pow(B,10)*pow(gamma,4)*pow(MY_PI,2)))/pow(Eeff,2),THIRD)) + (pow(MY_PI/2.,THIRD)*pow((27*pow(A,4)*pow(B,4)*gamma)/Eeff -
                             (2*pow(B,6)*pow(gamma,3)*pow(MY_PI,2))/pow(Eeff,3) + (3*sqrt(3)*sqrt(27*pow(A,8)*pow(B,8)*pow(Eeff,2)*pow(gamma,2) - 4*pow(A,4)*pow(B,10)*pow(gamma,4)*pow(MY_PI,2)))/
-                            pow(Eeff,2),0.3333333333333333))/pow(A,2))/6;
+                            pow(Eeff,2),THIRD))/pow(A,2))/6;
 
         if ( (deltae1D + lmax - g_aAdh) >= 0.0) { // case 2: tensile springs, but not exceeding critical length --> deltae + lmax - g(aAdhes) >= 0
           const double deltaeAdh = g_aAdh;
@@ -819,7 +804,7 @@ double GranSubModNormalMDR::calculate_forces()
               }
               dfda = -((aAdh_tmp*A)/(B*sqrt(-pow(aAdh_tmp,2.0) + pow(B,2.0)/4.0))) + (gamma*sqrt(MY_PI/2.0))/(Eeff*sqrt((aAdh_tmp*gamma)/Eeff));
               aAdh_tmp = aAdh_tmp - fa/dfda;
-              fa2 = deltae1D + sqrt(2.0*MY_PI*aAdh_tmp*gamma/Eeff) - ( A/2 - A/B*sqrt(pow(B,2.0)/4 - pow(aAdh_tmp,2.0)) );
+              fa2 = deltae1D + sqrt(2.0*MY_PI*aAdh_tmp*gamma/Eeff) - (A/2 - A/B*sqrt(pow(B,2.0)/4 - pow(aAdh_tmp,2.0)));
               if (abs(fa-fa2) < error2) {
                 break;
               }
