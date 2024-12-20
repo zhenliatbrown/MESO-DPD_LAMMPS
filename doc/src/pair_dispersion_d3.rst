@@ -30,8 +30,8 @@ Description
 
 Style *dispersion/d3* computes the dispersion energy-correction used in
 the DFT-D3 method of Grimme :ref:`(Grimme1) <Grimme1>`.  It would
-typically be used with a machine learning potential that was trained
-with results from plain DFT calculations without the dispersion
+typically be used with a machine learning (ML) potential that was
+trained with results from plain DFT calculations without the dispersion
 correction through pair_style hybrid/overlay. ML potentials are often
 combined *a posteriori* with dispersion energy-correction schemes (see
 *e.g.* :ref:`(Qamar) <Qamar>` and :ref:`(Batatia) <Batatia>`).
