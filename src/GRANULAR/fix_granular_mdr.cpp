@@ -38,10 +38,6 @@
 #include "update.h"
 #include "variable.h"
 
-#include <algorithm>
-#include <iomanip>
-#include <sstream>
-
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
 using namespace FixConst;
@@ -275,12 +271,12 @@ void FixGranularMDR::end_of_step()
 
     const double Vo = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
     const double Vgeoi = 4.0 / 3.0 * MY_PI * pow(R, 3.0) - Vcaps[i];
-    Vgeo[i] = std::min(Vgeoi, Vo);
+    Vgeo[i] = MIN(Vgeoi, Vo);
 
     const double Afree = Atot[i] - Acon1[i];
     psi[i] = Afree / Atot[i];
 
-    const double dR = std::max(dRnumerator[i] / (dRdenominator[i] - 4.0 * MY_PI * pow(R, 2.0)), 0.0);
+    const double dR = MAX(dRnumerator[i] / (dRdenominator[i] - 4.0 * MY_PI * pow(R, 2.0)), 0.0);
     if (psi_b[i] < psi[i]) {
       if ((radius[i] + dR) < (1.5 * Ro[i])) radius[i] += dR;
     }
@@ -426,6 +422,7 @@ void FixGranularMDR::calculate_contact_penalty()
         k = jlist[kk];
         k &= NEIGHMASK;
 
+        // QUESTION: why not start loop at jj+1?
         if (kk == jj) continue;
         const double delx_ik = x[k][0] - xtmp;
         const double dely_ik = x[k][1] - ytmp;
@@ -458,41 +455,17 @@ void FixGranularMDR::calculate_contact_penalty()
         history_ik = &allhistory[size_history * kk];
         double * pik = &history_ik[22]; // penalty for contact i and k
 
-        // we don't know if who owns the contact ahead of time, k might be in j'sneigbor list or vice versa,
-        // so we need to manually search to figure out the owner check if k is inthe neighbor list of j
-        double * pjk = nullptr;
-        int * const jklist = firstneigh[j];
-        const int jknum = numneigh[j];
-        for (int jk = 0; jk < jknum; jk++) {
-          const int kneigh = jklist[jk] & NEIGHMASK;
-          if (k == kneigh) {
-            allhistory_j = firsthistory[j];
-            history_jk = &allhistory_j[size_history * jk];
-            pjk = &history_jk[22]; // penalty for contact j and k
-            break;
-          }
-        }
+        // Find pair of atoms with the smallest overlap, atoms a & b, 3rd atom c is central
+        //   if a & b are both local:
+        //     calculate ab penalty and add to the one history entry
+        //   if a is local & b is ghost:
+        //     each processor has a-b in nlist and independently calculates + adds penalty
+        //   if a & b are both ghosts:
+        //     skip calculation since it's performed on other proc
+        // This process requires newon off, or nlist may not include ab, ac, & bc
 
-        // check if j is in the neighbor list of k
-        if (pjk == nullptr) {
-          int * const kjlist = firstneigh[k];
-          const int kjnum = numneigh[k];
-          for (int kj = 0; kj < kjnum; kj++) {
-            const int jneigh = kjlist[kj] & NEIGHMASK;
-            if (j == jneigh) {
-              allhistory_k = firsthistory[k];
-              history_kj = &allhistory_k[size_history * kj];
-              pjk = &history_kj[22]; // penalty for contact j and k
-              break;
-            }
-          }
-        }
-
-        std::vector<double> distances = {r_ij, r_ik, r_jk};
-        auto maxElement = std::max_element(distances.begin(), distances.end());
-        double maxValue = *maxElement;
-        int maxIndex = std::distance(distances.begin(), maxElement);
-        if (maxIndex == 0) { // the central particle is k
+        const double r_max = MAX(r_ij, MAX(r_ik, r_jk));
+        if (r_ij == r_max) { // the central particle is k
           const double enx_ki = -delx_ik * rinv_ik;
           const double eny_ki = -dely_ik * rinv_ik;
           const double enz_ki = -delz_ik * rinv_ik;
@@ -501,7 +474,7 @@ void FixGranularMDR::calculate_contact_penalty()
           const double enz_kj = -delz_jk * rinv_jk;
           const double alpha = std::acos(enx_ki * enx_kj + eny_ki * eny_kj + enz_ki * enz_kj);
           pij[0] += 1.0 / (1.0 + std::exp(-50.0 * (alpha / MY_PI - 0.5)));
-        } else if (maxIndex == 1) { // the central particle is j
+        } else if (r_ik == r_max) { // the central particle is j
           const double enx_ji = -delx_ij * rinv_ij;
           const double eny_ji = -dely_ij * rinv_ij;
           const double enz_ji = -delz_ij * rinv_ij;
@@ -519,6 +492,43 @@ void FixGranularMDR::calculate_contact_penalty()
             const double eny_ik = dely_ik * rinv_ik;
             const double enz_ik = delz_ik * rinv_ik;
             const double alpha = std::acos(enx_ij * enx_ik + eny_ij * eny_ik + enz_ij * enz_ik);
+
+            // don't know who owns the contact, k may be in j's nlist or vice versa
+            // need to search both to find owner
+            double * pjk = nullptr;
+            if (j < atom->nlocal) {
+              int * const jklist = firstneigh[j];
+              const int jknum = numneigh[j];
+              for (int jk = 0; jk < jknum; jk++) {
+                const int kneigh = jklist[jk] & NEIGHMASK;
+                if (k == kneigh) {
+                  allhistory_j = firsthistory[j];
+                  history_jk = &allhistory_j[size_history * jk];
+                  pjk = &history_jk[22]; // penalty for contact j and k
+                  break;
+                }
+              }
+            }
+
+            // check if j is in the neighbor list of k
+            if (pjk == nullptr && k < atom->nlocal) {
+              int * const kjlist = firstneigh[k];
+              const int kjnum = numneigh[k];
+              for (int kj = 0; kj < kjnum; kj++) {
+                const int jneigh = kjlist[kj] & NEIGHMASK;
+                if (j == jneigh) {
+                  allhistory_k = firsthistory[k];
+                  history_kj = &allhistory_k[size_history * kj];
+                  pjk = &history_kj[22]; // penalty for contact j and k
+                  break;
+                }
+              }
+            }
+
+            // QUESTION: is this ever supposed to happen?
+            if (pjk == nullptr)
+              error->one(FLERR, "MDR could not find atom pair in neighbor list");
+
             pjk[0] += 1.0 / (1.0 + std::exp(-50.0 * (alpha / MY_PI - 0.5)));
           }
         }
