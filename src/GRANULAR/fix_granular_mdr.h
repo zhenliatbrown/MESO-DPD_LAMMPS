@@ -41,6 +41,9 @@ class FixGranularMDR : public Fix {
  private:
   int comm_stage;
   char *id_fix;
+  double psi_b_coeff;
+  class PairGranular *pair;
+  class FixNeighHistory *fix_history;
 
   void radius_update();
   void mean_surf_disp();

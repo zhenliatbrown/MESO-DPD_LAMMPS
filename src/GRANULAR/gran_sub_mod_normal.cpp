@@ -653,8 +653,7 @@ double GranSubModNormalMDR::calculate_forces()
           gm->radj = radi_true;
       }
 
-      double delta_geo;
-      double delta_geo_alt;
+      double delta_geo, delta_geo_alt;
       double delta_geoOpt1 = deltamax*(deltamax - 2.0*R1)/(2.0*(deltamax - R0 - R1));
       double delta_geoOpt2 = deltamax*(deltamax - 2.0*R0)/(2.0*(deltamax - R0 - R1));
       (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1,delta_geoOpt2);
@@ -699,8 +698,7 @@ double GranSubModNormalMDR::calculate_forces()
     const double ddeltao = deltao - *deltao_offset;
     *deltao_offset = deltao;
 
-    double ddelta_MDR;
-    double ddelta_BULK;
+    double ddelta_MDR, ddelta_BULK;
     if ( psi[i] < psi_b ) { // if true, bulk response has triggered, split displacement increment between the MDR and BULK components
       ddelta_MDR = std::min(ddelta-ddelta_bar[i], delta-*delta_MDR_offset);
       ddelta_BULK = ddelta_bar[i];
@@ -760,7 +758,7 @@ double GranSubModNormalMDR::calculate_forces()
     double aAdh = *aAdh_offset;
     if (aAdh > a_fac*amax) aAdh = a_fac*amax;
 
-    if ( gamma > 0.0  ) { // adhesive contact
+    if ( gamma > 0.0 ) { // adhesive contact
     double g_aAdh;
 
       if (delta_MDR == deltamax_MDR || a_na >= aAdh ) { // case 1: no tensile springs, purely compressive contact

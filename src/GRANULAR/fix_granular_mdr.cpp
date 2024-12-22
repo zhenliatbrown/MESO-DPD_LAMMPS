@@ -47,6 +47,8 @@ using namespace Granular_NS;
 using namespace FixConst;
 using MathConst::MY_PI;
 
+static constexpr double EPSILON = 1e-16;
+
 enum {MEAN_SURF_DISP, RADIUS_UPDATE};
 
 /* ---------------------------------------------------------------------- */
@@ -54,7 +56,7 @@ enum {MEAN_SURF_DISP, RADIUS_UPDATE};
 FixGranularMDR::FixGranularMDR(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
-  comm_forward = 20; // value needs to match number of values you communicate
+  comm_forward = 20;
   create_attribute = 1;
 
   id_fix = nullptr;
@@ -86,32 +88,54 @@ void FixGranularMDR::post_constructor()
   id_fix = utils::strdup("MDR_PARTICLE_HISTORY_VARIABLES");
   modify->add_fix(fmt::format("{} all property/atom d_Ro d_Vcaps d_Vgeo d_Velas d_eps_bar d_dRnumerator d_dRdenominator d_Acon0 d_Acon1 d_Atot d_Atot_sum d_ddelta_bar d_psi d_psi_b d_history_setup_flag d_sigmaxx d_sigmayy d_sigmazz d_contacts d_adhesive_length ghost yes", id_fix));
 
-  index_Ro = atom->find_custom("Ro",tmp1,tmp2);
-  index_Vcaps = atom->find_custom("Vcaps",tmp1,tmp2);
-  index_Vgeo = atom->find_custom("Vgeo",tmp1,tmp2);
-  index_Velas = atom->find_custom("Velas",tmp1,tmp2);
-  index_eps_bar = atom->find_custom("eps_bar",tmp1,tmp2);
-  index_dRnumerator = atom->find_custom("dRnumerator",tmp1,tmp2);
-  index_dRdenominator = atom->find_custom("dRdenominator",tmp1,tmp2);
-  index_Acon0 = atom->find_custom("Acon0",tmp1,tmp2);
-  index_Acon1 = atom->find_custom("Acon1",tmp1,tmp2);
-  index_Atot = atom->find_custom("Atot",tmp1,tmp2);
-  index_Atot_sum = atom->find_custom("Atot_sum",tmp1,tmp2);
-  index_ddelta_bar = atom->find_custom("ddelta_bar",tmp1,tmp2);
-  index_psi = atom->find_custom("psi",tmp1,tmp2);
-  index_psi_b = atom->find_custom("psi_b",tmp1,tmp2);
-  index_history_setup_flag = atom->find_custom("history_setup_flag",tmp1,tmp2);
-  index_sigmaxx = atom->find_custom("sigmaxx",tmp1,tmp2);
-  index_sigmayy = atom->find_custom("sigmayy",tmp1,tmp2);
-  index_sigmazz = atom->find_custom("sigmazz",tmp1,tmp2);
-  index_contacts = atom->find_custom("contacts",tmp1,tmp2);
-  index_adhesive_length = atom->find_custom("adhesive_length",tmp1,tmp2);
+  index_Ro = atom->find_custom("Ro", tmp1, tmp2);
+  index_Vcaps = atom->find_custom("Vcaps", tmp1, tmp2);
+  index_Vgeo = atom->find_custom("Vgeo", tmp1, tmp2);
+  index_Velas = atom->find_custom("Velas", tmp1, tmp2);
+  index_eps_bar = atom->find_custom("eps_bar", tmp1, tmp2);
+  index_dRnumerator = atom->find_custom("dRnumerator", tmp1, tmp2);
+  index_dRdenominator = atom->find_custom("dRdenominator", tmp1, tmp2);
+  index_Acon0 = atom->find_custom("Acon0", tmp1, tmp2);
+  index_Acon1 = atom->find_custom("Acon1", tmp1, tmp2);
+  index_Atot = atom->find_custom("Atot", tmp1, tmp2);
+  index_Atot_sum = atom->find_custom("Atot_sum", tmp1, tmp2);
+  index_ddelta_bar = atom->find_custom("ddelta_bar", tmp1, tmp2);
+  index_psi = atom->find_custom("psi", tmp1, tmp2);
+  index_psi_b = atom->find_custom("psi_b", tmp1, tmp2);
+  index_history_setup_flag = atom->find_custom("history_setup_flag", tmp1, tmp2);
+  index_sigmaxx = atom->find_custom("sigmaxx", tmp1, tmp2);
+  index_sigmayy = atom->find_custom("sigmayy", tmp1, tmp2);
+  index_sigmazz = atom->find_custom("sigmazz", tmp1, tmp2);
+  index_contacts = atom->find_custom("contacts", tmp1, tmp2);
+  index_adhesive_length = atom->find_custom("adhesive_length", tmp1, tmp2);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixGranularMDR::setup_pre_force(int /*vflag*/)
 {
+  pair = dynamic_cast<PairGranular *>(force->pair_match("granular", 1));
+  if (pair == nullptr)
+    error->all(FLERR, "Must use pair granular with MDR model");
+
+  class GranularModel* model;
+  class GranularModel** models_list = pair->models_list;
+  class GranSubModNormalMDR* norm_model = nullptr;
+  for (int i = 0; i < pair->nmodels; i++) {
+    model = models_list[i];
+    if (model->normal_model->name == "mdr")
+      norm_model = dynamic_cast<GranSubModNormalMDR *>(model->normal_model);
+  }
+
+  if (norm_model == nullptr)
+    error->all(FLERR, "Must specify MDR normal model with pair granular");
+
+  fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
+
+
+  // QUESTION: can psi_b be different in different models?
+  psi_b_coeff = norm_model->psi_b;
+
   pre_force(0);
 }
 
@@ -247,21 +271,22 @@ void FixGranularMDR::end_of_step()
   for (int i = 0; i < nlocal; i++) {
 
     const double R = radius[i];
-    Atot[i] = 4.0*MY_PI*pow(R,2.0) + Atot_sum[i];
+    Atot[i] = 4.0 * MY_PI * pow(R, 2.0) + Atot_sum[i];
 
-    const double Vo = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
-    const double Vgeoi = 4.0/3.0*MY_PI*pow(R,3.0) - Vcaps[i];
-    Vgeo[i] = std::min(Vgeoi,Vo);
+    const double Vo = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+    const double Vgeoi = 4.0 / 3.0 * MY_PI * pow(R, 3.0) - Vcaps[i];
+    Vgeo[i] = std::min(Vgeoi, Vo);
 
     const double Afree = Atot[i] - Acon1[i];
-    psi[i] = Afree/Atot[i];
+    psi[i] = Afree / Atot[i];
 
-    const double dR = std::max(dRnumerator[i]/(dRdenominator[i] - 4.0*MY_PI*pow(R,2.0)),0.0);
+    const double dR = std::max(dRnumerator[i] / (dRdenominator[i] - 4.0 * MY_PI * pow(R, 2.0)), 0.0);
     if (psi_b[i] < psi[i]) {
-      if ((radius[i] + dR) < (1.5*Ro[i])) radius[i] += dR;
+      if ((radius[i] + dR) < (1.5 * Ro[i])) radius[i] += dR;
     }
 
-    Velas[i] = Vo*(1.0 + eps_bar[i]);
+    // QUESTION: does it make more sense to initialize these in pre_force?
+    Velas[i] = Vo * (1.0 + eps_bar[i]);
     Vcaps[i] = 0.0;
     eps_bar[i] = 0.0;
     dRnumerator[i] = 0.0;
@@ -282,26 +307,26 @@ void FixGranularMDR::end_of_step()
 
 void FixGranularMDR::set_arrays(int i)
 {
-  atom->dvector[index_Ro][i] = 0.0;
-  atom->dvector[index_Vgeo][i] = 0.0;
-  atom->dvector[index_Velas][i] = 0.0;
+  // atom->dvector[index_Ro][i] = 0.0;
+  // atom->dvector[index_Vgeo][i] = 0.0;
+  // atom->dvector[index_Velas][i] = 0.0;
   atom->dvector[index_Vcaps][i] = 0.0;
   atom->dvector[index_eps_bar][i] = 0.0;
   atom->dvector[index_dRnumerator][i] = 0.0;
   atom->dvector[index_dRdenominator][i] = 0.0;
   atom->dvector[index_Acon0][i] = 0.0;
   atom->dvector[index_Acon1][i] = 0.0;
-  atom->dvector[index_Atot][i] = 0.0;
+  // atom->dvector[index_Atot][i] = 0.0;
   atom->dvector[index_Atot_sum][i] = 0.0;
   atom->dvector[index_ddelta_bar][i] = 0.0;
-  atom->dvector[index_psi][i] = 0.0;
-  atom->dvector[index_psi_b][i] = 0.0;
-  atom->dvector[index_sigmaxx][i] = 0.0;
-  atom->dvector[index_sigmayy][i] = 0.0;
-  atom->dvector[index_sigmazz][i] = 0.0;
+  // atom->dvector[index_psi][i] = 0.0;
+  // atom->dvector[index_psi_b][i] = 0.0;
+  // atom->dvector[index_sigmaxx][i] = 0.0;
+  // atom->dvector[index_sigmayy][i] = 0.0;
+  // atom->dvector[index_sigmazz][i] = 0.0;
   atom->dvector[index_history_setup_flag][i] = 0.0;
-  atom->dvector[index_contacts][i] = 0.0;
-  atom->dvector[index_adhesive_length][i] = 0.0;
+  // atom->dvector[index_contacts][i] = 0.0;
+  // atom->dvector[index_adhesive_length][i] = 0.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -310,16 +335,6 @@ void FixGranularMDR::set_arrays(int i)
 
 void FixGranularMDR::radius_update()
 {
-  PairGranular * pair = dynamic_cast<PairGranular *>(force->pair_match("granular",1));
-  class GranularModel* model;
-  class GranularModel** models_list = pair->models_list;
-  class GranSubModNormalMDR* norm_model = nullptr;
-  for (int i = 0; i < pair->nmodels; i++) {
-    model = models_list[i];
-    if (model->normal_model->name == "mdr") norm_model = dynamic_cast<GranSubModNormalMDR *>(model->normal_model);
-  }
-  if (norm_model == nullptr) error->all(FLERR, "Did not find mdr model");
-
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
 
@@ -337,13 +352,13 @@ void FixGranularMDR::radius_update()
   double *history_setup_flag = atom->dvector[index_history_setup_flag];
 
   for (int i = 0; i < nlocal; i++) {
-    if (history_setup_flag[i] < 1e-16) {
+    if (history_setup_flag[i] < EPSILON) {
       Ro[i] = radius[i];
-      Vgeo[i] = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
-      Velas[i] = 4.0/3.0*MY_PI*pow(Ro[i],3.0);
-      Atot[i] = 4.0*MY_PI*pow(Ro[i],2.0);
+      Vgeo[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+      Velas[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+      Atot[i] = 4.0 * MY_PI * pow(Ro[i], 2.0);
       psi[i] = 1.0;
-      psi_b[i] = norm_model->psi_b;
+      psi_b[i] = psi_b_coeff;
       history_setup_flag[i] = 1.0;
     }
     sigmaxx[i] = 0.0;
@@ -360,23 +375,19 @@ void FixGranularMDR::radius_update()
 
 void FixGranularMDR::calculate_contact_penalty()
 {
-  FixNeighHistory * fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
-  PairGranular * pair = dynamic_cast<PairGranular *>(force->pair_match("granular",1));
   NeighList * list = pair->list;
-
   const int size_history = pair->get_size_history();
 
+  int i, j, k, lv1, ii, jj, inum, jnum;
 
-  int i,j,k,lv1,ii,jj,inum,jnum,itype,jtype,ktype;
-
-  int *ilist,*jlist,*numneigh,**firstneigh;
-  int *touch,**firsttouch;
-  double *history_ij,*history_ik,*history_jk,*history_kj,*allhistory,*allhistory_j,*allhistory_k,**firsthistory;
+  int *ilist, *jlist, *numneigh, **firstneigh;
+  int *touch, **firsttouch;
+  double *history_ij, *history_ik, *history_jk, *history_kj;
+  double *allhistory, *allhistory_j, *allhistory_k, **firsthistory;
 
   bool touchflag = false;
 
   double **x = atom->x;
-  int *type = atom->type;
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
 
@@ -388,8 +399,8 @@ void FixGranularMDR::calculate_contact_penalty()
   firsthistory = fix_history->firstvalue;
 
   // contact penalty calculation
-  for (int ii = 0; ii < inum; ii++) {
-    const int i = ilist[ii];
+  for (ii = 0; ii < inum; ii++) {
+    i = ilist[ii];
     const double xtmp = x[i][0];
     const double ytmp = x[i][1];
     const double ztmp = x[i][2];
@@ -397,117 +408,118 @@ void FixGranularMDR::calculate_contact_penalty()
     double radi = radius[i];
     jlist = firstneigh[i];
     jnum = numneigh[i];
-    for (int jj = 0; jj < jnum; jj++) {
+    for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       j &= NEIGHMASK;
-      jtype = type[j];
+
       double radj = radius[j];
       const double delx_ij = x[j][0] - xtmp;
       const double dely_ij = x[j][1] - ytmp;
       const double delz_ij = x[j][2] - ztmp;
-      const double rsq_ij = delx_ij*delx_ij + dely_ij*dely_ij + delz_ij*delz_ij;
+      const double rsq_ij = delx_ij * delx_ij + dely_ij * dely_ij + delz_ij * delz_ij;
       const double r_ij = sqrt(rsq_ij);
-      const double rinv_ij = 1.0/r_ij;
+      const double rinv_ij = 1.0 / r_ij;
       const double radsum_ij = radi + radj;
       const double deltan_ij = radsum_ij - r_ij;
-      if (deltan_ij >= 0.0) {
-        for (int kk = jj; kk < jnum; kk++) {
-          k = jlist[kk];
-          k &= NEIGHMASK;
-          ktype = type[k];
-          if (kk != jj) {
-            const double delx_ik = x[k][0] - xtmp;
-            const double dely_ik = x[k][1] - ytmp;
-            const double delz_ik = x[k][2] - ztmp;
-            const double rsq_ik = delx_ik*delx_ik + dely_ik*dely_ik + delz_ik*delz_ik;
-            const double r_ik = sqrt(rsq_ik);
-            const double rinv_ik = 1.0/r_ik;
-            const double radk = radius[k];
-            const double radsum_ik = radi + radk;
-            const double deltan_ik = radsum_ik - r_ik;
-            const double delx_jk = x[k][0] - x[j][0];
-            const double dely_jk = x[k][1] - x[j][1];
-            const double delz_jk = x[k][2] - x[j][2];
-            const double rsq_jk = delx_jk*delx_jk + dely_jk*dely_jk + delz_jk*delz_jk;
-            const double r_jk = sqrt(rsq_jk);
-            const double rinv_jk = 1.0/r_jk;
-            const double radsum_jk = radj + radk;
-            const double deltan_jk = radsum_jk - r_jk;
-            if (deltan_ik >= 0.0 && deltan_jk >= 0.0) {
+      if (deltan_ij < 0.0) continue;
+      for (int kk = jj; kk < jnum; kk++) {
+        k = jlist[kk];
+        k &= NEIGHMASK;
 
-              // pull ij history
-              history_ij = &allhistory[size_history * jj];
-              double * pij = &history_ij[22]; // penalty for contact i and j
+        if (kk == jj) continue;
+        const double delx_ik = x[k][0] - xtmp;
+        const double dely_ik = x[k][1] - ytmp;
+        const double delz_ik = x[k][2] - ztmp;
+        const double rsq_ik = delx_ik * delx_ik + dely_ik * dely_ik + delz_ik *delz_ik;
+        const double r_ik = sqrt(rsq_ik);
+        const double rinv_ik = 1.0 / r_ik;
+        const double radk = radius[k];
+        const double radsum_ik = radi + radk;
+        const double deltan_ik = radsum_ik - r_ik;
 
-              // pull ik history
-              history_ik = &allhistory[size_history * kk];
-              double * pik = &history_ik[22]; // penalty for contact i and k
+        if (deltan_ik < 0.0) continue;
 
-              // we don't know if who owns the contact ahead of time, k might be in j's neigbor list or vice versa,
-              // so we need to manually search to figure out the owner check if k is in the neighbor list of j
-              double * pjk = NULL;
-              int * const jklist = firstneigh[j];
-              const int jknum = numneigh[j];
-              for (int jk = 0; jk < jknum; jk++) {
-                const int kneigh = jklist[jk] & NEIGHMASK;
-                if (k == kneigh) {
-                  allhistory_j = firsthistory[j];
-                  history_jk = &allhistory_j[size_history * jk];
-                  pjk = &history_jk[22]; // penalty for contact j and k
-                  break;
-                }
-              }
+        const double delx_jk = x[k][0] - x[j][0];
+        const double dely_jk = x[k][1] - x[j][1];
+        const double delz_jk = x[k][2] - x[j][2];
+        const double rsq_jk = delx_jk * delx_jk + dely_jk * dely_jk + delz_jk *delz_jk;
+        const double r_jk = sqrt(rsq_jk);
+        const double rinv_jk = 1.0 / r_jk;
+        const double radsum_jk = radj + radk;
+        const double deltan_jk = radsum_jk - r_jk;
 
-              // check if j is in the neighbor list of k
-              if (pjk == NULL) {
-                int * const kjlist = firstneigh[k];
-                const int kjnum = numneigh[k];
-                for (int kj = 0; kj < kjnum; kj++) {
-                  const int jneigh = kjlist[kj] & NEIGHMASK;
-                  if (j == jneigh) {
-                    allhistory_k = firsthistory[k];
-                    history_kj = &allhistory_k[size_history * kj];
-                    pjk = &history_kj[22]; // penalty for contact j and k
-                    break;
-                  }
-                }
-              }
+        if (deltan_jk < 0.0) continue;
 
-              std::vector<double> distances = {r_ij,r_ik,r_jk};
-              auto maxElement = std::max_element(distances.begin(), distances.end());
-              double maxValue = *maxElement;
-              int maxIndex = std::distance(distances.begin(), maxElement);
-              if (maxIndex == 0) { // the central particle is k
-                const double enx_ki = -delx_ik * rinv_ik;
-                const double eny_ki = -dely_ik * rinv_ik;
-                const double enz_ki = -delz_ik * rinv_ik;
-                const double enx_kj = -delx_jk * rinv_jk;
-                const double eny_kj = -dely_jk * rinv_jk;
-                const double enz_kj = -delz_jk * rinv_jk;
-                const double alpha = std::acos(enx_ki*enx_kj + eny_ki*eny_kj + enz_ki*enz_kj);
-                pij[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)));
-              } else if (maxIndex == 1) { // the central particle is j
-                const double enx_ji = -delx_ij * rinv_ij;
-                const double eny_ji = -dely_ij * rinv_ij;
-                const double enz_ji = -delz_ij * rinv_ij;
-                const double enx_jk = delx_jk * rinv_jk;
-                const double eny_jk = dely_jk * rinv_jk;
-                const double enz_jk = delz_jk * rinv_jk;
-                const double alpha = std::acos(enx_ji*enx_jk + eny_ji*eny_jk + enz_ji*enz_jk);
-                pik[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)));
-              } else { // the central particle is i
-                if (j < atom->nlocal || k < atom->nlocal) {
-                  const double enx_ij = delx_ij * rinv_ij;
-                  const double eny_ij = dely_ij * rinv_ij;
-                  const double enz_ij = delz_ij * rinv_ij;
-                  const double enx_ik = delx_ik * rinv_ik;
-                  const double eny_ik = dely_ik * rinv_ik;
-                  const double enz_ik = delz_ik * rinv_ik;
-                  const double alpha = std::acos(enx_ij*enx_ik + eny_ij*eny_ik + enz_ij*enz_ik);
-                  pjk[0] += 1.0/( 1.0 + std::exp(-50.0*(alpha/MY_PI - 1.0/2.0)));
-                }
-              }
+        // pull ij history
+        history_ij = &allhistory[size_history * jj];
+        double * pij = &history_ij[22]; // penalty for contact i and j
+
+        // pull ik history
+        history_ik = &allhistory[size_history * kk];
+        double * pik = &history_ik[22]; // penalty for contact i and k
+
+        // we don't know if who owns the contact ahead of time, k might be in j'sneigbor list or vice versa,
+        // so we need to manually search to figure out the owner check if k is inthe neighbor list of j
+        double * pjk = nullptr;
+        int * const jklist = firstneigh[j];
+        const int jknum = numneigh[j];
+        for (int jk = 0; jk < jknum; jk++) {
+          const int kneigh = jklist[jk] & NEIGHMASK;
+          if (k == kneigh) {
+            allhistory_j = firsthistory[j];
+            history_jk = &allhistory_j[size_history * jk];
+            pjk = &history_jk[22]; // penalty for contact j and k
+            break;
+          }
+        }
+
+        // check if j is in the neighbor list of k
+        if (pjk == nullptr) {
+          int * const kjlist = firstneigh[k];
+          const int kjnum = numneigh[k];
+          for (int kj = 0; kj < kjnum; kj++) {
+            const int jneigh = kjlist[kj] & NEIGHMASK;
+            if (j == jneigh) {
+              allhistory_k = firsthistory[k];
+              history_kj = &allhistory_k[size_history * kj];
+              pjk = &history_kj[22]; // penalty for contact j and k
+              break;
             }
+          }
+        }
+
+        std::vector<double> distances = {r_ij, r_ik, r_jk};
+        auto maxElement = std::max_element(distances.begin(), distances.end());
+        double maxValue = *maxElement;
+        int maxIndex = std::distance(distances.begin(), maxElement);
+        if (maxIndex == 0) { // the central particle is k
+          const double enx_ki = -delx_ik * rinv_ik;
+          const double eny_ki = -dely_ik * rinv_ik;
+          const double enz_ki = -delz_ik * rinv_ik;
+          const double enx_kj = -delx_jk * rinv_jk;
+          const double eny_kj = -dely_jk * rinv_jk;
+          const double enz_kj = -delz_jk * rinv_jk;
+          const double alpha = std::acos(enx_ki * enx_kj + eny_ki * eny_kj + enz_ki * enz_kj);
+          pij[0] += 1.0 / (1.0 + std::exp(-50.0 * (alpha / MY_PI - 0.5)));
+        } else if (maxIndex == 1) { // the central particle is j
+          const double enx_ji = -delx_ij * rinv_ij;
+          const double eny_ji = -dely_ij * rinv_ij;
+          const double enz_ji = -delz_ij * rinv_ij;
+          const double enx_jk = delx_jk * rinv_jk;
+          const double eny_jk = dely_jk * rinv_jk;
+          const double enz_jk = delz_jk * rinv_jk;
+          const double alpha = std::acos(enx_ji * enx_jk + eny_ji * eny_jk + enz_ji * enz_jk);
+          pik[0] += 1.0 / (1.0 + std::exp(-50.0 * (alpha / MY_PI - 0.5)));
+        } else { // the central particle is i
+          if (j < atom->nlocal || k < atom->nlocal) {
+            const double enx_ij = delx_ij * rinv_ij;
+            const double eny_ij = dely_ij * rinv_ij;
+            const double enz_ij = delz_ij * rinv_ij;
+            const double enx_ik = delx_ik * rinv_ik;
+            const double eny_ik = dely_ik * rinv_ik;
+            const double enz_ik = delz_ik * rinv_ik;
+            const double alpha = std::acos(enx_ij * enx_ik + eny_ij * eny_ik + enz_ij * enz_ik);
+            pjk[0] += 1.0 / (1.0 + std::exp(-50.0 * (alpha / MY_PI - 0.5)));
           }
         }
       }
@@ -522,8 +534,6 @@ void FixGranularMDR::calculate_contact_penalty()
 
 void FixGranularMDR::mean_surf_disp()
 {
-  FixNeighHistory * fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
-  PairGranular * pair = dynamic_cast<PairGranular *>(force->pair_match("granular",1));
   NeighList * list = pair->list;
 
   const int size_history = pair->get_size_history();
