@@ -33,6 +33,7 @@ using namespace LAMMPS_NS;
 
 FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDNVT(lmp, narg, arg),
+    // CR: apply mic (compatible with previous implementation, and with pimd_nvt)
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, false)
 {
   virial = 0.;
@@ -57,13 +58,11 @@ void FixPIMDBNVT::kinetic_estimators()
   if (universe->me == 0)
   {
     prim = bosonic_exchange.prim_estimator();
+    // CR: spring_energy is not a kinetic estimator?... rename? separate?
     spring_energy = bosonic_exchange.get_potential();
   }
   else {
-    // CR: ha, tricky, nice. But where does the constant come into play?
-    // CR: Meaning, what is the "meaning" of the prim value? Because it's not that the sum gives you the kinetic energy,
-    // CR: right?
-    // OB: The sum over the output files from all beads do give the kinetic energy with this implementation...
+    // CR: Keep the quantity in local variable to avoid recomputing between prim and spring_energy
     prim = -bosonic_exchange.get_total_spring_energy_for_bead();
     spring_energy = bosonic_exchange.get_total_spring_energy_for_bead();
   }

@@ -29,6 +29,7 @@ class FixPIMDBNVT : public FixPIMDNVT {
  public:
     FixPIMDBNVT(class LAMMPS *, int, char **);
     ~FixPIMDBNVT();
+    // CR: remove comment
    //  void post_force(int) override;
     double compute_vector(int) override;
 

@@ -15,6 +15,8 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
     memory->create(V, nbosons + 1, "BosonicExchange: V");
     memory->create(V_backwards, nbosons + 1, "BosonicExchange: V_backwards");
     memory->create(connection_probabilities, nbosons * nbosons, "BosonicExchange: connection probabilities");
+    // CR: use underscore naming convention, not camelCase
+    // CR: need to document the meaning, because it's tricky and weird
     iPyConvention = iPyConvention;
 }
 
@@ -34,7 +36,11 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
         evaluate_connection_probabilities();
     }
 
+    // CR: bead_num != 0
     if (0 != bead_num) {
+        // CR: why not calculate the total spring force inside get_total_spring_energy_for_bead()?
+        // CR: Is this a quantity that is queries more than once per step?
+        // CR: see also comment in fix_pimdb_nvt.cpp
         calc_total_spring_energy_for_bead();
     }
 }
@@ -375,8 +381,7 @@ double BosonicExchange::prim_estimator()
 
     temp_nbosons_array[m] = sig / sig_denom_m;
   }
-  
-  // OB: is this a better solution?
+
   int convention_correction = (iPyConvention ? 1 : np);
   return 0.5 * domain->dimension * nbosons * convention_correction / beta + temp_nbosons_array[nbosons];
 }

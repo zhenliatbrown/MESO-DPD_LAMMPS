@@ -45,6 +45,7 @@ namespace LAMMPS_NS {
         void evaluate_connection_probabilities();
         // CR: actually these force functions can also be const? (probably my bad)
         // OB: as written now they cannot because they use "diff_two_beads" - it gave me an error...
+        // CR: diff_two_beads can be const too?
         void spring_force_last_bead(double** f);
         void spring_force_first_bead(double** f);
         void spring_force_interior_bead(double** f);
