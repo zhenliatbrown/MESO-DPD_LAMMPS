@@ -34,6 +34,7 @@ using namespace LAMMPS_NS;
 FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDNVT(lmp, narg, arg),
     // CR: apply mic (compatible with previous implementation, and with pimd_nvt)
+    // OB: Did you mean apply minimum image convention? Because "bosonic_exchange" takes care of it...
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, false)
 {
   virial = 0.;
@@ -52,19 +53,18 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDBNVT::kinetic_estimators()
+void FixPIMDBNVT::estimate_energies()
 {
   vir_estimator();
   if (universe->me == 0)
   {
     prim = bosonic_exchange.prim_estimator();
-    // CR: spring_energy is not a kinetic estimator?... rename? separate?
     spring_energy = bosonic_exchange.get_potential();
   }
   else {
-    // CR: Keep the quantity in local variable to avoid recomputing between prim and spring_energy
-    prim = -bosonic_exchange.get_total_spring_energy_for_bead();
-    spring_energy = bosonic_exchange.get_total_spring_energy_for_bead();
+    double total_spring_energy_for_bead = bosonic_exchange.get_total_spring_energy_for_bead();
+    prim = -total_spring_energy_for_bead;
+    spring_energy = total_spring_energy_for_bead;
   }
 }
 
