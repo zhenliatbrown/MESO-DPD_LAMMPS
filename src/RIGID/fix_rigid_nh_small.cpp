@@ -222,7 +222,7 @@ void FixRigidNHSmall::init()
   if (tcomputeflag) {
     temperature = modify->get_compute_by_id(id_temp);
     if (!temperature)
-      error->all(FLERR,"Temperature ID {} for fix {} does not exist", id_temp, style);
+      error->all(FLERR,"Temperature compute ID {} for fix {} does not exist", id_temp, style);
   }
 
   if (pstat_flag) {
@@ -237,7 +237,8 @@ void FixRigidNHSmall::init()
         int *dimflag = deform->dimflag;
         if ((p_flag[0] && dimflag[0]) || (p_flag[1] && dimflag[1]) ||
             (p_flag[2] && dimflag[2]))
-          error->all(FLERR,"Cannot use fix {} and fix deform on same component of stress tensor", style);
+          error->all(FLERR,"Cannot use fix {} and fix deform on same component of stress tensor",
+                     style);
       }
     }
 

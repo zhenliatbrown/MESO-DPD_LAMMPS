@@ -247,7 +247,7 @@ void FixRigidNH::init()
   if (tcomputeflag) {
     temperature = modify->get_compute_by_id(id_temp);
     if (!temperature)
-      error->all(FLERR,"Temperature ID {} for fix {} does not exist", id_temp, style);
+      error->all(FLERR,"Temperature compute ID {} for fix {} does not exist", id_temp, style);
   }
 
   if (pstat_flag) {
