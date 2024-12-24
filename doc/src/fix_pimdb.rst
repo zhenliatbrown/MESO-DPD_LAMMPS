@@ -78,17 +78,25 @@ detailed description of the syntax.
 
 .. note::
 
-Currently, fix *pimdb/langevin* only supports the "pimd" method, and fix *pimdb/nvt*
-only supports the "pimd" and "nmpimd" methods.
+   Currently, fix *pimdb/langevin* only supports the "pimd" method, and fix *pimdb/nvt*
+   only supports the "pimd" and "nmpimd" methods.
 
- The isomorphism between the partition function of :math:`N` bosonic quantum particles and that of a system of classical ring polymers
+The isomorphism between the partition function of :math:`N` bosonic quantum particles and that of a system of classical ring polymers
 at inverse temperature :math:`\beta`
 is given by :ref:`(Tuckerman) <book-Tuckerman>`:
 
 .. math::
 
-   Z \propto \int d{\bf q} \cdot \frac{1}{N!} \sum_\sigma \textrm{exp} [ -\beta \left( E^\sigma + V \right) ] 
+   Z \propto \int d{\bf q} \cdot \frac{1}{N!} \sum_\sigma \textrm{exp} [ -\beta \left( E^\sigma + V \right) ].
 
+Here, :math:`V` is the potential between different particles at the same imaginary time slice, which is the same for bosons and
+distinguishable particles. The sum is over all pemrutations :math:`\sigma`. Recall that a permutation matchs each element :math:`l` in :math:`1, ..., N` to an element :math:`\sigma(l)` in :math:`1, ..., N` without repititions. The energies :math:`E^\sigma` correspond to the linking of ring polymers of different particles according to the different permutations:
+
+.. math::
+
+   E^\sigma = \frac{\sqrt{Pm^2}}{2\beta \hbar} \sum_{l=1}^N \sum_{j=1}^P \left(\bf{r}_l^j - \bf{r}_l^{j+1}\right)^2,
+
+where :math:`\bf{r}_l^{P+1}=\bf{r}_{\sigma(l)}^1.
 .. image:: JPG/pimd.jpg
    :align: center
 
