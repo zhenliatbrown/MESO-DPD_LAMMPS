@@ -247,7 +247,7 @@ void FixRigidNH::init()
   if (tcomputeflag) {
     temperature = modify->get_compute_by_id(id_temp);
     if (!temperature)
-      error->all(FLERR,"Temperature ID {} for fix {} does not exist", id_temp, style);
+      error->all(FLERR,"Temperature compute ID {} for fix {} does not exist", id_temp, style);
   }
 
   if (pstat_flag) {
@@ -285,6 +285,8 @@ void FixRigidNH::init()
 
     pressure = modify->get_compute_by_id(id_press);
     if (!pressure) error->all(FLERR,"Pressure ID {} for fix {} does not exist", id_press, style);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
 
     // detect if any rigid fixes exist so rigid bodies move on remap
     // this will include self

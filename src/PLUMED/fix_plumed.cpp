@@ -272,6 +272,19 @@ void FixPlumed::init()
   // in a setup method
 
   for (int i = 0; i < 6; i++) virial[i] = 0.;
+
+  c_pe = modify->get_compute_by_id(id_pe);
+  if (!c_pe) {
+    error->all(FLERR,"Potential energy compute ID {} for fix plumed does not exist", id_pe);
+    if (c_pe->peflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute potential energy", id_pe);
+  }
+
+  if (!c_press) {
+    error->all(FLERR,"Pressure compute ID {} for fix plumed does not exist", id_press);
+    if (c_press->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
+  }
 }
 
 void FixPlumed::setup(int vflag)
