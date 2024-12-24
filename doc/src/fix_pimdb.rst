@@ -69,12 +69,12 @@ Description
 
 Fix *pimdb/nvt* and fix *pimdb/langevin* were added, inheriting fix *pimd/nvt* and fix *pimd/langevin*, respectively.
 
-These fix commands are based of the fix *pimd/nvt* and fix *pimd/langevin* commands for 
+These fix commands are based on the fix *pimd/nvt* and fix *pimd/langevin* commands for 
 performing quantum molecular dynamics simulations based
-on the Feynman path-integral formalizm. The key difference is that *pimd/nvt* and fix *pimd/langevin* simulate *distinguishable* particles,
+on the Feynman path-integral formalism. The key difference is that fix *pimd/nvt* and fix *pimd/langevin* simulate *distinguishable* particles,
 while fix *pimdb/nvt* and fix *pimdb/langevin* support simulations of bosons by including exchange effects.
-The *pimdb* commands share syntax with the equivilant *pimd* commands. The user is referred to the documentation of the *pimd* commands for a 
-detailed description of the syntax.
+The *pimdb* commands share syntax with the equivalent *pimd* commands. The user is referred to the documentation of the *pimd* commands for a 
+detailed syntax description and additional, general capabilities of the commands.
 
 .. note::
 
@@ -90,20 +90,32 @@ is given by :ref:`(Tuckerman) <book-Tuckerman>`:
    Z \propto \int d{\bf q} \cdot \frac{1}{N!} \sum_\sigma \textrm{exp} [ -\beta \left( E^\sigma + V \right) ].
 
 Here, :math:`V` is the potential between different particles at the same imaginary time slice, which is the same for bosons and
-distinguishable particles. The sum is over all pemrutations :math:`\sigma`. Recall that a permutation matchs each element :math:`l` in :math:`1, ..., N` to an element :math:`\sigma(l)` in :math:`1, ..., N` without repititions. The energies :math:`E^\sigma` correspond to the linking of ring polymers of different particles according to the different permutations:
+distinguishable particles. The sum is over all permutations :math:`\sigma`. Recall that a permutation matches each element :math:`l` in :math:`1, ..., N` to an element :math:`\sigma(l)` in :math:`1, ..., N` without repetitions. The energies :math:`E^\sigma` correspond to the linking of ring polymers of different particles according to the different permutations:
 
 .. math::
 
    E^\sigma = \frac{\sqrt{Pm^2}}{2\beta \hbar} \sum_{l=1}^N \sum_{j=1}^P \left(\bf{r}_l^j - \bf{r}_l^{j+1}\right)^2,
 
-where :math:`\bf{r}_l^{P+1}=\bf{r}_{\sigma(l)}^1.
-.. image:: JPG/pimd.jpg
-   :align: center
+where :math:`P` is the number of beads and :math:`\bf{r}_l^{P+1}=\bf{r}_{\sigma(l)}^1.` 
+
+Hirshberg et. al. showed that the ring polymer potential 
+:math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma \textrm{exp} ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
+can be replaced by a potential :math:`V^{1,N}` defined through a recurrence relation :ref:`(Hirshberg) <Hirshberg>`:
+
+.. math::
+
+   \textrm{exp} ^ { -\beta  V^{[1,N]} } = \frac{1}{N} \sum_{k=1}^N \textrm{exp} ^ { -\beta \left(  V^{[1,N-k]} + E^{[N-K+1,N} \right)}.
+
+Here, :math:`E^{[N-K+1,N}` is the spring energy of the ring polymer obtained by connecting the beads of particles :math:`N − k + 1, N − k + 2, ..., N` in a cycle.
+This potential does not include all :math:`N!` permutations, but samples the same bosonic partition function. The implemented algorithm in LAMMPS for calculating 
+the potential is the one developed by Feldman and Hirshberg, which scales like :math:`NP+N^2` :ref:`(Feldman) <Feldman>`. 
+The forces are calculated as weighted averages over the representative permutations,
+through an algorithm that scales the same as the one for the potential calculation :math:`NP+N^2` :ref:`(Feldman) <Feldman>`.
 
 Output
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-Fix *pimd/nvt* computes a global 3-vector, which can be accessed by
+Fix *pimdb/nvt* computes a global 4-vector, which can be accessed by
 various :doc:`output commands <Howto_output>`.  The three quantities in
 the global vector are:
 
@@ -111,69 +123,38 @@ the global vector are:
    #. the current temperature of the classical system of ring polymers,
    #. the current value of the scalar virial estimator for the kinetic
       energy of the quantum system :ref:`(Herman) <Herman>`.
+   #. the current value of the scalar primitive estimator for the kinetic
+      energy of the quantum system :ref:`(Tuckerman) <book-Tuckerman>`.
 
-The vector values calculated by fix *pimd/nvt* are "extensive", except for the
+The vector values calculated by fix *pimdb/nvt* are "extensive", except for the
 temperature, which is "intensive".
 
-Fix *pimd/langevin* computes a global vector of quantities, which
-can be accessed by various :doc:`output commands <Howto_output>`. Note that
-it outputs multiple log files, and different log files contain information
-about different beads or modes (see detailed explanations below). If *ensemble*
-is *nve* or *nvt*, the vector has 10 values:
+Fix *pimdb/langevin* computes a global 6-vector, which
+can be accessed by various :doc:`output commands <Howto_output>`. The quantities in the global vector are:
 
    #. kinetic energy of the normal mode
    #. spring elastic energy of the normal mode
    #. potential energy of the bead
-   #. total energy of all beads (conserved if *ensemble* is *nve*)
+   #. total energy of all beads
    #. primitive kinetic energy estimator
    #. virial energy estimator
-   #. centroid-virial energy estimator
-   #. primitive pressure estimator
-   #. thermodynamic pressure estimator
-   #. centroid-virial pressure estimator
 
 The first 3 are different for different log files, and the others are the same for different log files.
 
-If *ensemble* is *nph* or *npt*, the vector stores internal variables of the barostat. If *iso* is used,
-the vector has 15 values:
-
-   #. kinetic energy of the normal mode
-   #. spring elastic energy of the normal mode
-   #. potential energy of the bead
-   #. total energy of all beads (conserved if *ensemble* is *nve*)
-   #. primitive kinetic energy estimator
-   #. virial energy estimator
-   #. centroid-virial energy estimator
-   #. primitive pressure estimator
-   #. thermodynamic pressure estimator
-   #. centroid-virial pressure estimator
-   #. barostat velocity
-   #. barostat kinetic energy
-   #. barostat potential energy
-   #. barostat cell Jacobian
-   #. enthalpy of the extended system (sum of 4, 12, 13, and 14; conserved if *ensemble* is *nph*)
-
-If *aniso* or *x* or *y* or *z* is used for the barostat, the vector has 17 values:
-
-   #. kinetic energy of the normal mode
-   #. spring elastic energy of the normal mode
-   #. potential energy of the bead
-   #. total energy of all beads (conserved if *ensemble* is *nve*)
-   #. primitive kinetic energy estimator
-   #. virial energy estimator
-   #. centroid-virial energy estimator
-   #. primitive pressure estimator
-   #. thermodynamic pressure estimator
-   #. centroid-virial pressure estimator
-   #. x component of barostat velocity
-   #. y component of barostat velocity
-   #. z component of barostat velocity
-   #. barostat kinetic energy
-   #. barostat potential energy
-   #. barostat cell Jacobian
-   #. enthalpy of the extended system (sum of 4, 14, 15, and 16; conserved if *ensemble* is *nph*)
-
+----------
 
 .. book-Tuckerman:
 
 **(Tuckerman)** M. Tuckerman, Statistical Mechanics: Theory and Molecular Simulation (Oxford University Press, 2010)
+
+.. Hirshberg:
+
+**(Hirshberg)** B. Hirshberg, V. Rizzi, and M.Parrinello, “Path integral molecular dynamics for bosons,” Proc. Natl. Acad. Sci. U. S. A. 116, 21445 (2019)
+
+.. Feldman:
+
+**(Feldman)** Y. M. Y. Feldman and B. Hirshberg, “Quadratic scaling bosonic path integral molecular dynamics,” J. Chem. Phys. 159, 154107 (2023)
+
+.. _Herman:
+
+**(Herman)** M. F. Herman, E. J. Bruskin, B. J. Berne, J Chem Phys, 76, 5150 (1982).
