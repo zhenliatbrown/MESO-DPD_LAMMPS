@@ -90,8 +90,7 @@ double FixPIMDBNVT::compute_vector(int n)
     if (0 <= n && n < 3) {
         return FixPIMDNVT::compute_vector(n);
     }
-  // CR: needs to be added also to the documentation.
-  // CR: Reminds that we need to add documentation about the entire bosonic fix
+   
   if (n == 3) return prim;
   return 0.0;
 }
