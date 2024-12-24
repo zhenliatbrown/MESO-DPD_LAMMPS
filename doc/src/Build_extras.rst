@@ -713,7 +713,7 @@ They must be specified in uppercase.
       - GPU
       - Intel GPU Ponte Vecchio
 
-This list was last updated for version 4.5.0 of the Kokkos library.
+This list was last updated for version 4.5.1 of the Kokkos library.
 
 .. tabs::
 
