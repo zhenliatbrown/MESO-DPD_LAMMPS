@@ -16,6 +16,7 @@
 #include "atom.h"
 #include "error.h"
 #include "citeme.h"
+#include "fix_granular_mdr.h"
 #include "granular_model.h"
 #include "math_const.h"
 #include "modify.h"
@@ -494,6 +495,7 @@ void GranSubModNormalMDR::init()
 
 double GranSubModNormalMDR::calculate_forces()
 {
+  using namespace Granular_MDR_NS;
   // To understand the structure of the overall code it is important to consider
   // the following:
   //
@@ -545,41 +547,13 @@ double GranSubModNormalMDR::calculate_forces()
   int i1 = 0;
   double delta = gm->delta;               // apparent overlap
 
-  // initialize indexing in history array of different constact history variables
-  const int delta_offset_0 = 0;           // apparent overlap
-  const int delta_offset_1 = 1;
-  const int deltao_offset_0 = 2;          // displacement
-  const int deltao_offset_1 = 3;
-  const int delta_MDR_offset_0 = 4;       // MDR apparent overlap
-  const int delta_MDR_offset_1 = 5;
-  const int delta_BULK_offset_0 = 6;      // bulk displacement
-  const int delta_BULK_offset_1 = 7;
-  const int deltamax_MDR_offset_0 = 8;    // maximum MDR apparent overlap
-  const int deltamax_MDR_offset_1 = 9;
-  const int Yflag_offset_0 = 10;          // yield flag
-  const int Yflag_offset_1 = 11;
-  const int deltaY_offset_0 = 12;         // yield displacement
-  const int deltaY_offset_1 = 13;
-  const int cA_offset_0 = 14;             // contact area intercept
-  const int cA_offset_1 = 15;
-  const int aAdh_offset_0 = 16;           // adhesive contact radius
-  const int aAdh_offset_1 = 17;
-  const int Ac_offset_0 = 18;             // contact area
-  const int Ac_offset_1 = 19;
-  const int eps_bar_offset_0 = 20;        // volume-averaged infinitesimal strain tensor
-  const int eps_bar_offset_1 = 21;
-  const int penalty_offset_ = 22;         // contact penalty
-  const int deltamax_offset_ = 23;
-  const int deltap_offset_0 = 24;
-  const int deltap_offset_1 = 25;
-
   double * history = & gm->history[history_index]; // load in all history variables
 
   // Rigid flat placement scheme
-  double * deltamax_offset = & history[deltamax_offset_];
+  double * deltamax_offset = & history[DELTA_MAX];
   double deltamax = *deltamax_offset;
-  double * deltap_offset0 = & history[deltap_offset_0];
-  double * deltap_offset1 = & history[deltap_offset_1];
+  double * deltap_offset0 = & history[DELTAP_0];
+  double * deltap_offset1 = & history[DELTAP_1];
   double deltap0 = *deltap_offset0;
   double deltap1 = *deltap_offset1;
 
@@ -627,18 +601,18 @@ double GranSubModNormalMDR::calculate_forces()
         delta = delta_geo + (deltap0 - delta_geo)/(deltap - deltamax)*(gm->delta-deltamax);
 
       }
-      delta_offset = & history[delta_offset_0];
-      deltao_offset = & history[deltao_offset_0];
-      delta_MDR_offset = & history[delta_MDR_offset_0];
-      delta_BULK_offset = & history[delta_BULK_offset_0];
-      deltamax_MDR_offset = & history[deltamax_MDR_offset_0];
-      Yflag_offset = & history[Yflag_offset_0];
-      deltaY_offset = & history[deltaY_offset_0];
-      cA_offset = & history[cA_offset_0];
-      aAdh_offset = & history[aAdh_offset_0];
-      Ac_offset = & history[Ac_offset_0];
-      eps_bar_offset = & history[eps_bar_offset_0];
-      deltap_offset = & history[deltap_offset_0];
+      delta_offset = & history[DELTA_0];
+      deltao_offset = & history[DELTAO_0];
+      delta_MDR_offset = & history[DELTA_MDR_0];
+      delta_BULK_offset = & history[DELTA_BULK_0];
+      deltamax_MDR_offset = & history[DELTAMAX_MDR_0];
+      Yflag_offset = & history[YFLAG_0];
+      deltaY_offset = & history[DELTAY_0];
+      cA_offset = & history[CA_0];
+      aAdh_offset = & history[AADH_0];
+      Ac_offset = & history[AC_0];
+      eps_bar_offset = & history[EPS_BAR_0];
+      deltap_offset = & history[DELTAP_0];
     } else {
       if (gm->contact_type != PAIR) break; // contact with particle-wall requires only one evaluation
       if (itag_true < jtag_true) {
@@ -668,18 +642,18 @@ double GranSubModNormalMDR::calculate_forces()
       double deltap = deltap0 + deltap1;
       delta = delta_geo + (deltap1 - delta_geo)/(deltap - deltamax)*(gm->delta-deltamax);
 
-      delta_offset = & history[delta_offset_1];
-      deltao_offset = & history[deltao_offset_1];
-      delta_MDR_offset = & history[delta_MDR_offset_1];
-      delta_BULK_offset = & history[delta_BULK_offset_1];
-      deltamax_MDR_offset = & history[deltamax_MDR_offset_1];
-      Yflag_offset = & history[Yflag_offset_1];
-      deltaY_offset = & history[deltaY_offset_1];
-      cA_offset = & history[cA_offset_1];
-      aAdh_offset = & history[aAdh_offset_1];
-      Ac_offset = & history[Ac_offset_1];
-      eps_bar_offset = & history[eps_bar_offset_1];
-      deltap_offset = & history[deltap_offset_1];
+      delta_offset = & history[DELTA_1];
+      deltao_offset = & history[DELTAO_1];
+      delta_MDR_offset = & history[DELTA_MDR_1];
+      delta_BULK_offset = & history[DELTA_BULK_1];
+      deltamax_MDR_offset = & history[DELTAMAX_MDR_1];
+      Yflag_offset = & history[YFLAG_1];
+      deltaY_offset = & history[DELTAY_1];
+      cA_offset = & history[CA_1];
+      aAdh_offset = & history[AADH_1];
+      Ac_offset = & history[AC_1];
+      eps_bar_offset = & history[EPS_BAR_1];
+      deltap_offset = & history[DELTAP_1];
     }
 
     // temporary i and j indices
@@ -834,7 +808,7 @@ double GranSubModNormalMDR::calculate_forces()
     adhesive_length[i] += aAdh;
 
     // contact penalty scheme
-    penalty_offset = & history[penalty_offset_];
+    penalty_offset = & history[PENALTY];
     double pij = *penalty_offset;
     const double wij = std::max(1.0-pij,0.0);
 
@@ -886,7 +860,7 @@ double GranSubModNormalMDR::calculate_forces()
   gm->radi = radi_true;
   gm->radj = radj_true;
 
-  double * penalty_offset = & history[penalty_offset_];
+  double * penalty_offset = & history[PENALTY];
   const double pij = *penalty_offset;
   const double wij = std::max(1.0-pij,0.0);
   *penalty_offset = 0.0;

@@ -23,6 +23,38 @@ FixStyle(GRANULAR/MDR,FixGranularMDR);
 #include "fix.h"
 
 namespace LAMMPS_NS {
+namespace Granular_MDR_NS {
+
+  enum HistoryIndex {
+    DELTA_0 = 0,       // apparent overlap
+    DELTA_1,
+    DELTAO_0,          // displacement
+    DELTAO_1,
+    DELTA_MDR_0,       // MDR apparent overlap
+    DELTA_MDR_1,
+    DELTA_BULK_0,      // bulk displacement
+    DELTA_BULK_1,
+    DELTAMAX_MDR_0,    // maximum MDR apparent overlap
+    DELTAMAX_MDR_1,
+    YFLAG_0,           // yield flag
+    YFLAG_1,
+    DELTAY_0,          // yield displacement
+    DELTAY_1,
+    CA_0,              // contact area intercept
+    CA_1,
+    AADH_0,            // adhesive contact radius
+    AADH_1,
+    AC_0,              // contact area
+    AC_1,
+    EPS_BAR_0,         // volume-averaged   infinitesimal sor
+    EPS_BAR_1,
+    PENALTY,           // contact penalty
+    DELTA_MAX,
+    DELTAP_0,
+    DELTAP_1
+  };
+
+}    // namespace Granular_MDR_NS
 
 class FixGranularMDR : public Fix {
  public:

@@ -40,6 +40,7 @@
 
 using namespace LAMMPS_NS;
 using namespace Granular_NS;
+using namespace Granular_MDR_NS;
 using namespace FixConst;
 using MathConst::MY_PI;
 
@@ -547,10 +548,10 @@ void FixGranularMDR::mean_surf_disp()
   NeighList * list = pair->list;
 
   const int size_history = pair->get_size_history();
-  int i,j,k,ii,jj,inum,jnum,itype,jtype;
-  int *ilist,*jlist,*numneigh,**firstneigh;
-  int *touch,**firsttouch;
-  double *history,*allhistory,**firsthistory;
+  int i, j, k, ii, jj, inum, jnum, itype, jtype;
+  int *ilist, *jlist, *numneigh, **firstneigh;
+  int *touch, **firsttouch;
+  double *history, *allhistory, **firsthistory;
 
   bool touchflag = false;
   class GranularModel* model;
@@ -612,22 +613,14 @@ void FixGranularMDR::mean_surf_disp()
 
       const double delta = model->radsum - sqrt(model->rsq);
 
-      const int delta_offset_0 = 0;           // apparent overlap
-      const int delta_offset_1 = 1;
-      const int Ac_offset_0 = 18;             // contact area
-      const int Ac_offset_1 = 19;
-      const int deltamax_offset_ = 23;
-      const int deltap_offset_0 = 24;
-      const int deltap_offset_1 = 25;
-
-      double deltamax = history[deltamax_offset_];
-      double deltap0 = history[deltap_offset_0];
-      double deltap1 = history[deltap_offset_1];
+      double deltamax = history[DELTA_MAX];
+      double deltap0 = history[DELTAP_0];
+      double deltap1 = history[DELTAP_1];
 
       if (delta > deltamax) deltamax = delta;
 
-      double delta0old = history[delta_offset_0];
-      double delta1old = history[delta_offset_1];
+      double delta0old = history[DELTA_0];
+      double delta1old = history[DELTA_1];
 
       int i0;
       int i1;
@@ -644,37 +637,37 @@ void FixGranularMDR::mean_surf_disp()
 
       double delta_geo0;
       double delta_geo1;
-      double deltaOpt1 = deltamax*(deltamax - 2.0*R1)/(2.0*(deltamax - R0 - R1));
-      double deltaOpt2 = deltamax*(deltamax - 2.0*R0)/(2.0*(deltamax - R0 - R1));
-      (R0 < R1) ? delta_geo0 = MAX(deltaOpt1,deltaOpt2) : delta_geo0 = MIN(deltaOpt1,deltaOpt2);
-      (R0 < R1) ? delta_geo1 = MIN(deltaOpt1,deltaOpt2) : delta_geo1 = MAX(deltaOpt1,deltaOpt2);
+      double deltaOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
+      double deltaOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
+      (R0 < R1) ? delta_geo0 = MAX(deltaOpt1, deltaOpt2) : delta_geo0 = MIN(deltaOpt1, deltaOpt2);
+      (R0 < R1) ? delta_geo1 = MIN(deltaOpt1, deltaOpt2) : delta_geo1 = MAX(deltaOpt1, deltaOpt2);
 
       double overlap_limit = 0.75;
 
-      if (delta_geo0/R0 > overlap_limit) {
-        delta_geo0 = R0*overlap_limit;
+      if (delta_geo0 / R0 > overlap_limit) {
+        delta_geo0 = R0 * overlap_limit;
         delta_geo1 = deltamax - delta_geo0;
-      } else if (delta_geo1/R1 > overlap_limit) {
-        delta_geo1 = R1*overlap_limit;
+      } else if (delta_geo1 / R1 > overlap_limit) {
+        delta_geo1 = R1 * overlap_limit;
         delta_geo0 = deltamax - delta_geo1;
       }
 
       double deltap = deltap0 + deltap1;
 
-      double delta0 = delta_geo0 + (deltap0 - delta_geo0)/(deltap - deltamax)*(delta-deltamax);
-      double delta1 = delta_geo1 + (deltap1 - delta_geo1)/(deltap - deltamax)*(delta-deltamax);
+      double delta0 = delta_geo0 + (deltap0 - delta_geo0) / (deltap - deltamax) * (delta - deltamax);
+      double delta1 = delta_geo1 + (deltap1 - delta_geo1) / (deltap - deltamax) * (delta - deltamax);
 
       double ddel0 = delta0 - delta0old;
       double ddel1 = delta1 - delta1old;
 
       if (Acon0[i0] != 0.0) {
-        const double Ac_offset0 = history[Ac_offset_0];
-        ddelta_bar[i0] += Ac_offset0/Acon0[i0]*ddel0;
+        const double Ac_offset0 = history[AC_0];
+        ddelta_bar[i0] += Ac_offset0 / Acon0[i0] * ddel0;
       }
 
       if (Acon0[i1] != 0.0) {
-        const double Ac_offset1 = history[Ac_offset_1];
-        ddelta_bar[i1] += Ac_offset1/Acon0[i1]*ddel1;
+        const double Ac_offset1 = history[AC_1];
+        ddelta_bar[i1] += Ac_offset1 / Acon0[i1] * ddel1;
       }
     }
   }
@@ -698,7 +691,7 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
   model->history_update = history_update;
 
   int regiondynamic = region->dynamic_check();
-  if (!regiondynamic) vwall[0] = vwall[1] = vwall[2] = 00;
+  if (!regiondynamic) vwall[0] = vwall[1] = vwall[2] = 0;
 
   double **x = atom->x;
   double *radius = atom->radius;
@@ -762,7 +755,7 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
         const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
         const double ddelta = delta - delta_offset0;
         const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
-        ddelta_bar[i] += wij*Ac_offset0/Acon0[i]*ddelta;
+        ddelta_bar[i] += wij * Ac_offset0 / Acon0[i] * ddelta;
       }
     }
   }
