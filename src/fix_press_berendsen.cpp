@@ -268,6 +268,7 @@ void FixPressBerendsen::init()
   temperature = modify->get_compute_by_id(id_temp);
   if (!temperature) {
     error->all(FLERR, "Temperature compute ID {} for fix {} does not exist", id_temp, style);
+  } else {
     if (temperature->tempflag == 0)
       error->all(FLERR, "Compute ID {} for fix {} does not compute a temperature", id_temp, style);
     if (temperature->tempbias)
@@ -279,6 +280,7 @@ void FixPressBerendsen::init()
   pressure = modify->get_compute_by_id(id_press);
   if (!pressure) {
     error->all(FLERR, "Pressure compute ID {} for fix {} does not exist", id_press, style);
+  } else {
     if (pressure->pressflag == 0)
       error->all(FLERR, "Compute ID {} for fix {} does not compute pressure", id_press, style);
   }
