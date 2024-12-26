@@ -195,10 +195,10 @@ void FixWallGranRegion::post_force(int /*vflag*/)
     if (nc > tmax) error->one(FLERR, "Too many wallgran/region contacts for one particle");
 
     // shear history maintenance
-    // update ncontact,walls,shear2many for particle I
-    //   to reflect new and persistent shear historyvalues
-    // also set c2r[] = indices into region->contact[]for each of N contacts
-    // process zero or one contact here, otherwiseinvoke update_contacts()
+    // update ncontact, walls, shear2many for particle I
+    //   to reflect new and persistent shear history values
+    // also set c2r[] = indices into region->contact[] for each of N contacts
+    // process zero or one contact here, otherwise invoke update_contacts()
 
     if (use_history) {
       if (nc == 0) {

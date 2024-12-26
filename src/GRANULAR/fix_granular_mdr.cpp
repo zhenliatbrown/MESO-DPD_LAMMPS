@@ -155,8 +155,8 @@ void FixGranularMDR::pre_force(int)
   calculate_contact_penalty();
   mean_surf_disp();
 
+  // QUESTION: What about fix wall/gran?
   auto fix_list = modify->get_fix_by_style("wall/gran/region");
-
   for (int w = 0; w < fix_list.size(); w++) {
     update_fix_gran_wall(fix_list[w]);
   }
@@ -304,6 +304,8 @@ void FixGranularMDR::end_of_step()
 
 void FixGranularMDR::set_arrays(int i)
 {
+  // QUESTION: which of these must be initialized to zero?
+  //           maybe just index_history_setup_flag?
   // atom->dvector[index_Ro][i] = 0.0;
   // atom->dvector[index_Vgeo][i] = 0.0;
   // atom->dvector[index_Velas][i] = 0.0;
@@ -367,7 +369,7 @@ void FixGranularMDR::radius_update()
 }
 
 /* ----------------------------------------------------------------------
-   ...
+   QUESTION: is there a physical description for this loop?
 ------------------------------------------------------------------------- */
 
 void FixGranularMDR::calculate_contact_penalty()
@@ -456,6 +458,8 @@ void FixGranularMDR::calculate_contact_penalty()
         history_ik = &allhistory[size_history * kk];
         double * pik = &history_ik[22]; // penalty for contact i and k
 
+        // QUESTION: is this comment accurate?
+
         // Find pair of atoms with the smallest overlap, atoms a & b, 3rd atom c is central
         //   if a & b are both local:
         //     calculate ab penalty and add to the one history entry
@@ -540,7 +544,7 @@ void FixGranularMDR::calculate_contact_penalty()
 
 
 /* ----------------------------------------------------------------------
-   ...
+   QUESTION: is there a physical description for this loop?
 ------------------------------------------------------------------------- */
 
 void FixGranularMDR::mean_surf_disp()
@@ -685,13 +689,6 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
 
   const int size_history = model->size_history;
   int i, m, nc, iwall;
-  double vwall[3];
-  bool touchflag = false;
-  int history_update = 1;
-  model->history_update = history_update;
-
-  int regiondynamic = region->dynamic_check();
-  if (!regiondynamic) vwall[0] = vwall[1] = vwall[2] = 0;
 
   double **x = atom->x;
   double *radius = atom->radius;
@@ -701,14 +698,8 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
   double *Acon0 = atom->dvector[index_Acon0];
   double *ddelta_bar = atom->dvector[index_ddelta_bar];
 
-  if (regiondynamic) {
+  if (region->dynamic_check())
     region->prematch();
-    region->set_velocity();
-  }
-
-  if (fix->peratom_flag) fix->clear_stored_contacts();
-
-  model->radj = 0.0;
 
   for (i = 0; i < nlocal; i++) {
     if (!(mask[i] & groupbit)) continue;
@@ -732,26 +723,11 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
     } else
       fix->update_contacts(i, nc);
 
-
     // process current contacts
     for (int ic = 0; ic < nc; ic++) {
-
-      // Reset model and copy initial geometric data
-      model->dx[0] = region->contact[ic].delx;
-      model->dx[1] = region->contact[ic].dely;
-      model->dx[2] = region->contact[ic].delz;
-      model->radi = radius[i];
-      model->radj = region->contact[ic].radius;
-      model->r = region->contact[ic].r;
-
-      if (model->beyond_contact) model->touch = fix->history_many[i][fix->c2r[ic]][0];
-
-      touchflag = model->check_contact();
-
       const double wij = 1.0;
-
       if (Acon0[i] != 0.0) {
-        const double delta = model->radsum - model->r;
+        const double delta = radius[i] - region->contact[ic].r;
         const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
         const double ddelta = delta - delta_offset0;
         const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];

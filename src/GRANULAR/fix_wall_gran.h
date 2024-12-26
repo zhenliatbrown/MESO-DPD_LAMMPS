@@ -52,7 +52,6 @@ class FixWallGran : public Fix {
 
   // for granular model choices
   class Granular_NS::GranularModel *model;
-  void clear_stored_contacts();
 
  protected:
   int wallstyle, wiggle, wshear, axis;
@@ -86,6 +85,8 @@ class FixWallGran : public Fix {
   // store particle interactions
 
   int store;
+
+  void clear_stored_contacts();
 };
 
 }    // namespace LAMMPS_NS
