@@ -3,7 +3,6 @@ LAMMPS-GUI TODO list:
 # Short term goals (v1.x)
 
 - add wizards for all tutorials. try to reduce redundant code in wizards.
-- add a highlighting to the log window that highlights warnings
 - add a preferences option to override light/dark theme setting and add choice for theme
 - implement a timed "Auto-Save" feature that saves after some idle time.  set timeout in Editor preferences.
 - add a "Filter data" checkbox to the "Charts" window to select whether data should be dropped.
