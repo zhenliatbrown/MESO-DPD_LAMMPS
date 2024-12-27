@@ -20,7 +20,7 @@ to the online LAMMPS documentation for known LAMMPS commands and styles.
    (Ubuntu 20.04LTS or later and compatible), macOS (version 11 aka Big
    Sur or later), and Windows (version 10 or later) :ref:`are available
    <lammps_gui_install>` for download.  Non-MPI LAMMPS executables (as
-   ``lmp``) for running LAMMPS from the command line and :doc:`some
+   ``lmp``) for running LAMMPS from the command-line and :doc:`some
    LAMMPS tools <Tools>` compiled executables are also included.
 
    The source code for LAMMPS-GUI is included in the LAMMPS source code
@@ -29,16 +29,16 @@ to the online LAMMPS documentation for known LAMMPS commands and styles.
    <Build_cmake>`.
 
 LAMMPS-GUI tries to provide an experience similar to what people
-traditionally would have running LAMMPS using a command line window and
+traditionally would have running LAMMPS using a command-line window and
 the console LAMMPS executable but just rolled into a single executable:
 
 - writing & editing LAMMPS input files with a text editor
-- run LAMMPS on those input file with selected command line flags
+- run LAMMPS on those input file with selected command-line flags
 - extract data from the created files and visualize it with and
   external software
 
 That procedure is quite effective for people proficient in using the
-command line, as that allows them to use tools for the individual steps
+command-line, as that allows them to use tools for the individual steps
 that they are most comfortable with.  In fact, it is often *required* to
 adopt this workflow when running LAMMPS simulations on high-performance
 computing facilities.
@@ -165,9 +165,9 @@ window is stored when exiting and restored when starting again.
 Opening Files
 ^^^^^^^^^^^^^
 
-The LAMMPS-GUI application can be launched without command line arguments
+The LAMMPS-GUI application can be launched without command-line arguments
 and then starts with an empty buffer in the *Editor* window.  If arguments
-are given LAMMPS will use first command line argument as the file name for
+are given LAMMPS will use first command-line argument as the file name for
 the *Editor* buffer and reads its contents into the buffer, if the file
 exists.  All further arguments are ignored.  Files can also be opened via
 the *File* menu, the `Ctrl-O` (`Command-O` on macOS) keyboard shortcut
@@ -261,7 +261,7 @@ Output Window
 
 By default, when starting a run, an *Output* window opens that displays
 the screen output of the running LAMMPS calculation, as shown below.
-This text would normally be seen in the command line window.
+This text would normally be seen in the command-line window.
 
 .. image:: JPG/lammps-gui-log.png
    :align: center
@@ -398,7 +398,7 @@ below.
 Like for the *Output* and *Charts* windows, its content is continuously
 updated during a run.  It will show "(none)" if there are no variables
 defined.  Note that it is also possible to *set* :doc:`index style
-variables <variable>`, that would normally be set via command line
+variables <variable>`, that would normally be set via command-line
 flags, via the "Set Variables..." dialog from the *Run* menu.
 LAMMPS-GUI automatically defines the variable "gui_run" to the current
 value of the run counter.  That way it is possible to automatically
@@ -775,11 +775,11 @@ General Settings:
 
 - *Echo input to log:* when checked, all input commands, including
   variable expansions, are echoed to the *Output* window. This is
-  equivalent to using `-echo screen` at the command line.  There is no
+  equivalent to using `-echo screen` at the command-line.  There is no
   log *file* produced by default, since LAMMPS-GUI uses `-log none`.
 - *Include citation details:* when checked full citation info will be
   included to the log window.  This is equivalent to using `-cite
-  screen` on the command line.
+  screen` on the command-line.
 - *Show log window by default:* when checked, the screen output of a
   LAMMPS run will be collected in a log window during the run
 - *Show chart window by default:* when checked, the thermodynamic
@@ -828,7 +828,7 @@ Accelerators:
 
 This tab enables selection of an accelerator package for LAMMPS to use
 and is equivalent to using the `-suffix` and `-package` flags on the
-command line.  Only settings supported by the LAMMPS library and local
+command-line.  Only settings supported by the LAMMPS library and local
 hardware are available.  The `Number of threads` field allows setting
 the maximum number of threads for the accelerator packages that use
 threads.

@@ -209,7 +209,7 @@ necessary for ``hipcc`` and the linker to work correctly.
 Using the CHIP-SPV implementation of HIP is supported. It allows one to
 run HIP code on Intel GPUs via the OpenCL or Level Zero back ends. To use
 CHIP-SPV, you must set ``-DHIP_USE_DEVICE_SORT=OFF`` in your CMake
-command line as CHIP-SPV does not yet support hipCUB. As of Summer 2022,
+command-line as CHIP-SPV does not yet support hipCUB. As of Summer 2022,
 the use of HIP for Intel GPUs is experimental. You should only use this
 option in preparations to run on Aurora system at Argonne.
 
@@ -421,9 +421,9 @@ minutes to hours) to build.  Of course you only need to do that once.)
       cmake build system.  The ``lib/kim/Install.py`` script supports a
       ``CMAKE`` environment variable if the cmake executable is named other
       than ``cmake`` on your system.  Additional environment variables may be
-      provided on the command line for use by cmake.  For example, to use the
+      provided on the command-line for use by cmake.  For example, to use the
       ``cmake3`` executable and tell it to use the gnu version 11 compilers
-      to build KIM, one could use the following command line.
+      to build KIM, one could use the following command.
 
       .. code-block:: bash
 
@@ -2191,7 +2191,7 @@ verified to work in February 2020 with Quantum Espresso versions 6.3 to
       from the sources in the *lib* folder (including the essential
       libqmmm.a) are not included in the static LAMMPS library and
       (currently) not installed, while their code is included in the
-      shared LAMMPS library.  Thus a typical command line to configure
+      shared LAMMPS library.  Thus a typical command to configure
       building LAMMPS for QMMM would be:
 
       .. code-block:: bash
