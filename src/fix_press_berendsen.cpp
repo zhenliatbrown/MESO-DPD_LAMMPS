@@ -259,8 +259,7 @@ void FixPressBerendsen::init()
     if (!dimflag) continue;
     if ((p_flag[0] && dimflag[0]) || (p_flag[1] && dimflag[1]) || (p_flag[2] && dimflag[2]))
       error->all(FLERR,
-                 "Cannot use fix press/berendsen and "
-                 "fix deform on same component of stress tensor");
+                 "Cannot use fix press/berendsen and fix deform on same component of stress tensor");
   }
 
   // set temperature and pressure ptrs
