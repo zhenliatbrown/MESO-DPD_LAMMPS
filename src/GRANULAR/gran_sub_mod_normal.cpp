@@ -543,8 +543,6 @@ double GranSubModNormalMDR::calculate_forces()
   double F1 = 0.0;                        // force on contact side 1
   double R0 = 0.0;
   double R1 = 0.0;
-  int i0 = 0;
-  int i1 = 0;
   double delta = gm->delta;               // apparent overlap
 
   double * history = & gm->history[history_index]; // load in all history variables
@@ -582,54 +580,44 @@ double GranSubModNormalMDR::calculate_forces()
         }
         R0 = gm->radi;
         R1 = gm->radj;
-        i0 = gm->i;
-        i1 = gm->j;
 
         double delta_geo, delta_geo_alt;
         double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
         double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
-        (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
-        (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1, delta_geoOpt2);
+        (R0 < gm->radj) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
+        (R0 > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1, delta_geoOpt2);
 
-        if (delta_geo / gm->radi > overlap_limit) {
-          delta_geo = gm->radi * overlap_limit;
+        if (delta_geo / R0 > overlap_limit) {
+          delta_geo = R0 * overlap_limit;
         } else if (delta_geo_alt / gm->radj > overlap_limit) {
           delta_geo = deltamax - gm->radj * overlap_limit;
         }
 
         double deltap = deltap0 + deltap1;
         delta = delta_geo + (deltap0 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
-
       }
-      delta_offset = & history[DELTA_0];
-      deltao_offset = & history[DELTAO_0];
-      delta_MDR_offset = & history[DELTA_MDR_0];
-      delta_BULK_offset = & history[DELTA_BULK_0];
-      deltamax_MDR_offset = & history[DELTAMAX_MDR_0];
-      Yflag_offset = & history[YFLAG_0];
-      deltaY_offset = & history[DELTAY_0];
-      cA_offset = & history[CA_0];
-      aAdh_offset = & history[AADH_0];
-      Ac_offset = & history[AC_0];
-      eps_bar_offset = & history[EPS_BAR_0];
-      deltap_offset = & history[DELTAP_0];
     } else {
       if (gm->contact_type != PAIR) break; // contact with particle-wall requires only one evaluation
       if (itag_true < jtag_true) {
-          gm->i = i_true;
-          gm->j = j_true;
-          gm->radi = radi_true;
-          gm->radj = radj_true;
-        } else {
-          gm->i = j_true;
-          gm->j = i_true;
-          gm->radi = radj_true;
-          gm->radj = radi_true;
+        gm->i = i_true;
+        gm->j = j_true;
+        gm->radi = radi_true;
+        gm->radj = radj_true;
+      } else {
+        gm->i = j_true;
+        gm->j = i_true;
+        gm->radi = radj_true;
+        gm->radj = radi_true;
       }
 
+      // QUESTION: R0/R1 here are never defined so they default to zero
+      //  did you mean to define:
+      //    R0 = gm->radi;
+      //    R1 = gm->radj;
+      //  here to mirror above?
       double delta_geo, delta_geo_alt;
       double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
-      double delta_geoOpt2 = deltamax*(deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
+      double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
       (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
       (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1,delta_geoOpt2);
 
@@ -641,20 +629,20 @@ double GranSubModNormalMDR::calculate_forces()
 
       double deltap = deltap0 + deltap1;
       delta = delta_geo + (deltap1 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
-
-      delta_offset = & history[DELTA_1];
-      deltao_offset = & history[DELTAO_1];
-      delta_MDR_offset = & history[DELTA_MDR_1];
-      delta_BULK_offset = & history[DELTA_BULK_1];
-      deltamax_MDR_offset = & history[DELTAMAX_MDR_1];
-      Yflag_offset = & history[YFLAG_1];
-      deltaY_offset = & history[DELTAY_1];
-      cA_offset = & history[CA_1];
-      aAdh_offset = & history[AADH_1];
-      Ac_offset = & history[AC_1];
-      eps_bar_offset = & history[EPS_BAR_1];
-      deltap_offset = & history[DELTAP_1];
     }
+
+    delta_offset = & history[DELTA_0 + contactSide];
+    deltao_offset = & history[DELTAO_0 + contactSide];
+    delta_MDR_offset = & history[DELTA_MDR_0 + contactSide];
+    delta_BULK_offset = & history[DELTA_BULK_0 + contactSide];
+    deltamax_MDR_offset = & history[DELTAMAX_MDR_0 + contactSide];
+    Yflag_offset = & history[YFLAG_0 + contactSide];
+    deltaY_offset = & history[DELTAY_0 + contactSide];
+    cA_offset = & history[CA_0 + contactSide];
+    aAdh_offset = & history[AADH_0 + contactSide];
+    Ac_offset = & history[AC_0 + contactSide];
+    eps_bar_offset = & history[EPS_BAR_0 + contactSide];
+    deltap_offset = & history[DELTAP_0 + contactSide];
 
     // temporary i and j indices
     const int i = gm->i;
@@ -673,7 +661,7 @@ double GranSubModNormalMDR::calculate_forces()
     *deltao_offset = deltao;
 
     double ddelta_MDR, ddelta_BULK;
-    if ( psi[i] < psi_b ) { // if true, bulk response has triggered, split displacement increment between the MDR and BULK components
+    if (psi[i] < psi_b) { // if true, bulk response has triggered, split displacement increment between the MDR and BULK components
       ddelta_MDR = MIN(ddelta - ddelta_bar[i], delta - *delta_MDR_offset);
       ddelta_BULK = ddelta_bar[i];
     } else { // if false, no bulk response, full displacement increment goes to the MDR component
@@ -688,8 +676,8 @@ double GranSubModNormalMDR::calculate_forces()
     if (delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
     const double deltamax_MDR = *deltamax_MDR_offset;
 
-    const double pY = Y * (1.75 * exp(-4.4*deltamax_MDR / R) + 1.0); // Set value of average pressure along yield surface
-    if ( *Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR ) {
+    const double pY = Y * (1.75 * exp(-4.4 * deltamax_MDR / R) + 1.0); // Set value of average pressure along yield surface
+    if (*Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR) {
     const double phertz = 4 * Eeff * sqrt(delta_MDR) / (3 * MY_PI * sqrt(R));
       if ( phertz > pY ) {
         *Yflag_offset = 1.0;
@@ -738,7 +726,7 @@ double GranSubModNormalMDR::calculate_forces()
       if (delta_MDR == deltamax_MDR || a_na >= aAdh ) { // case 1: no tensile springs, purely compressive contact
         (deltae1D <= 0.0) ? F_MDR = 0.0 : F_MDR = Eeff * (A * B / 4.0) * (acos(1.0 - 2.0 * deltae1D / A) - (1.0 - 2.0 * deltae1D / A) * sqrt(4.0 * deltae1D / A - 4.0 * pow(deltae1D, 2.0) / pow(A, 2.0)));
         if (std::isnan(F_MDR)) {
-           error->one(FLERR, "F_MDR is NaN, case 1: no tensile springs");
+          error->one(FLERR, "F_MDR is NaN, case 1: no tensile springs");
         }
         *aAdh_offset = a_fac * a_na;
       } else {
@@ -883,7 +871,7 @@ double GranSubModNormalMDR::calculate_forces()
       Eeff = E / (1.0 - pow(nu, 2.0));
       Reff = gm->radi;
     }
-    const double kn = Eeff*Reff;
+    const double kn = Eeff * Reff;
     const double beta = -log(CoR) / sqrt(pow(log(CoR), 2.0) + MY_PI * MY_PI);
     const double damp_prefactor = beta * sqrt(gm->meff * kn);
     const double F_DAMP = -damp_prefactor * (gm->vnnr);
