@@ -771,7 +771,7 @@ void PRD::replicate(int ireplica)
 
     if (universe->iworld == ireplica) {
       memcpy(tagall,tag,(nlocal*sizeof(tagint))&MEMCPYMASK);
-      memcpy(xall[0],x[0],(3*nlocal*sizeof(double))&MEMCPYMASK);
+      memcpy(xall[0],x[0],(sizeof(double)*3*nlocal)&MEMCPYMASK);
       memcpy(imageall,image,(nlocal*sizeof(imageint))&MEMCPYMASK);
     }
 
