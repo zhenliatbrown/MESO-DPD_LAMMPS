@@ -252,7 +252,7 @@ void FixMSST::init()
     error->all(FLERR, "Could not find fix msst temperature compute ID {}", id_temp);
   } else {
     if (temperature->tempflag == 0)
-      error->all(FLERR, "Fix msst compute ID {} does not compute temperature", id_temp);
+      error->all(FLERR, "Fix msst compute ID {} does not compute a temperature", id_temp);
   }
 
   pressure = modify->get_compute_by_id(id_press);

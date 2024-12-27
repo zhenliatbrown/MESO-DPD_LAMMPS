@@ -166,8 +166,7 @@ void FixNPHug::init()
     error->all(FLERR, "Potential energy compute ID {} for fix {} does not exist", id_pe, style);
   } else {
     if (pe->peflag == 0)
-      error->all(FLERR, "Compute ID {} for fix {} does not compute potential energy",
-                 id_temp, style);
+      error->all(FLERR, "Compute ID {} for fix {} does not compute potential energy", id_pe, style);
   }
 }
 
