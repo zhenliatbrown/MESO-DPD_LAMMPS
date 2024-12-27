@@ -290,6 +290,7 @@ void Info::command(int narg, char **arg)
 
     fmt::print(out,"\nCompiler: {} with {}\nC++ standard: {}\n",
                platform::compiler_info(),platform::openmp_standard(),platform::cxx_standard());
+    fputs(get_fmt_info().c_str(), out);
 
     fputs("\nActive compile time flags:\n\n",out);
     if (has_gzip_support()) fputs("-DLAMMPS_GZIP\n",out);
@@ -1357,6 +1358,18 @@ std::string Info::get_fft_info()
 #endif
 #endif
   return fft_info;
+}
+
+/* ---------------------------------------------------------------------- */
+
+static constexpr int fmt_ver_major = FMT_VERSION / 10000;
+static constexpr int fmt_ver_minor = (FMT_VERSION % 10000) / 100;
+static constexpr int fmt_ver_patch = FMT_VERSION % 100;
+
+std::string Info::get_fmt_info()
+{
+  return fmt::format("Embedded fmt library version: {}.{}.{}\n",
+                     fmt_ver_major, fmt_ver_minor, fmt_ver_patch);
 }
 
 /* ---------------------------------------------------------------------- */
