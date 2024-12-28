@@ -100,10 +100,11 @@ MacOS 11 and later
 ^^^^^^^^^^^^^^^^^^
 
 After downloading the ``LAMMPS-macOS-multiarch-GUI-<version>.dmg``
-installer package, you need to double-click it and then, in the window
-that opens, drag the app bundle as indicated into the "Applications"
-folder.  The follow the instructions in the "README.txt" file to
-get access to the other included executables.
+application bundle disk image, you need to double-click it and then, in
+the window that opens, drag the app bundle as indicated into the
+"Applications" folder.  Afterwards, the disk image can be unmounted.
+Then follow the instructions in the "README.txt" file to get access to
+the other included command-line executables.
 
 Linux on x86\_64
 ^^^^^^^^^^^^^^^^
@@ -117,15 +118,25 @@ into the "LAMMPS_GUI" folder and execute "./lammps-gui" directly.
 
 The second variant uses `flatpak <https://www.flatpak.org>`_ and
 requires the flatpak management and runtime software to be installed.
-After downloading the ``LAMMPS-GUI-Linux-x86_64-GUI-<version>.tar.gz``
+After downloading the ``LAMMPS-GUI-Linux-x86_64-GUI-<version>.flatpak``
 flatpak bundle, you can install it with ``flatpak install --user
-LAMMPS-GUI-Linux-x86_64-GUI-<version>.tar.gz``.  After installation,
+LAMMPS-GUI-Linux-x86_64-GUI-<version>.flatpak``.  After installation,
 LAMMPS-GUI should be integrated into your desktop environment under
 "Applications > Science" but also can be launched from the console with
 ``flatpak run org.lammps.lammps-gui``.  The flatpak bundle also includes
 the console LAMMPS executable ``lmp`` which can be launched to run
-simulations with, for example: ``flatpak run --command=lmp
-org.lammps.lammps-gui -in in.melt``.
+simulations with, for example with:
+
+.. code-block:: sh
+
+   flatpak run --command=lmp org.lammps.lammps-gui -in in.melt
+
+Other bundled command-line executables are run the same way and can be
+listed with:
+
+.. code-block:: sh
+
+   ls $(flatpak info --show-location org.lammps.lammps-gui )/files/bin
 
 
 Compiling from Source
@@ -268,7 +279,9 @@ This text would normally be seen in the command-line window.
    :scale: 50%
 
 LAMMPS-GUI captures the screen output from LAMMPS as it is generated and
-updates the *Output* window regularly during a run.
+updates the *Output* window regularly during a run.  If there are any
+warnings or errors in the LAMMPS output, they are highlighted by using
+bold text colored in red.
 
 By default, the *Output* window is replaced each time a run is started.
 The runs are counted and the run number for the current run is displayed
