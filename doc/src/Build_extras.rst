@@ -421,9 +421,10 @@ minutes to hours) to build.  Of course you only need to do that once.)
       cmake build system.  The ``lib/kim/Install.py`` script supports a
       ``CMAKE`` environment variable if the cmake executable is named other
       than ``cmake`` on your system.  Additional environment variables may be
-      provided on the command-line for use by cmake.  For example, to use the
-      ``cmake3`` executable and tell it to use the gnu version 11 compilers
-      to build KIM, one could use the following command.
+      set with the ``make`` command for use by cmake.  For example, to use the
+      ``cmake3`` executable and tell it to use the GNU version 11 compilers
+      called ``g++-11``, ``gcc-11`` and ``gfortran-11`` to build KIM, one
+      could use the following command.
 
       .. code-block:: bash
 
