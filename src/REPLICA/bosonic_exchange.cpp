@@ -23,7 +23,10 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
     // Notably, the classical Hamiltonians of the two conventions differ, with the spring constant
     // in the i-Pi convention being P times larger than that in Tuckerman's convention. Additionally, the i-Pi convention
     // lacks a 1/P prefactor in front of the external potential. The Hamiltonians of the two conventions are related through
-    // H_tuckerman = H_ipi / P. Note however that the expressions for the various estimators are unaffected by this choice.
+    // H_tuckerman = H_ipi / P. Note however that the expressions for the various estimators are unaffected by this choice,
+    // so as the algorithm for bosonic exchange. The code below was designed to be compatible with both conventions,
+    // and the choice of convention only affects a single calculation within it.
+    //
     // Setting the following boolian variable to false amounts to adopting Tuckerman's convention.
     ipy_convention = ipy_convention;
 }
@@ -238,7 +241,7 @@ double BosonicExchange::get_Vn(int n) const {
 
 /* ---------------------------------------------------------------------- */
 
-void BosonicExchange::spring_force(double** f) {
+void BosonicExchange::spring_force(double** f) const {
     if (bead_num == np - 1) {
         spring_force_last_bead(f);
     } else if (bead_num == 0) {

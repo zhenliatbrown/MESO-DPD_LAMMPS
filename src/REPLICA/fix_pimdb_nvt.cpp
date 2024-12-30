@@ -33,9 +33,7 @@ using namespace LAMMPS_NS;
 
 FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDNVT(lmp, narg, arg),
-    // CR: apply mic (compatible with previous implementation, and with pimd_nvt)
-    // OB: Did you mean apply minimum image convention? Because "bosonic_exchange" takes care of it...
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, false)
+    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
   virial = 0.;
   prim = 0.;

@@ -30,7 +30,7 @@ namespace LAMMPS_NS {
         double get_total_spring_energy_for_bead();
         double get_Vn(int n) const;
 
-        void spring_force(double** f);
+        void spring_force(double** f) const;
 
         double prim_estimator();
 
