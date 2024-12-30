@@ -653,15 +653,20 @@ void FixNPTCauchy::init()
   // set temperature and pressure ptrs
 
   temperature = modify->get_compute_by_id(id_temp);
-  if (!temperature)
-    error->all(FLERR,"Temperature ID {} for fix npt/cauchy does not exist", id_temp);
-
-  if (temperature->tempbias) which = BIAS;
-  else which = NOBIAS;
+  if (!temperature) {
+    error->all(FLERR,"Temperature compute ID {} for fix {} does not exist", id_temp, style);
+  } else {
+    if (temperature->tempflag == 0)
+      error->all(FLERR, "Compute ID {} for fix {} does not compute a temperature", id_temp, style);
+    if (temperature->tempbias) which = BIAS;
+    else which = NOBIAS;
+  }
 
   if (pstat_flag) {
     pressure = modify->get_compute_by_id(id_press);
     if (!pressure) error->all(FLERR,"Pressure ID {} for fix npt/cauchy does not exist", id_press);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
   }
 
   // set timesteps and frequencies
