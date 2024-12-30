@@ -30,10 +30,8 @@ Syntax
 * keywords for style *pimdb/langevin*
 
   .. parsed-literal::
-       *keywords* = *method* or *integrator* or *ensemble* or *fmmode* or *fmass* or *scale* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
-       *method* value = *pimd*
+       *keywords* = *integrator* or *fmass* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
        *integrator* value = *obabo* or *baoab*
-       *fmmode* value = *physical* or *normal*
        *fmass* value = scaling factor on mass
        *temp* value = temperature (temperature unit)
           temperature = target temperature of the thermostat
@@ -41,7 +39,6 @@ Syntax
           style value = *PILE_L*
           seed = random number generator seed
        *tau* value = thermostat damping parameter (time unit)
-       *scale* value = scaling factor of the damping times of non-centroid modes of PILE_L thermostat
        *iso* or *aniso* values = pressure (pressure unit)
          pressure = scalar external pressure of the barostat
        *barostat* value = *BZP* or *MTTK*
@@ -60,7 +57,7 @@ Examples
 .. code-block:: LAMMPS
 
    fix 1 all pimdb/nvt method pimd fmass 1.0 sp 1.0 temp 2.0 nhc 4
-   fix 1 all pimdb/langevin ensemble npt integrator obabo temp 113.15 thermostat PILE_L 1234 tau 1.0 iso 1.0 barostat BZP taup 1.0
+   fix 1 all pimdb/langevin integrator obabo temp 113.15 thermostat PILE_L 1234 tau 1.0
 
 Description
 """""""""""
@@ -78,8 +75,13 @@ detailed syntax description and additional, general capabilities of the commands
 
 .. note::
 
-   Currently, fix *pimdb/langevin* only supports the "pimd" method, and fix *pimdb/nvt*
-   only supports the "pimd" and "nmpimd" methods.
+   Currently, and fix *pimdb/nvt* only supports the "pimd" and "nmpimd" methods.
+   Fix *pimdb/langevin* only supports the "pimd" method, and the keyword *method* should not be used.
+   Trying to explicitly set a different method than "pimd" would raise an error.
+   Similarly, the keywords *ensemble* and *fmmode* should not be used, and would raise an error if set to values
+   other than *nvt* and *normal*, respectively.
+   Trying to use the *scale* keywords, that is not supported for "pimd" method, would also raise an error.
+   Finally, trying to use any of the barostat-related keywords supported for *pimd/langevin* would raise errors.
 
 The isomorphism between the partition function of :math:`N` bosonic quantum particles and that of a system of classical ring polymers
 at inverse temperature :math:`\beta`
