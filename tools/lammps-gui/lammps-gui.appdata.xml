@@ -46,6 +46,7 @@
     <keyword>Physics</keyword>
     <keyword>Editor</keyword>
     <keyword>N-body</keyword>
+    <keyword>Simulation</keyword>
   </keywords>
 
   <provides>
@@ -59,6 +60,7 @@
         Update Tutorial menu entries to cover all 8 tutorials
         Highlight warnings and error messages in Output window
         Make Tutorial wizards more compact
+        Include download and compilation of WHAM software from Alan Grossfield
       </description>
     </release>
     <release version="1.6.11" timestamp="1725080055">

@@ -92,6 +92,42 @@ else()
   endif()
 endif()
 
+option(BUILD_WHAM "Download and compile WHAM executable from Grossfield Lab" YES)
+if(BUILD_WHAM)
+  set(WHAM_URL "http://membrane.urmc.rochester.edu/sites/default/files/wham/wham-release-2.0.11.tgz" CACHE STRING "URL for WHAM tarball")
+  set(WHAM_MD5 "f56751ac71a8d1c485b9ebd4ccff8dbe" CACHE STRING "MD5 checksum of WHAM tarball")
+  mark_as_advanced(WHAM_URL)
+  mark_as_advanced(WHAM_MD5)
+
+  get_filename_component(archive ${WHAM_URL} NAME)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/_deps/src)
+  if(EXISTS ${CMAKE_BINARY_DIR}/_deps/${archive})
+    file(MD5 ${CMAKE_BINARY_DIR}/_deps/${archive} DL_MD5)
+  endif()
+  if(NOT "${DL_MD5}" STREQUAL "${WHAM_MD5}")
+    message(STATUS "Downloading ${WHAM_URL}")
+    file(DOWNLOAD ${WHAM_URL} ${CMAKE_BINARY_DIR}/_deps/${archive} STATUS DL_STATUS SHOW_PROGRESS)
+    file(MD5 ${CMAKE_BINARY_DIR}/_deps/${archive} DL_MD5)
+    if((NOT DL_STATUS EQUAL 0) OR (NOT "${DL_MD5}" STREQUAL "${WHAM_MD5}"))
+      message(ERROR "Download of WHAM sources from ${WHAM_URL} failed")
+    endif()
+  else()
+    message(STATUS "Using already downloaded archive ${CMAKE_BINARY_DIR}/_deps/${archive}")
+  endif()
+  message(STATUS "Unpacking and configuring ${archive}")
+
+  execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_BINARY_DIR}/_deps/${archive}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/_deps/src)
+  file(GLOB TARGET_SOURCE "${CMAKE_BINARY_DIR}/_deps/src/wham")
+  file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/_deps/wham-src)
+  file(RENAME ${TARGET_SOURCE} ${CMAKE_BINARY_DIR}/_deps/wham-src)
+  file(COPY CMakeLists.wham DESTINATION ${CMAKE_BINARY_DIR}/_deps/wham-src/)
+  file(RENAME "${CMAKE_BINARY_DIR}/_deps/wham-src/CMakeLists.wham"
+    "${CMAKE_BINARY_DIR}/_deps/wham-src/CMakeLists.txt")
+  add_subdirectory("${CMAKE_BINARY_DIR}/_deps/wham-src" "${CMAKE_BINARY_DIR}/_deps/wham-build")
+  set(WHAM_EXE wham wham-2d)
+endif()
+
 set(LAMMPS_PLUGINLIB_DIR ${LAMMPS_DIR}/examples/COUPLE/plugin)
 if(LAMMPS_GUI_USE_PLUGIN)
   if(APPLE)
@@ -249,6 +285,10 @@ if(APPLE)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/binary2txt ${APP_CONTENTS}/bin/
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/stl_bin2txt ${APP_CONTENTS}/bin/
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/phana ${APP_CONTENTS}/bin/
+      if(WHAM_EXE)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/wham ${APP_CONTENTS}/bin/
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/wham-2d ${APP_CONTENTS}/bin/
+      endif()
       COMMAND ${CMAKE_COMMAND} -E create_symlink ../MacOS/lammps-gui ${APP_CONTENTS}/bin/lammps-gui
       COMMAND ${CMAKE_COMMAND} -E make_directory ${APP_CONTENTS}/Resources
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LAMMPS_DIR}/cmake/packaging/README.macos ${APP_CONTENTS}/Resources/README.txt
@@ -262,7 +302,7 @@ if(APPLE)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LAMMPS_DIR}/doc/lammps.1 ${APP_CONTENTS}/share/lammps/man/man1/
       COMMAND ${CMAKE_COMMAND} -E create_symlink lammps.1 ${APP_CONTENTS}/share/lammps/man/man1/lmp.1
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LAMMPS_DIR}/doc/msi2lmp.1 ${APP_CONTENTS}/share/lammps/man/man1
-      DEPENDS lammps-gui lammps lmp binary2txt stl_bin2txt msi2lmp phana
+      DEPENDS lammps-gui lammps lmp binary2txt stl_bin2txt msi2lmp phana ${WHAM_EXE}
       COMMENT "Copying additional files into macOS app bundle tree"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
@@ -314,7 +354,7 @@ elseif((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND CMAKE_CROSSCOMPILING)
   install(FILES $<TARGET_RUNTIME_DLLS:lmp> TYPE BIN)
   add_custom_target(zip
     COMMAND sh -vx ${LAMMPS_DIR}/cmake/packaging/build_windows_cross_zip.sh ${CMAKE_INSTALL_PREFIX} ${LAMMPS_RELEASE}
-    DEPENDS lmp lammps-gui
+    DEPENDS lmp lammps-gui ${WHAM_EXE}
     COMMENT "Create zip file with windows binaries"
     BYPRODUCT LAMMPS-Win10-amd64-${LAMMPS_VERSION}.zip
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -351,7 +391,7 @@ elseif((CMAKE_SYSTEM_NAME STREQUAL "Linux") AND NOT LAMMPS_GUI_USE_PLUGIN)
 
   add_custom_target(tgz
     COMMAND ${LAMMPS_DIR}/cmake/packaging/build_linux_tgz.sh ${LAMMPS_RELEASE}
-    DEPENDS lammps-gui
+    DEPENDS lammps-gui ${WHAM_EXE}
     COMMENT "Create compressed tar file of LAMMPS-GUI with dependent libraries and wrapper"
     BYPRODUCT LAMMPS-Linux-amd64-${LAMMPS_RELEASE}.tar.gz
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
