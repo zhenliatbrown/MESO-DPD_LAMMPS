@@ -22,6 +22,9 @@ to the online LAMMPS documentation for known LAMMPS commands and styles.
    <lammps_gui_install>` for download.  Non-MPI LAMMPS executables (as
    ``lmp``) for running LAMMPS from the command-line and :doc:`some
    LAMMPS tools <Tools>` compiled executables are also included.
+   Also, the pre-compiled LAMMPS-GUI packages include the WHAM executables
+   from http://membrane.urmc.rochester.edu/content/wham/ for use with
+   LAMMPS tutorials.
 
    The source code for LAMMPS-GUI is included in the LAMMPS source code
    distribution and can be found in the ``tools/lammps-gui`` folder.  It
