@@ -618,6 +618,14 @@ double GranSubModNormalMDR::calculate_forces()
       //    R0 = gm->radi;
       //    R1 = gm->radj;
       //  here to mirror above? After confirming, these two conditions can be easily collapsed to remove duplication and clarify differences (also replace gm->radi/radj with R0/R1)
+      // ANSWER: If I am not mistaken R0 & R1 will always be set to non-zero values from the case above where contactSide = 0: 
+      //            R0 = gm->radi;
+      //            R1 = gm->radj;
+      //         Then their values will carry over into this else statement for the case of contactSide = 1. I don't want their values to change after they are set above, 
+      //         hence why I didn't redine them.
+      //
+      //         However, this is written in a bit of a strange way now that I am reviewing it, I will give it some more thought.
+       
       double delta_geo, delta_geo_alt;
       double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
       double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
