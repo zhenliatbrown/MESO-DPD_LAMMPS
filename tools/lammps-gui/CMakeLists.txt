@@ -285,10 +285,6 @@ if(APPLE)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/binary2txt ${APP_CONTENTS}/bin/
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/stl_bin2txt ${APP_CONTENTS}/bin/
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/phana ${APP_CONTENTS}/bin/
-      if(WHAM_EXE)
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/wham ${APP_CONTENTS}/bin/
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/wham-2d ${APP_CONTENTS}/bin/
-      endif()
       COMMAND ${CMAKE_COMMAND} -E create_symlink ../MacOS/lammps-gui ${APP_CONTENTS}/bin/lammps-gui
       COMMAND ${CMAKE_COMMAND} -E make_directory ${APP_CONTENTS}/Resources
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LAMMPS_DIR}/cmake/packaging/README.macos ${APP_CONTENTS}/Resources/README.txt
@@ -302,12 +298,21 @@ if(APPLE)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LAMMPS_DIR}/doc/lammps.1 ${APP_CONTENTS}/share/lammps/man/man1/
       COMMAND ${CMAKE_COMMAND} -E create_symlink lammps.1 ${APP_CONTENTS}/share/lammps/man/man1/lmp.1
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LAMMPS_DIR}/doc/msi2lmp.1 ${APP_CONTENTS}/share/lammps/man/man1
-      DEPENDS lammps-gui lammps lmp binary2txt stl_bin2txt msi2lmp phana ${WHAM_EXE}
+      DEPENDS lammps-gui lammps lmp binary2txt stl_bin2txt msi2lmp phana
       COMMENT "Copying additional files into macOS app bundle tree"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
   else()
     message(FATAL_ERROR "Must use -D BUILD_TOOLS=yes for building app bundle")
+  endif()
+  if(BUILD_WHAM)
+    add_custom_target(copy-wham
+      ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/wham ${APP_CONTENTS}/bin/
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/wham-2d ${APP_CONTENTS}/bin/
+      DEPENDS complete-bundle wham wham-2d
+      COMMENT "Copying WHAM executables into macOS app bundle tree"
+    )
+    set(WHAM_TARGET copy-wham)
   endif()
   if(FFMPEG_EXECUTABLE)
     add_custom_target(copy-ffmpeg
@@ -319,7 +324,7 @@ if(APPLE)
   endif()
   add_custom_target(dmg
     COMMAND ${LAMMPS_DIR}/cmake/packaging/build_macos_dmg.sh ${LAMMPS_RELEASE}
-    DEPENDS complete-bundle ${FFMPEG_TARGET}
+    DEPENDS complete-bundle ${WHAM_TARGET} ${FFMPEG_TARGET}
     COMMENT "Create Drag-n-Drop installer disk image from app bundle"
     BYPRODUCT LAMMPS-macOS-multiarch-${LAMMPS_VERSION}.dmg
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
