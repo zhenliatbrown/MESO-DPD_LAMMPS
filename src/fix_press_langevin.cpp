@@ -422,9 +422,10 @@ void FixPressLangevin::init()
 
   pressure = modify->get_compute_by_id(id_press);
   if (!pressure) {
-    error->all(FLERR, "Pressure compute ID {} for fix press/langevin does not exist", id_press);
+    error->all(FLERR, "Pressure compute ID {} for fix {} does not exist", id_press, style);
+  } else {
     if (pressure->pressflag == 0)
-      error->all(FLERR,"Compute ID {} does not compute pressure", id_press);
+      error->all(FLERR,"Compute ID {} for fix {} does not compute pressure", id_press, style);
   }
 
   // Kspace setting
