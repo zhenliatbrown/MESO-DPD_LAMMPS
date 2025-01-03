@@ -40,6 +40,7 @@ static constexpr double JKRPREFIX = 1.2277228507842888;         // cbrt(3*PI**2/
 static constexpr int MDR_MAX_IT = 100;                          // Newton-Raphson for MDR
 static constexpr double MDR_EPSILON1 = 1e-10;                   // Newton-Raphson for MDR
 static constexpr double MDR_EPSILON2 = 1e-16;                   // Newton-Raphson for MDR
+static constexpr double MDR_OVERLAP_LIMIT = 0.75;               // Maximum contact overlap for MDR
 
 static const char cite_mdr[] =
     "MDR contact model command: \n\n"
@@ -561,7 +562,6 @@ double GranSubModNormalMDR::calculate_forces()
   if (gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
   deltamax = *deltamax_offset;
 
-  double overlap_limit = 0.75;
   for (int contactSide = 0; contactSide < 2; contactSide++) {
 
     double *delta_offset, *deltao_offset, *delta_MDR_offset, *delta_BULK_offset;
@@ -587,13 +587,13 @@ double GranSubModNormalMDR::calculate_forces()
         double delta_geo, delta_geo_alt;
         double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
         double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
-        (R0 < gm->radj) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
-        (R0 > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1, delta_geoOpt2);
+        (R0 < R1) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
+        (R0 > R1) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1, delta_geoOpt2);
 
-        if (delta_geo / R0 > overlap_limit) {
-          delta_geo = R0 * overlap_limit;
-        } else if (delta_geo_alt / gm->radj > overlap_limit) {
-          delta_geo = deltamax - gm->radj * overlap_limit;
+        if (delta_geo / R0 > MDR_OVERLAP_LIMIT) {
+          delta_geo = R0 * MDR_OVERLAP_LIMIT;
+        } else if (delta_geo_alt / R1 > MDR_OVERLAP_LIMIT) {
+          delta_geo = deltamax - R1 * MDR_OVERLAP_LIMIT;
         }
 
         double deltap = deltap0 + deltap1;
@@ -618,24 +618,26 @@ double GranSubModNormalMDR::calculate_forces()
       //    R0 = gm->radi;
       //    R1 = gm->radj;
       //  here to mirror above? After confirming, these two conditions can be easily collapsed to remove duplication and clarify differences (also replace gm->radi/radj with R0/R1)
-      // ANSWER: If I am not mistaken R0 & R1 will always be set to non-zero values from the case above where contactSide = 0: 
+      // ANSWER: If I am not mistaken R0 & R1 will always be set to non-zero values from the case above where contactSide = 0:
       //            R0 = gm->radi;
       //            R1 = gm->radj;
-      //         Then their values will carry over into this else statement for the case of contactSide = 1. I don't want their values to change after they are set above, 
+      //         Then their values will carry over into this else statement for the case of contactSide = 1. I don't want their values to change after they are set above,
       //         hence why I didn't redine them.
       //
       //         However, this is written in a bit of a strange way now that I am reviewing it, I will give it some more thought.
-       
+      // ANSWER2: What if the contact type is WALL, then the iteration over contactSide = 0 will skip
+      //          defining R0 and R1? Is that correct?
+
       double delta_geo, delta_geo_alt;
       double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
       double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
       (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
       (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1,delta_geoOpt2);
 
-      if (delta_geo / gm->radi > overlap_limit) {
-        delta_geo = gm->radi * overlap_limit;
-      } else if (delta_geo_alt / gm->radj > overlap_limit) {
-        delta_geo = deltamax - gm->radj * overlap_limit;
+      if (delta_geo / gm->radi > MDR_OVERLAP_LIMIT) {
+        delta_geo = gm->radi * MDR_OVERLAP_LIMIT;
+      } else if (delta_geo_alt / gm->radj > MDR_OVERLAP_LIMIT) {
+        delta_geo = deltamax - gm->radj * MDR_OVERLAP_LIMIT;
       }
 
       double deltap = deltap0 + deltap1;

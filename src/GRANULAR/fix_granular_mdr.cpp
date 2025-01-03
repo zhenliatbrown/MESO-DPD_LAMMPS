@@ -46,7 +46,7 @@ using MathConst::MY_PI;
 
 static constexpr double EPSILON = 1e-16;
 
-enum {MEAN_SURF_DISP, RADIUS_UPDATE};
+enum {COMM_RADIUS_UPDATE, COMM_DDELTA_BAR};
 
 /* ---------------------------------------------------------------------- */
 
@@ -131,11 +131,15 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
 
 
   // QUESTION: can psi_b be different in different models?
-  // ANSWER: psi_b is a required argument when defining the mdr contact model (i.e. coeffs[4]). 
+  // ANSWER: psi_b is a required argument when defining the mdr contact model (i.e. coeffs[4]).
   //         It is a unique parameter to only the mdr model.
   //         It is allowed to vary as a parameter meaning it can be different for each simulation.
   //         Like the other coeffs for the MDR model no sensible mixing rule exists at the moment
-  //         meaning only one material type can be considered. 
+  //         meaning only one material type can be considered.
+  // ANSWER2: So users cannot define 2 MDR models with different moduli?
+  //         Should an error be invoked if two MDR models are therefore defined?
+  //         Should there be an error if a user uses a non-MDR model with an MDR model?
+
   psi_b_coeff = norm_model->psi_b;
 
   pre_force(0);
@@ -154,20 +158,25 @@ void FixGranularMDR::pre_force(int)
 {
   radius_update();
 
-  comm_stage = RADIUS_UPDATE;
+  comm_stage = COMM_RADIUS_UPDATE;
   comm->forward_comm(this, 20);
 
   calculate_contact_penalty();
   mean_surf_disp();
 
   // QUESTION: What about fix wall/gran?
-  // Answer: We never considered interaction between the mdr contact model and fix wall/gran 
-  auto fix_list = modify->get_fix_by_style("wall/gran/region");
-  for (int w = 0; w < fix_list.size(); w++) {
-    update_fix_gran_wall(fix_list[w]);
+  // Answer: We never considered interaction between the mdr contact model and fix wall/gran
+  // ANSWER2: Ideally this would be added, but at least temporarily I added an
+  // error. This incompatibility should be noted in the docs
+
+  auto fix_list = modify->get_fix_by_style("wall/gran");
+  for (int i = 0; i < fix_list.size(); i++) {
+    if (!utils::strmatch(fix_list[i]->style, "wall/gran/region"))
+      error->all(FLERR, "MDR model currently only supports fix wall/gran/region, not fix wall/gran");
+    update_fix_gran_wall(fix_list[i]);
   }
 
-  comm_stage = MEAN_SURF_DISP;
+  comm_stage = COMM_DDELTA_BAR;
   comm->forward_comm(this, 1);
 }
 
@@ -177,7 +186,7 @@ int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_f
 {
   double **dvector = atom->dvector;
   int m = 0;
-  if (comm_stage == RADIUS_UPDATE) {
+  if (comm_stage == COMM_RADIUS_UPDATE) {
     for (int i = 0; i < n; i++) {
       int j = list[i];
       buf[m++] = dvector[index_Ro][j];                 // 1
@@ -218,7 +227,7 @@ void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
   int m = 0;
   int last = first + n;
 
-  if (comm_stage == RADIUS_UPDATE) {
+  if (comm_stage == COMM_RADIUS_UPDATE) {
     for (int i = first; i < last; i++) {
       dvector[index_Ro][i] = buf[m++];                 // 1
       dvector[index_Vgeo][i] = buf[m++];               // 2
@@ -288,11 +297,6 @@ void FixGranularMDR::end_of_step()
       if ((radius[i] + dR) < (1.5 * Ro[i])) radius[i] += dR;
     }
 
-    // QUESTION: does it make more sense to initialize these in pre_force?
-    // ANSWER: The resetting/intialization of these values could likely also be done in pre_force.
-    //         I only placed them here since they should only be reset after all MDR calcs are done
-    //         for a particular particle in a given step. However, if the resetting is done 
-    //         prior to any MDR calcs in the next step it should effectivily be the same.
     Velas[i] = Vo * (1.0 + eps_bar[i]);
     Vcaps[i] = 0.0;
     eps_bar[i] = 0.0;
@@ -303,8 +307,6 @@ void FixGranularMDR::end_of_step()
     Atot_sum[i] = 0.0;
     ddelta_bar[i] = 0.0;
   }
-  comm_stage = RADIUS_UPDATE;
-  comm->forward_comm(this, 20);
 }
 
 
@@ -316,9 +318,9 @@ void FixGranularMDR::set_arrays(int i)
 {
   // QUESTION: which of these must be initialized to zero?
   //           maybe just index_history_setup_flag?
-  // ANSWER: I would agree with how you have it right now. All of the variables being initialized 
-  //         to zero here should be zero when the atom is created. However, is it ever possible for 
-  //         calculate_forces() to be called without calling pre_force()? If the answer is no, then 
+  // ANSWER: I would agree with how you have it right now. All of the variables being initialized
+  //         to zero here should be zero when the atom is created. However, is it ever possible for
+  //         calculate_forces() to be called without calling pre_force()? If the answer is no, then
   //         we might be able to move the initializations/resetting of Velas[i] through ddelta_bar[i]
   //         from end_of_step to pre_force. Then I think we could get rid of all the set arrays except
   //         for history_setup_flag. Vo will have to be redefined in pre_force to allow Velas[i] to be set.
@@ -386,9 +388,8 @@ void FixGranularMDR::radius_update()
 }
 
 /* ----------------------------------------------------------------------
-   QUESTION: is there a physical description for this loop?
-   ANSWER: Screen for non-physical contacts occuring through obstructing particles.
-           Assign non-zero penalties to these contacts to adjust force evaluation. 
+  Screen for non-physical contacts occuring through obstructing particles.
+  Assign non-zero penalties to these contacts to adjust force evaluation.
 ------------------------------------------------------------------------- */
 
 void FixGranularMDR::calculate_contact_penalty()
@@ -440,13 +441,10 @@ void FixGranularMDR::calculate_contact_penalty()
       const double radsum_ij = radi + radj;
       const double deltan_ij = radsum_ij - r_ij;
       if (deltan_ij < 0.0) continue;
-      for (int kk = jj; kk < jnum; kk++) {
+      for (int kk = jj + 1; kk < jnum; kk++) {
         k = jlist[kk];
         k &= NEIGHMASK;
 
-        // QUESTION: why not start loop at jj+1?
-        // ANSWER: Good point, I can't think of any reason not to.
-        if (kk == jj) continue;
         const double delx_ik = x[k][0] - xtmp;
         const double dely_ik = x[k][1] - ytmp;
         const double delz_ik = x[k][2] - ztmp;
@@ -477,9 +475,6 @@ void FixGranularMDR::calculate_contact_penalty()
         // pull ik history
         history_ik = &allhistory[size_history * kk];
         double * pik = &history_ik[22]; // penalty for contact i and k
-
-        // QUESTION: is this comment accurate?
-        // ANSWER: Yes, looks accurate
 
         // Find pair of atoms with the smallest overlap, atoms a & b, 3rd atom c is central
         //   if a & b are both local:
@@ -551,11 +546,8 @@ void FixGranularMDR::calculate_contact_penalty()
               }
             }
 
-            // QUESTION: is this ever supposed to happen?
-            // ANSWER: No, it means the neighbor lists are either (i) not being built frequently enough
-            //         or (ii) the size of the neighbor list is too small. An error should be given.
             if (pjk == nullptr)
-              error->one(FLERR, "Contact between a pair of particles was detected, however it is not reflected in the neighbor lists. To solve this issue either build the neighbor lists more frequently or increase their size (e.g. increase the skin distance).");
+              error->one(FLERR, "Contact between a pair of particles was detected by the MDR model, however it is not reflected in the neighbor lists. To solve this issue either build the neighbor lists more frequently or increase their size (e.g. increase the skin distance).");
 
             pjk[0] += 1.0 / (1.0 + std::exp(-50.0 * (alpha / MY_PI - 0.5)));
           }
@@ -567,8 +559,7 @@ void FixGranularMDR::calculate_contact_penalty()
 
 
 /* ----------------------------------------------------------------------
-   QUESTION: is there a physical description for this loop?
-   ANSWER: Calculate mean surface displacement increment for each particle
+   Calculate mean surface displacement increment for each particle
 ------------------------------------------------------------------------- */
 
 void FixGranularMDR::mean_surf_disp()
