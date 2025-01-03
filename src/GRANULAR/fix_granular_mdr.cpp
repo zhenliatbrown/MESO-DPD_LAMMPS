@@ -45,6 +45,7 @@ using namespace FixConst;
 using MathConst::MY_PI;
 
 static constexpr double EPSILON = 1e-16;
+static constexpr double OVERLAP_LIMIT = 0.75;
 
 enum {COMM_RADIUS_UPDATE, COMM_DDELTA_BAR};
 
@@ -115,45 +116,61 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
   if (pair == nullptr)
     error->all(FLERR, "Must use pair granular with MDR model");
 
-  class GranularModel* model;
-  class GranularModel** models_list = pair->models_list;
-  class GranSubModNormalMDR* norm_model = nullptr;
+  // Confirm all MDR models are consistent
+
+  class GranularModel *pair_model, *fix_model;
+  class GranularModel **models_list = pair->models_list;
+  class GranSubModNormalMDR *norm_model = nullptr;
   for (int i = 0; i < pair->nmodels; i++) {
-    model = models_list[i];
-    if (model->normal_model->name == "mdr")
-      norm_model = dynamic_cast<GranSubModNormalMDR *>(model->normal_model);
+    pair_model = models_list[i];
+    if (pair_model->normal_model->name == "mdr") {
+      if (norm_model != nullptr)
+        error->all(FLERR, "Cannot currently define multiple MDR normal models in the pairstyle");
+      norm_model = dynamic_cast<GranSubModNormalMDR *>(pair_model->normal_model);
+    } else {
+      error->all(FLERR, "Cannot combine MDR normal model with a different normal model in the pairstyle");
+    }
   }
 
   if (norm_model == nullptr)
     error->all(FLERR, "Must specify MDR normal model with pair granular");
+  psi_b_coeff = norm_model->psi_b;
+
+  fix_wall_list = modify->get_fix_by_style("wall/gran/region");
+  class GranSubModNormalMDR *norm_model2;
+  class FixWallGranRegion *fix;
+  for (int i = 0; i < fix_wall_list.size(); i++) {
+    if (!utils::strmatch(fix_wall_list[i]->style, "wall/gran/region"))
+      error->all(FLERR, "MDR model currently only supports fix wall/gran/region, not fix wall/gran");
+
+    fix = dynamic_cast<FixWallGranRegion*>(fix_wall_list[i]);
+    if (fix->model->normal_model->name != "mdr")
+      error->all(FLERR, "Fix wall/gran/region must use an MDR normal model when using an MDR pair model");
+
+    norm_model2 = dynamic_cast<GranSubModNormalMDR *>(fix->model->normal_model);
+
+    // QUESTION: which of these coefficients must be identical?
+    //if (norm_model->E != norm_model2->E)
+    //  error->all(FLERR, "Young's modulus in pair style, {}, does not agree with value {} in fix gran/wall/region",
+    //    norm_model->E, norm_model2->E);
+    //if (norm_model->nu != norm_model2->nu)
+    //  error->all(FLERR, "Poisson's ratio in pair style, {}, does not agree with value {} in fix gran/wall/region",
+    //    norm_model->nu, norm_model2->nu);
+    //if (norm_model->Y != norm_model2->Y)
+    //  error->all(FLERR, "Yield stress in pair style, {}, does not agree with value {} in fix gran/wall/region",
+    //    norm_model->Y, norm_model2->Y);
+    //if (norm_model->gamma != norm_model2->gamma)
+    //  error->all(FLERR, "Surface energy in pair style, {}, does not agree with value {} in fix gran/wall/region",
+    //    norm_model->gamma, norm_model2->gamma);
+    //if (norm_model->CoR != norm_model2->CoR)
+    //  error->all(FLERR, "Coefficient of restitution in pair style, {}, does not agree with value {} in fix gran/wall/region",
+    //    norm_model->CoR, norm_model2->CoR);
+    //if (norm_model->psi_b != norm_model2->psi_b)
+    //  error->all(FLERR, "Bulk response trigger in pair style, {}, does not agree with value {} in fix gran/wall/region",
+    //    norm_model->psi_b, norm_model2->psi_b);
+  }
 
   fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));
-
-
-  // QUESTION: can psi_b be different in different models?
-  // ANSWER: psi_b is a required argument when defining the mdr contact model (i.e. coeffs[4]).
-  //         It is a unique parameter to only the mdr model.
-  //         It is allowed to vary as a parameter meaning it can be different for each simulation.
-  //         Like the other coeffs for the MDR model no sensible mixing rule exists at the moment
-  //         meaning only one material type can be considered.
-  // ANSWER2: So users cannot define 2 MDR models with different moduli?
-  //         Should an error be invoked if two MDR models are therefore defined?
-  //         Should there be an error if a user uses a non-MDR model with an MDR model?
-  // ANSWER3: So users cannot define 2 MDR models with different moduli?
-  //           -> Correct, as of now it only makes sense to have 1 MDR model with one set of material 
-  //              properties defined per simulation.
-  //         Should an error be invoked if two MDR models are therefore defined?
-  //           -> Yes, it would be good to have an error alerting the user that only 1 MDR model
-  //              is allowed to be defined.
-  //         Should there be an error if a user uses a non-MDR model with an MDR model? 
-  //           -> It depends, if it is a rolling or tangential model then its okay. We superimpose
-  //              the MDR model with a rolling and tangential model for the tableting simulation. 
-  //              However, I don't think we should allow other normal models to be defined. I don't
-  //              really know what it would mean physically if a hooke-particle contacted a mdr-particle.
-  //              The gran/wall/region interaction should also be MDR so that the mean surface displacement
-  //              is correctly calculated. 
-
-  psi_b_coeff = norm_model->psi_b;
 
   pre_force(0);
 }
@@ -176,19 +193,7 @@ void FixGranularMDR::pre_force(int)
 
   calculate_contact_penalty();
   mean_surf_disp();
-
-  // QUESTION: What about fix wall/gran?
-  // ANSWER: We never considered interaction between the mdr contact model and fix wall/gran
-  // ANSWER2: Ideally this would be added, but at least temporarily I added an
-  // error. This incompatibility should be noted in the docs
-  // ANSWER3: Sounds good.
-
-  auto fix_list = modify->get_fix_by_style("wall/gran");
-  for (int i = 0; i < fix_list.size(); i++) {
-    if (!utils::strmatch(fix_list[i]->style, "wall/gran/region"))
-      error->all(FLERR, "MDR model currently only supports fix wall/gran/region, not fix wall/gran");
-    update_fix_gran_wall(fix_list[i]);
-  }
+  update_fix_gran_wall();
 
   comm_stage = COMM_DDELTA_BAR;
   comm->forward_comm(this, 1);
@@ -675,13 +680,11 @@ void FixGranularMDR::mean_surf_disp()
       (R0 < R1) ? delta_geo0 = MAX(deltaOpt1, deltaOpt2) : delta_geo0 = MIN(deltaOpt1, deltaOpt2);
       (R0 < R1) ? delta_geo1 = MIN(deltaOpt1, deltaOpt2) : delta_geo1 = MAX(deltaOpt1, deltaOpt2);
 
-      double overlap_limit = 0.75;
-
-      if (delta_geo0 / R0 > overlap_limit) {
-        delta_geo0 = R0 * overlap_limit;
+      if (delta_geo0 / R0 > OVERLAP_LIMIT) {
+        delta_geo0 = R0 * OVERLAP_LIMIT;
         delta_geo1 = deltamax - delta_geo0;
-      } else if (delta_geo1 / R1 > overlap_limit) {
-        delta_geo1 = R1 * overlap_limit;
+      } else if (delta_geo1 / R1 > OVERLAP_LIMIT) {
+        delta_geo1 = R1 * OVERLAP_LIMIT;
         delta_geo0 = deltamax - delta_geo1;
       }
 
@@ -710,13 +713,8 @@ void FixGranularMDR::mean_surf_disp()
    Update instance of fix gran/wall
 ------------------------------------------------------------------------- */
 
-void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
+void FixGranularMDR::update_fix_gran_wall()
 {
-  FixWallGranRegion* fix = dynamic_cast<FixWallGranRegion*>(fix_in);
-  GranularModel * model = fix->model;
-  Region * region = fix->region;
-
-  const int size_history = model->size_history;
   int i, m, nc, iwall;
 
   double **x = atom->x;
@@ -727,40 +725,47 @@ void FixGranularMDR::update_fix_gran_wall(Fix* fix_in)
   double *Acon0 = atom->dvector[index_Acon0];
   double *ddelta_bar = atom->dvector[index_ddelta_bar];
 
-  if (region->dynamic_check())
-    region->prematch();
+  for (int w = 0; w < fix_wall_list.size(); w++) {
+    FixWallGranRegion *fix = dynamic_cast<FixWallGranRegion*>(fix_wall_list[w]);
+    GranularModel *model = fix->model;
+    const int size_history = model->size_history;
+    Region *region = fix->region;
 
-  for (i = 0; i < nlocal; i++) {
-    if (!(mask[i] & groupbit)) continue;
-    if (! region->match(x[i][0], x[i][1], x[i][2])) continue;
+    if (region->dynamic_check())
+      region->prematch();
 
-    nc = region->surface(x[i][0], x[i][1], x[i][2], radius[i] + model->pulloff_distance(radius[i], 0.0));
+    for (i = 0; i < nlocal; i++) {
+      if (!(mask[i] & groupbit)) continue;
+      if (! region->match(x[i][0], x[i][1], x[i][2])) continue;
 
-    if (nc == 0) {
-      fix->ncontact[i] = 0;
-      continue;
-    }
-    if (nc == 1) {
-      fix->c2r[0] = 0;
-      iwall = region->contact[0].iwall;
-      if (fix->ncontact[i] == 0) {
-        fix->ncontact[i] = 1;
-        fix->walls[i][0] = iwall;
-        for (m = 0; m < size_history; m++) fix->history_many[i][0][m] = 0.0;
-      } else if (fix->ncontact[i] > 1 || iwall != fix->walls[i][0])
+      nc = region->surface(x[i][0], x[i][1], x[i][2], radius[i] + model->pulloff_distance(radius[i], 0.0));
+
+      if (nc == 0) {
+        fix->ncontact[i] = 0;
+        continue;
+      }
+      if (nc == 1) {
+        fix->c2r[0] = 0;
+        iwall = region->contact[0].iwall;
+        if (fix->ncontact[i] == 0) {
+          fix->ncontact[i] = 1;
+          fix->walls[i][0] = iwall;
+          for (m = 0; m < size_history; m++) fix->history_many[i][0]  [m] = 0.0;
+        } else if (fix->ncontact[i] > 1 || iwall != fix->walls[i][0])
+          fix->update_contacts(i, nc);
+      } else
         fix->update_contacts(i, nc);
-    } else
-      fix->update_contacts(i, nc);
 
-    // process current contacts
-    for (int ic = 0; ic < nc; ic++) {
-      const double wij = 1.0;
-      if (Acon0[i] != 0.0) {
-        const double delta = radius[i] - region->contact[ic].r;
-        const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
-        const double ddelta = delta - delta_offset0;
-        const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
-        ddelta_bar[i] += wij * Ac_offset0 / Acon0[i] * ddelta;
+      // process current contacts
+      for (int ic = 0; ic < nc; ic++) {
+        const double wij = 1.0;
+        if (Acon0[i] != 0.0) {
+          const double delta = radius[i] - region->contact[ic].r;
+          const double delta_offset0 = fix->history_many[i][fix->c2r[ic]][0];
+          const double ddelta = delta - delta_offset0;
+          const double Ac_offset0 = fix->history_many[i][fix->c2r[ic]][18];
+          ddelta_bar[i] += wij * Ac_offset0 / Acon0[i] * ddelta;
+        }
       }
     }
   }

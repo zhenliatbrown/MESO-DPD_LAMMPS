@@ -76,11 +76,12 @@ class FixGranularMDR : public Fix {
   double psi_b_coeff;
   class PairGranular *pair;
   class FixNeighHistory *fix_history;
+  std::vector<Fix *> fix_wall_list;
 
   void radius_update();
   void mean_surf_disp();
   void calculate_contact_penalty();
-  void update_fix_gran_wall(Fix*);
+  void update_fix_gran_wall();
 
   int index_Ro;                 // initial radius
   int index_Vgeo;               // geometric particle volume of apparent particle afterremoving spherical cap volume
