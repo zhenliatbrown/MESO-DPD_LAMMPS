@@ -627,6 +627,7 @@ double GranSubModNormalMDR::calculate_forces()
       //         However, this is written in a bit of a strange way now that I am reviewing it, I will give it some more thought.
       // ANSWER2: What if the contact type is WALL, then the iteration over contactSide = 0 will skip
       //          defining R0 and R1? Is that correct?
+      // ANSWER3: Correct, but in that case they are not needed since there is no partitioning of the displacement.
 
       double delta_geo, delta_geo_alt;
       double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));

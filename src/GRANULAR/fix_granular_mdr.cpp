@@ -139,6 +139,19 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
   // ANSWER2: So users cannot define 2 MDR models with different moduli?
   //         Should an error be invoked if two MDR models are therefore defined?
   //         Should there be an error if a user uses a non-MDR model with an MDR model?
+  // ANSWER3: So users cannot define 2 MDR models with different moduli?
+  //           -> Correct, as of now it only makes sense to have 1 MDR model with one set of material 
+  //              properties defined per simulation.
+  //         Should an error be invoked if two MDR models are therefore defined?
+  //           -> Yes, it would be good to have an error alerting the user that only 1 MDR model
+  //              is allowed to be defined.
+  //         Should there be an error if a user uses a non-MDR model with an MDR model? 
+  //           -> It depends, if it is a rolling or tangential model then its okay. We superimpose
+  //              the MDR model with a rolling and tangential model for the tableting simulation. 
+  //              However, I don't think we should allow other normal models to be defined. I don't
+  //              really know what it would mean physically if a hooke-particle contacted a mdr-particle.
+  //              The gran/wall/region interaction should also be MDR so that the mean surface displacement
+  //              is correctly calculated. 
 
   psi_b_coeff = norm_model->psi_b;
 
@@ -165,9 +178,10 @@ void FixGranularMDR::pre_force(int)
   mean_surf_disp();
 
   // QUESTION: What about fix wall/gran?
-  // Answer: We never considered interaction between the mdr contact model and fix wall/gran
+  // ANSWER: We never considered interaction between the mdr contact model and fix wall/gran
   // ANSWER2: Ideally this would be added, but at least temporarily I added an
   // error. This incompatibility should be noted in the docs
+  // ANSWER3: Sounds good.
 
   auto fix_list = modify->get_fix_by_style("wall/gran");
   for (int i = 0; i < fix_list.size(); i++) {
