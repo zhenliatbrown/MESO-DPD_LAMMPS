@@ -118,9 +118,16 @@ if(BUILD_WHAM)
 
   execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf ${CMAKE_BINARY_DIR}/_deps/${archive}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/_deps/src)
-  file(GLOB TARGET_SOURCE "${CMAKE_BINARY_DIR}/_deps/src/wham")
+  find_package(Patch)
+  if(PATCH_FOUND)
+    message(STATUS "Apply patch to customize WHAM using ${Patch_EXECUTABLE}")
+    execute_process(
+      COMMAND ${Patch_EXECUTABLE} -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/update-wham-2.0.11.patch
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/_deps/src/wham/
+    )
+  endif()
   file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/_deps/wham-src)
-  file(RENAME ${TARGET_SOURCE} ${CMAKE_BINARY_DIR}/_deps/wham-src)
+  file(RENAME "${CMAKE_BINARY_DIR}/_deps/src/wham" ${CMAKE_BINARY_DIR}/_deps/wham-src)
   file(COPY CMakeLists.wham DESTINATION ${CMAKE_BINARY_DIR}/_deps/wham-src/)
   file(RENAME "${CMAKE_BINARY_DIR}/_deps/wham-src/CMakeLists.wham"
     "${CMAKE_BINARY_DIR}/_deps/wham-src/CMakeLists.txt")
