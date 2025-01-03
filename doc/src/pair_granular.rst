@@ -82,6 +82,7 @@ and their required arguments are:
 3. *hertz/material* : E, :math:`\eta_{n0}` (or :math:`e`), :math:`\nu`
 4. *dmt* : E, :math:`\eta_{n0}` (or :math:`e`), :math:`\nu`, :math:`\gamma`
 5. *jkr* : E, :math:`\eta_{n0}` (or :math:`e`), :math:`\nu`, :math:`\gamma`
+6. *mdr* : :math:`E`, :math:`\nu`, :math:`Y`, :math:`\Delta\gamma`, :math:`\psi_b`, :math:`e`
 
 Here, :math:`k_n` is spring stiffness (with units that depend on model
 choice, see below); :math:`\eta_{n0}` is a damping prefactor (or, in its
@@ -161,6 +162,45 @@ initially will not experience force until they come into contact
 :math:`\delta \geq 0`; as they move apart and (:math:`\delta < 0`), they
 experience a tensile force up to :math:`3\pi\gamma R`, at which point they
 lose contact.
+
+The *mdr* model is a mechanically-derived contact model able to capture the 
+contact response between adhesive elastic-plastic particles into large deformation.
+The inputs to the model are primarily physical material 
+properties: Young's Modulus :math:`E`, Poisson's ratio :math:`\nu`,
+yield stress :math:`Y`, effective surface energy :math:`\Delta\gamma`, and 
+coefficent of restitution :math:`e`. The execption is the critical confinement 
+ratio :math:`\psi_b` which is a geometrically motivated criterion for determining 
+when the bulk elastic response will trigger. The adhesive response is based on
+a JKR-type fracture mechanics based formulation that is valid into large deformation.     
+
+The majority of the theoritical foundations of the *mdr* model are developed in the
+two part series :ref:`Zunker and Kamrin Part I <Zunker2024I>` and 
+:ref:`Zunker and Kamrin Part II <Zunker2024II>`. Additional development 
+of the model and demonstration of its ability to simulate industrially relavant 
+powder compaction processes are presented in :ref:`Zunker et al. <Zunker2025>`
+
+.. note::
+
+   The *mdr* model requires some specific settings to function properly,
+   please read the following text carefully to ensure all requirments are 
+   followed.
+
+Newton's third law must be set *off*. This ensures that the neighbor lists
+are constructed properly for the topological penalty algorithm used to screen
+for non-physical contacts occurring through obstructing particles, an issue
+prevelant under large deformation conditions. For more information on this
+algorithm see :ref:`Zunker et al. <Zunker2025>`
+
+.. code-block:: LAMMPS
+
+   newton off
+
+The damping model must be set to *none*. The *mdr* model already has a built 
+in damping model. 
+
+.. code-block:: LAMMPS
+
+   pair_coeff * * mdr 5e6 0.4 1.9e5 2 0.5 0.5 damping none
 
 ----------
 
@@ -869,6 +909,28 @@ solids. Proc. R. Soc. Lond. A, 324(1558), 301-313.
 **Derjaguin et al, 1975)** Derjaguin, B. V., Muller, V. M., & Toporov,
 Y. P. (1975). Effect of contact deformations on the adhesion of
 particles. Journal of Colloid and interface science, 53(2), 314-326.
+
+.. _Zunker2024I:
+
+**(Zunker et al, 2024)** Zunker, W., & Kamrin, K. (2024).
+A mechanically-derived contact model for adhesive elastic-perfectly
+plastic particles, Part I: Utilizing the method of dimensionality
+reduction. Journal of the Mechanics and Physics of Solids, 183, 105492.
+
+.. _Zunker2024II:
+
+**(Zunker et al, 2024)** Zunker, W., & Kamrin, K. (2024).
+A mechanically-derived contact model for adhesive elastic-perfectly
+plastic particles, Part II: Contact under high compaction—modeling
+a bulk elastic response. Journal of the Mechanics and Physics of Solids,
+183, 105493.
+
+.. _Zunker2025:
+
+**(Zunker et al, 2025)** Zunker, W., Dunatunga, S., Thakur, S.,
+Tang, P., & Kamrin, K. (2025). Experimentally validated DEM for large
+deformation powder compaction: mechanically-derived contact model and
+screening of non-physical contacts. engrXiv.
 
 .. _Luding2008:
 
