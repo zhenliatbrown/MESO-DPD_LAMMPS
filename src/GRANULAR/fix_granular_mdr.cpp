@@ -149,25 +149,21 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
 
     norm_model2 = dynamic_cast<GranSubModNormalMDR *>(fix->model->normal_model);
 
-    // QUESTION: which of these coefficients must be identical?
-    //if (norm_model->E != norm_model2->E)
-    //  error->all(FLERR, "Young's modulus in pair style, {}, does not agree with value {} in fix gran/wall/region",
-    //    norm_model->E, norm_model2->E);
-    //if (norm_model->nu != norm_model2->nu)
-    //  error->all(FLERR, "Poisson's ratio in pair style, {}, does not agree with value {} in fix gran/wall/region",
-    //    norm_model->nu, norm_model2->nu);
-    //if (norm_model->Y != norm_model2->Y)
-    //  error->all(FLERR, "Yield stress in pair style, {}, does not agree with value {} in fix gran/wall/region",
-    //    norm_model->Y, norm_model2->Y);
-    //if (norm_model->gamma != norm_model2->gamma)
-    //  error->all(FLERR, "Surface energy in pair style, {}, does not agree with value {} in fix gran/wall/region",
-    //    norm_model->gamma, norm_model2->gamma);
-    //if (norm_model->CoR != norm_model2->CoR)
-    //  error->all(FLERR, "Coefficient of restitution in pair style, {}, does not agree with value {} in fix gran/wall/region",
-    //    norm_model->CoR, norm_model2->CoR);
-    //if (norm_model->psi_b != norm_model2->psi_b)
-    //  error->all(FLERR, "Bulk response trigger in pair style, {}, does not agree with value {} in fix gran/wall/region",
-    //    norm_model->psi_b, norm_model2->psi_b);
+    if (norm_model->E != norm_model2->E)
+      error->all(FLERR, "Young's modulus in pair style, {}, does not agree with value {} in fix gran/wall/region",
+        norm_model->E, norm_model2->E);
+    if (norm_model->nu != norm_model2->nu)
+      error->all(FLERR, "Poisson's ratio in pair style, {}, does not agree with value {} in fix gran/wall/region",
+        norm_model->nu, norm_model2->nu);
+    if (norm_model->Y != norm_model2->Y)
+      error->all(FLERR, "Yield stress in pair style, {}, does not agree with value {} in fix gran/wall/region",
+        norm_model->Y, norm_model2->Y);
+    if (norm_model->psi_b != norm_model2->psi_b)
+      error->all(FLERR, "Bulk response trigger in pair style, {}, does not agree with value {} in fix gran/wall/region",
+        norm_model->psi_b, norm_model2->psi_b);    
+    if (norm_model->CoR != norm_model2->CoR)
+      error->all(FLERR, "Coefficient of restitution in pair style, {}, does not agree with value {} in fix gran/wall/region",
+        norm_model->CoR, norm_model2->CoR);
   }
 
   fix_history = dynamic_cast<FixNeighHistory *>(modify->get_fix_by_id("NEIGH_HISTORY_GRANULAR"));

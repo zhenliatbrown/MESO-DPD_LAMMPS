@@ -40,6 +40,9 @@ Examples
    pair_style granular
    pair_coeff * * hertz 1000.0 50.0 tangential mindlin 1000.0 1.0 0.4 heat area 0.1
 
+   pair_style granular
+   pair_coeff * * mdr 5e6 0.4 1.9e5 2.0 0.5 0.5 tangential linear_history 940.0 0.0 0.7 rolling sds 2.7e5 0.0 0.6 damping none
+
 Description
 """""""""""
 
@@ -163,33 +166,77 @@ initially will not experience force until they come into contact
 experience a tensile force up to :math:`3\pi\gamma R`, at which point they
 lose contact.
 
-The *mdr* model is a mechanically-derived contact model able to capture the 
+The *mdr* model is a mechanically-derived contact model designed to capture the 
 contact response between adhesive elastic-plastic particles into large deformation.
-The inputs to the model are primarily physical material 
-properties: Young's Modulus :math:`E`, Poisson's ratio :math:`\nu`,
-yield stress :math:`Y`, effective surface energy :math:`\Delta\gamma`, and 
-coefficent of restitution :math:`e`. The execption is the critical confinement 
-ratio :math:`\psi_b` which is a geometrically motivated criterion for determining 
-when the bulk elastic response will trigger. The adhesive response is based on
-a JKR-type fracture mechanics based formulation that is valid into large deformation.     
+The theoritical foundations of the *mdr* model are detailed in the
+two-part series :ref:`Zunker and Kamrin Part I <Zunker2024I>` and 
+:ref:`Zunker and Kamrin Part II <Zunker2024II>`. Further development 
+and demonstrations of its application to industrially relevant powder
+compaction processes are presented in :ref:`Zunker et al. <Zunker2025>`.
 
-The majority of the theoritical foundations of the *mdr* model are developed in the
-two part series :ref:`Zunker and Kamrin Part I <Zunker2024I>` and 
-:ref:`Zunker and Kamrin Part II <Zunker2024II>`. Additional development 
-of the model and demonstration of its ability to simulate industrially relavant 
-powder compaction processes are presented in :ref:`Zunker et al. <Zunker2025>`
+The model requires the following inputs: 
+
+   1. *Young's modulus* :math:`E > 0` : The Young's modulus is commonly reported
+   for various powders.
+
+   2. *Poissons ratio* :math:`0 \le \nu \le 0.5` : The Poisson's ratio is commonly
+   reported for various powders.
+
+   3. *Yield stress* :math:`Y \ge 0` : The yield stress is often known for powders
+   composed of materials such as metals but may be unreported for ductile organic
+   materials, in which case it can be treated as a free parameter.
+
+   4. *Effective surface energy* :math:`\Delta\gamma \ge 0` : The effective surface
+   energy for powder compaction applications is most easily determined through its
+   relation to the more commonly reported critical stress intensity factor
+   :math:`K_{Ic} = \sqrt{2\Delta\gamma E/(1-\nu^2)}`.
+
+   5. *Critical confinement ratio* :math:`0 \le \psi_b \le 1` : The critcal confinment 
+   ratio is a tunable parameter that determines when the bulk elastic response is
+   triggered. Lower values of :math:`\psi_b` delay the onset of the bulk elastic
+   response.
+
+   6. *Coefficient of restiution* :math:`0 \le e \le 1` : The coefficient of
+   restitution is a tunable parameter that controls damping in the normal direction. 
+
+.. note::
+
+   The values for :math:`E`, :math:`\nu`, :math:`Y`, and :math:`\Delta\gamma` (i.e.,
+   :math:`K_{Ic}`) should be selected for zero porosity to reflect the intrinsic 
+   material property rather than the bulk powder property.
+
+The *mdr* model produces a nonlinear force-displacement response, therefore the
+critical timestep :math:`\Delta t` depends on the inputs and level of
+deformation. As a conservative starting point the timestep can be assumed to be
+dictated by the bulk elastic response such that
+:math:`\Delta t = 0.35\sqrt{m/k_\textrm{bulk}}`, where :math:`m` is the mass of
+the smallest particle and :math:`k_\textrm{bulk} = \kappa R_\textrm{min}` is an
+effective stiffness related to the bulk elastic response.
+Here, :math:`\kappa = E/(3(1-2\nu))` is the bulk modulus and
+:math:`R_\textrm{min}` is the radius of the smallest particle.
 
 .. note::
 
    The *mdr* model requires some specific settings to function properly,
-   please read the following text carefully to ensure all requirments are 
+   please read the following text carefully to ensure all requirements are 
    followed.
+
+The *atom_style* must be set to *sphere 1* to enable dynamic particle
+radii. The *mdr* model is designed to respect the incompressibility of
+plastic deformation and inherently tracks free surface displacements
+induced by all particle contacts. Setting *atom_style sphere 1* ensures
+that updates to the particle radius are properly reflected throughout
+the simulation.
+
+.. code-block:: LAMMPS
+
+   atom_style sphere 1
 
 Newton's third law must be set *off*. This ensures that the neighbor lists
 are constructed properly for the topological penalty algorithm used to screen
 for non-physical contacts occurring through obstructing particles, an issue
 prevelant under large deformation conditions. For more information on this
-algorithm see :ref:`Zunker et al. <Zunker2025>`
+algorithm see :ref:`Zunker et al. <Zunker2025>`. 
 
 .. code-block:: LAMMPS
 
@@ -202,6 +249,47 @@ in damping model.
 
    pair_coeff * * mdr 5e6 0.4 1.9e5 2 0.5 0.5 damping none
 
+The definition of multiple *mdr* models in the *pair_style* is currently not
+supported. Similarly, the *mdr* model cannot be combined with a different normal
+model in the *pair_style*. Phyiscally this means that only one homogenous
+collection of particles governed by a single *mdr* model is allowed.
+
+The *mdr* model currently only supports *fix wall/gran/region*, not
+*fix wall/gran*. If the *mdr* model is specified for the *pair_style*
+any *fix wall/gran/region* commands must also use the *mdr* model.
+Additionally, the following *mdr* inputs must match between the
+*pair_style* and *fix wall/gran/region* definitions: :math:`E`,
+:math:`\nu`, :math:`Y`, :math:`\psi_b`, and :math:`e`. The exception
+is :math:`\Delta\gamma`, which may vary, permitting different
+adhesive behaviors between particle-particle and particle-wall interactions.  
+
+.. note::
+
+   The *mdr* model has a number of custom *property/atom* definitions that
+   can be called in the input file. The useful properties for visualization
+   and analysis are described below.
+
+In addition to contact forces the *mdr* model also tracks the following
+quantities for each particle: elastic volume change, the average normal
+stress components for each particle, and total surface area involved in
+contact. In the input script these quantities can be accessed through the
+*compute* command.
+
+.. code-block:: LAMMPS
+
+   compute ID group-ID property/atom d_Velas
+   compute ID group-ID property/atom d_sigmaxx
+   compute ID group-ID property/atom d_sigmayy
+   compute ID group-ID property/atom d_sigmazz
+   compute ID group-ID property/atom d_Acon1
+
+.. note::
+
+   The *mdr* model has two example input scripts within the
+   *examples/granular* directory. The first is a die compaction
+   simulation involving 200 particles named *in.tableting.200*.
+   The second is a triaxial compaction simulation involving 12
+   particles named *in.triaxial.compaction.12*. 
 ----------
 
 In addition, the normal force is augmented by a damping term of the
