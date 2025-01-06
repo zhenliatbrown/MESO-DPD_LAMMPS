@@ -13,12 +13,12 @@
 
 /* ----------------------------------------------------------------------
    Package      FixPIMDBLangevin
-   // CR: I guess we should fill these?
-   Purpose      TODO
-   Copyright    TODO
-   Authors      TODO
 
-   Updated      TODO
+   Purpose      Path Integral Molecular Dynamics of Bosons with Langevin Thermostat
+   Copyright    Hirshberg lab @ Tel Aviv University
+   Authors      Yotam M. Y. Feldman, Ofir Blumer
+
+   Updated      Jan-06-2025
    Version      1.0
 ------------------------------------------------------------------------- */
 
@@ -41,11 +41,6 @@
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
-
-// CR: shouldn't be redefined here, the values are supposed to be consistent with fix_pimd_langevin.cpp
-enum { PIMD };
-enum { NVE, NVT, NPH, NPT };
-enum { PHYSICAL, NORMAL };
 
 /* ---------------------------------------------------------------------- */
 
