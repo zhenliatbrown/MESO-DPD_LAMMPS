@@ -9,28 +9,30 @@ neighbor        2 bin
 neigh_modify    delay 0
 timestep        1e-6
 
-######################### SIMULATION BOUNDING BOX, INTEGRATION, AND, GRAVITY ###########################
+##################### SIMULATION BOUNDING BOX, INSERT PARTICLES, AND INTEGRATION #######################
 
-boundary        f f f
+boundary f f f
 read_data spheres12.data
-fix             integr all nve/sphere
+fix integr all nve/sphere
 
 ########################### PARTICLE MATERIAL PROPERTIES AND FORCE MODEL ###############################
 
 variable atomRadius equal 0.5
 
 pair_style granular
-# mdr = E, nu, Y, gamma, psi_b, CoR
-# linear_history = k_t, x_gamma,t, mu_s 
-variable YoungsModulus equal 1e9
-variable PoissonsRatio equal 0.3
-variable YieldStress equal 50e6
-variable SurfaceEnergy equal 0.0
-variable psi_b equal 0.5
-variable CoR equal 0.5
-variable kt equal 2/7*${YoungsModulus}*${atomRadius}
-variable xgammat equal 0.0
-variable mu_s equal 0.5
+
+# mdr = E, nu, Y, gamma, psi_b, CoR 
+variable YoungsModulus  equal 1e9
+variable PoissonsRatio  equal 0.3
+variable YieldStress    equal 50e6
+variable SurfaceEnergy  equal 0.0
+variable psi_b          equal 0.5
+variable CoR            equal 0.5
+
+# linear_history = k_t, x_gamma,t, mu_s
+variable kt       equal 2/7*${YoungsModulus}*${atomRadius}
+variable xgammat  equal 0.0
+variable mu_s     equal 0.5
 
 pair_coeff * * mdr ${YoungsModulus} ${PoissonsRatio} ${YieldStress} ${SurfaceEnergy} ${psi_b} ${CoR} tangential linear_history ${kt} ${xgammat} ${mu_s} damping none
 
@@ -67,7 +69,7 @@ variable plane_xz_neg_force equal c_plane_xz_neg_force
 compute plane_yz_neg_force all reduce sum f_plane_yz_neg[2]
 variable plane_yz_neg_force equal c_plane_yz_neg_force
 
-fix print1 all print 1 "${plane_disp} ${plane_xy_neg_force} ${plane_xz_neg_force} ${plane_yz_neg_force}" file lammps_macro_force_disp_diff_radii.csv screen no
+fix print1 all print 1 "${plane_disp} ${plane_xy_neg_force} ${plane_xz_neg_force} ${plane_yz_neg_force}" file force_disp_triaxial12.csv screen no
 
 ######################################## SCREEN OUTPUT  #################################################### 
 
@@ -84,9 +86,9 @@ variable compression_steps equal round(${disp_max}/${ddisp})
 variable output_rate equal round(${compression_steps}/100)
 
 ##################################### SET UP DUMP OUTPUTS  ####################################################
-
-#dump   dmp all vtk ${output_rate} post/triaxial12particles_*.vtk id type mass x y z vx vy vz fx fy fz radius 
-dump dumpParticles all custom ${output_rate} triaxial12particles.dump id type mass x y z vx vy vz fx fy fz radius
+ 
+dump dumpParticles all custom ${output_rate} triaxial_compaction_12.dump id type mass x y z vx vy vz fx fy fz radius
+#dump   dmp all vtk ${output_rate} post/triaxial12particles_*.vtk id type mass x y z vx vy vz fx fy fz radius
 
 #################################### COMPRESS THE PARTICLES  ##################################################
 
@@ -96,5 +98,3 @@ variable plane_disp equal ${ddisp}*elapsed
 variable plane_disp_neg equal -${ddisp}*elapsed
 
 run ${compression_steps}
-
-#################################### UNCOMPRESS THE PARTICLES  ################################################

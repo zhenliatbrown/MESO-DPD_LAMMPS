@@ -279,11 +279,13 @@ adhesive behaviors between particle-particle and particle-wall interactions.
 In addition to contact forces the *mdr* model also tracks the following
 quantities for each particle: elastic volume change, the average normal
 stress components for each particle, and total surface area involved in
-contact. In the input script these quantities can be accessed through the
-*compute* command.
+contact. In the input script these quantities can be accessed by first
+calling *run 0* to initialize the values then through subsequent
+*compute* commands.
 
 .. code-block:: LAMMPS
 
+   run 0
    compute ID group-ID property/atom d_Velas
    compute ID group-ID property/atom d_sigmaxx
    compute ID group-ID property/atom d_sigmayy
