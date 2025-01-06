@@ -54,7 +54,7 @@ enum {COMM_RADIUS_UPDATE, COMM_DDELTA_BAR};
 FixGranularMDR::FixGranularMDR(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
-  comm_forward = 20;
+  comm_forward = 18;
   create_attribute = 1;
 
   id_fix = nullptr;
@@ -84,7 +84,7 @@ void FixGranularMDR::post_constructor()
 {
   int tmp1, tmp2;
   id_fix = utils::strdup("MDR_PARTICLE_HISTORY_VARIABLES");
-  modify->add_fix(fmt::format("{} all property/atom d_Ro d_Vcaps d_Vgeo d_Velas d_eps_bar d_dRnumerator d_dRdenominator d_Acon0 d_Acon1 d_Atot d_Atot_sum d_ddelta_bar d_psi d_psi_b d_history_setup_flag d_sigmaxx d_sigmayy d_sigmazz d_contacts d_adhesive_length ghost yes", id_fix));
+  modify->add_fix(fmt::format("{} all property/atom d_Ro d_Vcaps d_Vgeo d_Velas d_eps_bar d_dRnumerator d_dRdenominator d_Acon0 d_Acon1 d_Atot d_Atot_sum d_ddelta_bar d_psi d_psi_b d_history_setup_flag d_sigmaxx d_sigmayy d_sigmazz ghost yes", id_fix));
 
   index_Ro = atom->find_custom("Ro", tmp1, tmp2);
   index_Vcaps = atom->find_custom("Vcaps", tmp1, tmp2);
@@ -104,8 +104,6 @@ void FixGranularMDR::post_constructor()
   index_sigmaxx = atom->find_custom("sigmaxx", tmp1, tmp2);
   index_sigmayy = atom->find_custom("sigmayy", tmp1, tmp2);
   index_sigmazz = atom->find_custom("sigmazz", tmp1, tmp2);
-  index_contacts = atom->find_custom("contacts", tmp1, tmp2);
-  index_adhesive_length = atom->find_custom("adhesive_length", tmp1, tmp2);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -185,7 +183,7 @@ void FixGranularMDR::pre_force(int)
   radius_update();
 
   comm_stage = COMM_RADIUS_UPDATE;
-  comm->forward_comm(this, 20);
+  comm->forward_comm(this, 18);
 
   calculate_contact_penalty();
   mean_surf_disp();
@@ -222,8 +220,6 @@ int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_f
       buf[m++] = dvector[index_sigmayy][j];            // 16
       buf[m++] = dvector[index_sigmazz][j];            // 17
       buf[m++] = dvector[index_history_setup_flag][j]; // 18
-      buf[m++] = dvector[index_contacts][j];           // 19
-      buf[m++] = dvector[index_adhesive_length][j];    // 20
     }
   } else {
     for (int i = 0; i < n; i++) {
@@ -262,8 +258,6 @@ void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
       dvector[index_sigmayy][i] = buf[m++];            // 16
       dvector[index_sigmazz][i] = buf[m++];            // 17
       dvector[index_history_setup_flag][i] = buf[m++]; // 18
-      dvector[index_contacts][i] = buf[m++];           // 19
-      dvector[index_adhesive_length][i] = buf[m++];    // 20
     }
   } else {
     for (int i = first; i < last; i++) {
@@ -358,8 +352,6 @@ void FixGranularMDR::set_arrays(int i)
   // atom->dvector[index_sigmayy][i] = 0.0;
   // atom->dvector[index_sigmazz][i] = 0.0;
   atom->dvector[index_history_setup_flag][i] = 0.0;
-  // atom->dvector[index_contacts][i] = 0.0;
-  // atom->dvector[index_adhesive_length][i] = 0.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -380,8 +372,6 @@ void FixGranularMDR::radius_update()
   double *sigmaxx = atom->dvector[index_sigmaxx];
   double *sigmayy = atom->dvector[index_sigmayy];
   double *sigmazz = atom->dvector[index_sigmazz];
-  double *contacts = atom->dvector[index_contacts];
-  double *adhesive_length = atom->dvector[index_adhesive_length];
   double *history_setup_flag = atom->dvector[index_history_setup_flag];
 
   for (int i = 0; i < nlocal; i++) {
@@ -397,8 +387,6 @@ void FixGranularMDR::radius_update()
     sigmaxx[i] = 0.0;
     sigmayy[i] = 0.0;
     sigmazz[i] = 0.0;
-    contacts[i] = 0.0;
-    adhesive_length[i] = 0.0;
   }
 }
 

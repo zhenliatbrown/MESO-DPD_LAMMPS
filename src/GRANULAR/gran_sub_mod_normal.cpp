@@ -491,8 +491,6 @@ void GranSubModNormalMDR::init()
   index_sigmaxx = atom->find_custom("sigmaxx", tmp1, tmp2);             // xx-component of the stress tensor, not necessary for force calculation
   index_sigmayy = atom->find_custom("sigmayy", tmp1, tmp2);             // yy-component of the stress tensor, not necessary for force calculation
   index_sigmazz = atom->find_custom("sigmazz", tmp1, tmp2);             // zz-component of the stress tensor, not necessary for force calculation
-  index_contacts = atom->find_custom("contacts", tmp1, tmp2);                     // total contacts on particle
-  index_adhesive_length = atom->find_custom("adhesive_length", tmp1, tmp2);       // total contacts on particle
 }
 
 /* ---------------------------------------------------------------------- */
@@ -532,8 +530,6 @@ double GranSubModNormalMDR::calculate_forces()
   double *sigmaxx = atom->dvector[index_sigmaxx];
   double *sigmayy = atom->dvector[index_sigmayy];
   double *sigmazz = atom->dvector[index_sigmazz];
-  double *contacts = atom->dvector[index_contacts];
-  double *adhesive_length = atom->dvector[index_adhesive_length];
 
   const int itag_true = atom->tag[gm->i]; // true i particle tag
   const int jtag_true = atom->tag[gm->j]; // true j particle tag
@@ -811,9 +807,6 @@ double GranSubModNormalMDR::calculate_forces()
         error->one(FLERR, "F_MDR is NaN, non-adhesive case");
       }
     }
-
-    contacts[i] += 1;
-    adhesive_length[i] += aAdh;
 
     // contact penalty scheme
     penalty_offset = & history[PENALTY];
