@@ -12,12 +12,13 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Package      FixPIMDNVT
-   Purpose      Quantum Path Integral Algorithm for Quantum Chemistry
-   Copyright    Voth Group @ University of Chicago
-   Authors      Chris Knight & Yuxing Peng (yuxing at uchicago.edu)
+   Package      FixPIMDBNVT
+   
+   Purpose      Path Integral Molecular Dynamics of Bosons with Nose-Hoover Thermostat
+   Copyright    Hirshberg lab @ Tel Aviv University
+   Authors      Yotam M. Y. Feldman, Ofir Blumer
 
-   Updated      Oct-01-2011
+   Updated      Jan-06-2025
    Version      1.0
 ------------------------------------------------------------------------- */
 
