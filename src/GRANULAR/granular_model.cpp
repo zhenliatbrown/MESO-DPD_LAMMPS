@@ -246,8 +246,6 @@ void GranularModel::init()
   if (normal_model->name == "mdr") {
      if (damping_model->name != "none")
        error->all(FLERR, "MDR require 'none' damping model. To damp, specify a coefficient of restitution < 1.");
-     if (force->newton)
-       error->all(FLERR, "MDR contact model requires Newton off");
   } else {
     if (damping_model->name == "none") error->all(FLERR, "Must specify damping granular model");
   }

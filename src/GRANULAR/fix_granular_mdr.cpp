@@ -115,6 +115,9 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
   if (pair == nullptr)
     error->all(FLERR, "Must use pair granular with MDR model");
 
+  if (force->newton)
+    error->all(FLERR, "MDR contact model requires Newton off");
+
   // Confirm all MDR models are consistent
 
   class GranularModel *pair_model, *fix_model;
