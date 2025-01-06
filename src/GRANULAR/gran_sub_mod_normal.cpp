@@ -847,7 +847,7 @@ double GranSubModNormalMDR::calculate_forces()
     if (update) eps_bar[i] += eps_bar_contact;
 
     double desp_bar_contact = eps_bar_contact - *eps_bar_offset;
-    if (update && elta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
+    if (update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
       const double Vo = (4.0 * THIRD) * MY_PI * pow(Ro, 3);
       dRnumerator[i] += -Vo * (eps_bar_contact - *eps_bar_offset) - wij * MY_PI * ddeltao * (2.0 * deltao * Ro - pow(deltao, 2) + pow(R, 2) - pow(Ro, 2));
       dRdenominator[i] += wij * 2.0 * MY_PI * R * (deltao + R - Ro);
