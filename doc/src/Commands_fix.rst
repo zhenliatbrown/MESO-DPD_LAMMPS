@@ -174,6 +174,8 @@ OPT.
    * :doc:`phonon <fix_phonon>`
    * :doc:`pimd/langevin <fix_pimd>`
    * :doc:`pimd/nvt <fix_pimd>`
+   * :doc:`pimdb/langevin <fix_pimdb>`
+   * :doc:`pimdb/nvt <fix_pimdb>`
    * :doc:`planeforce <fix_planeforce>`
    * :doc:`plumed <fix_plumed>`
    * :doc:`poems <fix_poems>`

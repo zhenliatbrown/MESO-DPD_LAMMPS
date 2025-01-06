@@ -2,10 +2,10 @@
 .. index:: fix pimdb/nvt
 
 fix pimdb/langevin command
-=========================
+==========================
 
 fix pimdb/nvt command
-====================
+=====================
 
 Syntax
 """"""
@@ -30,8 +30,9 @@ Syntax
 * keywords for style *pimdb/langevin*
 
   .. parsed-literal::
-       *keywords* = *integrator* or *fmass* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
+       *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj*
        *integrator* value = *obabo* or *baoab*
+       *ensemble* value = *nvt* or *nve*
        *fmass* value = scaling factor on mass
        *temp* value = temperature (temperature unit)
           temperature = target temperature of the thermostat
@@ -39,10 +40,6 @@ Syntax
           style value = *PILE_L*
           seed = random number generator seed
        *tau* value = thermostat damping parameter (time unit)
-       *iso* or *aniso* values = pressure (pressure unit)
-         pressure = scalar external pressure of the barostat
-       *barostat* value = *BZP* or *MTTK*
-       *taup* value = barostat damping parameter (time unit)
        *fixcom* value = *yes* or *no*
        *lj* values = epsilon sigma mass planck mvv2e
           epsilon = energy scale for reduced units (energy units)
@@ -62,26 +59,17 @@ Examples
 Description
 """""""""""
 
-.. versionchanged:: -
-
-Fix *pimdb/nvt* and fix *pimdb/langevin* were added, inheriting fix *pimd/nvt* and fix *pimd/langevin*, respectively.
-
-These fix commands are based on the fix *pimd/nvt* and fix *pimd/langevin* commands for 
+These fix commands are based on the fixes :doc:`pimd/nvt and pimd/langevin <fix_pimd>` for 
 performing quantum molecular dynamics simulations based
 on the Feynman path-integral formalism. The key difference is that fix *pimd/nvt* and fix *pimd/langevin* simulate *distinguishable* particles,
-while fix *pimdb/nvt* and fix *pimdb/langevin* support simulations of bosons by including exchange effects.
-The *pimdb* commands share syntax with the equivalent *pimd* commands. The user is referred to the documentation of the *pimd* commands for a 
+while fix *pimdb/nvt* and fix *pimdb/langevin* perform simulations of bosons, including exchange effects.
+The *pimdb* commands share syntax with the equivalent *pimd* commands. The user is referred to the documentation of the *pimd* fix for a 
 detailed syntax description and additional, general capabilities of the commands.
+The major differences from fix *pimd* in terms of capabilities are:
 
-.. note::
+* Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, and the keyword *method* should not be used. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to value other than *normal*.
+* Fix *pimdb/langevin* currently does not support *ensemble* other than *nve*, *nvt*. The barostat related keywords *iso*, *aniso*, *barostat*, *taup* are not supported.
 
-   Currently, and fix *pimdb/nvt* only supports the "pimd" and "nmpimd" methods.
-   Fix *pimdb/langevin* only supports the "pimd" method, and the keyword *method* should not be used.
-   Trying to explicitly set a different method than "pimd" would raise an error.
-   Similarly, the keywords *ensemble* and *fmmode* should not be used, and would raise an error if set to values
-   other than *nvt* and *normal*, respectively.
-   Trying to use the *scale* keywords, that is not supported for "pimd" method, would also raise an error.
-   Finally, trying to use any of the barostat-related keywords supported for *pimd/langevin* would raise errors.
 
 The isomorphism between the partition function of :math:`N` bosonic quantum particles and that of a system of classical ring polymers
 at inverse temperature :math:`\beta`
@@ -92,30 +80,32 @@ is given by :ref:`(Tuckerman) <book-Tuckerman>`:
    Z \propto \int d{\bf q} \cdot \frac{1}{N!} \sum_\sigma \textrm{exp} [ -\beta \left( E^\sigma + V \right) ].
 
 Here, :math:`V` is the potential between different particles at the same imaginary time slice, which is the same for bosons and
-distinguishable particles. The sum is over all permutations :math:`\sigma`. Recall that a permutation matches each element :math:`l` in :math:`1, ..., N` to an element :math:`\sigma(l)` in :math:`1, ..., N` without repetitions. The energies :math:`E^\sigma` correspond to the linking of ring polymers of different particles according to the different permutations:
+distinguishable particles. The sum is over all permutations :math:`\sigma`. Recall that a permutation matches each element :math:`l` in :math:`1, ..., N` to an element :math:`\sigma(l)` in :math:`1, ..., N` without repetitions. The energies :math:`E^\sigma` correspond to the linking of ring polymers of different particles according to the permutations:
 
 .. math::
 
-   E^\sigma = \frac{\sqrt{Pm^2}}{2\beta \hbar} \sum_{l=1}^N \sum_{j=1}^P \left(\bf{r}_l^j - \bf{r}_l^{j+1}\right)^2,
+   E^\sigma = \frac{mP}{2\beta^2 \hbar^2} \sum_{\ell=1}^N \sum_{j=1}^P \left(\bf{r}_\ell^j - \bf{r}_\ell^{j+1}\right)^2,
 
-where :math:`P` is the number of beads and :math:`\bf{r}_l^{P+1}=\bf{r}_{\sigma(l)}^1.` 
+where :math:`P` is the number of beads and :math:`\bf{r}_\ell^{P+1}=\bf{r}_{\sigma(\ell)}^1.` 
 
 Hirshberg et. al. showed that the ring polymer potential 
-:math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma \textrm{exp} ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
-can be replaced by a potential :math:`V^{1,N}` defined through a recurrence relation :ref:`(Hirshberg) <Hirshberg>`:
+:math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma e ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
+can be replaced by a potential :math:`V^{[1,N]}` defined through a recurrence relation :ref:`(Hirshberg) <Hirshberg>`:
 
 .. math::
 
-   \textrm{exp} ^ { -\beta  V^{[1,N]} } = \frac{1}{N} \sum_{k=1}^N \textrm{exp} ^ { -\beta \left(  V^{[1,N-k]} + E^{[N-K+1,N} \right)}.
+   e ^ { -\beta  V^{[1,N]} } = \frac{1}{N} \sum_{k=1}^N e ^ { -\beta \left(  V^{[1,N-k]} + E^{[N-K+1,N} \right)}.
 
-Here, :math:`E^{[N-K+1,N}` is the spring energy of the ring polymer obtained by connecting the beads of particles :math:`N − k + 1, N − k + 2, ..., N` in a cycle.
+Here, :math:`E^{[N-K+1,N]}` is the spring energy of the ring polymer obtained by connecting the beads of particles :math:`N − k + 1, N − k + 2, ..., N` in a cycle.
 This potential does not include all :math:`N!` permutations, but samples the same bosonic partition function. The implemented algorithm in LAMMPS for calculating 
-the potential is the one developed by Feldman and Hirshberg, which scales like :math:`NP+N^2` :ref:`(Feldman) <Feldman>`. 
+the potential is the one developed by Feldman and Hirshberg, which scales like :math:`N^2+PN` :ref:`(Feldman) <Feldman>`. 
 The forces are calculated as weighted averages over the representative permutations,
-through an algorithm that scales the same as the one for the potential calculation :math:`NP+N^2` :ref:`(Feldman) <Feldman>`.
+through an algorithm that scales the same as the one for the potential calculation :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
 
-Output
+Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+The use of :doc:`binary restart files <restart>` and :doc:`fix_modify <fix_modify>` is the same as in :doc:`fix pimd <fix_pimd>`.
 
 Fix *pimdb/nvt* computes a global 4-vector, which can be accessed by
 various :doc:`output commands <Howto_output>`.  The three quantities in
@@ -124,9 +114,9 @@ the global vector are:
    #. the total spring energy of the quasi-beads,
    #. the current temperature of the classical system of ring polymers,
    #. the current value of the scalar virial estimator for the kinetic
-      energy of the quantum system :ref:`(Herman) <Herman>`.
+      energy of the quantum system :ref:`(Herman) <HermanBB>`.
    #. the current value of the scalar primitive estimator for the kinetic
-      energy of the quantum system :ref:`(Tuckerman) <book-Tuckerman>`.
+      energy of the quantum system :ref:`(Hirshberg) <Hirshberg>`.
 
 The vector values calculated by fix *pimdb/nvt* are "extensive", except for the
 temperature, which is "intensive".
@@ -134,29 +124,44 @@ temperature, which is "intensive".
 Fix *pimdb/langevin* computes a global 6-vector, which
 can be accessed by various :doc:`output commands <Howto_output>`. The quantities in the global vector are:
 
-   #. kinetic energy of the normal mode
-   #. spring elastic energy of the normal mode
+   #. kinetic energy of the beads
+   #. spring elastic energy of the beads
    #. potential energy of the bead
-   #. total energy of all beads
-   #. primitive kinetic energy estimator
-   #. virial energy estimator
+   #. total energy of all beads (conserved if *ensemble* is *nve*)
+   #. primitive kinetic energy estimator :ref:`(Hirshberg) <Hirshberg>`
+   #. virial energy estimator :ref:`(Herman) <HermanBB>`
 
 The first 3 are different for different log files, and the others are the same for different log files.
 
+Restrictions
+""""""""""""
+
+These fixes are part of the REPLICA package.  They are only enabled if
+LAMMPS was built with that package.  See the :doc:`Build package
+<Build_package>` page for more info.
+
+The restrictions of :doc:`fix pimd <fix_pimd>` apply.
+
+Default
+"""""""
+
+The keyword defaults for fix *pimdb/nvt* are method = pimd, fmass = 1.0, sp
+= 1.0, temp = 300.0, and nhc = 2.
+
 ----------
 
-.. book-Tuckerman:
+.. _book-Tuckerman:
 
 **(Tuckerman)** M. Tuckerman, Statistical Mechanics: Theory and Molecular Simulation (Oxford University Press, 2010)
 
-.. Hirshberg:
+.. _Hirshberg:
 
 **(Hirshberg)** B. Hirshberg, V. Rizzi, and M.Parrinello, “Path integral molecular dynamics for bosons,” Proc. Natl. Acad. Sci. U. S. A. 116, 21445 (2019)
 
-.. Feldman:
+.. _Feldman:
 
 **(Feldman)** Y. M. Y. Feldman and B. Hirshberg, “Quadratic scaling bosonic path integral molecular dynamics,” J. Chem. Phys. 159, 154107 (2023)
 
-.. _Herman:
+.. _HermanBB:
 
 **(Herman)** M. F. Herman, E. J. Bruskin, B. J. Berne, J Chem Phys, 76, 5150 (1982).

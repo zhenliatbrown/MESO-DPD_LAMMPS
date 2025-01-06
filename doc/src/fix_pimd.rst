@@ -33,6 +33,7 @@ Syntax
        *keywords* = *method* or *integrator* or *ensemble* or *fmmode* or *fmass* or *scale* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
        *method* value = *nmpimd* (default) or *pimd*
        *integrator* value = *obabo* or *baoab*
+       *ensemble* value = *nvt* or *nve* or *nph* or *npt*
        *fmmode* value = *physical* or *normal*
        *fmass* value = scaling factor on mass
        *temp* value = temperature (temperature unit)
@@ -222,7 +223,7 @@ be *PILE_L* (path integral Langevin equation local thermostat, as described in :
 The keyword *tau* specifies the thermostat damping time parameter for fix style *pimd/langevin*. It is in time unit. It only works on the centroid mode.
 
 The keyword *scale* specifies a scaling parameter for the damping times of the non-centroid modes for fix style *pimd/langevin*. The default
-damping time of the non-centroid mode :math:`i` is :math:`\frac{P}{\beta\hbar}\sqrt{\lambda_i\times\mathrm{fmass}}` (*fmmode* is *physical*) or  :math:`\frac{P}{\beta\hbar}\sqrt{\mathrm{fmass}}` (*fmmode* is *normal*). The damping times of all non-centroid modes are the default values divided by *scale*.
+damping time of the non-centroid mode :math:`i` is :math:`\frac{P}{\beta\hbar}\sqrt{\lambda_i\times\mathrm{fmass}}` (*fmmode* is *physical*) or  :math:`\frac{P}{\beta\hbar}\sqrt{\mathrm{fmass}}` (*fmmode* is *normal*). The damping times of all non-centroid modes are the default values divided by *scale*. This keyword should be used only with *method*=*nmpimd*.
 
 The barostat parameters for fix style *pimd/langevin* with *npt* or *nph* ensemble is specified using one of *iso* and *aniso*
 keywords. A *pressure* value should be given with pressure unit. The keyword *iso* means couple all 3 diagonal components together when pressure is computed (hydrostatic pressure), and dilate/contract the dimensions together. The keyword *aniso* means x, y, and z dimensions are controlled independently using the Pxx, Pyy, and Pzz components of the stress tensor as the driving forces, and the specified scalar external pressure.
@@ -334,8 +335,8 @@ it outputs multiple log files, and different log files contain information
 about different beads or modes (see detailed explanations below). If *ensemble*
 is *nve* or *nvt*, the vector has 10 values:
 
-   #. kinetic energy of the normal mode
-   #. spring elastic energy of the normal mode
+   #. kinetic energy of the bead (if *method*=*pimd*) or normal mode (if *method*=*nmpimd*)
+   #. spring elastic energy of the bead (if *method*=*pimd*) or normal mode (if *method*=*nmpimd*)
    #. potential energy of the bead
    #. total energy of all beads (conserved if *ensemble* is *nve*)
    #. primitive kinetic energy estimator
