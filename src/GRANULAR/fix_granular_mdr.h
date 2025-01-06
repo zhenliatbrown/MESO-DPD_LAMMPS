@@ -62,7 +62,6 @@ class FixGranularMDR : public Fix {
   ~FixGranularMDR() override;
   int setmask() override;
   void post_constructor() override;
-  void setup(int) override;
   void setup_pre_force(int) override;
   void pre_force(int) override;
   void end_of_step() override;

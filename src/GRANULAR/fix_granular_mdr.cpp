@@ -172,14 +172,6 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
 
 /* ---------------------------------------------------------------------- */
 
-void FixGranularMDR::setup(int /*vflag*/)
-{
-  end_of_step();
-  reset_properties();
-}
-
-/* ---------------------------------------------------------------------- */
-
 void FixGranularMDR::pre_force(int)
 {
   // Initialize variables for any new atoms
@@ -291,7 +283,6 @@ void FixGranularMDR::end_of_step()
   double *Acon1 = atom->dvector[index_Acon1];
   double *Atot = atom->dvector[index_Atot];
   double *Atot_sum = atom->dvector[index_Atot_sum];
-  double *ddelta_bar = atom->dvector[index_ddelta_bar];
   double *psi = atom->dvector[index_psi];
   double *psi_b = atom->dvector[index_psi_b];
 
@@ -328,7 +319,7 @@ void FixGranularMDR::set_arrays(int i)
 }
 
 /* ----------------------------------------------------------------------
-   reset all intermediate variables
+   reset all intermediate properties
 ------------------------------------------------------------------------- */
 
 void FixGranularMDR::reset_properties()
