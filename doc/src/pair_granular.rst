@@ -224,15 +224,22 @@ Here, :math:`\kappa = E/(3(1-2\nu))` is the bulk modulus and
 The *atom_style* must be set to *sphere 1* to enable dynamic particle
 radii. The *mdr* model is designed to respect the incompressibility of
 plastic deformation and inherently tracks free surface displacements
-induced by all particle contacts. Setting *atom_style sphere 1* ensures
-that updates to the particle radius are properly reflected throughout
-the simulation.
+induced by all particle contacts. In practice, this means that all particles
+begin with an initial radius, however as compaction occurs and plastic
+deformation is accumulated, a new enlarged apparent radius is defined to
+ensure that that volume change due to plastic deformation is not lost.
+This apparent radius is stored as the *atom radius* meaning it is used
+for subsequent neighbor list builds and contact dectection checks. The
+advantage of this is that multi-neighbor dependent effects such as 
+formation of secondary contacts caused by radial expansion are captured
+by the *mdr* model. Setting *atom_style sphere 1* ensures that updates to
+the particle radius are properly reflected throughout the simulation.
 
 .. code-block:: LAMMPS
 
    atom_style sphere 1
 
-Newton's third law must be set *off*. This ensures that the neighbor lists
+Newton's third law must be set to *off*. This ensures that the neighbor lists
 are constructed properly for the topological penalty algorithm used to screen
 for non-physical contacts occurring through obstructing particles, an issue
 prevelant under large deformation conditions. For more information on this
