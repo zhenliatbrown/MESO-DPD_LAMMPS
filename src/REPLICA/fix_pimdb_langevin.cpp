@@ -13,6 +13,7 @@
 
 /* ----------------------------------------------------------------------
    Package      FixPIMDBLangevin
+   // CR: I guess we should fill these?
    Purpose      TODO
    Copyright    TODO
    Authors      TODO
@@ -41,6 +42,7 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
+// CR: shouldn't be redefined here, the values are supposed to be consistent with fix_pimd_langevin.cpp
 enum { PIMD };
 enum { NVE, NVT, NPH, NPT };
 enum { PHYSICAL, NORMAL };
