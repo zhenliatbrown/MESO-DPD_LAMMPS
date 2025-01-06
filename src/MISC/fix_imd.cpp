@@ -43,7 +43,7 @@ negotiate an appropriate license for such distribution."
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Contributing author:  Axel Kohlmeyer (Temple U)
+   Contributing authors:  Axel Kohlmeyer (Temple U), Lawson Woods (Arizona State U)
    IMD API, hash, and socket code written by: John E. Stone,
    Justin Gullingsrud, and James Phillips, (TCBG, Beckman Institute, UIUC)
 ------------------------------------------------------------------------- */
@@ -469,7 +469,7 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
 
   /* default values for optional flags */
   imd_version = 2;
-  
+
   unwrap_flag = 0;
   nowait_flag = 0;
   connect_msg = 1;
@@ -482,7 +482,7 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
   int coord_flag = 1;
   int vel_flag = 1;
   int force_flag = 1;
-  
+
   /* parse optional arguments */
   int iarg = 4;
   while (iarg+1 < narg) {
@@ -528,7 +528,7 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
     imdsinfo->coords = true;
     imdsinfo->unwrap = unwrap_flag;
     imdsinfo->velocities = false;
-    imdsinfo->forces = false; 
+    imdsinfo->forces = false;
     imdsinfo->energies = false;
   }
 
@@ -551,7 +551,7 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
   MPI_Type_commit(&MPI_CommData);
 
   MPI_Comm_rank(world,&me);
- 
+
   /* initialize various imd state variables. */
   clientsock = nullptr;
   localsock  = nullptr;
@@ -590,7 +590,7 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
     msglen = 3*sizeof(float)*num_coords+IMDHEADERSIZE;
     msgdata = new char[msglen];
   }
-  
+
   if (me == 0) {
     /* set up incoming socket on MPI rank 0. */
     imdsock_init();
@@ -864,7 +864,7 @@ void FixIMD::setup_v2() {
 
   }
 
-void FixIMD::setup_v3() 
+void FixIMD::setup_v3()
 {
   /* nme:    number of atoms in group on this MPI task
    * nmax:   max number of atoms in group across all MPI tasks
@@ -880,7 +880,7 @@ void FixIMD::setup_v3()
     if (mask[i] & groupbit) ++nme;
 
   MPI_Allreduce(&nme,&nmax,1,MPI_INT,MPI_MAX,world);
- 
+
   maxbuf = nmax*size_one;
 
   if (imdsinfo->coords) {
@@ -1039,7 +1039,7 @@ void FixIMD::post_force_respa(int vflag, int ilevel, int /*iloop*/)
 }
 
 void FixIMD::end_of_step()
-{ 
+{
   if (imd_version == 3 && update->ntimestep % imd_trate == 0) {
     handle_output_v3();
   }
@@ -1240,7 +1240,7 @@ void FixIMD::handle_step_v2() {
      * us one extra copy of the data. */
     imd_fill_header((IMDheader *)msgdata, IMD_FCOORDS, num_coords);
     /* array pointer, to the offset where we receive the coordinates. */
-    auto recvcoord = (float *) (msgdata+IMDHEADERSIZE); 
+    auto recvcoord = (float *) (msgdata+IMDHEADERSIZE);
 
     /* add local data */
     if (imdsinfo->unwrap) {
@@ -1435,7 +1435,7 @@ void FixIMD::handle_client_input_v3() {
             continue;
           }
           break;
-        
+
         case IMD_RESUME:
           /* resume the running simulation. */
           if (imd_paused) {
@@ -1571,7 +1571,7 @@ void FixIMD::handle_output_v3() {
     if (imdsinfo->time) {
       imd_fill_header((IMDheader *)msgdata, IMD_TIME, 1);
       double dt = update->dt;
-    
+
       double currtime = update->atime + ((update->ntimestep - update->atimestep) * update->dt);
       long long currstep = update->ntimestep;
       char *time = (msgdata+IMDHEADERSIZE);
@@ -1594,9 +1594,9 @@ void FixIMD::handle_output_v3() {
       box[6] = domain->h[4];
       box[7] = domain->h[3];
       box[8] = domain->h[2];
-      
+
       offset += (9*4)+IMDHEADERSIZE;
-      
+
     }
     if (imdsinfo->coords) {
       imd_fill_header((IMDheader *)(msgdata + offset), IMD_FCOORDS, num_coords);
@@ -1631,12 +1631,11 @@ void FixIMD::handle_output_v3() {
   }
 
   MPI_Gather(&nme, 1, MPI_INT, recvcounts, 1, MPI_INT, 0, world);
-  
   if (me == 0) {
     displs[0] = 0;
     ntotal = recvcounts[0];
     for (int i = 1; i < comm->nprocs; ++i) {
-      displs[i] = displs[i - 1] + recvcounts[i - 1]; 
+      displs[i] = displs[i - 1] + recvcounts[i - 1];
       ntotal += recvcounts[i];
     }
   }
@@ -1699,7 +1698,7 @@ void FixIMD::handle_output_v3() {
           int idx = displs[i]+j;
           const tagint t = 3*taginthash_lookup((taginthash_t *)idmap, recvcoord[idx].tag);
           if (t != 3*HASH_FAIL) {
-            global_coords[t] = recvcoord[idx].x; 
+            global_coords[t] = recvcoord[idx].x;
             global_coords[t + 1] = recvcoord[idx].y;
             global_coords[t + 2] = recvcoord[idx].z;
           }
@@ -2071,8 +2070,8 @@ int imd_handshake_v3(void *s, IMDSessionInfo *imdsinfo) {
   body[4] = !imdsinfo->unwrap;
   body[5] = imdsinfo->velocities;
   body[6] = imdsinfo->forces;
-  
-  if (imd_writen(s, (char *)&header, IMDHEADERSIZE) != IMDHEADERSIZE || 
+
+  if (imd_writen(s, (char *)&header, IMDHEADERSIZE) != IMDHEADERSIZE ||
       imd_writen(s, (char *)&body, 7) != 7) return -1;
   return 0;
 }

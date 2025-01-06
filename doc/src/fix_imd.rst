@@ -59,8 +59,8 @@ Description
 This fix implements the "Interactive MD" (IMD) protocol which allows
 realtime visualization and manipulation of MD simulations through the
 IMD protocol, as initially implemented in VMD and NAMD.  Specifically
-it allows LAMMPS to connect an IMD client, for example the `VMD visualization program <VMD_>`_ 
-(currently only supports IMDv2) or the 
+it allows LAMMPS to connect an IMD client, for example the `VMD visualization program <VMD_>`_
+(currently only supports IMDv2) or the
 `Python IMDClient <IMDClient_>`_ (supports both IMDv2 and IMDv3),
 so that it can monitor the progress of the
 simulation and interactively apply forces to selected atoms.
