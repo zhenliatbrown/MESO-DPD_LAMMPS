@@ -780,10 +780,10 @@ double GranSubModNormalMDR::calculate_forces()
     double Ac;
     (*Yflag_offset == 0.0) ? Ac = MY_PI * delta * R : Ac = MY_PI * ((2.0 * delta * R - pow(delta, 2)) + cA / MY_PI);
     if (Ac < 0.0) Ac = 0.0;
-    //if (update) {
+    if (update) {
       Atot_sum[i] += wij * (Ac - 2.0 * MY_PI * R * (deltamax_MDR + delta_BULK));
       Acon1[i] += wij * Ac;
-    //}
+    }
 
     // bulk force calculation
     double F_BULK;
@@ -796,9 +796,9 @@ double GranSubModNormalMDR::calculate_forces()
     *Ac_offset = wij * Ac;
 
     // radius update scheme quantity calculation
-    //if (update) { 
+    if (update) {
       Vcaps[i] += (MY_PI * THIRD) * pow(delta, 2) * (3.0 * R - delta);
-    //}
+    }
 
     const double Fntmp = wij * (F_MDR + F_BULK);
     const double fx = Fntmp * gm->nx[0];
@@ -808,24 +808,21 @@ double GranSubModNormalMDR::calculate_forces()
     const double by = -(Ro - deltao) * gm->nx[1];
     const double bz = -(Ro - deltao) * gm->nx[2];
     const double eps_bar_contact = (1.0 / (3 * kappa * Velas[i])) * (fx * bx + fy * by + fz * bz);
-    //if (update) {
-      eps_bar[i] += eps_bar_contact;
-    //} 
+    if (update) eps_bar[i] += eps_bar_contact;
 
     double desp_bar_contact = eps_bar_contact - *eps_bar_offset;
-    //if (update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
-    if (delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
+    if (update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0) {
       const double Vo = (4.0 * THIRD) * MY_PI * pow(Ro, 3);
       dRnumerator[i] += -Vo * (eps_bar_contact - *eps_bar_offset) - wij * MY_PI * ddeltao * (2.0 * deltao * Ro - pow(deltao, 2) + pow(R, 2) - pow(Ro, 2));
       dRdenominator[i] += wij * 2.0 * MY_PI * R * (deltao + R - Ro);
     }
     *eps_bar_offset = eps_bar_contact;
 
-    //if (update) {
+    if (update) {
       sigmaxx[i] += (1.0 / Velas[i]) * (fx * bx);
       sigmayy[i] += (1.0 / Velas[i]) * (fy * by);
       sigmazz[i] += (1.0 / Velas[i]) * (fz * bz);
-    //}
+    }
   }
 
   gm->i = i_true;

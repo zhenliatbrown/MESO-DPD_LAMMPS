@@ -78,7 +78,7 @@ class FixGranularMDR : public Fix {
   class FixNeighHistory *fix_history;
   std::vector<Fix *> fix_wall_list;
 
-  void radius_update();
+  void reset_properties();
   void mean_surf_disp();
   void calculate_contact_penalty();
   void update_fix_gran_wall();

@@ -47,14 +47,14 @@ using MathConst::MY_PI;
 static constexpr double EPSILON = 1e-16;
 static constexpr double OVERLAP_LIMIT = 0.75;
 
-enum {COMM_RADIUS_UPDATE, COMM_DDELTA_BAR};
+enum {COMM_1, COMM_2};
 
 /* ---------------------------------------------------------------------- */
 
 FixGranularMDR::FixGranularMDR(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
-  comm_forward = 18;
+  comm_forward = 6;
   create_attribute = 1;
 
   id_fix = nullptr;
@@ -74,7 +74,8 @@ FixGranularMDR::~FixGranularMDR()
 int FixGranularMDR::setmask()
 {
   int mask = 0;
-  mask |= PRE_FORCE | END_OF_STEP;
+  mask |= PRE_FORCE;
+  mask |= END_OF_STEP;
   return mask;
 }
 
@@ -158,7 +159,7 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
         norm_model->Y, norm_model2->Y);
     if (norm_model->psi_b != norm_model2->psi_b)
       error->all(FLERR, "Bulk response trigger in pair style, {}, does not agree with value {} in fix gran/wall/region",
-        norm_model->psi_b, norm_model2->psi_b);    
+        norm_model->psi_b, norm_model2->psi_b);
     if (norm_model->CoR != norm_model2->CoR)
       error->all(FLERR, "Coefficient of restitution in pair style, {}, does not agree with value {} in fix gran/wall/region",
         norm_model->CoR, norm_model2->CoR);
@@ -174,22 +175,51 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
 void FixGranularMDR::setup(int /*vflag*/)
 {
   end_of_step();
+  reset_properties();
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixGranularMDR::pre_force(int)
 {
-  radius_update();
+  // Initialize variables for any new atoms
 
-  comm_stage = COMM_RADIUS_UPDATE;
-  comm->forward_comm(this, 18);
+  double *radius = atom->radius;
+  int nlocal = atom->nlocal;
+
+  double *Ro = atom->dvector[index_Ro];
+  double *Vgeo = atom->dvector[index_Vgeo];
+  double *Velas = atom->dvector[index_Velas];
+  double *Acon1 = atom->dvector[index_Acon1];
+  double *Atot = atom->dvector[index_Atot];
+  double *psi = atom->dvector[index_psi];
+  double *psi_b = atom->dvector[index_psi_b];
+  double *history_setup_flag = atom->dvector[index_history_setup_flag];
+
+  int ntotal = atom->nlocal + atom->nghost;
+  for (int i = 0; i < ntotal; i++) {
+    if (history_setup_flag[i] < EPSILON) {
+      Ro[i] = radius[i];
+      Vgeo[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+      Velas[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+      Atot[i] = 4.0 * MY_PI * pow(Ro[i], 2.0);
+      psi[i] = 1.0;
+      psi_b[i] = psi_b_coeff;
+      Acon1[i] = 0.0;
+      history_setup_flag[i] = 1.0;
+    }
+  }
+
+  reset_properties();
+
+  comm_stage = COMM_1;
+  comm->forward_comm(this, 6);
 
   calculate_contact_penalty();
   mean_surf_disp();
   update_fix_gran_wall();
 
-  comm_stage = COMM_DDELTA_BAR;
+  comm_stage = COMM_2;
   comm->forward_comm(this, 1);
 }
 
@@ -199,27 +229,15 @@ int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_f
 {
   double **dvector = atom->dvector;
   int m = 0;
-  if (comm_stage == COMM_RADIUS_UPDATE) {
+  if (comm_stage == COMM_1) {
     for (int i = 0; i < n; i++) {
       int j = list[i];
-      buf[m++] = dvector[index_Ro][j];                 // 1
       buf[m++] = dvector[index_Vgeo][j];               // 2
       buf[m++] = dvector[index_Velas][j];              // 3
-      buf[m++] = dvector[index_Vcaps][j];              // 4
-      buf[m++] = dvector[index_eps_bar][j];            // 5
-      buf[m++] = dvector[index_dRnumerator][j];        // 6
-      buf[m++] = dvector[index_dRdenominator][j];      // 7
       buf[m++] = dvector[index_Acon0][j];              // 8
-      buf[m++] = dvector[index_Acon1][j];              // 9
       buf[m++] = dvector[index_Atot][j];               // 10
-      buf[m++] = dvector[index_Atot_sum][j];           // 11
-      buf[m++] = dvector[index_ddelta_bar][j];         // 12
       buf[m++] = dvector[index_psi][j];                // 13
       buf[m++] = dvector[index_psi_b][j];              // 14
-      buf[m++] = dvector[index_sigmaxx][j];            // 15
-      buf[m++] = dvector[index_sigmayy][j];            // 16
-      buf[m++] = dvector[index_sigmazz][j];            // 17
-      buf[m++] = dvector[index_history_setup_flag][j]; // 18
     }
   } else {
     for (int i = 0; i < n; i++) {
@@ -238,26 +256,14 @@ void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
   int m = 0;
   int last = first + n;
 
-  if (comm_stage == COMM_RADIUS_UPDATE) {
+  if (comm_stage == COMM_1) {
     for (int i = first; i < last; i++) {
-      dvector[index_Ro][i] = buf[m++];                 // 1
       dvector[index_Vgeo][i] = buf[m++];               // 2
       dvector[index_Velas][i] = buf[m++];              // 3
-      dvector[index_Vcaps][i] = buf[m++];              // 4
-      dvector[index_eps_bar][i] = buf[m++];            // 5
-      dvector[index_dRnumerator][i] = buf[m++];        // 6
-      dvector[index_dRdenominator][i] = buf[m++];      // 7
       dvector[index_Acon0][i] = buf[m++];              // 8
-      dvector[index_Acon1][i] = buf[m++];              // 9
       dvector[index_Atot][i] = buf[m++];               // 10
-      dvector[index_Atot_sum][i] = buf[m++];           // 11
-      dvector[index_ddelta_bar][i] = buf[m++];         // 12
       dvector[index_psi][i] = buf[m++];                // 13
       dvector[index_psi_b][i] = buf[m++];              // 14
-      dvector[index_sigmaxx][i] = buf[m++];            // 15
-      dvector[index_sigmayy][i] = buf[m++];            // 16
-      dvector[index_sigmazz][i] = buf[m++];            // 17
-      dvector[index_history_setup_flag][i] = buf[m++]; // 18
     }
   } else {
     for (int i = first; i < last; i++) {
@@ -307,83 +313,46 @@ void FixGranularMDR::end_of_step()
     }
 
     Velas[i] = Vo * (1.0 + eps_bar[i]);
-    Vcaps[i] = 0.0;
-    eps_bar[i] = 0.0;
-    dRnumerator[i] = 0.0;
-    dRdenominator[i] = 0.0;
     Acon0[i] = Acon1[i];
-    Acon1[i] = 0.0;
-    Atot_sum[i] = 0.0;
-    ddelta_bar[i] = 0.0;
   }
 }
 
 
 /* ----------------------------------------------------------------------
-   initialize values to zero, called when atom is created
+   initialize setup flag to zero, called when atom is created
 ------------------------------------------------------------------------- */
 
 void FixGranularMDR::set_arrays(int i)
 {
-  // QUESTION: which of these must be initialized to zero?
-  //           maybe just index_history_setup_flag?
-  // ANSWER: I would agree with how you have it right now. All of the variables being initialized
-  //         to zero here should be zero when the atom is created. However, is it ever possible for
-  //         calculate_forces() to be called without calling pre_force()? If the answer is no, then
-  //         we might be able to move the initializations/resetting of Velas[i] through ddelta_bar[i]
-  //         from end_of_step to pre_force. Then I think we could get rid of all the set arrays except
-  //         for history_setup_flag. Vo will have to be redefined in pre_force to allow Velas[i] to be set.
-
-  // atom->dvector[index_Ro][i] = 0.0;
-  // atom->dvector[index_Vgeo][i] = 0.0;
-  // atom->dvector[index_Velas][i] = 0.0;
-  atom->dvector[index_Vcaps][i] = 0.0;
-  atom->dvector[index_eps_bar][i] = 0.0;
-  atom->dvector[index_dRnumerator][i] = 0.0;
-  atom->dvector[index_dRdenominator][i] = 0.0;
-  atom->dvector[index_Acon0][i] = 0.0;
-  atom->dvector[index_Acon1][i] = 0.0;
-  // atom->dvector[index_Atot][i] = 0.0;
-  atom->dvector[index_Atot_sum][i] = 0.0;
-  atom->dvector[index_ddelta_bar][i] = 0.0;
-  // atom->dvector[index_psi][i] = 0.0;
-  // atom->dvector[index_psi_b][i] = 0.0;
-  // atom->dvector[index_sigmaxx][i] = 0.0;
-  // atom->dvector[index_sigmayy][i] = 0.0;
-  // atom->dvector[index_sigmazz][i] = 0.0;
   atom->dvector[index_history_setup_flag][i] = 0.0;
 }
 
 /* ----------------------------------------------------------------------
-   calculate updated radius for atoms
+   reset all intermediate variables
 ------------------------------------------------------------------------- */
 
-void FixGranularMDR::radius_update()
+void FixGranularMDR::reset_properties()
 {
-  double *radius = atom->radius;
-  int nlocal = atom->nlocal;
-
-  double *Ro = atom->dvector[index_Ro];
-  double *Vgeo = atom->dvector[index_Vgeo];
-  double *Velas = atom->dvector[index_Velas];
-  double *Atot = atom->dvector[index_Atot];
-  double *psi = atom->dvector[index_psi];
-  double *psi_b = atom->dvector[index_psi_b];
+  double *Vcaps = atom->dvector[index_Vcaps];
+  double *eps_bar = atom->dvector[index_eps_bar];
+  double *dRnumerator = atom->dvector[index_dRnumerator];
+  double *dRdenominator = atom->dvector[index_dRdenominator];
+  double *Acon1 = atom->dvector[index_Acon1];
+  double *Atot_sum = atom->dvector[index_Atot_sum];
+  double *ddelta_bar = atom->dvector[index_ddelta_bar];
   double *sigmaxx = atom->dvector[index_sigmaxx];
   double *sigmayy = atom->dvector[index_sigmayy];
   double *sigmazz = atom->dvector[index_sigmazz];
-  double *history_setup_flag = atom->dvector[index_history_setup_flag];
 
-  for (int i = 0; i < nlocal; i++) {
-    if (history_setup_flag[i] < EPSILON) {
-      Ro[i] = radius[i];
-      Vgeo[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
-      Velas[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
-      Atot[i] = 4.0 * MY_PI * pow(Ro[i], 2.0);
-      psi[i] = 1.0;
-      psi_b[i] = psi_b_coeff;
-      history_setup_flag[i] = 1.0;
-    }
+  int ntotal = atom->nlocal + atom->nghost;
+  for (int i = 0; i < ntotal; i++) {
+    Vcaps[i] = 0.0;
+    eps_bar[i] = 0.0;
+    dRnumerator[i] = 0.0;
+    dRdenominator[i] = 0.0;
+    Acon1[i] = 0.0;
+    Atot_sum[i] = 0.0;
+    ddelta_bar[i] = 0.0;
     sigmaxx[i] = 0.0;
     sigmayy[i] = 0.0;
     sigmazz[i] = 0.0;
