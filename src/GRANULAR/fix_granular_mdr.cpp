@@ -210,6 +210,8 @@ void FixGranularMDR::pre_force(int)
   comm_stage = COMM_1;
   comm->forward_comm(this, 6);
 
+  if (update->setupflag) return;
+
   calculate_contact_penalty();
   mean_surf_disp();
   update_fix_gran_wall();
