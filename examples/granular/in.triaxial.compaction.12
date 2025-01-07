@@ -1,6 +1,6 @@
 ############################### SIMULATION SETTINGS ###################################################
 
-atom_style      sphere 
+atom_style      sphere 1
 atom_modify     map array 
 comm_modify vel yes
 units           si

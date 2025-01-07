@@ -168,7 +168,7 @@ lose contact.
 
 The *mdr* model is a mechanically-derived contact model designed to capture the 
 contact response between adhesive elastic-plastic particles into large deformation.
-The theoritical foundations of the *mdr* model are detailed in the
+The theoretical foundations of the *mdr* model are detailed in the
 two-part series :ref:`Zunker and Kamrin Part I <Zunker2024I>` and 
 :ref:`Zunker and Kamrin Part II <Zunker2024II>`. Further development 
 and demonstrations of its application to industrially relevant powder
@@ -191,7 +191,7 @@ The model requires the following inputs:
    relation to the more commonly reported critical stress intensity factor
    :math:`K_{Ic} = \sqrt{2\Delta\gamma E/(1-\nu^2)}`.
 
-   5. *Critical confinement ratio* :math:`0 \le \psi_b \le 1` : The critcal confinment 
+   5. *Critical confinement ratio* :math:`0 \le \psi_b \le 1` : The critical confinment 
    ratio is a tunable parameter that determines when the bulk elastic response is
    triggered. Lower values of :math:`\psi_b` delay the onset of the bulk elastic
    response.
