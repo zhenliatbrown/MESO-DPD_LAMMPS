@@ -541,12 +541,10 @@ double GranSubModNormalMDR::calculate_forces()
   F = 0.0;                                // average force
   double F0 = 0.0;                        // force on contact side 0
   double F1 = 0.0;                        // force on contact side 1
-  double R0 = 0.0;
-  double R1 = 0.0;
   double delta = gm->delta;               // apparent overlap
 
   double *history = & gm->history[history_index]; // load in all history variables
-  int update = gm->history_update;
+  //int update = gm->history_update;
 
   // Rigid flat placement scheme
   double * deltamax_offset = & history[DELTA_MAX];
@@ -565,81 +563,45 @@ double GranSubModNormalMDR::calculate_forces()
     double *deltamax_MDR_offset, *Yflag_offset, *deltaY_offset, *cA_offset, *aAdh_offset;
     double *Ac_offset, *eps_bar_offset, *penalty_offset, *deltap_offset;
 
-    if (contactSide == 0) {
-      if (gm->contact_type == PAIR) {
-        if (itag_true > jtag_true) {
+    if (gm->contact_type == PAIR) { // displacement partitioning only necessary for particle-particle contact
+
+      // itag and jtag are persistent even after neighbor list builds, comparison based on tags helps match
+      // contact history variables consistently across steps for particle pair.
+      if ((contactSide == 0 && itag_true > jtag_true) || (contactSide != 0 && itag_true < jtag_true)) {
           gm->i = i_true;
           gm->j = j_true;
           gm->radi = radi_true;
           gm->radj = radj_true;
-        } else {
+      } else {
           gm->i = j_true;
           gm->j = i_true;
           gm->radi = radj_true;
           gm->radj = radi_true;
-        }
-        R0 = gm->radi;
-        R1 = gm->radj;
-
-        double delta_geo, delta_geo_alt;
-        double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
-        double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
-        (R0 < R1) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
-        (R0 > R1) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1, delta_geoOpt2);
-
-        if (delta_geo / R0 > MDR_OVERLAP_LIMIT) {
-          delta_geo = R0 * MDR_OVERLAP_LIMIT;
-        } else if (delta_geo_alt / R1 > MDR_OVERLAP_LIMIT) {
-          delta_geo = deltamax - R1 * MDR_OVERLAP_LIMIT;
-        }
-
-        double deltap = deltap0 + deltap1;
-        delta = delta_geo + (deltap0 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
-      }
-    } else {
-      if (gm->contact_type != PAIR) break; // contact with particle-wall requires only one evaluation
-      if (itag_true < jtag_true) {
-        gm->i = i_true;
-        gm->j = j_true;
-        gm->radi = radi_true;
-        gm->radj = radj_true;
-      } else {
-        gm->i = j_true;
-        gm->j = i_true;
-        gm->radi = radj_true;
-        gm->radj = radi_true;
       }
 
-      // QUESTION: R0/R1 here are never defined so they default to zero
-      //  did you mean to define:
-      //    R0 = gm->radi;
-      //    R1 = gm->radj;
-      //  here to mirror above? After confirming, these two conditions can be easily collapsed to remove duplication and clarify differences (also replace gm->radi/radj with R0/R1)
-      // ANSWER: If I am not mistaken R0 & R1 will always be set to non-zero values from the case above where contactSide = 0:
-      //            R0 = gm->radi;
-      //            R1 = gm->radj;
-      //         Then their values will carry over into this else statement for the case of contactSide = 1. I don't want their values to change after they are set above,
-      //         hence why I didn't redine them.
-      //
-      //         However, this is written in a bit of a strange way now that I am reviewing it, I will give it some more thought.
-      // ANSWER2: What if the contact type is WALL, then the iteration over contactSide = 0 will skip
-      //          defining R0 and R1? Is that correct?
-      // ANSWER3: Correct, but in that case they are not needed since there is no partitioning of the displacement.
-
+      // determine the two maximum experienced geometric overlaps on either side of rigid flat
       double delta_geo, delta_geo_alt;
-      double delta_geoOpt1 = deltamax * (deltamax - 2.0 * R1) / (2.0 * (deltamax - R0 - R1));
-      double delta_geoOpt2 = deltamax * (deltamax - 2.0 * R0) / (2.0 * (deltamax - R0 - R1));
+      double delta_geoOpt1 = deltamax * (deltamax - 2.0 * gm->radj) / (2.0 * (deltamax - gm->radi - gm->radj));
+      double delta_geoOpt2 = deltamax * (deltamax - 2.0 * gm->radi) / (2.0 * (deltamax - gm->radi - gm->radj));
       (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
       (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1,delta_geoOpt2);
 
+      // cap displacement if it exceeds the overlap limit and parition the remaining to the other side
       if (delta_geo / gm->radi > MDR_OVERLAP_LIMIT) {
         delta_geo = gm->radi * MDR_OVERLAP_LIMIT;
       } else if (delta_geo_alt / gm->radj > MDR_OVERLAP_LIMIT) {
         delta_geo = deltamax - gm->radj * MDR_OVERLAP_LIMIT;
       }
 
+      // determine final delta used for subsequent calculations
       double deltap = deltap0 + deltap1;
-      delta = delta_geo + (deltap1 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
+      if (contactSide == 0) {
+        delta = delta_geo + (deltap0 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
+      } else {
+        delta = delta_geo + (deltap1 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
+      }
+    } else if (gm->contact_type != PAIR && contactSide != 0) { // contact with particle-wall requires only one evaluation
+      break;
     }
 
     delta_offset = & history[DELTA_0 + contactSide];
@@ -680,7 +642,7 @@ double GranSubModNormalMDR::calculate_forces()
       ddelta_MDR = ddelta;
     }
     const double delta_MDR = *delta_MDR_offset + ddelta_MDR; // MDR displacement
-    *delta_MDR_offset = delta_MDR; // Update old MDR displacement
+    *delta_MDR_offset = delta_MDR; // update old MDR displacement
     const double delta_BULK = MAX(0.0, *delta_BULK_offset + ddelta_BULK); // bulk displacement
     *delta_BULK_offset = delta_BULK; // update old bulk displacement
 
@@ -818,10 +780,10 @@ double GranSubModNormalMDR::calculate_forces()
     double Ac;
     (*Yflag_offset == 0.0) ? Ac = MY_PI * delta * R : Ac = MY_PI * ((2.0 * delta * R - pow(delta, 2)) + cA / MY_PI);
     if (Ac < 0.0) Ac = 0.0;
-    if (update) {
+    //if (update) {
       Atot_sum[i] += wij * (Ac - 2.0 * MY_PI * R * (deltamax_MDR + delta_BULK));
       Acon1[i] += wij * Ac;
-    }
+    //}
 
     // bulk force calculation
     double F_BULK;
@@ -834,7 +796,9 @@ double GranSubModNormalMDR::calculate_forces()
     *Ac_offset = wij * Ac;
 
     // radius update scheme quantity calculation
-    if (update) Vcaps[i] += (MY_PI * THIRD) * pow(delta, 2) * (3.0 * R - delta);
+    //if (update) { 
+      Vcaps[i] += (MY_PI * THIRD) * pow(delta, 2) * (3.0 * R - delta);
+    //}
 
     const double Fntmp = wij * (F_MDR + F_BULK);
     const double fx = Fntmp * gm->nx[0];
@@ -844,21 +808,24 @@ double GranSubModNormalMDR::calculate_forces()
     const double by = -(Ro - deltao) * gm->nx[1];
     const double bz = -(Ro - deltao) * gm->nx[2];
     const double eps_bar_contact = (1.0 / (3 * kappa * Velas[i])) * (fx * bx + fy * by + fz * bz);
-    if (update) eps_bar[i] += eps_bar_contact;
+    //if (update) {
+      eps_bar[i] += eps_bar_contact;
+    //} 
 
     double desp_bar_contact = eps_bar_contact - *eps_bar_offset;
-    if (update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
+    //if (update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
+    if (delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0){
       const double Vo = (4.0 * THIRD) * MY_PI * pow(Ro, 3);
       dRnumerator[i] += -Vo * (eps_bar_contact - *eps_bar_offset) - wij * MY_PI * ddeltao * (2.0 * deltao * Ro - pow(deltao, 2) + pow(R, 2) - pow(Ro, 2));
       dRdenominator[i] += wij * 2.0 * MY_PI * R * (deltao + R - Ro);
     }
     *eps_bar_offset = eps_bar_contact;
 
-    if (update) {
+    //if (update) {
       sigmaxx[i] += (1.0 / Velas[i]) * (fx * bx);
       sigmayy[i] += (1.0 / Velas[i]) * (fy * by);
       sigmazz[i] += (1.0 / Velas[i]) * (fz * bz);
-    }
+    //}
   }
 
   gm->i = i_true;
