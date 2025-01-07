@@ -64,7 +64,6 @@ class FixGranularMDR : public Fix {
   void post_constructor() override;
   void setup_pre_force(int) override;
   void pre_force(int) override;
-  void end_of_step() override;
   int pack_forward_comm(int, int *, double *, int, int *) override;
   void unpack_forward_comm(int, int, double *) override;
   void set_arrays(int) override;
@@ -77,7 +76,6 @@ class FixGranularMDR : public Fix {
   class FixNeighHistory *fix_history;
   std::vector<Fix *> fix_wall_list;
 
-  void reset_properties();
   void mean_surf_disp();
   void calculate_contact_penalty();
   void update_fix_gran_wall();

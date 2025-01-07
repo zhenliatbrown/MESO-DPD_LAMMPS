@@ -75,7 +75,6 @@ int FixGranularMDR::setmask()
 {
   int mask = 0;
   mask |= PRE_FORCE;
-  mask |= END_OF_STEP;
   return mask;
 }
 
@@ -177,22 +176,30 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
 
 void FixGranularMDR::pre_force(int)
 {
-  // Initialize variables for any new atoms
-
   double *radius = atom->radius;
   int nlocal = atom->nlocal;
 
   double *Ro = atom->dvector[index_Ro];
   double *Vgeo = atom->dvector[index_Vgeo];
   double *Velas = atom->dvector[index_Velas];
+  double *Vcaps = atom->dvector[index_Vcaps];
+  double *eps_bar = atom->dvector[index_eps_bar];
+  double *dRnumerator = atom->dvector[index_dRnumerator];
+  double *dRdenominator = atom->dvector[index_dRdenominator];
+  double *Acon0 = atom->dvector[index_Acon0];
   double *Acon1 = atom->dvector[index_Acon1];
   double *Atot = atom->dvector[index_Atot];
+  double *Atot_sum = atom->dvector[index_Atot_sum];
   double *psi = atom->dvector[index_psi];
   double *psi_b = atom->dvector[index_psi_b];
+  double *ddelta_bar = atom->dvector[index_ddelta_bar];
+  double *sigmaxx = atom->dvector[index_sigmaxx];
+  double *sigmayy = atom->dvector[index_sigmayy];
+  double *sigmazz = atom->dvector[index_sigmazz];
   double *history_setup_flag = atom->dvector[index_history_setup_flag];
 
-  int ntotal = atom->nlocal + atom->nghost;
-  for (int i = 0; i < ntotal; i++) {
+  // update the apparent radius of local particles, will forward to ghosts
+  for (int i = 0; i < nlocal; i++) {
     if (history_setup_flag[i] < EPSILON) {
       Ro[i] = radius[i];
       Vgeo[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
@@ -200,24 +207,58 @@ void FixGranularMDR::pre_force(int)
       Atot[i] = 4.0 * MY_PI * pow(Ro[i], 2.0);
       psi[i] = 1.0;
       psi_b[i] = psi_b_coeff;
+      Acon0[i] = 0.0;
       Acon1[i] = 0.0;
       history_setup_flag[i] = 1.0;
+      continue;
     }
+
+    if (update->setupflag) continue;
+
+    const double R = radius[i];
+    const double Vo = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
+    const double Vgeoi = 4.0 / 3.0 * MY_PI * pow(R, 3.0) - Vcaps[i];
+
+    Vgeo[i] = MIN(Vgeoi, Vo);
+    Velas[i] = Vo * (1.0 + eps_bar[i]);
+    Atot[i] = 4.0 * MY_PI * pow(R, 2.0) + Atot_sum[i];
+    psi[i] = (Atot[i] - Acon1[i]) / Atot[i];
+
+    if (psi_b[i] < psi[i]) {
+      const double dR = MAX(dRnumerator[i] / (dRdenominator[i] - 4.0 * MY_PI * pow(R, 2.0)), 0.0);
+      if ((radius[i] + dR) < (1.5 * Ro[i]))
+        radius[i] += dR;
+    }
+
+    Acon0[i] = Acon1[i];
   }
 
-  reset_properties();
+  // rezero temporary variables for all atoms, no need to communicate
+  int ntotal = nlocal + atom->nghost;
+  for (int i = 0; i < ntotal; i++) {
+    Vcaps[i] = 0.0;
+    eps_bar[i] = 0.0;
+    dRnumerator[i] = 0.0;
+    dRdenominator[i] = 0.0;
+    Acon1[i] = 0.0;
+    Atot_sum[i] = 0.0;
+    ddelta_bar[i] = 0.0;
+    sigmaxx[i] = 0.0;
+    sigmayy[i] = 0.0;
+    sigmazz[i] = 0.0;
+  }
 
   comm_stage = COMM_1;
   comm->forward_comm(this, 6);
 
-  if (update->setupflag) return;
+  if (!update->setupflag) {
+    calculate_contact_penalty();
+    mean_surf_disp();
+    update_fix_gran_wall();
 
-  calculate_contact_penalty();
-  mean_surf_disp();
-  update_fix_gran_wall();
-
-  comm_stage = COMM_2;
-  comm->forward_comm(this, 1);
+    comm_stage = COMM_2;
+    comm->forward_comm(this, 1);
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -269,51 +310,6 @@ void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
   }
 }
 
-/* ---------------------------------------------------------------------- */
-
-void FixGranularMDR::end_of_step()
-{
-  // update the apparent radius of every particle
-  double *radius = atom->radius;
-  int nlocal = atom->nlocal;
-
-  double *Ro = atom->dvector[index_Ro];
-  double *Vgeo = atom->dvector[index_Vgeo];
-  double *Velas = atom->dvector[index_Velas];
-  double *Vcaps = atom->dvector[index_Vcaps];
-  double *eps_bar = atom->dvector[index_eps_bar];
-  double *dRnumerator = atom->dvector[index_dRnumerator];
-  double *dRdenominator = atom->dvector[index_dRdenominator];
-  double *Acon0 = atom->dvector[index_Acon0];
-  double *Acon1 = atom->dvector[index_Acon1];
-  double *Atot = atom->dvector[index_Atot];
-  double *Atot_sum = atom->dvector[index_Atot_sum];
-  double *psi = atom->dvector[index_psi];
-  double *psi_b = atom->dvector[index_psi_b];
-
-  for (int i = 0; i < nlocal; i++) {
-
-    const double R = radius[i];
-    Atot[i] = 4.0 * MY_PI * pow(R, 2.0) + Atot_sum[i];
-
-    const double Vo = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
-    const double Vgeoi = 4.0 / 3.0 * MY_PI * pow(R, 3.0) - Vcaps[i];
-    Vgeo[i] = MIN(Vgeoi, Vo);
-
-    const double Afree = Atot[i] - Acon1[i];
-    psi[i] = Afree / Atot[i];
-
-    const double dR = MAX(dRnumerator[i] / (dRdenominator[i] - 4.0 * MY_PI * pow(R, 2.0)), 0.0);
-    if (psi_b[i] < psi[i]) {
-      if ((radius[i] + dR) < (1.5 * Ro[i])) radius[i] += dR;
-    }
-
-    Velas[i] = Vo * (1.0 + eps_bar[i]);
-    Acon0[i] = Acon1[i];
-  }
-}
-
-
 /* ----------------------------------------------------------------------
    initialize setup flag to zero, called when atom is created
 ------------------------------------------------------------------------- */
@@ -321,38 +317,6 @@ void FixGranularMDR::end_of_step()
 void FixGranularMDR::set_arrays(int i)
 {
   atom->dvector[index_history_setup_flag][i] = 0.0;
-}
-
-/* ----------------------------------------------------------------------
-   reset all intermediate properties
-------------------------------------------------------------------------- */
-
-void FixGranularMDR::reset_properties()
-{
-  double *Vcaps = atom->dvector[index_Vcaps];
-  double *eps_bar = atom->dvector[index_eps_bar];
-  double *dRnumerator = atom->dvector[index_dRnumerator];
-  double *dRdenominator = atom->dvector[index_dRdenominator];
-  double *Acon1 = atom->dvector[index_Acon1];
-  double *Atot_sum = atom->dvector[index_Atot_sum];
-  double *ddelta_bar = atom->dvector[index_ddelta_bar];
-  double *sigmaxx = atom->dvector[index_sigmaxx];
-  double *sigmayy = atom->dvector[index_sigmayy];
-  double *sigmazz = atom->dvector[index_sigmazz];
-
-  int ntotal = atom->nlocal + atom->nghost;
-  for (int i = 0; i < ntotal; i++) {
-    Vcaps[i] = 0.0;
-    eps_bar[i] = 0.0;
-    dRnumerator[i] = 0.0;
-    dRdenominator[i] = 0.0;
-    Acon1[i] = 0.0;
-    Atot_sum[i] = 0.0;
-    ddelta_bar[i] = 0.0;
-    sigmaxx[i] = 0.0;
-    sigmayy[i] = 0.0;
-    sigmazz[i] = 0.0;
-  }
 }
 
 /* ----------------------------------------------------------------------
