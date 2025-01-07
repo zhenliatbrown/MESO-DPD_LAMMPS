@@ -54,7 +54,7 @@ enum {COMM_1, COMM_2};
 FixGranularMDR::FixGranularMDR(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
-  comm_forward = 6;
+  comm_forward = 5;
   create_attribute = 1;
 
   id_fix = nullptr;
@@ -84,7 +84,7 @@ void FixGranularMDR::post_constructor()
 {
   int tmp1, tmp2;
   id_fix = utils::strdup("MDR_PARTICLE_HISTORY_VARIABLES");
-  modify->add_fix(fmt::format("{} all property/atom d_Ro d_Vcaps d_Vgeo d_Velas d_eps_bar d_dRnumerator d_dRdenominator d_Acon0 d_Acon1 d_Atot d_Atot_sum d_ddelta_bar d_psi d_psi_b d_history_setup_flag d_sigmaxx d_sigmayy d_sigmazz ghost yes", id_fix));
+  modify->add_fix(fmt::format("{} all property/atom d_Ro d_Vcaps d_Vgeo d_Velas d_eps_bar d_dRnumerator d_dRdenominator d_Acon0 d_Acon1 d_Atot d_Atot_sum d_ddelta_bar d_psi d_history_setup_flag d_sigmaxx d_sigmayy d_sigmazz ghost yes", id_fix));
 
   index_Ro = atom->find_custom("Ro", tmp1, tmp2);
   index_Vcaps = atom->find_custom("Vcaps", tmp1, tmp2);
@@ -99,7 +99,6 @@ void FixGranularMDR::post_constructor()
   index_Atot_sum = atom->find_custom("Atot_sum", tmp1, tmp2);
   index_ddelta_bar = atom->find_custom("ddelta_bar", tmp1, tmp2);
   index_psi = atom->find_custom("psi", tmp1, tmp2);
-  index_psi_b = atom->find_custom("psi_b", tmp1, tmp2);
   index_history_setup_flag = atom->find_custom("history_setup_flag", tmp1, tmp2);
   index_sigmaxx = atom->find_custom("sigmaxx", tmp1, tmp2);
   index_sigmayy = atom->find_custom("sigmayy", tmp1, tmp2);
@@ -191,7 +190,6 @@ void FixGranularMDR::pre_force(int)
   double *Atot = atom->dvector[index_Atot];
   double *Atot_sum = atom->dvector[index_Atot_sum];
   double *psi = atom->dvector[index_psi];
-  double *psi_b = atom->dvector[index_psi_b];
   double *ddelta_bar = atom->dvector[index_ddelta_bar];
   double *sigmaxx = atom->dvector[index_sigmaxx];
   double *sigmayy = atom->dvector[index_sigmayy];
@@ -206,7 +204,6 @@ void FixGranularMDR::pre_force(int)
       Velas[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
       Atot[i] = 4.0 * MY_PI * pow(Ro[i], 2.0);
       psi[i] = 1.0;
-      psi_b[i] = psi_b_coeff;
       Acon0[i] = 0.0;
       Acon1[i] = 0.0;
       history_setup_flag[i] = 1.0;
@@ -224,7 +221,7 @@ void FixGranularMDR::pre_force(int)
     Atot[i] = 4.0 * MY_PI * pow(R, 2.0) + Atot_sum[i];
     psi[i] = (Atot[i] - Acon1[i]) / Atot[i];
 
-    if (psi_b[i] < psi[i]) {
+    if (psi_b_coeff < psi[i]) {
       const double dR = MAX(dRnumerator[i] / (dRdenominator[i] - 4.0 * MY_PI * pow(R, 2.0)), 0.0);
       if ((radius[i] + dR) < (1.5 * Ro[i]))
         radius[i] += dR;
@@ -249,7 +246,7 @@ void FixGranularMDR::pre_force(int)
   }
 
   comm_stage = COMM_1;
-  comm->forward_comm(this, 6);
+  comm->forward_comm(this, 5);
 
   if (!update->setupflag) {
     calculate_contact_penalty();
@@ -275,7 +272,6 @@ int FixGranularMDR::pack_forward_comm(int n, int *list, double *buf, int /*pbc_f
       buf[m++] = dvector[index_Acon0][j];              // 8
       buf[m++] = dvector[index_Atot][j];               // 10
       buf[m++] = dvector[index_psi][j];                // 13
-      buf[m++] = dvector[index_psi_b][j];              // 14
     }
   } else {
     for (int i = 0; i < n; i++) {
@@ -301,7 +297,6 @@ void FixGranularMDR::unpack_forward_comm(int n, int first, double *buf)
       dvector[index_Acon0][i] = buf[m++];              // 8
       dvector[index_Atot][i] = buf[m++];               // 10
       dvector[index_psi][i] = buf[m++];                // 13
-      dvector[index_psi_b][i] = buf[m++];              // 14
     }
   } else {
     for (int i = first; i < last; i++) {

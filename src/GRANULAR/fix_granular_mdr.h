@@ -93,7 +93,6 @@ class FixGranularMDR : public Fix {
   int index_Atot_sum;           // running sum of contact area minus cap area
   int index_ddelta_bar;         // change in mean surface displacement
   int index_psi;                // ratio of free surface area to total surface area
-  int index_psi_b;              // TEMPORARY, SINCE PSI_B IS ALREADY DEFINED IN THEINPUT SCRIPT
   int index_sigmaxx;            // xx-component of the stress tensor, not necessary forforce calculation
   int index_sigmayy;            // yy-component of the stress tensor, not necessary forforce calculation
   int index_sigmazz;            // zz-component of the stress tensor, not necessary forforce calculation
