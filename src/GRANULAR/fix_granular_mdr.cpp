@@ -333,7 +333,7 @@ void FixGranularMDR::calculate_contact_penalty()
 
   int *ilist, *jlist, *numneigh, **firstneigh;
   int *touch, **firsttouch;
-  double *history_ij, *history_ik, *history_jk, *history_kj;
+  double *history, *history_ij, *history_ik, *history_jk, *history_kj;
   double *allhistory, *allhistory_j, *allhistory_k, **firsthistory;
 
   bool touchflag = false;
@@ -348,6 +348,16 @@ void FixGranularMDR::calculate_contact_penalty()
   firstneigh = list->firstneigh;
   firsttouch = fix_history->firstflag;
   firsthistory = fix_history->firstvalue;
+
+  // zero existing penalties
+
+  for (ii = 0; ii < inum; ii++) {
+    i = ilist[ii];
+    allhistory = firsthistory[i];
+    jnum = numneigh[i];
+    for (jj = 0; jj < jnum; jj++)
+      (&allhistory[size_history * jj])[PENALTY] = 0.0;
+  }
 
   // contact penalty calculation
   for (ii = 0; ii < inum; ii++) {
@@ -402,11 +412,11 @@ void FixGranularMDR::calculate_contact_penalty()
 
         // pull ij history
         history_ij = &allhistory[size_history * jj];
-        double * pij = &history_ij[22]; // penalty for contact i and j
+        double * pij = &history_ij[PENALTY]; // penalty for contact i and j
 
         // pull ik history
         history_ik = &allhistory[size_history * kk];
-        double * pik = &history_ik[22]; // penalty for contact i and k
+        double * pik = &history_ik[PENALTY]; // penalty for contact i and k
 
         // Find pair of atoms with the smallest overlap, atoms a & b, 3rd atom c is central
         //   if a & b are both local:
@@ -457,7 +467,7 @@ void FixGranularMDR::calculate_contact_penalty()
                 if (k == kneigh) {
                   allhistory_j = firsthistory[j];
                   history_jk = &allhistory_j[size_history * jk];
-                  pjk = &history_jk[22]; // penalty for contact j and k
+                  pjk = &history_jk[PENALTY]; // penalty for contact j and k
                   break;
                 }
               }
@@ -472,7 +482,7 @@ void FixGranularMDR::calculate_contact_penalty()
                 if (j == jneigh) {
                   allhistory_k = firsthistory[k];
                   history_kj = &allhistory_k[size_history * kj];
-                  pjk = &history_kj[22]; // penalty for contact j and k
+                  pjk = &history_kj[PENALTY]; // penalty for contact j and k
                   break;
                 }
               }

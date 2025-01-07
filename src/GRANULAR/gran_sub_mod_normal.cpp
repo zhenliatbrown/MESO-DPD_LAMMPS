@@ -547,15 +547,15 @@ double GranSubModNormalMDR::calculate_forces()
   int update = gm->history_update;
 
   // Rigid flat placement scheme
-  double * deltamax_offset = & history[DELTA_MAX];
+  double *deltamax_offset = & history[DELTA_MAX];
   double deltamax = *deltamax_offset;
-  double * deltap_offset0 = & history[DELTAP_0];
-  double * deltap_offset1 = & history[DELTAP_1];
+  double *deltap_offset0 = & history[DELTAP_0];
+  double *deltap_offset1 = & history[DELTAP_1];
   double deltap0 = *deltap_offset0;
   double deltap1 = *deltap_offset1;
 
   if (gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
-  deltamax = *deltamax_offset;
+  if (update) deltamax = *deltamax_offset;
 
   for (int contactSide = 0; contactSide < 2; contactSide++) {
 
@@ -605,18 +605,18 @@ double GranSubModNormalMDR::calculate_forces()
       break;
     }
 
-    delta_offset = & history[DELTA_0 + contactSide];
-    deltao_offset = & history[DELTAO_0 + contactSide];
-    delta_MDR_offset = & history[DELTA_MDR_0 + contactSide];
-    delta_BULK_offset = & history[DELTA_BULK_0 + contactSide];
-    deltamax_MDR_offset = & history[DELTAMAX_MDR_0 + contactSide];
-    Yflag_offset = & history[YFLAG_0 + contactSide];
-    deltaY_offset = & history[DELTAY_0 + contactSide];
-    cA_offset = & history[CA_0 + contactSide];
-    aAdh_offset = & history[AADH_0 + contactSide];
-    Ac_offset = & history[AC_0 + contactSide];
-    eps_bar_offset = & history[EPS_BAR_0 + contactSide];
-    deltap_offset = & history[DELTAP_0 + contactSide];
+    delta_offset = &history[DELTA_0 + contactSide];
+    deltao_offset = &history[DELTAO_0 + contactSide];
+    delta_MDR_offset = &history[DELTA_MDR_0 + contactSide];
+    delta_BULK_offset = &history[DELTA_BULK_0 + contactSide];
+    deltamax_MDR_offset = &history[DELTAMAX_MDR_0 + contactSide];
+    Yflag_offset = &history[YFLAG_0 + contactSide];
+    deltaY_offset = &history[DELTAY_0 + contactSide];
+    cA_offset = &history[CA_0 + contactSide];
+    aAdh_offset = &history[AADH_0 + contactSide];
+    Ac_offset = &history[AC_0 + contactSide];
+    eps_bar_offset = &history[EPS_BAR_0 + contactSide];
+    deltap_offset = &history[DELTAP_0 + contactSide];
 
     // temporary i and j indices
     const int i = gm->i;
@@ -628,11 +628,11 @@ double GranSubModNormalMDR::calculate_forces()
 
     // kinematics
     const double ddelta = delta - *delta_offset;
-    *delta_offset = delta;
+    if (update) *delta_offset = delta;
 
     const double deltao = delta - (R - Ro);
     const double ddeltao = deltao - *deltao_offset;
-    *deltao_offset = deltao;
+    if (update) *deltao_offset = deltao;
 
     double ddelta_MDR, ddelta_BULK;
     if (psi[i] < psi_b) { // if true, bulk response has triggered, split displacement increment between the MDR and BULK components
@@ -643,17 +643,17 @@ double GranSubModNormalMDR::calculate_forces()
       ddelta_MDR = ddelta;
     }
     const double delta_MDR = *delta_MDR_offset + ddelta_MDR; // MDR displacement
-    *delta_MDR_offset = delta_MDR; // update old MDR displacement
+    if (update) *delta_MDR_offset = delta_MDR; // update old MDR displacement
     const double delta_BULK = MAX(0.0, *delta_BULK_offset + ddelta_BULK); // bulk displacement
-    *delta_BULK_offset = delta_BULK; // update old bulk displacement
+    if (update) *delta_BULK_offset = delta_BULK; // update old bulk displacement
 
-    if (delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
+    if (update && delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
     const double deltamax_MDR = *deltamax_MDR_offset;
 
     const double pY = Y * (1.75 * exp(-4.4 * deltamax_MDR / R) + 1.0); // Set value of average pressure along yield surface
     if (*Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR) {
     const double phertz = 4 * Eeff * sqrt(delta_MDR) / (3 * MY_PI * sqrt(R));
-      if ( phertz > pY ) {
+      if (update && phertz > pY) {
         *Yflag_offset = 1.0;
         *deltaY_offset = delta_MDR;
         *cA_offset = MY_PI * (pow(*deltaY_offset, 2) - *deltaY_offset * R);
@@ -669,7 +669,7 @@ double GranSubModNormalMDR::calculate_forces()
     double amax, amaxsq;          // maximum experienced contact radius
     const double cA = *cA_offset; // contact area intercept
 
-    if ( *Yflag_offset == 0.0 ) { // elastic contact
+    if (*Yflag_offset == 0.0) { // elastic contact
       A = 4.0 * R;
       Ainv = 1.0 / A;
       B = 2.0 * R;
@@ -689,7 +689,7 @@ double GranSubModNormalMDR::calculate_forces()
       deltae1D = (delta_MDR - deltamax_MDR + deltae1Dmax + deltaR) / (1 + deltaR / deltae1Dmax);  // transformed elastic displacement
 
       // added for rigid flat placement
-      *deltap_offset = deltamax_MDR - (deltae1Dmax + deltaR);
+      if (update) *deltap_offset = deltamax_MDR - (deltae1Dmax + deltaR);
     }
 
     double a_na;
@@ -701,7 +701,7 @@ double GranSubModNormalMDR::calculate_forces()
     if ( gamma > 0.0 ) { // adhesive contact
       double g_aAdh;
 
-      if (delta_MDR == deltamax_MDR || a_na >= aAdh ) { // case 1: no tensile springs, purely compressive contact
+      if (delta_MDR == deltamax_MDR || a_na >= aAdh) { // case 1: no tensile springs, purely compressive contact
         if (deltae1D <= 0.0) {
           F_MDR = 0.0;
         } else {
@@ -711,7 +711,7 @@ double GranSubModNormalMDR::calculate_forces()
         if (std::isnan(F_MDR)) {
           error->one(FLERR, "F_MDR is NaN, case 1: no tensile springs");
         }
-        *aAdh_offset = a_fac * a_na;
+        if (update) *aAdh_offset = a_fac * a_na;
       } else {
         const double lmax = sqrt(2.0 * MY_PI * aAdh * gamma / Eeff);
         g_aAdh = A * 0.5 - A / B * sqrt(pow(B, 2.0) * 0.25 - pow(aAdh, 2));
@@ -761,11 +761,11 @@ double GranSubModNormalMDR::calculate_forces()
             F_MDR = F_na + F_Adhes;
             if (std::isnan(F_MDR)) error->one(FLERR, "F_MDR is NaN, case 3: tensile springs exceed critical length");
           }
-          *aAdh_offset = aAdh;
+          if (update) *aAdh_offset = aAdh;
         }
       }
     } else { // non-adhesive contact
-      *aAdh_offset = a_na;
+      if (update) *aAdh_offset = a_na;
       (deltae1D <= 0.0) ? F_MDR = 0.0 : F_MDR = Eeff * (A * B * 0.25) * (acos(1.0 - 2.0 * deltae1D / A) - (1.0 - 2.0 * deltae1D / A) * sqrt(4.0 * deltae1D / A - 4.0 * pow(deltae1D, 2) / pow(A, 2)));
       if (std::isnan(F_MDR)) {
         error->one(FLERR, "F_MDR is NaN, non-adhesive case");
@@ -773,7 +773,7 @@ double GranSubModNormalMDR::calculate_forces()
     }
 
     // contact penalty scheme
-    penalty_offset = & history[PENALTY];
+    penalty_offset = &history[PENALTY];
     double pij = *penalty_offset;
     const double wij = MAX(1.0 - pij, 0.0);
 
@@ -793,11 +793,11 @@ double GranSubModNormalMDR::calculate_forces()
     // total force calculation
     (contactSide == 0) ? F0 = F_MDR + F_BULK : F1 = F_MDR + F_BULK;
 
-    // mean surface dipslacement calculation
-    *Ac_offset = wij * Ac;
-
-    // radius update scheme quantity calculation
     if (update) {
+      // mean surface dipslacement calculation
+      *Ac_offset = wij * Ac;
+
+      // radius update scheme quantity calculation
       Vcaps[i] += (MY_PI * THIRD) * pow(delta, 2) * (3.0 * R - delta);
     }
 
@@ -817,9 +817,9 @@ double GranSubModNormalMDR::calculate_forces()
       dRnumerator[i] += -Vo * (eps_bar_contact - *eps_bar_offset) - wij * MY_PI * ddeltao * (2.0 * deltao * Ro - pow(deltao, 2) + pow(R, 2) - pow(Ro, 2));
       dRdenominator[i] += wij * 2.0 * MY_PI * R * (deltao + R - Ro);
     }
-    *eps_bar_offset = eps_bar_contact;
 
     if (update) {
+      *eps_bar_offset = eps_bar_contact;
       sigmaxx[i] += (1.0 / Velas[i]) * (fx * bx);
       sigmayy[i] += (1.0 / Velas[i]) * (fy * by);
       sigmazz[i] += (1.0 / Velas[i]) * (fz * bz);
@@ -831,10 +831,9 @@ double GranSubModNormalMDR::calculate_forces()
   gm->radi = radi_true;
   gm->radj = radj_true;
 
-  double * penalty_offset = & history[PENALTY];
+  double *penalty_offset = &history[PENALTY];
   const double pij = *penalty_offset;
   const double wij = MAX(1.0 - pij, 0.0);
-  *penalty_offset = 0.0;
 
   // assign final force
   if (gm->contact_type != PAIR) {
