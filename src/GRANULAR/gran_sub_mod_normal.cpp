@@ -544,7 +544,7 @@ double GranSubModNormalMDR::calculate_forces()
   double delta = gm->delta;               // apparent overlap
 
   double *history = & gm->history[history_index]; // load in all history variables
-  //int update = gm->history_update;
+  int update = gm->history_update;
 
   // Rigid flat placement scheme
   double * deltamax_offset = & history[DELTA_MAX];
@@ -583,8 +583,8 @@ double GranSubModNormalMDR::calculate_forces()
       double delta_geo, delta_geo_alt;
       double delta_geoOpt1 = deltamax * (deltamax - 2.0 * gm->radj) / (2.0 * (deltamax - gm->radi - gm->radj));
       double delta_geoOpt2 = deltamax * (deltamax - 2.0 * gm->radi) / (2.0 * (deltamax - gm->radi - gm->radj));
-      (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
-      (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1,delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1,delta_geoOpt2);
+      (gm->radi < gm->radj) ? delta_geo = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo = MIN(delta_geoOpt1, delta_geoOpt2);
+      (gm->radi > gm->radj) ? delta_geo_alt = MAX(delta_geoOpt1, delta_geoOpt2) : delta_geo_alt = MIN(delta_geoOpt1,delta_geoOpt2);
 
       // cap displacement if it exceeds the overlap limit and parition the remaining to the other side
       if (delta_geo / gm->radi > MDR_OVERLAP_LIMIT) {
@@ -600,7 +600,8 @@ double GranSubModNormalMDR::calculate_forces()
       } else {
         delta = delta_geo + (deltap1 - delta_geo) / (deltap - deltamax) * (gm->delta - deltamax);
       }
-    } else if (gm->contact_type != PAIR && contactSide != 0) { // contact with particle-wall requires only one evaluation
+    } else if (gm->contact_type != PAIR && contactSide != 0) {
+      // contact with particle-wall requires only one evaluation
       break;
     }
 
