@@ -176,8 +176,6 @@ void FixGranularMDR::setup_pre_force(int /*vflag*/)
 void FixGranularMDR::pre_force(int)
 {
   double *radius = atom->radius;
-  int nlocal = atom->nlocal;
-
   double *Ro = atom->dvector[index_Ro];
   double *Vgeo = atom->dvector[index_Vgeo];
   double *Velas = atom->dvector[index_Velas];
@@ -196,21 +194,36 @@ void FixGranularMDR::pre_force(int)
   double *sigmazz = atom->dvector[index_sigmazz];
   double *history_setup_flag = atom->dvector[index_history_setup_flag];
 
-  // update the apparent radius of local particles, will forward to ghosts
-  for (int i = 0; i < nlocal; i++) {
+  int new_atom;
+  int nlocal = atom->nlocal;
+  int ntotal = nlocal + atom->nghost;
+  for (int i = 0; i < ntotal; i++) {
+    // initialize new atoms
+    new_atom = 0;
     if (history_setup_flag[i] < EPSILON) {
       Ro[i] = radius[i];
-      Vgeo[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
-      Velas[i] = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
-      Atot[i] = 4.0 * MY_PI * pow(Ro[i], 2.0);
-      psi[i] = 1.0;
       Acon0[i] = 0.0;
       Acon1[i] = 0.0;
+      Vcaps[i] = 0.0;
+      eps_bar[i] = 0.0;
+      dRnumerator[i] = 0.0;
+      dRdenominator[i] = 0.0;
+      Atot_sum[i] = 0.0;
+      ddelta_bar[i] = 0.0;
+      sigmaxx[i] = 0.0;
+      sigmayy[i] = 0.0;
+      sigmazz[i] = 0.0;
       history_setup_flag[i] = 1.0;
-      continue;
+      new_atom = 1;
     }
 
-    if (update->setupflag) continue;
+    // update apparent radius
+
+    // will forward to ghosts
+    if (i >= nlocal) continue;
+
+    // only update outside of setup (unless a new atom)
+    if (update->setupflag && (!new_atom)) continue;
 
     const double R = radius[i];
     const double Vo = 4.0 / 3.0 * MY_PI * pow(Ro[i], 3.0);
@@ -226,29 +239,27 @@ void FixGranularMDR::pre_force(int)
       if ((radius[i] + dR) < (1.5 * Ro[i]))
         radius[i] += dR;
     }
-
     Acon0[i] = Acon1[i];
-  }
-
-  // rezero temporary variables for all atoms, no need to communicate
-  int ntotal = nlocal + atom->nghost;
-  for (int i = 0; i < ntotal; i++) {
-    Vcaps[i] = 0.0;
-    eps_bar[i] = 0.0;
-    dRnumerator[i] = 0.0;
-    dRdenominator[i] = 0.0;
-    Acon1[i] = 0.0;
-    Atot_sum[i] = 0.0;
-    ddelta_bar[i] = 0.0;
-    sigmaxx[i] = 0.0;
-    sigmayy[i] = 0.0;
-    sigmazz[i] = 0.0;
   }
 
   comm_stage = COMM_1;
   comm->forward_comm(this, 5);
 
   if (!update->setupflag) {
+    // rezero temporary variables for all atoms, no need to communicate
+    for (int i = 0; i < ntotal; i++) {
+      Vcaps[i] = 0.0;
+      eps_bar[i] = 0.0;
+      dRnumerator[i] = 0.0;
+      dRdenominator[i] = 0.0;
+      Acon1[i] = 0.0;
+      Atot_sum[i] = 0.0;
+      ddelta_bar[i] = 0.0;
+      sigmaxx[i] = 0.0;
+      sigmayy[i] = 0.0;
+      sigmazz[i] = 0.0;
+    }
+
     calculate_contact_penalty();
     mean_surf_disp();
     update_fix_gran_wall();
