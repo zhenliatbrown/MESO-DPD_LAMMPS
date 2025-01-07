@@ -143,12 +143,10 @@ namespace Granular_NS {
     void coeffs_to_local() override;
     void init() override;
     double calculate_forces() override;
-    void set_fncrit() override;
     double E, nu, Y, gamma, CoR, psi_b; // specified coeffs
 
    protected:
     double G, kappa, Eeff; // derived coeffs
-    double F;
 
     int index_Ro, index_Vgeo, index_Velas, index_Vcaps, index_eps_bar, index_dRnumerator;
     int index_dRdenominator, index_Acon0, index_Acon1, index_Atot, index_Atot_sum, index_ddelta_bar;

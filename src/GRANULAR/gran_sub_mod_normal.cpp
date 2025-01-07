@@ -538,7 +538,7 @@ double GranSubModNormalMDR::calculate_forces()
   const double radi_true = gm->radi;      // true i particle initial radius
   const double radj_true = gm->radj;      // true j particle initial radius
 
-  F = 0.0;                                // average force
+  double F = 0.0;                         // average force
   double F0 = 0.0;                        // force on contact side 0
   double F1 = 0.0;                        // force on contact side 1
   double delta = gm->delta;               // apparent overlap
@@ -862,11 +862,4 @@ double GranSubModNormalMDR::calculate_forces()
   }
 
   return F;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void GranSubModNormalMDR::set_fncrit()
-{
-  Fncrit = fabs(F);
 }
