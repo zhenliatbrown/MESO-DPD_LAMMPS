@@ -63,8 +63,8 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     if (fmmode != PHYSICAL) {
         error->universe_all(FLERR, "The only available fmmode for pimdb is physical, please remove the fmmode keyword.");
     }
-    if (ensemble != NVT) {
-        error->universe_all(FLERR, "The only available ensemble for pimdb is nvt, please remove the ensemble keyword.");
+    if (ensemble != NVE && ensemble != NVT) {
+        error->universe_all(FLERR, "The only available ensembles for pimdb are nve and nvt, please choose one of these ensembles.");
     }
 
     method = PIMD;     
