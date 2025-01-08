@@ -18,6 +18,7 @@ concurrency:
 jobs:
   build:
     name: Windows Compilation Test
+    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: windows-latest
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache

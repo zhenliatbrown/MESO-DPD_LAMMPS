@@ -10,6 +10,7 @@ on:
 jobs:
   analyze:
     name: Analyze
+    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-latest
 
     permissions:

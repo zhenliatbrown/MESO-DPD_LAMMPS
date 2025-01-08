@@ -14,6 +14,7 @@ on:
 jobs:
   build:
     name: Build with C++23 support enabled
+    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-latest
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
