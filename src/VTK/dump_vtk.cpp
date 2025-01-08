@@ -983,9 +983,10 @@ void DumpVTK::write()
 void DumpVTK::pack(tagint *ids)
 {
   int n = 0;
-  for (std::map<int,FnPtrPack>::iterator it=pack_choice.begin(); it!=pack_choice.end(); ++it, ++n) {
-      current_pack_choice_key = it->first; // work-around for pack_compute, pack_fix, pack_variable
-      (this->*(it->second))(n);
+  for (auto &choice : pack_choice) {
+      current_pack_choice_key = choice.first; // work-around for pack_compute, pack_fix, pack_variable
+      (this->*(choice.second))(n);
+      ++n;
   }
 
   if (ids) {
@@ -1108,10 +1109,10 @@ void DumpVTK::buf2arrays(int n, double *mybuf)
     pid[0] = points->InsertNextPoint(mybuf[iatom*size_one],mybuf[iatom*size_one+1],mybuf[iatom*size_one+2]);
 
     int j=3; // 0,1,2 = x,y,z handled just above
-    for (std::map<int, vtkSmartPointer<vtkAbstractArray> >::iterator it=myarrays.begin(); it!=myarrays.end(); ++it) {
-      vtkAbstractArray *paa = it->second;
-      if (it->second->GetNumberOfComponents() == 3) {
-        switch (vtype[it->first]) {
+    for (auto &it : myarrays) {
+      vtkAbstractArray *paa = it.second;
+      if (it.second->GetNumberOfComponents() == 3) {
+        switch (vtype[it.first]) {
           case Dump::INT:
             {
               int iv3[3] = { static_cast<int>(mybuf[iatom*size_one+j  ]),
@@ -1130,7 +1131,7 @@ void DumpVTK::buf2arrays(int n, double *mybuf)
         }
         j+=3;
       } else {
-        switch (vtype[it->first]) {
+        switch (vtype[it.first]) {
           case Dump::INT:
             {
               vtkIntArray *pia = static_cast<vtkIntArray*>(paa);
@@ -1317,8 +1318,8 @@ void DumpVTK::write_vtk(int n, double *mybuf)
     unstructuredGrid->SetPoints(points);
     unstructuredGrid->SetCells(VTK_VERTEX, pointsCells);
 
-    for (std::map<int, vtkSmartPointer<vtkAbstractArray> >::iterator it=myarrays.begin(); it!=myarrays.end(); ++it) {
-      unstructuredGrid->GetPointData()->AddArray(it->second);
+    for (const auto & it : myarrays) {
+      unstructuredGrid->GetPointData()->AddArray(it.second);
     }
 
     vtkSmartPointer<vtkUnstructuredGridWriter> writer = vtkSmartPointer<vtkUnstructuredGridWriter>::New();
@@ -1327,8 +1328,8 @@ void DumpVTK::write_vtk(int n, double *mybuf)
     polyData->SetPoints(points);
     polyData->SetVerts(pointsCells);
 
-    for (std::map<int, vtkSmartPointer<vtkAbstractArray> >::iterator it=myarrays.begin(); it!=myarrays.end(); ++it) {
-      polyData->GetPointData()->AddArray(it->second);
+    for (auto &it : myarrays) {
+      polyData->GetPointData()->AddArray(it.second);
     }
 
     vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
@@ -1384,8 +1385,8 @@ void DumpVTK::write_vtp(int n, double *mybuf)
     polyData->SetPoints(points);
     polyData->SetVerts(pointsCells);
 
-    for (std::map<int, vtkSmartPointer<vtkAbstractArray> >::iterator it=myarrays.begin(); it!=myarrays.end(); ++it) {
-      polyData->GetPointData()->AddArray(it->second);
+    for (auto &it : myarrays) {
+      polyData->GetPointData()->AddArray(it.second);
     }
 
     vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
@@ -1448,8 +1449,8 @@ void DumpVTK::write_vtu(int n, double *mybuf)
     unstructuredGrid->SetPoints(points);
     unstructuredGrid->SetCells(VTK_VERTEX, pointsCells);
 
-    for (std::map<int, vtkSmartPointer<vtkAbstractArray> >::iterator it=myarrays.begin(); it!=myarrays.end(); ++it) {
-      unstructuredGrid->GetPointData()->AddArray(it->second);
+    for (auto &it : myarrays) {
+      unstructuredGrid->GetPointData()->AddArray(it.second);
     }
 
     vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
