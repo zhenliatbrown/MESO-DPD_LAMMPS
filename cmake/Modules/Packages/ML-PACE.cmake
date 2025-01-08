@@ -47,6 +47,12 @@ else()
       get_newest_file(${CMAKE_BINARY_DIR}/lammps-user-pace-* lib-pace)
     endif()
 
+    # some preinstalled yaml-cpp versions don't provide a namespaced target
+    find_package(yaml-cpp QUIET)
+    if(TARGET yaml-cpp AND NOT TARGET yaml-cpp::yaml-cpp)
+      add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
+    endif()
+
     add_subdirectory(${lib-pace} build-pace)
     set_target_properties(pace PROPERTIES CXX_EXTENSIONS ON OUTPUT_NAME lammps_pace${LAMMPS_MACHINE})
 
