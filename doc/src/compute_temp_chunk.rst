@@ -196,8 +196,8 @@ then the bias is added back in. This includes thermostatting
 fixes like :doc:`fix nvt <fix_nh>`,
 :doc:`fix temp/rescale <fix_temp_rescale>`,
 :doc:`fix temp/berendsen <fix_temp_berendsen>`, and
-:doc:`fix langevin <fix_langevin>`, and computes like 
-:doc:`compute stress/atom <compute_stress_atom>` and 
+:doc:`fix langevin <fix_langevin>`, and computes like
+:doc:`compute stress/atom <compute_stress_atom>` and
 :doc:`compute pressure <compute_pressure>`. See the input script in
 examples/stress_vcm for an example of how to use the *com* keyword in
 conjunction with compute stress/atom to create a stress profile of a rigid
