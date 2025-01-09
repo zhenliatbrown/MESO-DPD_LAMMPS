@@ -58,19 +58,19 @@ Description
 
 This fix implements the "Interactive MD" (IMD) protocol which allows
 realtime visualization and manipulation of MD simulations through the
-IMD protocol, as initially implemented in VMD and NAMD.  Specifically
-it allows LAMMPS to connect an IMD client, for example the `VMD visualization program <VMD_>`_
-(currently only supports IMDv2) or the
-`Python IMDClient <IMDClient_>`_ (supports both IMDv2 and IMDv3),
-so that it can monitor the progress of the
-simulation and interactively apply forces to selected atoms.
+IMD protocol, as initially implemented in VMD and NAMD.  Specifically it
+allows LAMMPS to connect an IMD client, for example the `VMD
+visualization program <VMD_>`_ (currently only supports IMDv2) or the
+`Python IMDClient <IMDClient_>`_ (supports both IMDv2 and IMDv3), so
+that it can monitor the progress of the simulation and interactively
+apply forces to selected atoms.
 
-If LAMMPS is compiled with the pre-processor flag -DLAMMPS_ASYNC_IMD (-DCMAKE_CXX_FLAGS="-DLAMMPS_ASYNC_IMD" in CMake),
-then fix imd will use POSIX threads to spawn a IMD communication
-thread on MPI rank 0 in order to offload data reading and writing
-from the main execution thread and potentially lower the inferred
-latencies for slow communication links. This feature has only been
-tested under linux.
+If LAMMPS is compiled with the pre-processor flag
+:ref:`-DLAMMPS_ASYNC_IMD <_misc>` then fix imd will use POSIX threads to
+spawn an IMD communication thread on MPI rank 0 in order to offload data
+exchange with the IMD client from the main execution thread and
+potentially lower the inferred latencies for slow communication
+links. This feature has only been tested under linux.
 
 The source code for this fix includes code developed by the Theoretical
 and Computational Biophysics Group in the Beckman Institute for Advanced
