@@ -547,16 +547,7 @@ They must be specified in uppercase.
       - Local machine
    *  - AMDAVX
       - HOST
-      - AMD 64-bit x86 CPU (AVX 1)
-   *  - ZEN
-      - HOST
-      - AMD Zen class CPU (AVX 2)
-   *  - ZEN2
-      - HOST
-      - AMD Zen2 class CPU (AVX 2)
-   *  - ZEN3
-      - HOST
-      - AMD Zen3 class CPU (AVX 2)
+      - AMD chip
    *  - ARMV80
       - HOST
       - ARMv8.0 Compatible CPU
@@ -572,105 +563,126 @@ They must be specified in uppercase.
    *  - A64FX
       - HOST
       - ARMv8.2 with SVE Support
+   *  - ARMV9_GRACE
+      - HOST
+      - ARMv9 NVIDIA Grace CPU
    *  - SNB
       - HOST
-      - Intel Sandy/Ivy Bridge CPU (AVX 1)
+      - Intel Sandy/Ivy Bridge CPUs
    *  - HSW
       - HOST
-      - Intel Haswell CPU (AVX 2)
+      - Intel Haswell CPUs
    *  - BDW
       - HOST
-      - Intel Broadwell Xeon E-class CPU (AVX 2 + transactional mem)
-   *  - SKL
-      - HOST
-      - Intel Skylake Client CPU
-   *  - SKX
-      - HOST
-      - Intel Skylake Xeon Server CPU (AVX512)
+      - Intel Broadwell Xeon E-class CPUs
    *  - ICL
       - HOST
-      - Intel Ice Lake Client CPU (AVX512)
+      - Intel Ice Lake Client CPUs (AVX512)
    *  - ICX
       - HOST
-      - Intel Ice Lake Xeon Server CPU (AVX512)
-   *  - SPR
+      - Intel Ice Lake Xeon Server CPUs (AVX512)
+   *  - SKL
       - HOST
-      - Intel Sapphire Rapids Xeon Server CPU (AVX512)
+      - Intel Skylake Client CPUs
+   *  - SKX
+      - HOST
+      - Intel Skylake Xeon Server CPUs (AVX512)
    *  - KNC
       - HOST
       - Intel Knights Corner Xeon Phi
    *  - KNL
       - HOST
       - Intel Knights Landing Xeon Phi
+   *  - SPR
+      - HOST
+      - Intel Sapphire Rapids Xeon Server CPUs (AVX512)
    *  - POWER8
       - HOST
-      - IBM POWER8 CPU
+      - IBM POWER8 CPUs
    *  - POWER9
       - HOST
-      - IBM POWER9 CPU
+      - IBM POWER9 CPUs
+   *  - ZEN
+      - HOST
+      - AMD Zen architecture
+   *  - ZEN2
+      - HOST
+      - AMD Zen2 architecture
+   *  - ZEN3
+      - HOST
+      - AMD Zen3 architecture
    *  - RISCV_SG2042
       - HOST
-      - SG2042 (RISC-V) CPU
+      - SG2042 (RISC-V) CPUs
+   *  - RISCV_RVA22V
+      - HOST
+      - RVA22V (RISC-V) CPUs
    *  - KEPLER30
       - GPU
-      - NVIDIA Kepler generation CC 3.0 GPU
+      - NVIDIA Kepler generation CC 3.0
    *  - KEPLER32
       - GPU
-      - NVIDIA Kepler generation CC 3.2 GPU
+      - NVIDIA Kepler generation CC 3.2
    *  - KEPLER35
       - GPU
-      - NVIDIA Kepler generation CC 3.5 GPU
+      - NVIDIA Kepler generation CC 3.5
    *  - KEPLER37
       - GPU
-      - NVIDIA Kepler generation CC 3.7 GPU
+      - NVIDIA Kepler generation CC 3.7
    *  - MAXWELL50
       - GPU
-      - NVIDIA Maxwell generation CC 5.0 GPU
+      - NVIDIA Maxwell generation CC 5.0
    *  - MAXWELL52
       - GPU
-      - NVIDIA Maxwell generation CC 5.2 GPU
+      - NVIDIA Maxwell generation CC 5.2
    *  - MAXWELL53
       - GPU
-      - NVIDIA Maxwell generation CC 5.3 GPU
+      - NVIDIA Maxwell generation CC 5.3
    *  - PASCAL60
       - GPU
-      - NVIDIA Pascal generation CC 6.0 GPU
+      - NVIDIA Pascal generation CC 6.0
    *  - PASCAL61
       - GPU
-      - NVIDIA Pascal generation CC 6.1 GPU
+      - NVIDIA Pascal generation CC 6.1
    *  - VOLTA70
       - GPU
-      - NVIDIA Volta generation CC 7.0 GPU
+      - NVIDIA Volta generation CC 7.0
    *  - VOLTA72
       - GPU
-      - NVIDIA Volta generation CC 7.2 GPU
+      - NVIDIA Volta generation CC 7.2
    *  - TURING75
       - GPU
-      - NVIDIA Turing generation CC 7.5 GPU
+      - NVIDIA Turing generation CC 7.5
    *  - AMPERE80
       - GPU
-      - NVIDIA Ampere generation CC 8.0 GPU
+      - NVIDIA Ampere generation CC 8.0
    *  - AMPERE86
       - GPU
-      - NVIDIA Ampere generation CC 8.6 GPU
+      - NVIDIA Ampere generation CC 8.6
    *  - ADA89
       - GPU
-      - NVIDIA Ada Lovelace generation CC 8.9 GPU
+      - NVIDIA Ada generation CC 8.9
    *  - HOPPER90
       - GPU
-      - NVIDIA Hopper generation CC 9.0 GPU
+      - NVIDIA Hopper generation CC 9.0
    *  - AMD_GFX906
       - GPU
-      - AMD GPU MI50/MI60
+      - AMD GPU MI50/60
    *  - AMD_GFX908
       - GPU
       - AMD GPU MI100
    *  - AMD_GFX90A
       - GPU
       - AMD GPU MI200
+   *  - AMD_GFX940
+      - GPU
+      - AMD GPU MI300
    *  - AMD_GFX942
       - GPU
       - AMD GPU MI300
+   *  - AMD_GFX942_APU
+      - GPU
+      - AMD APU MI300A
    *  - AMD_GFX1030
       - GPU
       - AMD GPU V620/W6800
@@ -679,7 +691,7 @@ They must be specified in uppercase.
       - AMD GPU RX7900XTX
    *  - AMD_GFX1103
       - GPU
-      - AMD Phoenix APU with Radeon 740M/760M/780M/880M/890M
+      - AMD APU Phoenix
    *  - INTEL_GEN
       - GPU
       - SPIR64-based devices, e.g. Intel GPUs, using JIT
@@ -702,7 +714,7 @@ They must be specified in uppercase.
       - GPU
       - Intel GPU Ponte Vecchio
 
-This list was last updated for version 4.3.0 of the Kokkos library.
+This list was last updated for version 4.5.1 of the Kokkos library.
 
 .. tabs::
 
