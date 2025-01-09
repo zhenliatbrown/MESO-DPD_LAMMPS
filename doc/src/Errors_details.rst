@@ -8,6 +8,13 @@ not the exact cause, or where the explanation needs to be more detailed than
 what can be fit into a message printed by the program.  The following are
 discussions of such cases.
 
+- :ref:`Unknown identifier in data file <err0001>`
+- :ref:`Incorrect format in ... section of data file <err0002>`
+- :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
+- :ref:`Out of range atoms - cannot compute ... <err0004>`
+
+------
+
 .. _err0001:
 
 Unknown identifier in data file
@@ -77,3 +84,41 @@ Thus missing quotes or accidental extra whitespace will lead to the
 error shown in the header because the unquoted whitespace will result
 in the text being broken into more "words", i.e. the variable expression
 being split.
+
+.. _err0004:
+
+Out of range atoms - cannot compute ...
+---------------------------------------
+
+The PPPM (and also PPPMDisp and MSM) methods require to assemble a grid
+of electron density data derived from the (partial) charges assigned to
+the atoms.  This charges are smeared out across multiple grid points
+(see :doc:`kspace_modify order <kspace_modify>`).  When running in
+parallel with MPI, LAMMPS uses a :doc:`domain decomposition scheme
+<Developer_par_part>` where each processor manages a subset of atoms and
+thus also a grid representing the density, which covers the actual
+volume of the sub-domain and some extra space corresponding to the
+:doc:`neighbor list skin <neighbor>`.  These are then :doc:`combined and
+redistributed <Developer_par_long>` for parallel processing of the
+long-range component of the Coulomb interaction.
+
+The ``Out of range atoms`` error can happen, when atoms move too fast or
+the neighbor list skin is too small or the neighbor lists are not
+updated frequently enough.  Then the smeared charges cannot be fully
+assigned to the density grid for all atoms.  LAMMPS checks for this
+condition and stops with an error.  Most of the time, this is an
+indication of a system with very high forces, most often at the
+beginning of a simulation or when boundary conditions are changed.
+
+There are multiple options to explore for avoiding the error.  The best
+choice dependa strongly on the individual system, and often a
+combination of changes is required.  For example, more conservative MD
+parameter settings can be used (larger neighbor skin, shorter time step,
+more frequent neighbor list updates).  Sometimes, it helps to revisit
+the system generation and avoid close contacts when building it, or use
+the :doc:`delete_atoms overlap<delete_atoms>` command to delete those
+close contact atoms, or run a minimization before the MD.  It can also
+help to temporarily use a cutoff-Coulomb pair style and no kspace style
+until the system has somewhat equilibrated and then switch to the
+long-range solver.
+

@@ -1463,7 +1463,7 @@ void MSM::particle_map()
         nz+nlower < nzlo_out[0] || nz+nupper > nzhi_out[0]) flag = 1;
   }
 
-  if (flag) error->one(FLERR,"Out of range atoms - cannot compute MSM");
+  if (flag) error->one(FLERR,"Out of range atoms - cannot compute MSM{}", utils::errorurl(4));
 }
 
 /* ----------------------------------------------------------------------
