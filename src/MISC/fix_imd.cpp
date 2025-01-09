@@ -454,29 +454,31 @@ struct commdata {
 MPI_Datatype MPI_CommData;
 
 /***************************************************************
- * create class and parse arguments in LAMMPS script. Syntax:
- * fix ID group-ID imd <imd_port> [trate <imd_trate>] [version (2|3)] [unwrap (on|off)] [fscale <imd_fscale>] [time (on|off)] [box (on|off)] [coordinates (on|off)] [velocities (on|off)] [forces (on|off)]
+ * create class and parse arguments in LAMMPS script.
  ***************************************************************/
+
 FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg)
+    Fix(lmp, narg, arg), localsock(nullptr), clientsock(nullptr), coord_data(nullptr),
+    vel_data(nullptr), force_data(nullptr), idmap(nullptr), rev_idmap(nullptr),
+    recv_force_buf(nullptr), imdsinfo(nullptr), msgdata(nullptr)
 {
-  if (narg < 4)
-    error->all(FLERR,"Illegal fix imd command");
+  if (narg < 4) utils::missing_cmd_args(FLERR, "fix imd", error);
 
   imd_port = utils::inumeric(FLERR,arg[3],false,lmp);
-  if (imd_port < 1024)
-    error->all(FLERR,"Illegal fix imd parameter: port < 1024");
+  if (imd_port < 1024) error->all(FLERR,"Illegal fix imd parameter: port < 1024");
 
   /* default values for optional flags */
-  imd_version = 2;
 
+  imd_version = 2;
   unwrap_flag = 0;
   nowait_flag = 0;
   connect_msg = 1;
   imd_fscale = 1.0;
   imd_trate = 1;
 
-  /* IMDv3-only flags. Aren't stored as class attributes since they're converted into IMDSessionInfo */
+  // IMDv3-only flags.
+  // Aren't stored as class attributes since they're converted into IMDSessionInfo
+
   int time_flag = 1;
   int box_flag = 1;
   int coord_flag = 1;
@@ -507,17 +509,17 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
     } else if (0 == strcmp(arg[iarg], "forces")) {
       force_flag = utils::logical(FLERR, arg[iarg+1], false, lmp);
     } else {
-      error->all(FLERR,"Unknown fix imd parameter");
+      error->all(FLERR,"Unknown fix imd parameter: {}", arg[iarg]);
     }
     ++iarg; ++iarg;
   }
 
   /* sanity check on parameters */
   if (imd_trate < 1)
-    error->all(FLERR,"Illegal fix imd parameter. trate < 1.");
+    error->all(FLERR,"Illegal fix imd trate parameter. trate < 1.");
 
   if (imd_version != 2 && imd_version != 3)
-    error->all(FLERR,"Illegal fix imd parameter. version != 2 or 3.");
+    error->all(FLERR,"Illegal fix imd version parameter: version != 2 or 3.");
 
   imdsinfo = new IMDSessionInfo;
 
@@ -553,19 +555,11 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
   MPI_Comm_rank(world,&me);
 
   /* initialize various imd state variables. */
-  clientsock = nullptr;
-  localsock  = nullptr;
   nlevels_respa = 0;
   imd_inactive = 0;
   imd_terminate = 0;
   imd_forces = 0;
-  recv_force_buf = nullptr;
   maxbuf = 0;
-  coord_data = nullptr;
-  vel_data = nullptr;
-  force_data = nullptr;
-  idmap = nullptr;
-  rev_idmap = nullptr;
 
   if (imd_version == 3) {
     msglen = 0;
@@ -673,8 +667,8 @@ FixIMD::~FixIMD()
   imdsock_destroy(clientsock);
   imdsock_shutdown(localsock);
   imdsock_destroy(localsock);
-  clientsock=nullptr;
-  localsock=nullptr;
+  clientsock = nullptr;
+  localsock = nullptr;
 }
 
 /* ---------------------------------------------------------------------- */
