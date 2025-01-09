@@ -30,6 +30,9 @@ Examples
    pair_coeff * * hertz/material 1e8 0.3 0.3 tangential mindlin_rescale NULL 1.0 0.4 damping tsuji
 
    pair_style granular
+   pair_coeff * * hertz/material 1e8 0.3 0.3 tangential mindlin_rescale NULL 1.0 0.4 damping coeff_restitution synchronized_verlet
+
+   pair_style granular
    pair_coeff 1 * jkr 1000.0 500.0 0.3 10 tangential mindlin 800.0 1.0 0.5 rolling sds 500.0 200.0 0.5 twisting marshall
    pair_coeff 2 2 hertz 200.0 100.0 tangential linear_history 300.0 1.0 0.1 rolling sds 200.0 100.0 0.1 twisting marshall
 
@@ -663,6 +666,16 @@ attractive force. This keyword cannot be used with the JKR or DMT models.
 
 ----------
 
+The *synchronized_verlet* flag implements an improved Velocity-Verlet integration scheme, 
+as detailed in :ref:`Vyas et al <Vyas2025>`, to address inaccuracies arising from the time 
+lag between position and velocity updates in the standard Velocity-Verlet method. 
+These inaccuracies are particularly significant in polydisperse frictional flows with
+large-to-small size ratios greater than three. By synchronizing position and velocity updates
+for force evaluation and refining tangential force calculations, the method ensures more
+accurate and physically consistent outcomes without any significant influence on computational cost.
+
+----------
+
 The optional *heat* keyword enables heat conduction. The options currently
 supported are:
 
@@ -943,3 +956,8 @@ I. Assembling process, geometry, and contact networks. Phys. Rev. E, 76, 061302.
 Heat conduction in granular materials.
 AIChE Journal, 47(5), 1052-1059.
 
+.. _Vyas2025:
+
+**(Vyas et al, 2025)**  Vyas D. R., Ottino J. M., Lueptow R. M., Umbanhowar P. B. (2025).
+Improved Velocity-Verlet Algorithm for the Discrete Element Method.
+Computer Physics Communications, xx xx 

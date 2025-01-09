@@ -2,10 +2,10 @@
 # Refer https://arxiv.org/abs/2410.14798 for further details
 
 units	        si
-atom_style	    sphere
+atom_style	sphere
 newton off
 
-boundary   	    p p f
+boundary   	p p f
 read_data       3ps.dat 
 
 group           ps type 1
