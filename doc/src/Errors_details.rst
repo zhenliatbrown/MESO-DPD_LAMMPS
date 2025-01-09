@@ -108,10 +108,11 @@ updated frequently enough.  Then the smeared charges cannot be fully
 assigned to the density grid for all atoms.  LAMMPS checks for this
 condition and stops with an error.  Most of the time, this is an
 indication of a system with very high forces, most often at the
-beginning of a simulation or when boundary conditions are changed.
+beginning of a simulation or when boundary conditions are changed.  The
+error becomes more likely with more MPI processes.
 
 There are multiple options to explore for avoiding the error.  The best
-choice dependa strongly on the individual system, and often a
+choice depends strongly on the individual system, and often a
 combination of changes is required.  For example, more conservative MD
 parameter settings can be used (larger neighbor skin, shorter time step,
 more frequent neighbor list updates).  Sometimes, it helps to revisit
