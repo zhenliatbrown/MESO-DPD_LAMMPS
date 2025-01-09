@@ -656,11 +656,8 @@ int Group::find_unused()
 int Group::get_bitmask_by_id(const std::string &file, int line, const std::string &name,
                              const std::string &caller)
 {
-  int igroup = 0;
-  for (; igroup < MAX_GROUP; ++igroup) {
-    if (names[igroup] && (name == names[igroup])) break;
-  }
-  if (igroup == MAX_GROUP)
+  int igroup = find(name);
+  if (igroup < 0)
     error->all(file, line, "Group ID {} requested by {} does not exist", name, caller);
   return bitmask[igroup];
 }
