@@ -71,7 +71,7 @@ that it can monitor the progress of the simulation and interactively
 apply forces to selected atoms.
 
 If LAMMPS is compiled with the pre-processor flag
-:ref:`-DLAMMPS_ASYNC_IMD <_misc>` then fix imd will use POSIX threads to
+:ref:`-DLAMMPS_ASYNC_IMD <misc>` then fix imd will use POSIX threads to
 spawn an IMD communication thread on MPI rank 0 in order to offload data
 exchange with the IMD client from the main execution thread and
 potentially lower the inferred latencies for slow communication
