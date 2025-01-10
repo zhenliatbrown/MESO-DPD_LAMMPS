@@ -666,9 +666,9 @@ attractive force. This keyword cannot be used with the JKR or DMT models.
 
 ----------
 
-The *synchronized_verlet* flag implements an improved Velocity-Verlet integration scheme, 
-as detailed in :ref:`Vyas et al <Vyas2025>`, to address inaccuracies arising from the time 
-lag between position and velocity updates in the standard Velocity-Verlet method. 
+The *synchronized_verlet* flag implements an improved Velocity-Verlet integration scheme,
+as detailed in :ref:`Vyas et al <Vyas2025>`, to address inaccuracies arising from the time
+lag between position and velocity updates in the standard Velocity-Verlet method.
 These inaccuracies are particularly significant in polydisperse frictional flows with
 large-to-small size ratios greater than three. By synchronizing position and velocity updates
 for force evaluation and refining tangential force calculations, the method ensures more
@@ -960,4 +960,4 @@ AIChE Journal, 47(5), 1052-1059.
 
 **(Vyas et al, 2025)**  Vyas D. R., Ottino J. M., Lueptow R. M., Umbanhowar P. B. (2025).
 Improved Velocity-Verlet Algorithm for the Discrete Element Method.
-Computer Physics Communications, xx xx 
+Computer Physics Communications, xx xx
