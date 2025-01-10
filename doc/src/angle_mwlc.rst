@@ -37,7 +37,8 @@ where the non-melted and melted partition functions are
 
 :math:`k_1` is the bending elastic constant of the non-melted state,
 :math:`k_2` is the bending elastic constant of the melted state,
-and :math:`\mu` is the melting energy.
+:math:`\mu` is the melting energy, and
+:math:`T` is the reference temperature.
 The reference energy,
 
 .. math::
