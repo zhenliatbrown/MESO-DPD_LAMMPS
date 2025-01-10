@@ -201,7 +201,7 @@ void FixQEqCTIP::extract_ctip()
 void FixQEqCTIP::pre_force(int /*vflag*/)
 {
 
-  int i,n;
+  int i, n, nout;
 
   if (update->ntimestep % nevery) return;
 
@@ -238,14 +238,6 @@ void FixQEqCTIP::init_matvec()
   int *ilist;
   double *q = atom->q, qi;
   int *type = atom->type;
-
-  double r = cutoff;
-  double rsq = r*r;
-  double r6 = rsq*rsq*rsq;
-
-  double erfcd_cut = exp(-cdamp * cdamp * rsq);
-  double t_cut = 1.0 / (1.0 + EWALD_P * cdamp * r);
-  double erfcc_cut = (t_cut * (A1 + t_cut * (A2 + t_cut * (A3 + t_cut * (A4 + t_cut * A5)))) * erfcd_cut) / r;
 
   inum = list->inum;
   ilist = list->ilist;
@@ -285,9 +277,7 @@ void FixQEqCTIP::compute_H()
   int inum, jnum, *ilist, *jlist, *numneigh, **firstneigh;
   int i, j, ii, jj;
   double dx, dy, dz, r_sqr, r, reff;
-  double cutoffsq, cutoffcu, cutoff4, cdampcu, erfcc_cut, erfcd_cut, t_cut;
   double erfcc, erfcd, t;
-  int elt1, elt2;
 
   double **x = atom->x;
   int *mask = atom->mask;
@@ -297,16 +287,6 @@ void FixQEqCTIP::compute_H()
   ilist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
-
-  cutoffsq = cutoff * cutoff;
-  cutoffcu = cutoffsq * cutoff;
-  cutoff4 = cutoffsq * cutoffsq;
-  cdampcu = cdamp * cdamp * cdamp;
-
-  erfcd_cut = exp(-cdamp * cdamp * cutoffsq);
-  t_cut = 1.0 / (1.0 + EWALD_P * cdamp * cutoff);
-  erfcc_cut = t_cut * (A1 + t_cut * (A2 + t_cut * (A3 + t_cut * (A4 + t_cut * A5)))) * erfcd_cut;
-
 
   // fill in the H matrix
   m_fill = 0;
@@ -425,7 +405,7 @@ int FixQEqCTIP::calculate_check_Q()
       qi_check1=(qi_new-qmin[type[i]])*(qi_old-qmin[type[i]]);
       qi_check2=(qi_new-qmax[type[i]])*(qi_old-qmax[type[i]]);
       if ( qi_check1 < 0.0 || qi_check2 < 0.0 ) {
-        qi_check3=abs(qi_new-qi_old);
+        qi_check3=fabs(qi_new-qi_old);
         if (qi_check3 > tolerance) n++;
       }
     }

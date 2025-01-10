@@ -430,7 +430,8 @@ TEST(FixTimestep, plain)
     // fix nve/limit cannot work with r-RESPA
     ifix = lmp->modify->get_fix_by_id("test");
     if (ifix && !utils::strmatch(ifix->style, "^rigid") &&
-        !utils::strmatch(ifix->style, "^nve/limit")) {
+        !utils::strmatch(ifix->style, "^nve/limit") &&
+        !utils::strmatch(ifix->style, "^recenter")) {
         if (!verbose) ::testing::internal::CaptureStdout();
         cleanup_lammps(lmp, test_config);
         if (!verbose) ::testing::internal::GetCapturedStdout();
@@ -857,6 +858,10 @@ TEST(FixTimestep, kokkos_omp)
     if (!LAMMPS::is_installed_pkg("KOKKOS")) GTEST_SKIP();
     if (test_config.skip_tests.count(test_info_->name())) GTEST_SKIP();
     if (!Info::has_accelerator_feature("KOKKOS", "api", "openmp")) GTEST_SKIP();
+    // if KOKKOS has GPU support enabled, it *must* be used. We cannot test OpenMP only.
+    if (Info::has_accelerator_feature("KOKKOS", "api", "cuda") ||
+        Info::has_accelerator_feature("KOKKOS", "api", "hip") ||
+        Info::has_accelerator_feature("KOKKOS", "api", "sycl")) GTEST_SKIP();
 
     LAMMPS::argv args = {"FixTimestep", "-log", "none", "-echo", "screen", "-nocite",
                          "-k",          "on",   "t",    "4",     "-sf",    "kk"};
