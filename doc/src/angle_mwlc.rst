@@ -21,23 +21,29 @@ Examples
 Description
 """""""""""
 
-The *mwlc* angle style models a meltable wormlike chain, using a potential that is a canonical-ensemble superposition of
-a non-melted and a melted state :ref:`(Farrell) <Farrell>`,
+The *mwlc* angle style models a meltable wormlike chain and can be used to model non-linear bending elasticity of polymers, e.g. DNA.
+*mwlc* uses a potential that is a canonical-ensemble superposition of a non-melted and a melted state :ref:`(Farrell) <Farrell>`.
+The potential is
 
 .. math::
 
     E = -k_{B}T\,\log [q + q^{m}] + E_{0},
 
-where
+where the non-melted and melted partition functions are
 
 .. math::
-    q = \exp [-k_{1}(1+\cos{\theta})/k_{B}T], \\
-    q^{m} = \exp [-(\mu+k_{2}(1+\cos{\theta}))/k_{B}T], \\
+    q = \exp [-k_{1}(1+\cos{\theta})/k_{B}T]; \\
+    q^{m} = \exp [-(\mu+k_{2}(1+\cos{\theta}))/k_{B}T].
+
+:math:`k_1` is the bending elastic constant of the non-melted state,
+:math:`k_2` is the bending elastic constant of the melted state,
+and :math:`\mu` is the melting energy.
+The reference energy,
+
+.. math::
     E_{0} = -k_{B}T\,\log [1 + \exp[-\mu/k_{B}T]],
 
-:math:`k_1` is the bending force constant of the non-melted state,
-:math:`k_2` is the bending force constant of the melted state,
-and :math:`\mu` is the melting energy.
+ensures that E is zero for a fully extended chain.
 
 This potential is a continuous version of the two-state potential
 introduced by :ref:`(Yan) <Yan>`.
