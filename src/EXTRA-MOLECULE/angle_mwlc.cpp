@@ -12,7 +12,7 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Contributing author: James D. Farrell (IoP CAS)
+   Contributing author: James D. Farrell (IoP CAS) j.d.farrell at gmail.com
    [ based on angle_cosine.cpp ]
 ------------------------------------------------------------------------- */
 
