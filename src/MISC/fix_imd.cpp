@@ -80,6 +80,8 @@ negotiate an appropriate license for such distribution."
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
+/* ---------------------------------------------------------------------- */
+
 /* re-usable integer hash table code with static linkage. */
 
 /** hash table top level data structure */
@@ -672,6 +674,7 @@ FixIMD::~FixIMD()
 }
 
 /* ---------------------------------------------------------------------- */
+
 int FixIMD::setmask()
 {
   int mask = 0;
@@ -682,6 +685,7 @@ int FixIMD::setmask()
 }
 
 /* ---------------------------------------------------------------------- */
+
 void FixIMD::init()
 {
   if (utils::strmatch(update->integrate_style,"^respa"))
@@ -771,6 +775,8 @@ void FixIMD::setup(int)
   }
 }
 
+/* ---------------------------------------------------------------------- */
+
 void FixIMD::setup_v2() {
   /* nme:    number of atoms in group on this MPI task
    * nmax:   max number of atoms in group across all MPI tasks
@@ -857,6 +863,8 @@ void FixIMD::setup_v2() {
   }
 
   }
+
+/* ---------------------------------------------------------------------- */
 
 void FixIMD::setup_v3()
 {
@@ -1026,11 +1034,14 @@ void FixIMD::post_force(int /*vflag*/)
   }
 
 /* ---------------------------------------------------------------------- */
+
 void FixIMD::post_force_respa(int vflag, int ilevel, int /*iloop*/)
 {
   /* only process IMD on the outmost RESPA level. */
   if (ilevel == nlevels_respa-1) post_force(vflag);
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixIMD::end_of_step()
 {
@@ -1041,10 +1052,13 @@ void FixIMD::end_of_step()
 
 /* ---------------------------------------------------------------------- */
 /* local memory usage. approximately. */
+
 double FixIMD::memory_usage()
 {
   return static_cast<double>(num_coords+maxbuf+imd_forces)*size_one;
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixIMD::handle_step_v2() {
 
@@ -1358,6 +1372,8 @@ void FixIMD::handle_step_v2() {
 
 }
 
+/* ---------------------------------------------------------------------- */
+
 void FixIMD::handle_client_input_v3() {
   // IMDV3
 
@@ -1541,6 +1557,8 @@ void FixIMD::handle_client_input_v3() {
     }
   }
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixIMD::handle_output_v3() {
 
@@ -1818,6 +1836,7 @@ int imdsock_init() {
 #endif
 }
 
+/* ---------------------------------------------------------------------- */
 
 void * imdsock_create() {
   imdsocket * s;
@@ -1836,6 +1855,8 @@ void * imdsock_create() {
   return (void *) s;
 }
 
+/* ---------------------------------------------------------------------- */
+
 int imdsock_bind(void * v, int port) {
   auto s = (imdsocket *) v;
   auto *addr = &(s->addr);
@@ -1847,10 +1868,14 @@ int imdsock_bind(void * v, int port) {
   return bind(s->sd, (struct sockaddr *) addr, s->addrlen);
 }
 
+/* ---------------------------------------------------------------------- */
+
 int imdsock_listen(void * v) {
   auto s = (imdsocket *) v;
   return listen(s->sd, 5);
 }
+
+/* ---------------------------------------------------------------------- */
 
 void *imdsock_accept(void * v) {
   int rc;
@@ -1881,6 +1906,8 @@ void *imdsock_accept(void * v) {
   return (void *)new_s;
 }
 
+/* ---------------------------------------------------------------------- */
+
 int  imdsock_write(void * v, const void *buf, int len) {
   auto s = (imdsocket *) v;
 #if defined(_MSC_VER) || defined(__MINGW32__)
@@ -1889,6 +1916,8 @@ int  imdsock_write(void * v, const void *buf, int len) {
   return write(s->sd, buf, len);
 #endif
 }
+
+/* ---------------------------------------------------------------------- */
 
 int  imdsock_read(void * v, void *buf, int len) {
   auto s = (imdsocket *) v;
@@ -1899,6 +1928,8 @@ int  imdsock_read(void * v, void *buf, int len) {
 #endif
 
 }
+
+/* ---------------------------------------------------------------------- */
 
 void imdsock_shutdown(void *v) {
   auto  s = (imdsocket *) v;
@@ -1912,6 +1943,8 @@ void imdsock_shutdown(void *v) {
 #endif
 }
 
+/* ---------------------------------------------------------------------- */
+
 void imdsock_destroy(void * v) {
   auto  s = (imdsocket *) v;
   if (s == nullptr)
@@ -1924,6 +1957,8 @@ void imdsock_destroy(void * v) {
 #endif
   free(s);
 }
+
+/* ---------------------------------------------------------------------- */
 
 int imdsock_selread(void *v, int sec) {
   auto s = (imdsocket *)v;
@@ -1943,6 +1978,8 @@ int imdsock_selread(void *v, int sec) {
   return rc;
 
 }
+
+/* ---------------------------------------------------------------------- */
 
 int imdsock_selwrite(void *v, int sec) {
   auto s = (imdsocket *)v;
@@ -1979,6 +2016,8 @@ typedef union {
   } b;
 } netint;
 
+/* ---------------------------------------------------------------------- */
+
 static int32 imd_htonl(int32 h) {
   netint n;
   n.b.highest = h >> 24;
@@ -1988,21 +2027,29 @@ static int32 imd_htonl(int32 h) {
   return n.i;
 }
 
+/* ---------------------------------------------------------------------- */
+
 static int32 imd_ntohl(int32 n) {
   netint u;
   u.i = n;
   return (u.b.highest << 24 | u.b.high << 16 | u.b.low << 8 | u.b.lowest);
 }
 
+/* ---------------------------------------------------------------------- */
+
 static void imd_fill_header(IMDheader *header, IMDType type, int32 length) {
   header->type = imd_htonl((int32)type);
   header->length = imd_htonl(length);
 }
 
+/* ---------------------------------------------------------------------- */
+
 static void swap_header(IMDheader *header) {
   header->type = imd_ntohl(header->type);
   header->length= imd_ntohl(header->length);
 }
+
+/* ---------------------------------------------------------------------- */
 
 static int32 imd_readn(void *s, char *ptr, int32 n) {
   int32 nleft;
@@ -2023,6 +2070,8 @@ static int32 imd_readn(void *s, char *ptr, int32 n) {
   return n-nleft;
 }
 
+/* ---------------------------------------------------------------------- */
+
 static int32 imd_writen(void *s, const char *ptr, int32 n) {
   int32 nleft;
   int32 nwritten;
@@ -2041,12 +2090,16 @@ static int32 imd_writen(void *s, const char *ptr, int32 n) {
   return n;
 }
 
+/* ---------------------------------------------------------------------- */
+
 int imd_handshake_v2(void *s) {
   IMDheader header;
   imd_fill_header(&header, IMD_HANDSHAKE, 1);
   header.length = 2;   /* Not byteswapped! */
   return (imd_writen(s, (char *)&header, IMDHEADERSIZE) != IMDHEADERSIZE);
 }
+
+/* ---------------------------------------------------------------------- */
 
 int imd_handshake_v3(void *s, IMDSessionInfo *imdsinfo) {
   IMDheader header;
@@ -2081,16 +2134,22 @@ IMDType imd_recv_header(void *s, int32 *length) {
   return IMDType(header.type);
 }
 
+/* ---------------------------------------------------------------------- */
+
 int imd_recv_mdcomm(void *s, int32 n, int32 *indices, float *forces) {
   if (imd_readn(s, (char *)indices, 4*n) != 4*n) return 1;
   if (imd_readn(s, (char *)forces, 12*n) != 12*n) return 1;
   return 0;
 }
 
+/* ---------------------------------------------------------------------- */
+
 int imd_recv_energies(void *s, IMDEnergies *energies) {
   return (imd_readn(s, (char *)energies, sizeof(IMDEnergies))
           != sizeof(IMDEnergies));
 }
+
+/* ---------------------------------------------------------------------- */
 
 int imd_recv_fcoords(void *s, int32 n, float *coords) {
   return (imd_readn(s, (char *)coords, 12*n) != 12*n);
