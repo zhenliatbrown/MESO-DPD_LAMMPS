@@ -79,7 +79,7 @@ void AngleMWLC::compute(int eflag, int vflag)
     i2 = anglelist[n][1];
     i3 = anglelist[n][2];
     type = anglelist[n][3];
-    kbt = temp[type]*force->boltz;
+    kbt = temp[type] * force->boltz;
     v_min = -kbt * log(1 + exp(-mu[type] / kbt));
 
     // 1st bond
@@ -113,7 +113,7 @@ void AngleMWLC::compute(int eflag, int vflag)
     qm = exp((-k2[type] * (1.0 + c) - mu[type]) / kbt);
     Q = q + qm;
 
-    if (eflag) eangle = -kbt*log(Q) - v_min;
+    if (eflag) eangle = -kbt * log(Q) - v_min;
 
     a = (k1[type] * q + k2[type] * qm) / Q;
     a11 = a * c / rsq1;
@@ -245,7 +245,8 @@ void AngleMWLC::read_restart(FILE *fp)
 
 void AngleMWLC::write_data(FILE *fp)
 {
-  for (int i = 1; i <= atom->nangletypes; i++) fprintf(fp, "%d %g %g %g %g\n", i, k1[i], k2[i], mu[i], temp[i]);
+  for (int i = 1; i <= atom->nangletypes; i++)
+    fprintf(fp, "%d %g %g %g %g\n", i, k1[i], k2[i], mu[i], temp[i]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -254,7 +255,7 @@ double AngleMWLC::single(int type, int i1, int i2, int i3)
 {
   double **x = atom->x;
 
-  double kbt = temp[type]*force->boltz;
+  double kbt = temp[type] * force->boltz;
   double v_min = -kbt * log(1 + exp(-mu[type] / kbt));
   double delx1 = x[i1][0] - x[i2][0];
   double dely1 = x[i1][1] - x[i2][1];
@@ -283,7 +284,7 @@ double AngleMWLC::single(int type, int i1, int i2, int i3)
 void AngleMWLC::born_matrix(int type, int i1, int i2, int i3, double &du, double &du2)
 {
   double **x = atom->x;
-  double kbt = temp[type]*force->boltz;
+  double kbt = temp[type] * force->boltz;
 
   double delx1 = x[i1][0] - x[i2][0];
   double dely1 = x[i1][1] - x[i2][1];

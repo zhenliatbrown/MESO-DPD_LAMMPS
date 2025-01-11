@@ -21,9 +21,13 @@ Examples
 Description
 """""""""""
 
-The *mwlc* angle style models a meltable wormlike chain and can be used to model non-linear bending elasticity of polymers, e.g. DNA.
-*mwlc* uses a potential that is a canonical-ensemble superposition of a non-melted and a melted state :ref:`(Farrell) <Farrell>`.
-The potential is
+.. versionadded:: TBD
+
+The *mwlc* angle style models a meltable wormlike chain and can be used
+to model non-linear bending elasticity of polymers, e.g. DNA.  *mwlc*
+uses a potential that is a canonical-ensemble superposition of a
+non-melted and a melted state :ref:`(Farrell) <Farrell>`.  The potential
+is
 
 .. math::
 
@@ -58,6 +62,7 @@ or :doc:`read_restart <read_restart>` commands:
 * :math:`k_2` (energy)
 * :math:`\mu` (energy)
 * :math:`T` (temperature)
+
 ----------
 
 
@@ -65,8 +70,8 @@ Restrictions
 """"""""""""
 
 This angle style can only be used if LAMMPS was built with the
-EXTRA-MOLECULE package.  See the :doc:`Build package <Build_package>` doc page
-for more info.
+EXTRA-MOLECULE package.  See the :doc:`Build package <Build_package>`
+doc page for more info.
 
 Related commands
 """"""""""""""""
