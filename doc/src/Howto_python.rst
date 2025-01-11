@@ -3,16 +3,21 @@ LAMMPS Python Tutorial
 
 .. contents::
 
+-----
+
 Overview
 --------
 
-:py:class:`lammps <lammps.lammps>` is a Python wrapper class for the
+The :py:class:`lammps <lammps.lammps>` Python module is a wrapper class for the
 LAMMPS :ref:`C language library interface API <lammps_c_api>` which is written using
-`Python ctypes <ctypes_>`_.
+`Python ctypes <ctypes_>`_.  The design choice of this wrapper class is to
+follow the C language API closely with only small changes related to Python
+specific requirements and to better accommodate object oriented programming.
 
-In addition to the flat `ctypes <ctypes_>`_ interface, this class exposes a
-discoverable API that doesn't require knowledge of the underlying C++
-code implementation.
+In addition to this flat `ctypes <ctypes_>`_ interface, the
+:py:class:`lammps <lammps.lammps>` wrapper class exposes a discoverable
+API that doesn't require as much knowledge of the underlying C language
+library interface or LAMMPS C++ code implementation.
 
 Finally, the API exposes some additional features for `IPython integration
 <ipython_>`_ into `Jupyter notebooks <jupyter_>`_, e.g. for embedded
@@ -22,43 +27,47 @@ visualization output from :doc:`dump style image <dump_image>`.
 .. _ipython: https://ipython.org/
 .. _jupyter: https://jupyter.org/
 
+-----
+
 Quick Start
 -----------
 
-System-wide Installation
-^^^^^^^^^^^^^^^^^^^^^^^^
+System-wide or User Installation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Step 1: Building LAMMPS as a shared library
 """""""""""""""""""""""""""""""""""""""""""
 
-To use LAMMPS inside of Python it has to be compiled as shared
-library. This library is then loaded by the Python interface. In this
-example we enable the MOLECULE package and compile LAMMPS with PNG, JPEG
-and FFMPEG output support enabled.
+To use LAMMPS inside of Python it has to be compiled as shared library.
+This library is then loaded by the Python interface.  In this example we
+enable the :ref:`MOLECULE package <PKG-MOLECULE>` and compile LAMMPS
+with :ref:`PNG, JPEG and FFMPEG output support <graphics>` enabled.
 
-Step 1a: For the CMake based build system, the steps are:
+.. tabs::
 
-.. code-block:: bash
+   .. tab:: CMake build
 
-   mkdir $LAMMPS_DIR/build-shared
-   cd  $LAMMPS_DIR/build-shared
+      .. code-block:: bash
 
-   # MPI, PNG, Jpeg, FFMPEG are auto-detected
-   cmake ../cmake -DPKG_MOLECULE=yes -DPKG_PYTHON=on -DBUILD_SHARED_LIBS=yes
-   make
+         mkdir $LAMMPS_DIR/build-shared
+         cd  $LAMMPS_DIR/build-shared
 
-Step 1b: For the legacy, make based build system, the steps are:
+         # MPI, PNG, Jpeg, FFMPEG are auto-detected
+         cmake ../cmake -DPKG_MOLECULE=yes -DPKG_PYTHON=on -DBUILD_SHARED_LIBS=yes
+         make
 
-.. code-block:: bash
+   .. tab:: Traditional make
 
-   cd $LAMMPS_DIR/src
+      .. code-block:: bash
 
-   # add packages if necessary
-   make yes-MOLECULE
-   make yes-PYTHON
+         cd $LAMMPS_DIR/src
 
-   # compile shared library using Makefile
-   make mpi mode=shlib LMP_INC="-DLAMMPS_PNG -DLAMMPS_JPEG -DLAMMPS_FFMPEG" JPG_LIB="-lpng -ljpeg"
+         # add packages if necessary
+         make yes-MOLECULE
+         make yes-PYTHON
+
+         # compile shared library using Makefile
+         make mpi mode=shlib LMP_INC="-DLAMMPS_PNG -DLAMMPS_JPEG -DLAMMPS_FFMPEG" JPG_LIB="-lpng -ljpeg"
 
 Step 2: Installing the LAMMPS Python package
 """"""""""""""""""""""""""""""""""""""""""""
@@ -69,9 +78,16 @@ Next install the LAMMPS Python package into your current Python installation wit
 
    make install-python
 
+This will create a so-called `"wheel"
+<https://packaging.python.org/en/latest/discussions/package-formats/#what-is-a-wheel>`_
+and then install the LAMMPS Python module from that "wheel" into either
+into a system folder (provided the command is executed with root
+privileges) or into your personal Python module folder.
+
 .. note::
 
-   Recompiling the shared library requires re-installing the Python package
+   Recompiling the shared library requires re-installing the Python
+   package.
 
 Installation inside of a virtual environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -117,12 +133,14 @@ to the location in the virtual environment with:
    (testing) make install-python
 
    # install other useful packages
-   (testing) pip install matplotlib jupyter mpi4py
+   (testing) pip install matplotlib jupyter mpi4py pandas
 
    ...
 
    # return to original shell
    (testing) deactivate
+
+-------
 
 Creating a new lammps instance
 ------------------------------
@@ -135,6 +153,11 @@ module. By using the default constructor, a new :py:class:`lammps
 
    from lammps import lammps
    L = lammps()
+
+See the :doc:`LAMMPS Python documentation <Python_create>` for how to customize
+the instance creation with optional arguments.
+
+-----
 
 Commands
 --------
@@ -187,105 +210,47 @@ them automatically to a final command string.
    When running in IPython you can use Tab-completion after ``L.cmd.`` to see
    all available LAMMPS commands.
 
-System state
-------------
-
-In addition to dispatching commands directly through the PyLammps object, it
-also provides several properties which allow you to query the system state.
-
-L.system
-   Is a dictionary describing the system such as the bounding box or number of atoms
-
-L.system.xlo, L.system.xhi
-   bounding box limits along x-axis
-
-L.system.ylo, L.system.yhi
-   bounding box limits along y-axis
-
-L.system.zlo, L.system.zhi
-   bounding box limits along z-axis
-
-L.communication
-   configuration of communication subsystem, such as the number of threads or processors
-
-L.communication.nthreads
-   number of threads used by each LAMMPS process
-
-L.communication.nprocs
-   number of MPI processes used by LAMMPS
-
-L.fixes
-   List of fixes in the current system
-
-L.computes
-   List of active computes in the current system
-
-L.dump
-   List of active dumps in the current system
-
-L.groups
-   List of groups present in the current system
-
-Working with LAMMPS variables
------------------------------
-
-LAMMPS variables can be both defined and accessed via the PyLammps interface.
-
-To define a variable you can use the :doc:`variable <variable>` command:
-
-.. code-block:: python
-
-   L.variable("a index 2")
-
-A dictionary of all variables is returned by L.variables
-
-you can access an individual variable by retrieving a variable object from the
-``L.variables`` dictionary by name
-
-.. code-block:: python
-
-   a = L.variables['a']
-
-The variable value can then be easily read and written by accessing the value
-property of this object.
-
-.. code-block:: python
-
-   print(a.value)
-   a.value = 4
-
-Retrieving the value of an arbitrary LAMMPS expressions
--------------------------------------------------------
-
-LAMMPS expressions can be immediately evaluated by using the eval method. The
-passed string parameter can be any expression containing global thermo values,
-variables, compute or fix data.
-
-.. code-block:: python
-
-   result = L.get_thermo("ke") # kinetic energy
-   result = L.get_thermo("pe") # potential energy
-
-   result = L.extract_variable("t") / 2.0
+-----
 
 Accessing atom data
 -------------------
 
-All atoms in the current simulation can be accessed by using the L.atoms list.
-Each element of this list is an object which exposes its properties (id, type,
-position, velocity, force, etc.).
+All per-atom properties that are part of the :doc:`atom style
+<atom_style>` in the current simulation can be accessed using the
+:py:meth:`extract_atoms() <lammps.lammps.extract_atoms()>` method.  This
+can be retrieved as ctypes objects or as NumPy arrays through the
+lammps.numpy module.  Those represent the *local* atoms of the
+individual sub-domain for the current MPI process and may contain
+information for the local ghost atoms or not depending on the property.
+Both can be accessed as lists, but for the ctypes list object the size
+is not known and hast to be retrieved first to avoid out-of-bounds
+accesses.
 
 .. code-block:: python
 
-   # access first atom
-   atom_id = L.numpy.extract_atom("id")
+   nlocal = L.extract_setting("nlocal")
+   nall = L.extract_setting("nall")
+   print("Number of local atoms ", nlocal, "  Number of local and ghost atoms ", nall);
+
+   # access via ctypes directly
+   atom_id = L.extract_atom("id")
+   print("Atom IDs", atom_id[0:nlocal])
+
+   # access through numpy wrapper
    atom_type = L.numpy.extract_atom("type")
+   print("Atom types", atom_type)
 
    x = L.numpy.extract_atom("x")
    v = L.numpy.extract_atom("v")
-   f = L.numpy.extract_atom("f")
+   print("positions array shape", x.shape)
+   print("velocity array shape", v.shape)
+   # turn on communicating velocities to ghost atoms
+   L.cmd.comm_modify("vel", "yes")
+   v = L.numpy.extract_atom('v')
+   print("velocity array shape", v.shape)
 
-Some properties can also be used to set:
+Some properties can also be set from Python since internally the
+data of the C++ code is accessed directly:
 
 .. code-block:: python
 
@@ -295,65 +260,53 @@ Some properties can also be used to set:
    # set position in 3D simulation
    x[0] = (1.0, 0.0, 1.)
 
-Evaluating thermo data
-----------------------
+------
 
-Each simulation run usually produces thermo output based on system state,
-computes, fixes or variables. The trajectories of these values can be queried
-after a run via the L.runs list. This list contains a growing list of run data.
-The first element is the output of the first run, the second element that of
-the second run.
+Retrieving the values of thermodynamic data and variables
+---------------------------------------------------------
 
-.. code-block:: python
-
-   L.run(1000)
-   L.runs[0] # data of first 1000 time steps
-
-   L.run(1000)
-   L.runs[1] # data of second 1000 time steps
-
-Each run contains a dictionary of all trajectories. Each trajectory is
-accessible through its thermo name:
+To access thermodynamic data from the last completed timestep,
+you can use the :py:meth:`get_thermo() <lammps.lammps.get_thermo>`
+method, and to extract the value of (compatible) variables, you
+can use the :py:meth:`extract_variable() <lammps.lammps.extract_variable>`
+method.
 
 .. code-block:: python
 
-   L.runs[0].thermo.Step # list of time steps in first run
-   L.runs[0].thermo.Ke   # list of kinetic energy values in first run
+   result = L.get_thermo("ke") # kinetic energy
+   result = L.get_thermo("pe") # potential energy
 
-Together with matplotlib plotting data out of LAMMPS becomes simple:
+   result = L.extract_variable("t") / 2.0
 
-.. code-block:: python
+Error handling
+--------------
 
-   import matplotlib.plot as plt
-   steps = L.runs[0].thermo.Step
-   ke    = L.runs[0].thermo.Ke
-   plt.plot(steps, ke)
-
-Error handling with PyLammps
-----------------------------
-
-Using C++ exceptions in LAMMPS for errors allows capturing them on the
-C++ side and rethrowing them on the Python side.  This way you can handle
-LAMMPS errors through the Python exception handling mechanism.
+We are using C++ exceptions in LAMMPS for errors and the C language
+library interface captures and records them.  This allows checking
+whether errors have happened in Python during a call into LAMMPS and
+then re-throw the error as a Python exception.  This way you can handle
+LAMMPS errors in the conventional way through the Python exception
+handling mechanism.
 
 .. warning::
 
    Capturing a LAMMPS exception in Python can still mean that the
    current LAMMPS process is in an illegal state and must be
-   terminated. It is advised to save your data and terminate the Python
+   terminated.  It is advised to save your data and terminate the Python
    instance as quickly as possible.
 
 Using LAMMPS in IPython notebooks and Jupyter
 ---------------------------------------------
 
-If the LAMMPS Python package is installed for the same Python interpreter as
-IPython, you can use LAMMPS directly inside of an IPython notebook inside of
-Jupyter. Jupyter is a powerful integrated development environment (IDE) for
-many dynamic languages like Python, Julia and others, which operates inside of
-any web browser. Besides auto-completion and syntax highlighting it allows you
-to create formatted documents using Markup, mathematical formulas, graphics and
-animations intermixed with executable Python code. It is a great format for
-tutorials and showcasing your latest research.
+If the LAMMPS Python package is installed for the same Python
+interpreter as IPython, you can use LAMMPS directly inside of an IPython
+notebook inside of Jupyter. Jupyter is a powerful integrated development
+environment (IDE) for many dynamic languages like Python, Julia and
+others, which operates inside of any web browser.  Besides
+auto-completion and syntax highlighting it allows you to create
+formatted documents using Markup, mathematical formulas, graphics and
+animations intermixed with executable Python code.  It is a great format
+for tutorials and showcasing your latest research.
 
 To launch an instance of Jupyter simply run the following command inside your
 Python environment (this assumes you followed the Quick Start instructions):
@@ -365,7 +318,7 @@ Python environment (this assumes you followed the Quick Start instructions):
 Interactive Python Examples
 ---------------------------
 
-Examples of IPython notebooks can be found in the ``python/examples/juypter``
+Examples of IPython notebooks can be found in the ``python/examples/ipython``
 subdirectory. To open these notebooks launch ``jupyter notebook`` inside this
 directory and navigate to one of them. If you compiled and installed
 a LAMMPS shared library with PNG, JPEG and FFMPEG support
@@ -391,7 +344,7 @@ setting its position from Python, which changes the dihedral angle.
    pe = []
    for p in pos:
        x[3] = p
-       L.cmd.run(0)
+       L.cmd.run(0, "post", "no")
        pe.append(L.get_thermo("pe"))
 
 By evaluating the potential energy for each position we can verify that
@@ -429,7 +382,7 @@ It is then disordered by moving each atom by a random delta.
        x[i][0] += dx
        x[i][1] += dy
 
-   L.cmd.run(0)
+   L.cmd.run(0, "post", "no")
 
 .. image:: JPG/pylammps_mc_disordered.jpg
    :align: center
