@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     name: Linux flatpak build
-    if: ${{ github.repository == 'akohlmey/lammps' }}
+    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-latest
 
     steps:
