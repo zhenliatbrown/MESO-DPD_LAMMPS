@@ -32,9 +32,10 @@ using namespace LAMMPS_NS;
 /* ---------------------------------------------------------------------- */
 
 PairHybridScaled::PairHybridScaled(LAMMPS *lmp) :
-    PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr)
+  PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr), atomvar(nullptr), atomscale(nullptr)
 {
   nmaxfsum = -1;
+  nmaxscale = -1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -45,6 +46,8 @@ PairHybridScaled::~PairHybridScaled()
   memory->destroy(tsum);
   delete[] scaleval;
   delete[] scaleidx;
+  delete[] atomvar;
+  memory->destroy(atomscale);
 }
 
 /* ----------------------------------------------------------------------
@@ -66,18 +69,35 @@ void PairHybridScaled::compute(int eflag, int vflag)
   // update scale values from variables where needed
 
   const int nvars = scalevars.size();
+  int atomscaleflag = 0;
   if (nvars > 0) {
     auto vals = new double[nvars];
+    auto vars = new int[nvars];
     for (int k = 0; k < nvars; ++k) {
       int m = input->variable->find(scalevars[k].c_str());
       if (m < 0)
         error->all(FLERR, "Variable '{}' not found when updating scale factors", scalevars[k]);
-      vals[k] = input->variable->compute_equal(m);
+
+      // for equal-style, compute variable, set variable index to -1
+      if (input->variable->equalstyle(m)) {
+	vals[k] = input->variable->compute_equal(m);
+	vars[k] = -1;
+      // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
+      } else if (input->variable->atomstyle(m)) {
+	vals[k] = 0.0;
+	vars[k] = m;
+	atomscaleflag = 1;
+      } else
+	error->all(FLERR, "Variable '{}' has incompatible style", scalevars[k]);
     }
     for (int k = 0; k < nstyles; ++k) {
-      if (scaleidx[k] >= 0) scaleval[k] = vals[scaleidx[k]];
+      if (scaleidx[k] >= 0) {
+	scaleval[k] = vals[scaleidx[k]];
+	atomvar[k] = vars[scaleidx[k]];
+      }
     }
     delete[] vals;
+    delete[] vars;
   }
 
   // check if no_virial_fdotr_compute is set and global component of
@@ -111,6 +131,14 @@ void PairHybridScaled::compute(int eflag, int vflag)
       tsum[i][1] = t[i][1];
       tsum[i][2] = t[i][2];
     }
+  }
+
+  // grow atomscale array if needed
+
+  if (atomscaleflag && atom->nmax > nmaxscale) {
+    memory->destroy(atomscale);
+    nmaxscale = atom->nmax;
+    memory->create(fsum, nmaxscale, "pair:atomscale");
   }
 
   // check if global component of incoming vflag = VIRIAL_FDOTR
@@ -156,62 +184,80 @@ void PairHybridScaled::compute(int eflag, int vflag)
     }
 
     // add scaled forces to global sum
-    const double scale = scaleval[m];
-    for (i = 0; i < nall; ++i) {
-      fsum[i][0] += scale * f[i][0];
-      fsum[i][1] += scale * f[i][1];
-      fsum[i][2] += scale * f[i][2];
-      if (atom->torque_flag) {
-        tsum[i][0] += scale * t[i][0];
-        tsum[i][1] += scale * t[i][1];
-        tsum[i][2] += scale * t[i][2];
+    if (atomvar[m] == -1) {
+      const double scale = scaleval[m];
+      for (i = 0; i < nall; ++i) {
+	fsum[i][0] += scale * f[i][0];
+	fsum[i][1] += scale * f[i][1];
+	fsum[i][2] += scale * f[i][2];
+	if (atom->torque_flag) {
+	  tsum[i][0] += scale * t[i][0];
+	  tsum[i][1] += scale * t[i][1];
+	  tsum[i][2] += scale * t[i][2];
+	}
+      }
+    
+      restore_special(saved_special);
+
+      // jump to next sub-style if r-RESPA does not want global accumulated data
+
+      if (respaflag && !respa->tally_global) continue;
+
+      if (eflag_global) {
+	eng_vdwl += scale * styles[m]->eng_vdwl;
+	eng_coul += scale * styles[m]->eng_coul;
+      }
+      if (vflag_global) {
+	for (n = 0; n < 6; n++) virial[n] += scale * styles[m]->virial[n];
+      }
+      if (eflag_atom) {
+	n = atom->nlocal;
+	if (force->newton_pair) n += atom->nghost;
+	double *eatom_substyle = styles[m]->eatom;
+	for (i = 0; i < n; i++) eatom[i] += scale * eatom_substyle[i];
+      }
+      if (vflag_atom) {
+	n = atom->nlocal;
+	if (force->newton_pair) n += atom->nghost;
+	double **vatom_substyle = styles[m]->vatom;
+	for (i = 0; i < n; i++)
+	  for (j = 0; j < 6; j++) vatom[i][j] += scale * vatom_substyle[i][j];
+      }
+
+      // substyles may be CENTROID_SAME or CENTROID_AVAIL
+
+      if (cvflag_atom) {
+	n = atom->nlocal;
+	if (force->newton_pair) n += atom->nghost;
+	if (styles[m]->centroidstressflag == CENTROID_AVAIL) {
+	  double **cvatom_substyle = styles[m]->cvatom;
+	  for (i = 0; i < n; i++)
+	    for (j = 0; j < 9; j++) cvatom[i][j] += scale * cvatom_substyle[i][j];
+	} else {
+	  double **vatom_substyle = styles[m]->vatom;
+	  for (i = 0; i < n; i++) {
+	    for (j = 0; j < 6; j++) { cvatom[i][j] += scale * vatom_substyle[i][j]; }
+	    for (j = 6; j < 9; j++) { cvatom[i][j] += scale * vatom_substyle[i][j - 3]; }
+	  }
+	}
+      }
+
+    } else {
+      int igroupall = 0;
+      input->variable->compute_atom(atomvar[m],igroupall,atomscale,1,0);
+      for (i = 0; i < nall; ++i) {
+	const double scale = atomscale[i];
+	fsum[i][0] += scale * f[i][0];
+	fsum[i][1] += scale * f[i][1];
+	fsum[i][2] += scale * f[i][2];
+	if (atom->torque_flag) {
+	  tsum[i][0] += scale * t[i][0];
+	  tsum[i][1] += scale * t[i][1];
+	  tsum[i][2] += scale * t[i][2];
+	}
       }
     }
-
-    restore_special(saved_special);
-
-    // jump to next sub-style if r-RESPA does not want global accumulated data
-
-    if (respaflag && !respa->tally_global) continue;
-
-    if (eflag_global) {
-      eng_vdwl += scale * styles[m]->eng_vdwl;
-      eng_coul += scale * styles[m]->eng_coul;
-    }
-    if (vflag_global) {
-      for (n = 0; n < 6; n++) virial[n] += scale * styles[m]->virial[n];
-    }
-    if (eflag_atom) {
-      n = atom->nlocal;
-      if (force->newton_pair) n += atom->nghost;
-      double *eatom_substyle = styles[m]->eatom;
-      for (i = 0; i < n; i++) eatom[i] += scale * eatom_substyle[i];
-    }
-    if (vflag_atom) {
-      n = atom->nlocal;
-      if (force->newton_pair) n += atom->nghost;
-      double **vatom_substyle = styles[m]->vatom;
-      for (i = 0; i < n; i++)
-        for (j = 0; j < 6; j++) vatom[i][j] += scale * vatom_substyle[i][j];
-    }
-
-    // substyles may be CENTROID_SAME or CENTROID_AVAIL
-
-    if (cvflag_atom) {
-      n = atom->nlocal;
-      if (force->newton_pair) n += atom->nghost;
-      if (styles[m]->centroidstressflag == CENTROID_AVAIL) {
-        double **cvatom_substyle = styles[m]->cvatom;
-        for (i = 0; i < n; i++)
-          for (j = 0; j < 9; j++) cvatom[i][j] += scale * cvatom_substyle[i][j];
-      } else {
-        double **vatom_substyle = styles[m]->vatom;
-        for (i = 0; i < n; i++) {
-          for (j = 0; j < 6; j++) { cvatom[i][j] += scale * vatom_substyle[i][j]; }
-          for (j = 6; j < 9; j++) { cvatom[i][j] += scale * vatom_substyle[i][j - 3]; }
-        }
-      }
-    }
+      
   }
 
   // copy accumulated scaled forces to original force array
@@ -229,6 +275,7 @@ void PairHybridScaled::compute(int eflag, int vflag)
   delete[] saved_special;
 
   if (vflag_fdotr) virial_fdotr_compute();
+
 }
 
 /* ----------------------------------------------------------------------
@@ -288,6 +335,7 @@ void PairHybridScaled::settings(int narg, char **arg)
 
   scaleval = new double[narg];
   scaleidx = new int[narg];
+  atomvar = new int[narg];
   scalevars.reserve(narg);
 
   // allocate each sub-style
@@ -304,6 +352,7 @@ void PairHybridScaled::settings(int narg, char **arg)
 
     // first process scale factor or variable
     // idx < 0 indicates constant value otherwise index in variable name list
+    // atomvar[k] != -1 indicates atom-style variable 
 
     double val = 0.0;
     int idx = -1;
@@ -320,6 +369,7 @@ void PairHybridScaled::settings(int narg, char **arg)
       }
     } else {
       val = utils::numeric(FLERR, arg[iarg], false, lmp);
+      atomvar[nstyles] = -1;
     }
     scaleval[nstyles] = val;
     scaleidx[nstyles] = idx;

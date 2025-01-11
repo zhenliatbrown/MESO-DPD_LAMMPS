@@ -50,6 +50,9 @@ class PairHybridScaled : public PairHybrid {
   int *scaleidx;
   std::vector<std::string> scalevars;
   int nmaxfsum;
+  int* atomvar;       // indices of atom-style variables
+  double* atomscale;  // vector of atom-style variable values
+  int nmaxscale;      // allocated size of atomscale
 };
 
 }    // namespace LAMMPS_NS
