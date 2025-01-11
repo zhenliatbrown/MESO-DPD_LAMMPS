@@ -46,7 +46,7 @@ jobs:
     - name: Build flatpak
       run: |
         mkdir flatpack-state
-        flatpak-builder --force-clean --verbose --repo=flatpak-repo
-                               --install-deps-from=flathub --state-dir=flatpak-state
-                               --user --ccache --default-branch=${{ github.ref_name }}
+        flatpak-builder --force-clean --verbose --repo=flatpak-repo \
+                               --install-deps-from=flathub --state-dir=flatpak-state \
+                               --user --ccache --default-branch=${{ github.ref_name }} \
                                flatpak-build tools/lammps-gui/org.lammps.lammps-gui.yml
