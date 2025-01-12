@@ -2904,6 +2904,36 @@ int lammps_variable_info(void *handle, int idx, char *buffer, int buf_size) {
   return 0;
 }
 
+/** Evaluate an immediate variable expression
+ *
+\verbatim embed:rst
+
+.. versionadded:: TBD
+
+This function takes a string with an expression, like what can be used
+for :doc:`equal style variables <variable>`, evaluates it and returns
+the resulting (scalar) value as a floating point number.
+
+\endverbatim
+
+ * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
+ * \param expr     string with expression
+ * \return         result from expression */
+
+double lammps_eval(void *handle, const char *expr)
+{
+  auto lmp = (LAMMPS *) handle;
+  double result = 0.0;
+
+  BEGIN_CAPTURE
+  {
+    result = lmp->input->variable->compute_equal(expr);
+  }
+  END_CAPTURE
+
+  return result;
+}
+
 // ----------------------------------------------------------------------
 // Library functions for scatter/gather operations of data
 // ----------------------------------------------------------------------

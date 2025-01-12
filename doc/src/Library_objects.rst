@@ -12,6 +12,7 @@ fixes, or variables in LAMMPS using the following functions:
 - :cpp:func:`lammps_set_string_variable`
 - :cpp:func:`lammps_set_internal_variable`
 - :cpp:func:`lammps_variable_info`
+- :cpp:func:`lammps_eval`
 
 -----------------------
 
@@ -51,6 +52,11 @@ fixes, or variables in LAMMPS using the following functions:
 -----------------------
 
 .. doxygenfunction:: lammps_variable_info
+   :project: progguide
+
+-----------------------
+
+.. doxygenfunction:: lammps_eval
    :project: progguide
 
 -----------------------
