@@ -516,6 +516,9 @@ treated as part of the command and will **not** start a second command.
 The function returns the expanded string in a new string buffer that
 must be freed with :cpp:func:`lammps_free` after use to avoid a memory leak.
 
+*See also*
+    :cpp:func:`lammps_eval'
+
 \endverbatim
  *
  * \param  handle  pointer to a previously created LAMMPS instance
@@ -2910,9 +2913,12 @@ int lammps_variable_info(void *handle, int idx, char *buffer, int buf_size) {
 
 .. versionadded:: TBD
 
-This function takes a string with an expression, like what can be used
+This function takes a string with an expression that can be used
 for :doc:`equal style variables <variable>`, evaluates it and returns
 the resulting (scalar) value as a floating point number.
+
+*See also*
+    :cpp:func:`lammps_expand'
 
 \endverbatim
 
