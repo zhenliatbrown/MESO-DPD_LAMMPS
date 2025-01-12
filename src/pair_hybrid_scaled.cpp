@@ -35,7 +35,6 @@ PairHybridScaled::PairHybridScaled(LAMMPS *lmp) :
     PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr), atomvar(nullptr), atomscale(nullptr)
 {
   nmaxfsum = -1;
-  nmaxscale = -1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -115,9 +114,11 @@ void PairHybridScaled::compute(int eflag, int vflag)
   if (atom->nmax > nmaxfsum) {
     memory->destroy(fsum);
     if (atom->torque_flag) memory->destroy(tsum);
+    if (atomscaleflag) memory->destroy(atomscale);
     nmaxfsum = atom->nmax;
     memory->create(fsum, nmaxfsum, 3, "pair:fsum");
     if (atom->torque_flag) memory->create(tsum, nmaxfsum, 3, "pair:tsum");
+    if (atomscaleflag) memory->create(atomscale, nmaxfsum, "pair:atomscale");
   }
   const int nall = atom->nlocal + atom->nghost;
   auto f = atom->f;
@@ -131,14 +132,6 @@ void PairHybridScaled::compute(int eflag, int vflag)
       tsum[i][1] = t[i][1];
       tsum[i][2] = t[i][2];
     }
-  }
-
-  // grow atomscale array if needed
-
-  if (atomscaleflag && atom->nmax > nmaxscale) {
-    memory->destroy(atomscale);
-    nmaxscale = atom->nmax;
-    memory->create(atomscale, nmaxscale, "pair:atomscale");
   }
 
   // check if global component of incoming vflag = VIRIAL_FDOTR
@@ -185,7 +178,9 @@ void PairHybridScaled::compute(int eflag, int vflag)
 
     // add scaled forces to global sum
     const double scale = scaleval[m];
-    if (atomvar[m] == -1) {
+
+    // if scale factor is constant or equal-style variable
+    if (scaleidx[m] < 0 || atomvar[m] < 0) {
       for (i = 0; i < nall; ++i) {
         fsum[i][0] += scale * f[i][0];
         fsum[i][1] += scale * f[i][1];
@@ -196,6 +191,7 @@ void PairHybridScaled::compute(int eflag, int vflag)
           tsum[i][2] += scale * t[i][2];
         }
       }
+    // if scale factor is atom-style variable
     } else {
       int igroupall = 0;
       input->variable->compute_atom(atomvar[m],igroupall,atomscale,1,0);
@@ -348,8 +344,8 @@ void PairHybridScaled::settings(int narg, char **arg)
   while (iarg < narg - 1) {
 
     // first process scale factor or variable
-    // idx < 0 indicates constant value otherwise index in variable name list
-    // initialize atomvar[k] = -1 indicates atom-style variable
+    // scaleidx[k] < 0 indicates constant value, otherwise index in variable name list
+    // initialize atomvar[k] to -1, indicates not atom-style variable
 
     double val = 0.0;
     int idx = -1;
