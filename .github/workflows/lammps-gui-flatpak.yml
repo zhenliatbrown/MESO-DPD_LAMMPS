@@ -6,9 +6,6 @@ on:
     branches:
       - develop
       - collected-small-changes
-  pull_request:
-    branches:
-      - develop
 
   workflow_dispatch:
 
@@ -46,6 +43,7 @@ jobs:
     - name: Build flatpak
       run: |
         mkdir flatpack-state
+        sed -i -e 's/branch:.*/branch: develop/' tools/lammps-gui/org.lammps.lammps-gui.yml
         flatpak-builder --force-clean --verbose --repo=flatpak-repo \
                                --install-deps-from=flathub --state-dir=flatpak-state \
                                --user --ccache --default-branch=${{ github.ref_name }} \
