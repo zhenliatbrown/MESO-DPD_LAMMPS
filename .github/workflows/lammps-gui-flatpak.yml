@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - develop
-      - collected-small-changes
 
   workflow_dispatch:
 
@@ -15,8 +14,8 @@ concurrency:
 
 jobs:
   build:
-    name: Linux flatpak build
-    if: ${{ github.repository == 'akohlmey/lammps' }}
+    name: LAMMPS-GUI flatpak build
+    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-latest
 
     steps:
