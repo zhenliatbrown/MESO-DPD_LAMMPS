@@ -16,7 +16,6 @@
 #include "comm.h"
 #include "error.h"
 #include "tokenizer.h"
-#include "fmt/chrono.h"
 
 #include <cstring>
 #include <ctime>
@@ -244,11 +243,13 @@ void Timer::modify_params(int narg, char **arg)
       ++iarg;
       if (iarg < narg) {
         _checkfreq = utils::inumeric(FLERR, arg[iarg], false, lmp);
-        if (_checkfreq <= 0) error->all(FLERR, "Illegal timer command");
-      } else
-        error->all(FLERR, "Illegal timer command");
-    } else
-      error->all(FLERR, "Illegal timer command");
+        if (_checkfreq <= 0) error->all(FLERR, "Illegal timer every frequency: {}", arg[iarg]);
+      } else {
+        utils::missing_cmd_args(FLERR, "timer every", error);
+      }
+    } else {
+      error->all(FLERR, "Unknown timer keyword {}", arg[iarg]);
+    }
     ++iarg;
   }
 
@@ -258,8 +259,10 @@ void Timer::modify_params(int narg, char **arg)
     // format timeout setting
     std::string timeout = "off";
     if (_timeout >= 0.0) {
-      std::tm tv = fmt::gmtime((std::time_t) _timeout);
-      timeout = fmt::format("{:02d}:{:%M:%S}", tv.tm_yday * 24 + tv.tm_hour, tv);
+      std::time_t to = (std::time_t) _timeout;
+      std::tm *tv = std::gmtime(&to);
+      timeout = fmt::format("{:02d}:{:02d}:{:02d}", tv->tm_yday * 24 + tv->tm_hour, tv->tm_min,
+                            tv->tm_sec);
     }
 
     utils::logmesg(lmp, "New timer settings: style={}  mode={}  timeout={}\n", timer_style[_level],
