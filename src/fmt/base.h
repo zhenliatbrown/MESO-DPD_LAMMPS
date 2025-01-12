@@ -2238,12 +2238,15 @@ template <typename Context> class value {
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
 
+#if !defined(__INTEL_COMPILER) && !defined(__ICL)
+  // LAMMPS customization: disable for Intel compilers as some of them choke on it
   template <typename T, FMT_ENABLE_IF(!has_formatter<T, char_type>())>
   FMT_CONSTEXPR value(const T&, custom_tag) {
     // Cannot format an argument; to make type T formattable provide a
     // formatter<T> specialization: https://fmt.dev/latest/api.html#udt.
     type_is_unformattable_for<T, char_type> _;
   }
+#endif
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T, typename Formatter>
