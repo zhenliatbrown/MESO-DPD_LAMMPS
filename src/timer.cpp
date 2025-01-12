@@ -15,6 +15,7 @@
 
 #include "comm.h"
 #include "error.h"
+#include "tokenizer.h"
 #include "fmt/chrono.h"
 
 #include <cstring>
@@ -231,9 +232,14 @@ void Timer::modify_params(int narg, char **arg)
     } else if (strcmp(arg[iarg], "timeout") == 0) {
       ++iarg;
       if (iarg < narg) {
-        _timeout = utils::timespec2seconds(arg[iarg]);
-      } else
-        error->all(FLERR, "Illegal timer command");
+        try {
+          _timeout = utils::timespec2seconds(arg[iarg]);
+        } catch (TokenizerException &) {
+          error->all(FLERR, "Illegal timeout time: {}", arg[iarg]);
+        }
+      } else {
+        utils::missing_cmd_args(FLERR, "timer timeout", error);
+      }
     } else if (strcmp(arg[iarg], "every") == 0) {
       ++iarg;
       if (iarg < narg) {
