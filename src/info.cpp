@@ -270,8 +270,7 @@ void Info::command(int narg, char **arg)
 
   fputs("\nInfo-Info-Info-Info-Info-Info-Info-Info-Info-Info-Info\n",out);
   std::tm now = fmt::localtime(std::time(nullptr));
-  fmt::print(out,"Printed on {:%a %b %d %H:%M:%S %Y}\n", now.tm_wday, now.tm_mon, now.tm_mday,
-             now.tm_hour, now.tm_min, now.tm_sec, now.tm_year);
+  fmt::print(out,"Printed on {}", std::asctime(&now));
 
   if (flags & CONFIG) {
     fmt::print(out,"\nLAMMPS version: {} / {}\n", lmp->version, lmp->num_ver);
