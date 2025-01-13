@@ -507,6 +507,8 @@
 /angle_harmonic.h
 /angle_mm3.cpp
 /angle_mm3.h
+/angle_mwlc.cpp
+/angle_mwlc.h
 /angle_quartic.cpp
 /angle_quartic.h
 /angle_spica.cpp
@@ -988,6 +990,8 @@
 /fix_qeq_reaxff.h
 /fix_qmmm.cpp
 /fix_qmmm.h
+/fix_qtpie_reaxff.cpp
+/fix_qtpie_reaxff.h
 /fix_reaxff.cpp
 /fix_reaxff.h
 /fix_reaxff_bonds.cpp
