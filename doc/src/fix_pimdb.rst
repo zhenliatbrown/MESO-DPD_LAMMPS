@@ -90,7 +90,7 @@ where :math:`P` is the number of beads and :math:`\bf{r}_\ell^{P+1}=\bf{r}_{\sig
 
 Hirshberg et. al. showed that the ring polymer potential 
 :math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma e ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
-can be replaced by a potential :math:`V^{[1,N]}` defined through a recurrence relation :ref:`(Hirshberg) <Hirshberg>`:
+can be replaced by a potential :math:`V^{[1,N]}` defined through a recurrence relation :ref:`(Hirshberg1) <Hirshberg>`:
 
 .. math::
 
@@ -114,9 +114,9 @@ the global vector are:
    #. the total spring energy of the quasi-beads,
    #. the current temperature of the classical system of ring polymers,
    #. the current value of the scalar virial estimator for the kinetic
-      energy of the quantum system :ref:`(Herman) <HermanBB>`.
+      energy of the quantum system :ref:`(Herman) <HermanBB>` (see the justification in the supporting information of :ref:`(Hirshberg2) <HirshbergInvernizzi>`).
    #. the current value of the scalar primitive estimator for the kinetic
-      energy of the quantum system :ref:`(Hirshberg) <Hirshberg>`.
+      energy of the quantum system :ref:`(Hirshberg1) <Hirshberg>`.
 
 The vector values calculated by fix *pimdb/nvt* are "extensive", except for the
 temperature, which is "intensive".
@@ -128,7 +128,7 @@ can be accessed by various :doc:`output commands <Howto_output>`. The quantities
    #. spring elastic energy of the beads
    #. potential energy of the bead
    #. total energy of all beads (conserved if *ensemble* is *nve*)
-   #. primitive kinetic energy estimator :ref:`(Hirshberg) <Hirshberg>`
+   #. primitive kinetic energy estimator :ref:`(Hirshberg1) <Hirshberg>`
    #. virial energy estimator :ref:`(Herman) <HermanBB>`
 
 The first 3 are different for different log files, and the others are the same for different log files.
@@ -156,7 +156,11 @@ The keyword defaults for fix *pimdb/nvt* are method = pimd, fmass = 1.0, sp
 
 .. _Hirshberg:
 
-**(Hirshberg)** B. Hirshberg, V. Rizzi, and M.Parrinello, “Path integral molecular dynamics for bosons,” Proc. Natl. Acad. Sci. U. S. A. 116, 21445 (2019)
+**(Hirshberg1)** B. Hirshberg, V. Rizzi, and M. Parrinello, “Path integral molecular dynamics for bosons,” Proc. Natl. Acad. Sci. U. S. A. 116, 21445 (2019)
+
+.. _HirshbergInvernizzi:
+
+**(Hirshberg2)** B. Hirshberg, M. Invernizzi, and M. Parrinello, “Path integral molecular dynamics for fermions: Alleviating the sign problem with the Bogoliubov inequality,” J Chem Phys, 152, 171102 (2020)
 
 .. _Feldman:
 
