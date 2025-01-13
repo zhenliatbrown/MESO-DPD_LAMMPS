@@ -48,7 +48,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <mutex>
 #include <stdexcept>
 
 using namespace LAMMPS_NS;

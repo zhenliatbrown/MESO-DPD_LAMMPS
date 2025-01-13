@@ -16,10 +16,7 @@
 
 #include "pointers.h"
 #include <map>
-
-namespace std {
-class mutex;
-}
+#include <mutex>
 
 namespace LAMMPS_NS {
 
