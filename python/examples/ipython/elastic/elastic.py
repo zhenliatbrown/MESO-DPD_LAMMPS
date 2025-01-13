@@ -158,7 +158,8 @@ def elastic():
     parser.add_argument("--up", type=float, default=1.0e-6, help="the deformation magnitude (in strain units)")
     args = parser.parse_args()
 
-    L = PyLammps()
+    lmp = lammps()
+    L = lmp.cmd
 
     L.units("metal")
 
