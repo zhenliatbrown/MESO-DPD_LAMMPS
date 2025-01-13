@@ -428,6 +428,8 @@ class PyLammps(object):
   lower-level interface. The original interface can still be accessed via
   :py:attr:`PyLammps.lmp`.
 
+  .. deprecated:: TBA
+
   :param name: "machine" name of the shared LAMMPS library ("mpi" loads ``liblammps_mpi.so``, "" loads ``liblammps.so``)
   :type  name: string
   :param cmdargs: list of command line arguments to be passed to the :cpp:func:`lammps_open` function.  The executable name is automatically added.
@@ -447,6 +449,12 @@ class PyLammps(object):
   """
 
   def __init__(self, name="", cmdargs=None, ptr=None, comm=None, verbose=False):
+    print("WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING")
+    print()
+    print("The PyLammps interface is deprecated and will be removed in future versions.")
+    print("Please use the lammps Python class instead.")
+    print()
+    print("WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING")
     self.has_echo = False
     self.verbose = verbose
 
