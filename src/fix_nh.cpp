@@ -53,7 +53,7 @@ enum{ISO,ANISO,TRICLINIC};
  ---------------------------------------------------------------------- */
 
 FixNH::FixNH(LAMMPS *lmp, int narg, char **arg) :
-    Fix(lmp, narg, arg), id_dilate(nullptr), irregular(nullptr), id_temp(nullptr),
+    Fix(lmp, narg, arg), id_dilate(nullptr), irregular(nullptr), step_respa(nullptr), id_temp(nullptr),
     id_press(nullptr), eta(nullptr), eta_dot(nullptr), eta_dotdot(nullptr), eta_mass(nullptr),
     etap(nullptr), etap_dot(nullptr), etap_dotdot(nullptr), etap_mass(nullptr)
 {
@@ -654,14 +654,21 @@ void FixNH::init()
   // set temperature and pressure ptrs
 
   temperature = modify->get_compute_by_id(id_temp);
-  if (!temperature) error->all(FLERR,"Temperature ID {} for fix {} does not exist", id_temp, style);
-
-  if (temperature->tempbias) which = BIAS;
-  else which = NOBIAS;
+  if (!temperature) {
+    error->all(FLERR,"Temperature compute ID {} for fix {} does not exist", id_temp, style);
+  } else {
+    if (temperature->tempflag == 0)
+      error->all(FLERR, "Compute ID {} for fix {} does not compute a temperature", id_temp, style);
+    if (temperature->tempbias) which = BIAS;
+    else which = NOBIAS;
+  }
 
   if (pstat_flag) {
     pressure = modify->get_compute_by_id(id_press);
-    if (!pressure) error->all(FLERR,"Pressure ID {} for fix {} does not exist", id_press, style);
+    if (!pressure)
+      error->all(FLERR,"Pressure compute ID {} for fix {} does not exist", id_press, style);
+    if (pressure->pressflag == 0)
+      error->all(FLERR,"Compute ID {} for fix {} does not compute pressure", id_press, style);
   }
 
   // set timesteps and frequencies
@@ -712,8 +719,10 @@ void FixNH::init()
   else kspace_flag = 0;
 
   if (utils::strmatch(update->integrate_style,"^respa")) {
-    nlevels_respa = (dynamic_cast<Respa *>(update->integrate))->nlevels;
-    step_respa = (dynamic_cast<Respa *>(update->integrate))->step;
+    auto respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    nlevels_respa = respa_ptr->nlevels;
+    step_respa = respa_ptr->step;
     dto = 0.5*step_respa[0];
   }
 
@@ -1692,8 +1701,13 @@ void FixNH::reset_dt()
 
   // If using respa, then remap is performed in innermost level
 
-  if (utils::strmatch(update->integrate_style,"^respa"))
+  if (utils::strmatch(update->integrate_style,"^respa")) {
+    auto respa_ptr = dynamic_cast<Respa *>(update->integrate);
+    if (!respa_ptr) error->all(FLERR, "Failure to access Respa style {}", update->integrate_style);
+    nlevels_respa = respa_ptr->nlevels;
+    step_respa = respa_ptr->step;
     dto = 0.5*step_respa[0];
+  }
 
   if (pstat_flag)
     pdrag_factor = 1.0 - (update->dt * p_freq_max * drag / nc_pchain);

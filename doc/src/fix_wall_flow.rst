@@ -40,7 +40,7 @@ Examples
 Description
 """""""""""
 
-.. versionadded:: TBD
+.. versionadded:: 17Apr2024
 
 This fix implements flow boundary conditions (FBC) introduced in
 :ref:`(Pavlov1) <fbc-Pavlov1>` and :ref:`(Pavlov2) <fbc-Pavlov2>`.
@@ -122,6 +122,12 @@ also be potentially mitigated by using more multiple walls.
   set via the :doc:`neigh_modify <neigh_modify>` command, are as
   conservative as possible (every timestep if needed).  Those are the
   default settings.
+
+----------
+
+.. include:: accel_styles.rst
+
+----------
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
