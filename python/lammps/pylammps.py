@@ -449,12 +449,6 @@ class PyLammps(object):
   """
 
   def __init__(self, name="", cmdargs=None, ptr=None, comm=None, verbose=False):
-    print("WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING")
-    print()
-    print("The PyLammps interface is deprecated and will be removed in future versions.")
-    print("Please use the lammps Python class instead.")
-    print()
-    print("WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING")
     self.has_echo = False
     self.verbose = verbose
 
@@ -476,6 +470,12 @@ class PyLammps(object):
     self.comm_nprocs = self.lmp.extract_setting("world_size")
     self.comm_me = self.lmp.extract_setting("world_rank")
     if self.comm_me == 0:
+      print("\nWARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING")
+      print("WARNING:")
+      print("WARNING:   The PyLammps class is obsolete and will be removed from LAMMPS soon.")
+      print("WARNING:   Please use the lammps Python class instead.")
+      print("WARNING:")
+      print("WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING\n")
       print("LAMMPS output is captured by PyLammps wrapper")
       if self.comm_nprocs > 1:
         print("WARNING: Using PyLammps with multiple MPI ranks is experimental. Not all functionality is supported.")
