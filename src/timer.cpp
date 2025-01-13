@@ -15,6 +15,7 @@
 
 #include "comm.h"
 #include "error.h"
+#include "fmt/chrono.h"
 #include "tokenizer.h"
 
 #include <cstring>
@@ -259,10 +260,8 @@ void Timer::modify_params(int narg, char **arg)
     // format timeout setting
     std::string timeout = "off";
     if (_timeout >= 0.0) {
-      std::time_t to = (std::time_t) _timeout;
-      std::tm *tv = std::gmtime(&to);
-      timeout = fmt::format("{:02d}:{:02d}:{:02d}", tv->tm_yday * 24 + tv->tm_hour, tv->tm_min,
-                            tv->tm_sec);
+      std::tm tv = fmt::gmtime((std::time_t) _timeout);
+      timeout = fmt::format("{:02d}:{:%M:%S}", tv.tm_yday * 24 + tv.tm_hour, tv);
     }
 
     utils::logmesg(lmp, "New timer settings: style={}  mode={}  timeout={}\n", timer_style[_level],
