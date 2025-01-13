@@ -230,7 +230,6 @@ void FixEfieldLepton::post_force(int vflag)
   double v[6], unwrap[3];
   double xf, yf, zf, xb, yb, zb;
   double exf, eyf, ezf, exb, eyb, ezb;
-  double tx, ty, tz;
   double mu_norm, h_mu;
 
   if (atom->q_flag && atom->mu_flag) {
