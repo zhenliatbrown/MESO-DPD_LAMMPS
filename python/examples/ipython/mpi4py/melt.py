@@ -1,10 +1,10 @@
 from mpi4py import MPI
-from lammps import PyLammps
+from lammps import lammps
 
-L = PyLammps()
+L = lammps()
 L.file('in.melt')
 
 
 if MPI.COMM_WORLD.rank == 0:
-    pe = L.eval("pe")
+    pe = L.get_thermo("pe")
     print("Potential Energy:", pe)
