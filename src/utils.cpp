@@ -1804,7 +1804,7 @@ std::string utils::current_date()
 {
   time_t tv = time(nullptr);
   std::tm today = fmt::localtime(tv);
-  return fmt::format("{:%Y-%m-%d}", today);
+  return fmt::format("{:04d}-{:02d}-{:02d}", 1900 + today.tm_year, 1 + today.tm_mon, today.tm_mday);
 }
 
 /* ----------------------------------------------------------------------
