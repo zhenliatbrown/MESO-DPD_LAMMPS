@@ -13,12 +13,12 @@
 
 /* ----------------------------------------------------------------------
    Package      FixPIMDBLangevin
-   // CR: I guess we should fill these?
-   Purpose      TODO
-   Copyright    TODO
-   Authors      TODO
 
-   Updated      TODO
+   Purpose      Path Integral Molecular Dynamics of Bosons with Langevin Thermostat
+   Copyright    Hirshberg lab @ Tel Aviv University
+   Authors      Yotam M. Y. Feldman, Ofir Blumer
+
+   Updated      Jan-06-2025
    Version      1.0
 ------------------------------------------------------------------------- */
 
@@ -42,11 +42,6 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-// CR: shouldn't be redefined here, the values are supposed to be consistent with fix_pimd_langevin.cpp
-enum { PIMD };
-enum { NVE, NVT, NPH, NPT };
-enum { PHYSICAL, NORMAL };
-
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
@@ -68,8 +63,8 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     if (fmmode != PHYSICAL) {
         error->universe_all(FLERR, "The only available fmmode for pimdb is physical, please remove the fmmode keyword.");
     }
-    if (ensemble != NVT) {
-        error->universe_all(FLERR, "The only available ensemble for pimdb is nvt, please remove the ensemble keyword.");
+    if (ensemble != NVE && ensemble != NVT) {
+        error->universe_all(FLERR, "The only available ensembles for pimdb are nve and nvt, please choose one of these ensembles.");
     }
 
     method = PIMD;     

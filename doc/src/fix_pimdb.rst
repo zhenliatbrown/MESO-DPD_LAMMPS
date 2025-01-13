@@ -67,7 +67,7 @@ The *pimdb* commands share syntax with the equivalent *pimd* commands. The user 
 detailed syntax description and additional, general capabilities of the commands.
 The major differences from fix *pimd* in terms of capabilities are:
 
-* Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, and the keyword *method* should not be used. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to value other than *normal*.
+* Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, and the keyword *method* should not be used. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to a value other than *physical*.
 * Fix *pimdb/langevin* currently does not support *ensemble* other than *nve*, *nvt*. The barostat related keywords *iso*, *aniso*, *barostat*, *taup* are not supported.
 
 
