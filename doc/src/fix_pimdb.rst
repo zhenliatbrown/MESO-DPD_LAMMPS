@@ -67,7 +67,7 @@ The *pimdb* commands share syntax with the equivalent *pimd* commands. The user 
 detailed syntax description and additional, general capabilities of the commands.
 The major differences from fix *pimd* in terms of capabilities are:
 
-* Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, and the keyword *method* should not be used. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to a value other than *physical*.
+* Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, which is the default in this fix. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to a value other than *physical*.
 * Fix *pimdb/langevin* currently does not support *ensemble* other than *nve*, *nvt*. The barostat related keywords *iso*, *aniso*, *barostat*, *taup* are not supported.
 
 
@@ -84,9 +84,9 @@ distinguishable particles. The sum is over all permutations :math:`\sigma`. Reca
 
 .. math::
 
-   E^\sigma = \frac{mP}{2\beta^2 \hbar^2} \sum_{\ell=1}^N \sum_{j=1}^P \left(\bf{r}_\ell^j - \bf{r}_\ell^{j+1}\right)^2,
+   E^\sigma = \frac{mP}{2\beta^2 \hbar^2} \sum_{\ell=1}^N \sum_{j=1}^P \left(\bf{q}_\ell^j - \bf{q}_\ell^{j+1}\right)^2,
 
-where :math:`P` is the number of beads and :math:`\bf{r}_\ell^{P+1}=\bf{r}_{\sigma(\ell)}^1.` 
+where :math:`P` is the number of beads and :math:`\bf{q}_\ell^{P+1}=\bf{q}_{\sigma(\ell)}^1.` 
 
 Hirshberg et. al. showed that the ring polymer potential 
 :math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma e ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
@@ -94,13 +94,13 @@ can be replaced by a potential :math:`V^{[1,N]}` defined through a recurrence re
 
 .. math::
 
-   e ^ { -\beta  V^{[1,N]} } = \frac{1}{N} \sum_{k=1}^N e ^ { -\beta \left(  V^{[1,N-k]} + E^{[N-K+1,N} \right)}.
+   e ^ { -\beta  V^{[1,N]} } = \frac{1}{N} \sum_{k=1}^N e ^ { -\beta \left(  V^{[1,N-k]} + E^{[N-K+1,N]} \right)}.
 
 Here, :math:`E^{[N-K+1,N]}` is the spring energy of the ring polymer obtained by connecting the beads of particles :math:`N − k + 1, N − k + 2, ..., N` in a cycle.
 This potential does not include all :math:`N!` permutations, but samples the same bosonic partition function. The implemented algorithm in LAMMPS for calculating 
 the potential is the one developed by Feldman and Hirshberg, which scales like :math:`N^2+PN` :ref:`(Feldman) <Feldman>`. 
 The forces are calculated as weighted averages over the representative permutations,
-through an algorithm that scales the same as the one for the potential calculation :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
+through an algorithm that scales the same as the one for the potential calculation, :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -108,13 +108,13 @@ Restart, fix_modify, output, run start/stop, minimize info
 The use of :doc:`binary restart files <restart>` and :doc:`fix_modify <fix_modify>` is the same as in :doc:`fix pimd <fix_pimd>`.
 
 Fix *pimdb/nvt* computes a global 4-vector, which can be accessed by
-various :doc:`output commands <Howto_output>`.  The three quantities in
+various :doc:`output commands <Howto_output>`.  The quantities in
 the global vector are:
 
    #. the total spring energy of the quasi-beads,
    #. the current temperature of the classical system of ring polymers,
    #. the current value of the scalar virial estimator for the kinetic
-      energy of the quantum system :ref:`(Herman) <HermanBB>` (see the justification in the supporting information of :ref:`(Hirshberg2) <HirshbergInvernizzi>`).
+      energy of the quantum system :ref:`(Herman) <HermanBB>` (see the justification in the supporting information of :ref:`(Hirshberg2) <HirshbergInvernizzi>`),
    #. the current value of the scalar primitive estimator for the kinetic
       energy of the quantum system :ref:`(Hirshberg1) <Hirshberg>`.
 
@@ -124,14 +124,14 @@ temperature, which is "intensive".
 Fix *pimdb/langevin* computes a global 6-vector, which
 can be accessed by various :doc:`output commands <Howto_output>`. The quantities in the global vector are:
 
-   #. kinetic energy of the beads
-   #. spring elastic energy of the beads
-   #. potential energy of the bead
+   #. kinetic energy of the beads,
+   #. spring elastic energy of the beads,
+   #. potential energy of the bead,
    #. total energy of all beads (conserved if *ensemble* is *nve*)
    #. primitive kinetic energy estimator :ref:`(Hirshberg1) <Hirshberg>`
-   #. virial energy estimator :ref:`(Herman) <HermanBB>`
+   #. virial energy estimator :ref:`(Herman) <HermanBB>`.
 
-The first 3 are different for different log files, and the others are the same for different log files.
+The first three are different for different log files, and the others are the same for different log files.
 
 Restrictions
 """"""""""""
