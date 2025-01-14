@@ -13,6 +13,9 @@ fixes, or variables in LAMMPS using the following functions:
 - :cpp:func:`lammps_set_internal_variable`
 - :cpp:func:`lammps_variable_info`
 - :cpp:func:`lammps_eval`
+- :cpp:func:`lammps_compute_clearstep`
+- :cpp:func:`lammps_compute_addstep_all`
+- :cpp:func:`lammps_compute_addstep`
 
 -----------------------
 
@@ -57,6 +60,21 @@ fixes, or variables in LAMMPS using the following functions:
 -----------------------
 
 .. doxygenfunction:: lammps_eval
+   :project: progguide
+
+-----------------------
+
+.. doxygenfunction:: lammps_compute_clearstep
+   :project: progguide
+
+-----------------------
+
+.. doxygenfunction:: lammps_compute_addstep_all(void *handle, int nextstep)
+   :project: progguide
+
+-----------------------
+
+.. doxygenfunction:: lammps_compute_addstep(void *handle, int nextstep)
    :project: progguide
 
 -----------------------

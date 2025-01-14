@@ -2973,6 +2973,10 @@ double lammps_eval(void *handle, const char *expr)
    The invoked flag is used to avoid re-invoking same compute multiple times
    and to flag computes that store invocation times as having been invoked
 
+*See also*
+    :cpp:func:`lammps_compute_addstep_all`
+    :cpp:func:`lammps_compute_addstep`
+
 \endverbatim
 
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
@@ -2995,6 +2999,10 @@ void lammps_compute_clearstep(void * handle) {
    called when not sure what computes will be needed on newstep
    do not loop only over n_timeflag, since may not be set yet
 
+*See also*
+    :cpp:func:`lammps_compute_clearstep`
+    :cpp:func:`lammps_compute_addstep`
+
 \endverbatim
 
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
@@ -3015,6 +3023,10 @@ void lammps_compute_addstep_all(void * handle, bigint newstep) {
    loop over computes that store invocation times
    if its invoked flag set on this timestep, schedule next invocation
    called everywhere that computes are used, after computes are invoked
+
+*See also*
+    :cpp:func:`lammps_compute_addstep_all`
+    :cpp:func:`lammps_compute_clearstep`
 
 \endverbatim
 
