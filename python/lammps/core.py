@@ -103,7 +103,7 @@ class command_wrapper(object):
     This method is where the Python 'magic' happens. If a method is not
     defined by the class command_wrapper, it assumes it is a LAMMPS command. It takes
     all the arguments, concatinates them to a single string, and executes it using
-    :py:meth:`lammps.command()`.
+    :py:meth:`lammps.command`.
 
     Starting with Python 3.6 it also supports keyword arguments. key=value is
     transformed into 'key value'. Note, since these have come last in the

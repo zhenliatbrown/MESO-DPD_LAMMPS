@@ -1,5 +1,5 @@
-Compute, fixes, variables
-=========================
+Computes, fixes, variables
+==========================
 
 This section documents accessing or modifying data stored by computes,
 fixes, or variables in LAMMPS using the following functions:
