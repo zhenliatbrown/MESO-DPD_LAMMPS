@@ -605,6 +605,16 @@ foreach(PKG_WITH_INCL KSPACE PYTHON ML-IAP VORONOI COLVARS ML-HDNNP MDI MOLFILE 
   endif()
 endforeach()
 
+# settings for misc packages and styles
+if(PKG_MISC)
+  option(LAMMPS_ASYNC_IMD "Asynchronous IMD processing" OFF)
+  mark_as_advanced(LAMMPS_ASYNC_IMD)
+  if(LAMMPS_ASYNC_IMD)
+    target_compile_definitions(lammps PRIVATE -DLAMMPS_ASYNC_IMD)
+    message(STATUS "Using IMD in asynchronous mode")
+  endif()
+endif()
+
 # optionally enable building script wrappers using swig
 option(WITH_SWIG "Build scripting language wrappers with SWIG" OFF)
 if(WITH_SWIG)
