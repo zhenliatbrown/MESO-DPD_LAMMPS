@@ -172,9 +172,9 @@ class SNAKokkos {
   KOKKOS_INLINE_FUNCTION
   SNAKokkos(const SNAKokkos<DeviceType,real_type,vector_length>& sna, const typename Kokkos::TeamPolicy<DeviceType>::member_type& team);
 
+  template<class CopyClass>
   inline
-  //SNAKokkos(real_type, int, real_type, int, int, int, int, int, int, int);
-  SNAKokkos(const PairSNAPKokkos<DeviceType, real_type, vector_length>&);
+  SNAKokkos(const CopyClass&);
 
   KOKKOS_INLINE_FUNCTION
   ~SNAKokkos();

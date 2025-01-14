@@ -225,7 +225,7 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
 
   Kokkos::View<real_type*, DeviceType> d_radelem;              // element radii
   Kokkos::View<real_type*, DeviceType> d_wjelem;               // elements weights
-  //Kokkos::View<real_type**, Kokkos::LayoutRight, DeviceType> d_coeffelem;           // element bispectrum coefficients
+  Kokkos::View<real_type**, Kokkos::LayoutRight, DeviceType> d_coeffelem;           // element bispectrum coefficients
   Kokkos::View<real_type*, DeviceType> d_sinnerelem;           // element inner cutoff midpoint
   Kokkos::View<real_type*, DeviceType> d_dinnerelem;           // element inner cutoff half-width
   Kokkos::View<T_INT*, DeviceType> d_ninside;                // ninside for all atoms in list
@@ -271,6 +271,8 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   double h0, h1, h2, h3, h4, h5;
   double lo0, lo1, lo2;
 
+  // Make SNAKokkos a friend
+  friend class SNAKokkos<DeviceType, real_type, vector_length>;
 };
 
 // These wrapper classes exist to make the compute style factory happy/avoid having
