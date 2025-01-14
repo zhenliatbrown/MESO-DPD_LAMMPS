@@ -517,7 +517,7 @@ The function returns the expanded string in a new string buffer that
 must be freed with :cpp:func:`lammps_free` after use to avoid a memory leak.
 
 *See also*
-    :cpp:func:`lammps_eval'
+    :cpp:func:`lammps_eval`
 
 \endverbatim
  *
@@ -2936,7 +2936,7 @@ for :doc:`equal style variables <variable>`, evaluates it and returns
 the resulting (scalar) value as a floating point number.
 
 *See also*
-    :cpp:func:`lammps_expand'
+    :cpp:func:`lammps_expand`
 
 \endverbatim
 
