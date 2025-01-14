@@ -179,7 +179,7 @@ The model requires the following inputs:
    1. *Young's modulus* :math:`E > 0` : The Young's modulus is commonly reported
    for various powders.
 
-   2. *Poissons ratio* :math:`0 \le \nu \le 0.5` : The Poisson's ratio is commonly
+   2. *Poisson's ratio* :math:`0 \le \nu \le 0.5` : The Poisson's ratio is commonly
    reported for various powders.
 
    3. *Yield stress* :math:`Y \ge 0` : The yield stress is often known for powders
@@ -191,12 +191,12 @@ The model requires the following inputs:
    relation to the more commonly reported critical stress intensity factor
    :math:`K_{Ic} = \sqrt{2\Delta\gamma E/(1-\nu^2)}`.
 
-   5. *Critical confinement ratio* :math:`0 \le \psi_b \le 1` : The critical confinment 
+   5. *Critical confinement ratio* :math:`0 \le \psi_b \le 1` : The critical confinement
    ratio is a tunable parameter that determines when the bulk elastic response is
    triggered. Lower values of :math:`\psi_b` delay the onset of the bulk elastic
    response.
 
-   6. *Coefficient of restiution* :math:`0 \le e \le 1` : The coefficient of
+   6. *Coefficient of restitution* :math:`0 \le e \le 1` : The coefficient of
    restitution is a tunable parameter that controls damping in the normal direction. 
 
 .. note::
@@ -229,11 +229,11 @@ begin with an initial radius, however as compaction occurs and plastic
 deformation is accumulated, a new enlarged apparent radius is defined to
 ensure that that volume change due to plastic deformation is not lost.
 This apparent radius is stored as the *atom radius* meaning it is used
-for subsequent neighbor list builds and contact dectection checks. The
+for subsequent neighbor list builds and contact detection checks. The
 advantage of this is that multi-neighbor dependent effects such as 
 formation of secondary contacts caused by radial expansion are captured
 by the *mdr* model. Setting *atom_style sphere 1* ensures that updates to
-the particle radius are properly reflected throughout the simulation.
+the particle radii are properly reflected throughout the simulation.
 
 .. code-block:: LAMMPS
 
@@ -242,7 +242,7 @@ the particle radius are properly reflected throughout the simulation.
 Newton's third law must be set to *off*. This ensures that the neighbor lists
 are constructed properly for the topological penalty algorithm used to screen
 for non-physical contacts occurring through obstructing particles, an issue
-prevelant under large deformation conditions. For more information on this
+prevalent under large deformation conditions. For more information on this
 algorithm see :ref:`Zunker et al. <Zunker2025>`. 
 
 .. code-block:: LAMMPS
@@ -258,7 +258,7 @@ in damping model.
 
 The definition of multiple *mdr* models in the *pair_style* is currently not
 supported. Similarly, the *mdr* model cannot be combined with a different normal
-model in the *pair_style*. Phyiscally this means that only one homogenous
+model in the *pair_style*. Physically this means that only one homogenous
 collection of particles governed by a single *mdr* model is allowed.
 
 The *mdr* model currently only supports *fix wall/gran/region*, not
@@ -279,9 +279,8 @@ adhesive behaviors between particle-particle and particle-wall interactions.
 In addition to contact forces the *mdr* model also tracks the following
 quantities for each particle: elastic volume change, the average normal
 stress components for each particle, and total surface area involved in
-contact. In the input script these quantities can be accessed by first
-calling *run 0* to initialize the values then through subsequent
-*compute* commands.
+contact. In the input script, these quantities are initialized by calling
+*run 0* and can then be accessed using subsequent *compute* commands.
 
 .. code-block:: LAMMPS
 
@@ -1003,20 +1002,20 @@ solids. Proc. R. Soc. Lond. A, 324(1558), 301-313.
 
 .. _DMT1975:
 
-**Derjaguin et al, 1975)** Derjaguin, B. V., Muller, V. M., & Toporov,
+**(Derjaguin et al, 1975)** Derjaguin, B. V., Muller, V. M., & Toporov,
 Y. P. (1975). Effect of contact deformations on the adhesion of
 particles. Journal of Colloid and interface science, 53(2), 314-326.
 
 .. _Zunker2024I:
 
-**(Zunker et al, 2024)** Zunker, W., & Kamrin, K. (2024).
+**(Zunker and Kamrin, 2024)** Zunker, W., & Kamrin, K. (2024).
 A mechanically-derived contact model for adhesive elastic-perfectly
 plastic particles, Part I: Utilizing the method of dimensionality
 reduction. Journal of the Mechanics and Physics of Solids, 183, 105492.
 
 .. _Zunker2024II:
 
-**(Zunker et al, 2024)** Zunker, W., & Kamrin, K. (2024).
+**(Zunker and Kamrin, 2024)** Zunker, W., & Kamrin, K. (2024).
 A mechanically-derived contact model for adhesive elastic-perfectly
 plastic particles, Part II: Contact under high compaction—modeling
 a bulk elastic response. Journal of the Mechanics and Physics of Solids,
