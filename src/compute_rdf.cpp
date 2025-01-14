@@ -38,6 +38,8 @@
 using namespace LAMMPS_NS;
 using namespace MathConst;
 
+static constexpr double BIG = 1.0e20;
+
 /* ---------------------------------------------------------------------- */
 
 ComputeRDF::ComputeRDF(LAMMPS *lmp, int narg, char **arg) :
@@ -168,30 +170,63 @@ ComputeRDF::~ComputeRDF()
 
 void ComputeRDF::init()
 {
+  const double skin = neighbor->skin;
 
   if (!force->pair && !cutflag)
     error->all(FLERR,"Compute rdf requires a pair style or an explicit cutoff");
 
+  // check if the pair style cutoff varies
+  double pairmaxcut, pairmincut;
+  if (force->pair) {
+    pairmaxcut = 0.0;
+    pairmincut = BIG;
+    for (int i = 1; i <= atom->ntypes; i++)
+      for (int j = i; j <= atom->ntypes; j++) {
+        const double cut = sqrt(force->pair->cutsq[i][j]);
+        pairmaxcut = MAX(pairmaxcut, cut);
+        pairmincut = MIN(pairmincut, cut);
+      }
+  } else {
+    pairmaxcut = pairmincut = cutoff_user;
+  }
+
   if (cutflag) {
-    double skin = neighbor->skin;
     mycutneigh = cutoff_user + skin;
 
     double cutghost;            // as computed by Neighbor and Comm
+    double cutforce = 0.0;      // largest pairwise cutoff plus skin
+    if (force->pair) cutforce = force->pair->cutforce + skin;
     if (force->pair)
       cutghost = MAX(force->pair->cutforce+skin,comm->cutghostuser);
     else
       cutghost = comm->cutghostuser;
 
     if (mycutneigh > cutghost)
-      error->all(FLERR,"Compute rdf cutoff exceeds ghost atom range - "
-                 "use comm_modify cutoff command");
-    if (force->pair && mycutneigh < force->pair->cutforce + skin)
+      error->all(FLERR,"Compute rdf cutoff plus skin {} exceeds ghost atom range {} - "
+                 "use comm_modify cutoff command to increase it", mycutneigh, cutghost);
+
+    // if the pair-wise cutoff varies for different pairs of types, the neighbor list code
+    // will still re-use the pairwise neighbor list if the *largest* cutoff is sufficient.
+    // this will lead to incorrect results and a larger user cutoff is required.
+
+    if ((cutoff_user > pairmincut) && (cutoff_user <= pairmaxcut))
+      error->all(FLERR,"Compute rdf cutoff {} must be larger than the maximum pair-wise cutoff {} "
+                 "when the pair-wise cutoff varies", cutoff_user, pairmaxcut);
+
+    if (force->pair && (cutoff_user < pairmaxcut)) {
       if (comm->me == 0)
-        error->warning(FLERR,"Compute rdf cutoff less than neighbor cutoff - "
-                       "forcing a needless neighbor list build");
+        error->warning(FLERR,"Compute rdf cutoff {} is less than the pair-wise cutoff {} - "
+                       "forcing a needless neighbor list build", cutoff_user, pairmaxcut);
+    }
 
     delr = cutoff_user / nbin;
-  } else delr = force->pair->cutforce / nbin;
+  } else {
+    if ((pairmincut != pairmaxcut) && (comm->me == 0))
+      error->warning(FLERR,"Pair-wise cutoff varies between {} and {}. Individual rdf functions "
+                     "are only correct up to that cutoff - Use cutoff keyword to force a common "
+                     "cutoff", pairmincut, pairmaxcut);
+    delr = force->pair->cutforce / nbin;
+  }
 
   delrinv = 1.0/delr;
 
