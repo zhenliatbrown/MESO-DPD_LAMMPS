@@ -231,38 +231,42 @@ void FixEfieldLepton::post_force(int vflag)
   double exf, eyf, ezf, exb, eyb, ezb;
   double mu_norm, h_mu;
 
-  if (atom->q_flag && atom->mu_flag) {
-    double *q = atom->q;
-    double **mu = atom->mu;
-    double **t = atom->torque;
-    for (int i = 0; i < nlocal; i++) {
-      if (mask[i] & groupbit) {
-        if (region && !region->match(x[i][0], x[i][1], x[i][2])) continue;
-        domain->unmap(x[i], image[i], unwrap);
+  double *q = atom->q;
+  double **mu = atom->mu;
+  double **t = atom->torque;
 
-        // evaluate e-field, used by q and mu
-        for (size_t j = 0; j < 3; j++) {
-          if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = unwrap[0];
-          if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = unwrap[1];
-          if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = unwrap[2];
-        }
-        ex = -dphi_x.evaluate();
-        ey = -dphi_y.evaluate();
-        ez = -dphi_z.evaluate();
+  for (int i = 0; i < nlocal; i++) {
+    if (mask[i] & groupbit) {
+      if (region && !region->match(x[i][0], x[i][1], x[i][2])) continue;
+      fx = fy = fz = 0.0;
+      domain->unmap(x[i], image[i], unwrap);
 
-        if (phi_has_ref[0]) phi.getVariableReference("x") = unwrap[0];
-        if (phi_has_ref[1]) phi.getVariableReference("y") = unwrap[1];
-        if (phi_has_ref[2]) phi.getVariableReference("z") = unwrap[2];
+      // evaluate e-field, used by q and mu
+      for (size_t j = 0; j < 3; j++) {
+        if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = unwrap[0];
+        if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = unwrap[1];
+        if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = unwrap[2];
+      }
+      ex = -dphi_x.evaluate();
+      ey = -dphi_y.evaluate();
+      ez = -dphi_z.evaluate();
 
-        // charges
-        // force = q E
+      // charges
+      // force = q E
+      if (atom->q_flag) {
         fx = qe2f * q[i] * ex;
         fy = qe2f * q[i] * ey;
         fz = qe2f * q[i] * ez;
         // potential energy = q phi
+        
+	if (phi_has_ref[0]) phi.getVariableReference("x") = unwrap[0];
+        if (phi_has_ref[1]) phi.getVariableReference("y") = unwrap[1];
+        if (phi_has_ref[2]) phi.getVariableReference("z") = unwrap[2];
         fsum[0] += qe2f * q[i] * phi.evaluate();
+      }
 
-        // dipoles
+      if (atom->mu_flag) {
+      // dipoles
         mu_norm = sqrt(mu[i][0]*mu[i][0] + mu[i][1]*mu[i][1] + mu[i][2]*mu[i][2]);
         if (mu_norm > EPSILON) {
           // torque = mu cross E
@@ -271,182 +275,59 @@ void FixEfieldLepton::post_force(int vflag)
           t[i][2] += mue2e * (ey * mu[i][0] - ex * mu[i][1]);
           // potential energy = - mu dot E
           fsum[0] -= mue2e * (mu[i][0] * ex + mu[i][1] * ey + mu[i][2] * ez);
-
-          // force = (mu dot D) E
+  
+          // force = (mu dot D) E for non-uniform E
           // using central difference method
-          h_mu = h / mu_norm;
-
-          xf = unwrap[0] + h_mu * mu[i][0];
-          yf = unwrap[1] + h_mu * mu[i][1];
-          zf = unwrap[2] + h_mu * mu[i][2];
-          for (size_t j = 0; j < 3; j++) {
-            if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = xf;
-            if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = yf;
-            if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = zf;
+	  if (!e_uniform) {
+            h_mu = h / mu_norm;
+    
+            xf = unwrap[0] + h_mu * mu[i][0];
+            yf = unwrap[1] + h_mu * mu[i][1];
+            zf = unwrap[2] + h_mu * mu[i][2];
+            for (size_t j = 0; j < 3; j++) {
+              if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = xf;
+              if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = yf;
+              if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = zf;
+            }
+            exf = -dphi_x.evaluate();
+            eyf = -dphi_y.evaluate();
+            ezf = -dphi_z.evaluate();
+    
+            xb = unwrap[0] - h_mu * mu[i][0];
+            yb = unwrap[1] - h_mu * mu[i][1];
+            zb = unwrap[2] - h_mu * mu[i][2];
+            for (size_t j = 0; j < 3; j++) {
+              if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = xb;
+              if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = yb;
+              if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = zb;
+            }
+            exb = -dphi_x.evaluate();
+            eyb = -dphi_y.evaluate();
+            ezb = -dphi_z.evaluate();
+    
+            fx += qe2f * (exf - exb) / 2.0 / h_mu;
+            fy += qe2f * (eyf - eyb) / 2.0 / h_mu;
+            fz += qe2f * (ezf - ezb) / 2.0 / h_mu;
           }
-          exf = -dphi_x.evaluate();
-          eyf = -dphi_y.evaluate();
-          ezf = -dphi_z.evaluate();
-
-          xb = unwrap[0] - h_mu * mu[i][0];
-          yb = unwrap[1] - h_mu * mu[i][1];
-          zb = unwrap[2] - h_mu * mu[i][2];
-          for (size_t j = 0; j < 3; j++) {
-            if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = xb;
-            if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = yb;
-            if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = zb;
-          }
-          exb = -dphi_x.evaluate();
-          eyb = -dphi_y.evaluate();
-          ezb = -dphi_z.evaluate();
-
-          fx += qe2f * (exf - exb) / 2.0 / h_mu;
-          fy += qe2f * (eyf - eyb) / 2.0 / h_mu;
-          fz += qe2f * (ezf - ezb) / 2.0 / h_mu;
-        }
-
-        f[i][0] += fx;
-        f[i][1] += fy;
-        f[i][2] += fz;
-
-        fsum[1] += fx;
-        fsum[2] += fy;
-        fsum[3] += fz;
-
-        if (evflag) {
-          v[0] = fx * unwrap[0];
-          v[1] = fy * unwrap[1];
-          v[2] = fz * unwrap[2];
-          v[3] = fx * unwrap[1];
-          v[4] = fx * unwrap[2];
-          v[5] = fy * unwrap[2];
-          v_tally(i, v);
-        }
+	}
       }
-    }
-  } else if (atom->q_flag && !atom->mu_flag) {
-    double *q = atom->q;
-    for (int i = 0; i < nlocal; i++) {
-      if (mask[i] & groupbit) {
-        if (region && !region->match(x[i][0], x[i][1], x[i][2])) continue;
-        domain->unmap(x[i], image[i], unwrap);
 
-        for (size_t j = 0; j < 3; j++) {
-          if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = unwrap[0];
-          if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = unwrap[1];
-          if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = unwrap[2];
-        }
-        ex = -dphi_x.evaluate();
-        ey = -dphi_y.evaluate();
-        ez = -dphi_z.evaluate();
+      f[i][0] += fx;
+      f[i][1] += fy;
+      f[i][2] += fz;
 
-        if (phi_has_ref[0]) phi.getVariableReference("x") = unwrap[0];
-        if (phi_has_ref[1]) phi.getVariableReference("y") = unwrap[1];
-        if (phi_has_ref[2]) phi.getVariableReference("z") = unwrap[2];
+      fsum[1] += fx;
+      fsum[2] += fy;
+      fsum[3] += fz;
 
-        // force = q E
-        fx = qe2f * q[i] * ex;
-        fy = qe2f * q[i] * ey;
-        fz = qe2f * q[i] * ez;
-        // potential energy = q phi
-        fsum[0] += qe2f * q[i] * phi.evaluate();
-
-        f[i][0] += fx;
-        f[i][1] += fy;
-        f[i][2] += fz;
-
-        fsum[1] += fx;
-        fsum[2] += fy;
-        fsum[3] += fz;
-
-        if (evflag) {
-          v[0] = fx * unwrap[0];
-          v[1] = fy * unwrap[1];
-          v[2] = fz * unwrap[2];
-          v[3] = fx * unwrap[1];
-          v[4] = fx * unwrap[2];
-          v[5] = fy * unwrap[2];
-          v_tally(i, v);
-        }
-      }
-    }
-  } else if (!atom->q_flag && atom->mu_flag) {
-    double **mu = atom->mu;
-    double **t = atom->torque;
-    for (int i = 0; i < nlocal; i++) {
-      if (mask[i] & groupbit) {
-        if (region && !region->match(x[i][0], x[i][1], x[i][2])) continue;
-
-        mu_norm = sqrt(mu[i][0]*mu[i][0] + mu[i][1]*mu[i][1] + mu[i][2]*mu[i][2]);
-        if (mu_norm > EPSILON) continue;
-
-        domain->unmap(x[i], image[i], unwrap);
-
-        for (size_t j = 0; j < 3; j++) {
-          if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = unwrap[0];
-          if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = unwrap[1];
-          if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = unwrap[2];
-        }
-        ex = -dphi_x.evaluate();
-        ey = -dphi_y.evaluate();
-        ez = -dphi_z.evaluate();
-
-        // torque = mu cross E
-        t[i][0] += mue2e * (ez * mu[i][1] - ey * mu[i][2]);
-        t[i][1] += mue2e * (ex * mu[i][2] - ez * mu[i][0]);
-        t[i][2] += mue2e * (ey * mu[i][0] - ex * mu[i][1]);
-        // potential energy = - mu dot E
-        fsum[0] -= mue2e * (mu[i][0] * ex + mu[i][1] * ey + mu[i][2] * ez);
-
-        // force = (mu dot D) E
-        // using central difference method
-        h_mu = h / sqrt(mu[i][0]*mu[i][0] + mu[i][1]*mu[i][1] + mu[i][2]*mu[i][2]);
-
-        xf = unwrap[0] + h_mu * mu[i][0];
-        yf = unwrap[1] + h_mu * mu[i][1];
-        zf = unwrap[2] + h_mu * mu[i][2];
-        for (size_t j = 0; j < 3; j++) {
-          if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = xf;
-          if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = yf;
-          if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = zf;
-        }
-        exf = -dphi_x.evaluate();
-        eyf = -dphi_y.evaluate();
-        ezf = -dphi_z.evaluate();
-
-        xb = unwrap[0] - h_mu * mu[i][0];
-        yb = unwrap[1] - h_mu * mu[i][1];
-        zb = unwrap[2] - h_mu * mu[i][2];
-        for (size_t j = 0; j < 3; j++) {
-          if (dphis_has_ref[j][0]) (*dphis[j]).getVariableReference("x") = xb;
-          if (dphis_has_ref[j][1]) (*dphis[j]).getVariableReference("y") = yb;
-          if (dphis_has_ref[j][2]) (*dphis[j]).getVariableReference("z") = zb;
-        }
-        exb = -dphi_x.evaluate();
-        eyb = -dphi_y.evaluate();
-        ezb = -dphi_z.evaluate();
-
-        fx = qe2f * (exf - exb) / 2.0 / h_mu;
-        fy = qe2f * (eyf - eyb) / 2.0 / h_mu;
-        fz = qe2f * (ezf - ezb) / 2.0 / h_mu;
-
-        f[i][0] += fx;
-        f[i][1] += fy;
-        f[i][2] += fz;
-
-        fsum[1] += fx;
-        fsum[2] += fy;
-        fsum[3] += fz;
-
-        if (evflag) {
-          v[0] = fx * unwrap[0];
-          v[1] = fy * unwrap[1];
-          v[2] = fz * unwrap[2];
-          v[3] = fx * unwrap[1];
-          v[4] = fx * unwrap[2];
-          v[5] = fy * unwrap[2];
-          v_tally(i, v);
-        }
+      if (evflag) {
+        v[0] = fx * unwrap[0];
+        v[1] = fy * unwrap[1];
+        v[2] = fz * unwrap[2];
+        v[3] = fx * unwrap[1];
+        v[4] = fx * unwrap[2];
+        v[5] = fy * unwrap[2];
+        v_tally(i, v);
       }
     }
   }
