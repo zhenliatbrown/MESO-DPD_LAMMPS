@@ -2979,12 +2979,7 @@ double lammps_eval(void *handle, const char *expr)
  */
 void lammps_compute_clearstep(void * handle) {
   auto lmp = (LAMMPS *) handle;
-
-  BEGIN_CAPTURE
-  {
-    lmp->modify->clearstep_compute();
-  }
-  END_CAPTURE
+  lmp->modify->clearstep_compute();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -3007,12 +3002,7 @@ void lammps_compute_clearstep(void * handle) {
  */
 void lammps_compute_addstep_all(void * handle, bigint newstep) {
   auto lmp = (LAMMPS *) handle;
-
-  BEGIN_CAPTURE
-  {
-    lmp->modify->addstep_compute_all(newstep);
-  }
-  END_CAPTURE
+  lmp->modify->addstep_compute_all(newstep);
 }
 /* ---------------------------------------------------------------------- */
 
@@ -3033,12 +3023,7 @@ void lammps_compute_addstep_all(void * handle, bigint newstep) {
  */
 void lammps_compute_addstep(void * handle, bigint newstep) {
   auto lmp = (LAMMPS *) handle;
-
-  BEGIN_CAPTURE
-  {
-    lmp->modify->addstep_compute(newstep);
-  }
-  END_CAPTURE
+  lmp->modify->addstep_compute(newstep);
 }
 
 // ----------------------------------------------------------------------
