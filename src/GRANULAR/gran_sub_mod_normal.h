@@ -156,6 +156,8 @@ namespace Granular_NS {
     int fix_mdr_flag;
 
     char *id_fix;
+
+    inline double calculate_nonadhesive_mdr_force(double, double, double, double, double);
   };
 
 }    // namespace Granular_NS
