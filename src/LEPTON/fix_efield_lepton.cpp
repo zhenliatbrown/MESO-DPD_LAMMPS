@@ -183,7 +183,7 @@ void FixEfieldLepton::post_force(int vflag)
 
   // array of vectors of ptrs to Lepton variable references
   std::array<std::vector<double *>, 3> var_ref_ptrs{};
-  
+
   // fill ptr-vectors with Lepton refs as needed
   const char* DIM_NAMES[] = {"x", "y", "z"};
   if (atom->q_flag){
@@ -197,7 +197,7 @@ void FixEfieldLepton::post_force(int vflag)
       }
     }
   }
-  
+
   bool e_uniform = true;
   for (size_t j = 0; j < 3; j++)
     for (size_t d = 0; d < 3; d++) {
@@ -274,41 +274,41 @@ void FixEfieldLepton::post_force(int vflag)
           t[i][2] += mue2e * (ey * mu[i][0] - ex * mu[i][1]);
           // potential energy = - mu dot E
           fsum[0] -= mue2e * (mu[i][0] * ex + mu[i][1] * ey + mu[i][2] * ez);
-  
+
           // force = (mu dot D) E for non-uniform E
           // using central difference method
-	  if (!e_uniform) {
+          if (!e_uniform) {
             h_mu = h / mu_norm;
-	    dstep[0] = h_mu * mu[i][0];
-	    dstep[1] = h_mu * mu[i][1];
-	    dstep[2] = h_mu * mu[i][2];
-      
-	    // one step forwards, two steps back ;)
-	    for (size_t d = 0; d < 3; d++) {
+            dstep[0] = h_mu * mu[i][0];
+            dstep[1] = h_mu * mu[i][1];
+            dstep[2] = h_mu * mu[i][2];
+
+            // one step forwards, two steps back ;)
+            for (size_t d = 0; d < 3; d++) {
               for (auto & var_ref_ptr : var_ref_ptrs[d]) {
                 *var_ref_ptr += dstep[d];
               }
             }
-            
-	    exf = -dphi_x.evaluate();
+
+            exf = -dphi_x.evaluate();
             eyf = -dphi_y.evaluate();
             ezf = -dphi_z.evaluate();
-	    
-	    for (size_t d = 0; d < 3; d++) {
+
+            for (size_t d = 0; d < 3; d++) {
               for (auto & var_ref_ptr : var_ref_ptrs[d]) {
                 *var_ref_ptr -= 2*dstep[d];
               }
             }
-    
+
             exb = -dphi_x.evaluate();
             eyb = -dphi_y.evaluate();
             ezb = -dphi_z.evaluate();
-    
+
             fx += qe2f * (exf - exb) / 2.0 / h_mu;
             fy += qe2f * (eyf - eyb) / 2.0 / h_mu;
             fz += qe2f * (ezf - ezb) / 2.0 / h_mu;
           }
-	}
+        }
       }
 
       f[i][0] += fx;
