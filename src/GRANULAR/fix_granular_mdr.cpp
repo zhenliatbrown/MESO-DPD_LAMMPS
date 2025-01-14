@@ -245,28 +245,30 @@ void FixGranularMDR::pre_force(int)
   comm_stage = COMM_1;
   comm->forward_comm(this, 5);
 
-  if (!update->setupflag) {
+  
     // rezero temporary variables for all atoms, no need to communicate
-    for (int i = 0; i < ntotal; i++) {
+  for (int i = 0; i < ntotal; i++) {
+    ddelta_bar[i] = 0.0;
+    if (!update->setupflag) {
       Vcaps[i] = 0.0;
       eps_bar[i] = 0.0;
       dRnumerator[i] = 0.0;
       dRdenominator[i] = 0.0;
       Acon1[i] = 0.0;
       Atot_sum[i] = 0.0;
-      ddelta_bar[i] = 0.0;
       sigmaxx[i] = 0.0;
       sigmayy[i] = 0.0;
       sigmazz[i] = 0.0;
     }
-
+  }
+  if (!update->setupflag) {
     calculate_contact_penalty();
     mean_surf_disp();
     update_fix_gran_wall();
-
-    comm_stage = COMM_2;
-    comm->forward_comm(this, 1);
   }
+
+  comm_stage = COMM_2;
+  comm->forward_comm(this, 1);
 }
 
 /* ---------------------------------------------------------------------- */
