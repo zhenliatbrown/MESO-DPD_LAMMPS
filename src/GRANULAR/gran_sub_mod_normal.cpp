@@ -548,14 +548,14 @@ double GranSubModNormalMDR::calculate_forces()
 
   // Rigid flat placement scheme
   double *deltamax_offset = & history[DELTA_MAX];
-  double deltamax = *deltamax_offset;
   double *deltap_offset0 = & history[DELTAP_0];
   double *deltap_offset1 = & history[DELTAP_1];
   double deltap0 = *deltap_offset0;
   double deltap1 = *deltap_offset1;
 
-  if (gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
-  if (update) deltamax = *deltamax_offset;
+  if (update && gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
+  double deltamax = *deltamax_offset;
+
 
   for (int contactSide = 0; contactSide < 2; contactSide++) {
 
