@@ -179,37 +179,36 @@ void FixEfieldLepton::post_force(int vflag)
   auto dphi_x = parsed.differentiate("x").createCompiledExpression();
   auto dphi_y = parsed.differentiate("y").createCompiledExpression();
   auto dphi_z = parsed.differentiate("z").createCompiledExpression();
-  std::vector<Lepton::CompiledExpression*> dphis = {&dphi_x, &dphi_y, &dphi_z};
+  std::array<Lepton::CompiledExpression*, 3> dphis = {&dphi_x, &dphi_y, &dphi_z};
 
   // check if reference to x, y, z exist
-  const std::array<std::string, 3> variableNames = {"x", "y", "z"};
-  std::array<bool, 3> phi_has_ref = {true, true, true};
+  const char* DIM_NAMES[] = {"x", "y", "z"};
+  std::array<bool, 3> phi_has_ref{}; // zero-init
   if (atom->q_flag){
     phi = parsed.createCompiledExpression();
     for (size_t i = 0; i < 3; i++) {
       try {
-        phi.getVariableReference(variableNames[i]);
-      }
-      catch (Lepton::Exception &) {
-        phi_has_ref[i] = false;
-      }
-    }
-  }
-  std::vector<std::array<bool, 3>> dphis_has_ref;
-  bool e_uniform = true;
-  for (auto &dphi : dphis) {
-    dphis_has_ref.push_back({false, false, false});
-    for (size_t i = 0; i < 3; i++) {
-      try {
-        (*dphi).getVariableReference(variableNames[i]);
-        dphis_has_ref.back()[i] = true;
-        e_uniform = false;
+        phi.getVariableReference(DIM_NAMES[i]);
+	phi_has_ref[i] = true;
       }
       catch (Lepton::Exception &) {
         // do nothing
       }
     }
   }
+  std::array<std::array<bool, 3>, 3> dphis_has_ref{};
+  bool e_uniform = true;
+  for (size_t j = 0; j < 3; j++)
+    for (size_t i = 0; i < 3; i++) {
+      try {
+        (*dphis[j]).getVariableReference(DIM_NAMES[i]);
+        dphis_has_ref[j][i] = true;
+        e_uniform = false;
+      }
+      catch (Lepton::Exception &) {
+        // do nothing
+      }
+    }
   if (!e_uniform && atom->mu_flag && h < 0) {
     error->all(FLERR, "Fix {} requires keyword `step' for dipoles in a non-uniform electric field", style);
   }
