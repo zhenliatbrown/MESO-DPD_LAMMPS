@@ -30,12 +30,15 @@ using namespace LAMMPS_NS;
 using namespace Granular_NS;
 using namespace MathConst;
 
-static constexpr double PI27SQ = 266.47931882941264802866;      // 27*PI**2
+static constexpr double PISQ = MY_PI * MY_PI;
+static constexpr double PI27SQ = 27 * PISQ;
+static constexpr double PITOFIVETHIRDS = pow(MY_PI, 5.0 / 3.0);
+static constexpr double CBRT2 = cbrt(2.0);
+static constexpr double CBRTHALFPI = cbrt(MY_PI * 0.5);
 static constexpr double THREEROOT3 = 5.19615242270663202362;    // 3*sqrt(3)
 static constexpr double SIXROOT6 = 14.69693845669906728801;     // 6*sqrt(6)
 static constexpr double INVROOT6 = 0.40824829046386307274;      // 1/sqrt(6)
-static constexpr double FOURTHIRDS = (4.0 / 3.0);               // 4/3
-static constexpr double FIVETHIRDS = (5.0 / 3.0);               // 5/3
+static constexpr double FOURTHIRDS = 4.0 / 3.0;
 static constexpr double JKRPREFIX = 1.2277228507842888;         // cbrt(3*PI**2/16)
 static constexpr int MDR_MAX_IT = 100;                          // Newton-Raphson for MDR
 static constexpr double MDR_EPSILON1 = 1e-10;                   // Newton-Raphson for MDR
@@ -459,6 +462,16 @@ void GranSubModNormalMDR::coeffs_to_local()
   G = E / (2.0 * (1.0 + nu));            // shear modulus
   kappa = E / (3.0 * (1.0 - 2.0 * nu));  // bulk modulus
   Eeff = E / (1.0 - pow(nu, 2.0));       // composite plane strain modulus
+
+  // precomputing factors
+
+  Eeffinv = 1.0 / Eeff;
+  Eeffsq = Eeff * Eeff;
+  Eeffsqinv = Eeffinv * Eeffinv;
+
+  gammasq = gamma * gamma;
+  gamma3 = gammasq * gamma;
+  gamma4 = gammasq * gammasq;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -677,15 +690,19 @@ double GranSubModNormalMDR::calculate_forces()
       amax = sqrt(deltamax_MDR * R);
     } else { // plastic contact
       amax = sqrt((2.0 * deltamax_MDR * R - pow(deltamax_MDR, 2)) + cA / MY_PI);
-      amaxsq = amax * amax; // TODO later, breaks BFB
-      A = 4.0 * pY / Eeff * amax;
-      Ainv = 1.0 / A; // TODO later, breaks BFB
+      amaxsq = amax * amax;
+      A = 4.0 * pY * Eeffinv * amax;
+      Ainv = 1.0 / A;
       B = 2.0 * amax;
       const double deltae1Dmax = A * 0.5; // maximum transformed elastic displacement
-      const double Fmax = Eeff * (A * B * 0.25) * acos(1.0 - 2.0 * deltae1Dmax / A) - (1.0 - 2.0 * deltae1Dmax / A) * sqrt(4.0 * deltae1Dmax / A - 4.0 * pow(deltae1Dmax, 2) / pow(A, 2)); // force caused by full submersion of elliptical indenter to depth of A/2
+      double Fmax = Eeff * (A * B * 0.25) * acos(1.0 - 2.0 * deltae1Dmax * Ainv);
+
+      // force caused by full submersion of elliptical indenter to depth of A/2
+      Fmax -= (1.0 - 2.0 * deltae1Dmax * Ainv) * sqrt(4.0 * deltae1Dmax * Ainv - 4.0 * pow(deltae1Dmax, 2) * pow(Ainv, 2));
+
       const double zR = R - (deltamax_MDR - deltae1Dmax); // depth of particle center
-      deltaR = (Fmax * (2 * pow(amax, 2) * (-1 + nu) - (-1 + 2 * nu) * zR * (-zR + sqrt(pow(amax, 2) + pow(zR, 2)))));
-      deltaR /= (MY_PI * pow(amax, 2) * 2 * G * sqrt(pow(amax, 2) + pow(zR, 2)));
+      deltaR = (Fmax * (2 * amaxsq * (-1 + nu) - (-1 + 2 * nu) * zR * (-zR + sqrt(amaxsq + pow(zR, 2)))));
+      deltaR /= (MY_PI * amaxsq * 2 * G * sqrt(amaxsq + pow(zR, 2)));
       deltae1D = (delta_MDR - deltamax_MDR + deltae1Dmax + deltaR) / (1 + deltaR / deltae1Dmax);  // transformed elastic displacement
 
       // added for rigid flat placement
@@ -694,11 +711,20 @@ double GranSubModNormalMDR::calculate_forces()
 
     double a_na;
     double a_fac = 0.99;
-    (deltae1D >= 0.0) ? a_na = B * sqrt(A - deltae1D) * sqrt(deltae1D) / A : a_na = 0.0;
+    (deltae1D >= 0.0) ? a_na = B * sqrt(A - deltae1D) * sqrt(deltae1D) * Ainv : a_na = 0.0;
     double aAdh = *aAdh_offset;
     if (aAdh > a_fac * amax) aAdh = a_fac * amax;
 
-    if ( gamma > 0.0 ) { // adhesive contact
+    double Ainvsq = Ainv * Ainv;
+    double Asq = A * A;
+    double A3 = Asq * A;
+    double A4 = Asq * Asq;
+
+    double Binv = 1.0 / B;
+    double Bsq = B * B;
+    double B4 = Bsq * Bsq;
+
+    if (gamma > 0.0) { // adhesive contact
       double g_aAdh;
 
       if (delta_MDR == deltamax_MDR || a_na >= aAdh) { // case 1: no tensile springs, purely compressive contact
@@ -706,24 +732,29 @@ double GranSubModNormalMDR::calculate_forces()
           F_MDR = 0.0;
         } else {
           F_MDR = Eeff * (A * B * 0.25);
-          F_MDR *= acos(1.0 - 2.0 * deltae1D / A) - (1.0 - 2.0 * deltae1D / A) * sqrt(4.0 * deltae1D / A - 4.0 * pow(deltae1D, 2) / pow(A, 2));
+          F_MDR *= acos(1.0 - 2.0 * deltae1D * Ainv) - (1.0 - 2.0 * deltae1D * Ainv) * sqrt(4.0 * deltae1D * Ainv - 4.0 * pow(deltae1D, 2) * Ainvsq);
         }
         if (std::isnan(F_MDR)) {
           error->one(FLERR, "F_MDR is NaN, case 1: no tensile springs");
         }
         if (update) *aAdh_offset = a_fac * a_na;
       } else {
-        const double lmax = sqrt(2.0 * MY_PI * aAdh * gamma / Eeff);
-        g_aAdh = A * 0.5 - A / B * sqrt(pow(B, 2.0) * 0.25 - pow(aAdh, 2));
-        const double acrit = (-((pow(B, 2) * gamma * MY_PI) / (pow(A, 2) * Eeff)) + (pow(2, THIRD) * pow(B, 4) * pow(gamma, 2) * pow(MY_PI, FIVETHIRDS)) /
-                            (pow(A, 2) * pow(Eeff, 2) * pow((27 * pow(A, 4) * pow(B, 4) * gamma) / Eeff - (2 * pow(B, 6) * pow(gamma, 3) * pow(MY_PI, 2)) / pow(Eeff, 3) + (3 * sqrt(3) * sqrt(27 * pow(A, 8) * pow(B, 8) * pow(Eeff, 2) * pow(gamma, 2) -
-                              4 * pow(A, 4) * pow(B, 10) * pow(gamma, 4) * pow(MY_PI, 2))) / pow(Eeff, 2), THIRD)) + (pow(MY_PI * 0.5, THIRD) * pow((27 * pow(A, 4) * pow(B, 4) * gamma) / Eeff -
-                            (2 * pow(B, 6) * pow(gamma, 3) * pow(MY_PI, 2)) / pow(Eeff, 3) + (3 * sqrt(3) * sqrt(27 * pow(A, 8) * pow(B, 8) * pow(Eeff, 2) * pow(gamma, 2) - 4 * pow(A, 4) * pow(B, 10) * pow(gamma, 4) * pow(MY_PI, 2))) /
-                            pow(Eeff, 2), THIRD)) / pow(A, 2)) / 6;
+        const double lmax = sqrt(2.0 * MY_PI * aAdh * gamma * Eeffinv);
+        g_aAdh = A * 0.5 - A * Binv * sqrt(Bsq * 0.25 - pow(aAdh, 2));
+
+        double tmp = 27 * A4 * B4 * gamma * Eeffinv;
+        tmp -= 2 * pow(B, 6) * gamma3 * PISQ * pow(Eeffinv, 3);
+        tmp += (3 * sqrt(3) * sqrt(27 * pow(A, 8) * pow(B, 8) * Eeffsq * gammasq - 4 * A4 * pow(B, 10) * gamma4 * PISQ)) * Eeffsqinv;
+        tmp = cbrt(tmp);
+
+        double acrit = -Bsq * gamma * MY_PI * Ainvsq * Eeffinv;
+        acrit += CBRT2 * B4 * gammasq * PITOFIVETHIRDS / (Asq * Eeffsq * tmp);
+        acrit += CBRTHALFPI * tmp * Ainvsq;
+        acrit /= 6;
 
         if ( (deltae1D + lmax - g_aAdh) >= 0.0) { // case 2: tensile springs, but not exceeding critical length --> deltae + lmax - g(aAdhes) >= 0
           const double deltaeAdh = g_aAdh;
-          const double F_na = Eeff * (A * B * 0.25) * (acos(1.0 - 2.0 * deltaeAdh / A) - (1.0 - 2.0 * deltaeAdh / A) * sqrt(4.0 * deltaeAdh / A - 4.0 * pow(deltaeAdh, 2) / pow(A, 2)));
+          const double F_na = Eeff * (A * B * 0.25) * (acos(1.0 - 2.0 * deltaeAdh * Ainv) - (1.0 - 2.0 * deltaeAdh * Ainv) * 2.0 * sqrt(deltaeAdh * Ainv - pow(deltaeAdh, 2) * Ainvsq));
           const double F_Adhes = 2.0 * Eeff * (deltae1D - deltaeAdh) * aAdh;
           F_MDR = F_na + F_Adhes;
           if (std::isnan(F_MDR)) error->one(FLERR, "F_MDR is NaN, case 2: tensile springs, but not exceeding critical length");
@@ -734,29 +765,30 @@ double GranSubModNormalMDR::calculate_forces()
           } else {
             // newton-raphson to find aAdh
             double aAdh_tmp = aAdh;
-            double fa;
-            double fa2;
-            double dfda;
+            double fa, fa2, fa_tmp, dfda;
             for (int lv1 = 0; lv1 < MDR_MAX_IT; ++lv1) {
-              fa = deltae1D + sqrt(2.0 * MY_PI * aAdh_tmp * gamma / Eeff) - (A * 0.5 - A / B * sqrt(pow(B, 2) * 0.25 - pow(aAdh_tmp, 2)));
+              fa_tmp = deltae1D - A * 0.5 - A * sqrt(Bsq * 0.25 - pow(aAdh_tmp, 2)) * Binv;
+              fa = fa_tmp + sqrt(MY_2PI * aAdh_tmp * gamma * Eeffinv);
               if (abs(fa) < MDR_EPSILON1) {
                 break;
               }
-              dfda = -((aAdh_tmp * A) / (B * sqrt(-pow(aAdh_tmp, 2) + pow(B, 2) * 0.25))) + (gamma * sqrt(MY_PI * 0.5)) / (Eeff * sqrt((aAdh_tmp * gamma) / Eeff));
+              dfda = -aAdh_tmp * A / (B * sqrt(-pow(aAdh_tmp, 2) + Bsq * 0.25));
+              dfda += gamma * sqrt(MY_PI * 0.5) / sqrt(aAdh_tmp * gamma * Eeff);
               aAdh_tmp = aAdh_tmp - fa / dfda;
-              fa2 = deltae1D + sqrt(2.0 * MY_PI * aAdh_tmp * gamma / Eeff) - (A * 0.5 - A / B * sqrt(pow(B, 2) * 0.25 - pow(aAdh_tmp, 2)));
+              fa2 = fa_tmp + sqrt(MY_2PI * aAdh_tmp * gamma * Eeffinv);
               if (abs(fa - fa2) < MDR_EPSILON2) {
                 break;
               }
-              if (lv1 == MDR_MAX_IT - 1){
+              if (lv1 == MDR_MAX_IT - 1) {
                 aAdh_tmp = 0.0;
               }
             }
             aAdh = aAdh_tmp;
 
-            g_aAdh = A * 0.5 - A / B * sqrt(pow(B, 2) * 0.25 - pow(aAdh, 2));
+            g_aAdh = A * 0.5 - A * Binv * sqrt(Bsq * 0.25 - pow(aAdh, 2));
             const double deltaeAdh = g_aAdh;
-            const double F_na = Eeff * (A * B * 0.25) * (acos(1.0 - 2.0 * deltaeAdh / A) - (1.0 - 2.0 * deltaeAdh / A) * sqrt(4.0 * deltaeAdh / A - 4.0 * pow(deltaeAdh, 2) / pow(A, 2)));
+            double F_na = acos(1.0 - 2.0 * deltaeAdh * Ainv) - (1.0 - 2.0 * deltaeAdh * Ainv) * 2.0 * sqrt(deltaeAdh * Ainv - pow(deltaeAdh, 2) * Ainvsq);
+            F_na *= 0.25 * Eeff * A * B;
             const double F_Adhes = 2.0 * Eeff * (deltae1D - deltaeAdh) * aAdh;
             F_MDR = F_na + F_Adhes;
             if (std::isnan(F_MDR)) error->one(FLERR, "F_MDR is NaN, case 3: tensile springs exceed critical length");
@@ -766,7 +798,7 @@ double GranSubModNormalMDR::calculate_forces()
       }
     } else { // non-adhesive contact
       if (update) *aAdh_offset = a_na;
-      (deltae1D <= 0.0) ? F_MDR = 0.0 : F_MDR = Eeff * (A * B * 0.25) * (acos(1.0 - 2.0 * deltae1D / A) - (1.0 - 2.0 * deltae1D / A) * sqrt(4.0 * deltae1D / A - 4.0 * pow(deltae1D, 2) / pow(A, 2)));
+      (deltae1D <= 0.0) ? F_MDR = 0.0 : F_MDR = Eeff * (A * B * 0.25) * (acos(1.0 - 2.0 * deltae1D * Ainv) - (1.0 - 2.0 * deltae1D * Ainv) * 2.0 * sqrt(deltae1D * Ainv - pow(deltae1D, 2) * Ainvsq));
       if (std::isnan(F_MDR)) {
         error->one(FLERR, "F_MDR is NaN, non-adhesive case");
       }
@@ -779,7 +811,7 @@ double GranSubModNormalMDR::calculate_forces()
 
     // area related calculations
     double Ac;
-    (*Yflag_offset == 0.0) ? Ac = MY_PI * delta * R : Ac = MY_PI * ((2.0 * delta * R - pow(delta, 2)) + cA / MY_PI);
+    (*Yflag_offset == 0.0) ? Ac = MY_PI * delta * R : Ac = MY_PI * (2.0 * delta * R - pow(delta, 2)) + cA;
     if (Ac < 0.0) Ac = 0.0;
     if (update) {
       Atot_sum[i] += wij * (Ac - 2.0 * MY_PI * R * (deltamax_MDR + delta_BULK));
@@ -844,17 +876,17 @@ double GranSubModNormalMDR::calculate_forces()
 
   // calculate damping force
   if (F > 0.0) {
-    double Eeff;
+    double Eeff2;
     double Reff;
     if (gm->contact_type == PAIR) {
-      Eeff = E / (2.0 * (1.0 - pow(nu, 2)));
+      Eeff2 = E / (2.0 * (1.0 - pow(nu, 2)));
       Reff = pow((1 / gm->radi + 1 / gm->radj), -1);
     } else {
-      Eeff = E / (1.0 - pow(nu, 2));
+      Eeff2 = E / (1.0 - pow(nu, 2));
       Reff = gm->radi;
     }
-    const double kn = Eeff * Reff;
-    const double beta = -log(CoR) / sqrt(pow(log(CoR), 2) + MY_PI * MY_PI);
+    const double kn = Eeff2 * Reff;
+    const double beta = -log(CoR) / sqrt(pow(log(CoR), 2) + PISQ);
     const double damp_prefactor = beta * sqrt(gm->meff * kn);
     const double F_DAMP = -damp_prefactor * gm->vnnr;
 

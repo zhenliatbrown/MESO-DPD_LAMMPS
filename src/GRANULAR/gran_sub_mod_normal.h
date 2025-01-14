@@ -147,6 +147,8 @@ namespace Granular_NS {
 
    protected:
     double G, kappa, Eeff; // derived coeffs
+    double Eeffsq, Eeffinv, Eeffsqinv;
+    double gammasq, gamma3, gamma4;
 
     int index_Ro, index_Vgeo, index_Velas, index_Vcaps, index_eps_bar, index_dRnumerator;
     int index_dRdenominator, index_Acon0, index_Acon1, index_Atot, index_Atot_sum, index_ddelta_bar;
