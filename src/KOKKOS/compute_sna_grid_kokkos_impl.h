@@ -141,24 +141,11 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokko
   //memoryKK->destroy_kokkos(k_gridlocal, gridlocal);
 }
 
-// Init
-
-template<class DeviceType, typename real_type, int vector_length>
-void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::init()
-{
-  if (host_flag) {
-    return;
-  }
-  ComputeSNAGrid::init();
-
-}
-
 // Setup
 
 template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
 {
-
   // Do not call ComputeGrid::setup(), we don't wanna allocate the grid array there.
   // Instead, call ComputeGrid::set_grid_global and set_grid_local to set the n indices.
 
@@ -184,6 +171,7 @@ template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
 {
   if (host_flag) {
+    ComputeSNAGrid::compute_array();
     return;
   }
 
@@ -908,12 +896,6 @@ ComputeSNAGridKokkosDevice<DeviceType>::ComputeSNAGridKokkosDevice(class LAMMPS 
    : ComputeSNAGridKokkos<DeviceType, SNAP_KOKKOS_REAL, SNAP_KOKKOS_DEVICE_VECLEN>(lmp, narg, arg) { ; }
 
 template<class DeviceType>
-void ComputeSNAGridKokkosDevice<DeviceType>::init()
-{
-  Base::init();
-}
-
-template<class DeviceType>
 void ComputeSNAGridKokkosDevice<DeviceType>::compute_array()
 {
   Base::compute_array();
@@ -923,12 +905,6 @@ void ComputeSNAGridKokkosDevice<DeviceType>::compute_array()
 template<class DeviceType>
 ComputeSNAGridKokkosHost<DeviceType>::ComputeSNAGridKokkosHost(class LAMMPS *lmp, int narg, char **arg)
    : ComputeSNAGridKokkos<DeviceType, SNAP_KOKKOS_REAL, SNAP_KOKKOS_HOST_VECLEN>(lmp, narg, arg) { ; }
-
-template<class DeviceType>
-void ComputeSNAGridKokkosHost<DeviceType>::init()
-{
-  Base::init();
-}
 
 template<class DeviceType>
 void ComputeSNAGridKokkosHost<DeviceType>::compute_array()

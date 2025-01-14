@@ -167,7 +167,6 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   ComputeSNAGridKokkos(class LAMMPS *, int, char **);
   ~ComputeSNAGridKokkos() override;
 
-  void init() override;
   void setup() override;
   void compute_array() override;
 
@@ -321,7 +320,6 @@ class ComputeSNAGridKokkosDevice : public ComputeSNAGridKokkos<DeviceType, SNAP_
 
   ComputeSNAGridKokkosDevice(class LAMMPS *, int, char **);
 
-  void init() override;
   void compute_array() override;
 
 };
@@ -337,7 +335,6 @@ class ComputeSNAGridKokkosHost : public ComputeSNAGridKokkos<DeviceType, SNAP_KO
 
   ComputeSNAGridKokkosHost(class LAMMPS *, int, char **);
 
-  void init() override;
   void compute_array() override;
 
 };

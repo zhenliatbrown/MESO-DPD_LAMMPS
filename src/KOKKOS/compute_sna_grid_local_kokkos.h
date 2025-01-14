@@ -164,7 +164,6 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   ComputeSNAGridLocalKokkos(class LAMMPS *, int, char **);
   ~ComputeSNAGridLocalKokkos() override;
 
-  void init() override;
   void setup() override;
   void compute_local() override;
 
@@ -320,7 +319,6 @@ class ComputeSNAGridLocalKokkosDevice : public ComputeSNAGridLocalKokkos<DeviceT
 
   ComputeSNAGridLocalKokkosDevice(class LAMMPS *, int, char **);
 
-  void init() override;
   void compute_local() override;
   //void setup() override;
 
@@ -337,7 +335,6 @@ class ComputeSNAGridLocalKokkosHost : public ComputeSNAGridLocalKokkos<DeviceTyp
 
   ComputeSNAGridLocalKokkosHost(class LAMMPS *, int, char **);
 
-  void init() override;
   void compute_local() override;
 
 };

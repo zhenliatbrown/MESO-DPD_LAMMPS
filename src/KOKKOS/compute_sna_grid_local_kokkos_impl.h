@@ -142,18 +142,6 @@ ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGrid
   //memoryKK->destroy_kokkos(k_gridlocal, gridlocal);
 }
 
-// Init
-
-template<class DeviceType, typename real_type, int vector_length>
-void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::init()
-{
-  if (host_flag) {
-    return;
-  }
-  ComputeSNAGridLocal::init();
-
-}
-
 // Setup
 
 template<class DeviceType, typename real_type, int vector_length>
@@ -191,6 +179,7 @@ template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_local()
 {
   if (host_flag) {
+    ComputeSNAGridLocal::compute_array();
     return;
   }
 
@@ -925,12 +914,6 @@ ComputeSNAGridLocalKokkosDevice<DeviceType>::ComputeSNAGridLocalKokkosDevice(cla
    : ComputeSNAGridLocalKokkos<DeviceType, SNAP_KOKKOS_REAL, SNAP_KOKKOS_DEVICE_VECLEN>(lmp, narg, arg) { ; }
 
 template<class DeviceType>
-void ComputeSNAGridLocalKokkosDevice<DeviceType>::init()
-{
-  Base::init();
-}
-
-template<class DeviceType>
 void ComputeSNAGridLocalKokkosDevice<DeviceType>::compute_local()
 {
   Base::compute_local();
@@ -940,12 +923,6 @@ void ComputeSNAGridLocalKokkosDevice<DeviceType>::compute_local()
 template<class DeviceType>
 ComputeSNAGridLocalKokkosHost<DeviceType>::ComputeSNAGridLocalKokkosHost(class LAMMPS *lmp, int narg, char **arg)
    : ComputeSNAGridLocalKokkos<DeviceType, SNAP_KOKKOS_REAL, SNAP_KOKKOS_HOST_VECLEN>(lmp, narg, arg) { ; }
-
-template<class DeviceType>
-void ComputeSNAGridLocalKokkosHost<DeviceType>::init()
-{
-  Base::init();
-}
 
 template<class DeviceType>
 void ComputeSNAGridLocalKokkosHost<DeviceType>::compute_local()
