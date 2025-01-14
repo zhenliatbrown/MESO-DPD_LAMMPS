@@ -246,7 +246,7 @@ void FixGranularMDR::pre_force(int)
   comm->forward_comm(this, 5);
 
   
-    // rezero temporary variables for all atoms, no need to communicate
+  // rezero temporary variables for all atoms, no need to communicate
   for (int i = 0; i < ntotal; i++) {
     ddelta_bar[i] = 0.0;
     if (!update->setupflag) {
