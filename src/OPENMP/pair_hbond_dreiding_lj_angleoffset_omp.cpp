@@ -37,8 +37,8 @@ static constexpr double SMALL = 0.001;
 
 /* ---------------------------------------------------------------------- */
 
-PairHbondDreidingLJangleoffsetOMP::PairHbondDreidingLJangleoffsetOMP(LAMMPS *lmp) :
-  PairHbondDreidingLJangleoffset(lmp), ThrOMP(lmp, THR_PAIR)
+PairHbondDreidingLJAngleoffsetOMP::PairHbondDreidingLJAngleoffsetOMP(LAMMPS *lmp) :
+  PairHbondDreidingLJAngleoffset(lmp), ThrOMP(lmp, THR_PAIR)
 {
   suffix_flag |= Suffix::OMP;
   respa_enable = 0;
@@ -47,7 +47,7 @@ PairHbondDreidingLJangleoffsetOMP::PairHbondDreidingLJangleoffsetOMP(LAMMPS *lmp
 
 /* ---------------------------------------------------------------------- */
 
-PairHbondDreidingLJangleoffsetOMP::~PairHbondDreidingLJangleoffsetOMP()
+PairHbondDreidingLJAngleoffsetOMP::~PairHbondDreidingLJAngleoffsetOMP()
 {
   if (hbcount_thr) {
     delete[] hbcount_thr;
@@ -57,7 +57,7 @@ PairHbondDreidingLJangleoffsetOMP::~PairHbondDreidingLJangleoffsetOMP()
 
 /* ---------------------------------------------------------------------- */
 
-void PairHbondDreidingLJangleoffsetOMP::compute(int eflag, int vflag)
+void PairHbondDreidingLJAngleoffsetOMP::compute(int eflag, int vflag)
 {
   ev_init(eflag,vflag);
 
@@ -115,7 +115,7 @@ void PairHbondDreidingLJangleoffsetOMP::compute(int eflag, int vflag)
 }
 
 template <int EVFLAG, int EFLAG, int NEWTON_PAIR>
-void PairHbondDreidingLJangleoffsetOMP::eval(int iifrom, int iito, ThrData * const thr)
+void PairHbondDreidingLJAngleoffsetOMP::eval(int iifrom, int iito, ThrData * const thr)
 {
   int i,j,k,m,ii,jj,kk,jnum,knum,itype,jtype,ktype,iatom,imol;
   tagint tagprev;
@@ -312,11 +312,11 @@ void PairHbondDreidingLJangleoffsetOMP::eval(int iifrom, int iito, ThrData * con
 
 /* ---------------------------------------------------------------------- */
 
-double PairHbondDreidingLJangleoffsetOMP::memory_usage()
+double PairHbondDreidingLJAngleoffsetOMP::memory_usage()
 {
   double bytes = memory_usage_thr();
   bytes += (double)comm->nthreads * 2 * sizeof(double);
-  bytes += PairHbondDreidingLJangleoffset::memory_usage();
+  bytes += PairHbondDreidingLJAngleoffset::memory_usage();
 
   return bytes;
 }

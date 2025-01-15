@@ -17,7 +17,7 @@
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(hbond/dreiding/lj/angleoffset/omp,PairHbondDreidingLJangleoffsetOMP);
+PairStyle(hbond/dreiding/lj/angleoffset/omp,PairHbondDreidingLJAngleoffsetOMP);
 // clang-format on
 #else
 
@@ -29,11 +29,11 @@ PairStyle(hbond/dreiding/lj/angleoffset/omp,PairHbondDreidingLJangleoffsetOMP);
 
 namespace LAMMPS_NS {
 
-class PairHbondDreidingLJangleoffsetOMP : public PairHbondDreidingLJangleoffset, public ThrOMP {
+class PairHbondDreidingLJAngleoffsetOMP : public PairHbondDreidingLJAngleoffset, public ThrOMP {
 
  public:
-  PairHbondDreidingLJangleoffsetOMP(class LAMMPS *);
-  ~PairHbondDreidingLJangleoffsetOMP() override;
+  PairHbondDreidingLJAngleoffsetOMP(class LAMMPS *);
+  ~PairHbondDreidingLJAngleoffsetOMP() override;
 
   void compute(int, int) override;
   double memory_usage() override;
