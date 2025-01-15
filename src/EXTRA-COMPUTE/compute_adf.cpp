@@ -39,6 +39,8 @@ using MathConst::RAD2DEG;
 
 enum { DEGREE, RADIAN, COSINE };
 
+static constexpr double BIG = 1.0e20;
+
 /* ----------------------------------------------------------------------
    compute angular distribution functions for I, J, K atoms
  ---------------------------------------------------------------------- */
@@ -133,15 +135,15 @@ ComputeADF::ComputeADF(LAMMPS *lmp, int narg, char **arg) :
       utils::bounds(FLERR,arg[iarg+1],1,atom->ntypes,jlo[m],jhi[m],error);
       utils::bounds(FLERR,arg[iarg+2],1,atom->ntypes,klo[m],khi[m],error);
       if ((ilo[m] > ihi[m]) || (jlo[m] > jhi[m]) || (klo[m] > khi[m]))
-        error->all(FLERR,"Illegal compute adf command");
+        error->all(FLERR,"Illegal compute adf command index range");
       rcutinnerj[m] = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       rcutouterj[m] = utils::numeric(FLERR,arg[iarg+4],false,lmp);
       if (rcutinnerj[m] < 0.0 || rcutinnerj[m] >= rcutouterj[m])
-        error->all(FLERR,"Illegal compute adf command");
+        error->all(FLERR,"Illegal compute adf command j-cutoff");
       rcutinnerk[m] = utils::numeric(FLERR,arg[iarg+5],false,lmp);
       rcutouterk[m] = utils::numeric(FLERR,arg[iarg+6],false,lmp);
       if (rcutinnerk[m] < 0.0 || rcutinnerk[m] >= rcutouterk[m])
-        error->all(FLERR,"Illegal compute adf command");
+        error->all(FLERR,"Illegal compute adf command k-cutoff");
       iarg += nargsperadf;
     }
   }
@@ -290,8 +292,8 @@ void ComputeADF::init()
     double skin = neighbor->skin;
     mycutneigh = maxouter + skin;
     if (mycutneigh > comm->cutghostuser)
-      error->all(FLERR,"Compute adf outer cutoff exceeds ghost atom range - "
-                 "use comm_modify cutoff command");
+      error->all(FLERR,"Compute adf outer cutoff {} exceeds ghost atom range {} - "
+                 "use comm_modify cutoff command", mycutneigh, comm->cutghostuser);
   }
 
   // assign ordinate values to 1st column of output array
@@ -328,6 +330,33 @@ void ComputeADF::init()
   if (mycutneigh > 0.0) {
     if ((neighbor->style == Neighbor::MULTI) || (neighbor->style == Neighbor::MULTI_OLD))
       error->all(FLERR, "Compute adf with custom cutoffs requires neighbor style 'bin' or 'nsq'");
+
+    // check if the pair style cutoff varies
+    double pairmaxcut, pairmincut;
+    double skin = neighbor->skin;
+    double cutoff_user = mycutneigh - skin;
+
+    if (force->pair) {
+      pairmaxcut = 0.0;
+      pairmincut = BIG;
+      for (int i = 1; i <= atom->ntypes; i++)
+        for (int j = i; j <= atom->ntypes; j++) {
+          const double cut = sqrt(force->pair->cutsq[i][j]);
+          pairmaxcut = MAX(pairmaxcut, cut);
+          pairmincut = MIN(pairmincut, cut);
+        }
+    } else {
+      pairmaxcut = pairmincut = cutoff_user;
+    }
+
+    // if the pair-wise cutoff varies for different pairs of types, the neighbor list code
+    // will still re-use the pairwise neighbor list if the *largest* cutoff is sufficient.
+    // this will lead to incorrect results and a larger user cutoff is required.
+
+    if ((cutoff_user > pairmincut) && (cutoff_user <= pairmaxcut))
+      error->all(FLERR,"Compute adf max cutoff {} must be larger than the maximum pair-wise "
+                 "cutoff {} when the pair-wise cutoff varies", cutoff_user, pairmaxcut);
+
     req->set_cutoff(mycutneigh);
   }
 }
