@@ -41,7 +41,7 @@ static constexpr int CHUNK = 8;
 /* ---------------------------------------------------------------------- */
 
 PairHbondDreidingMorseAngleoffset::PairHbondDreidingMorseAngleoffset(LAMMPS *lmp) :
-  PairHbondDreidingLJ(lmp) {
+  PairHbondDreidingMorse(lmp) {
 
   angle_offset_flag = 1;
   angle_offset_global = 0.0;
@@ -58,7 +58,7 @@ void PairHbondDreidingMorseAngleoffset::settings(int narg, char **arg)
 
   // use first four settings args in parent method to update other variables
   
-  PairHbondDreidingLJ::settings(4,arg);
+  PairHbondDreidingMorse::settings(4,arg);
 
   angle_offset_global = (180.0 - utils::numeric(FLERR, arg[4], false, lmp)) * MY_PI/180.0;
   
@@ -103,7 +103,7 @@ void PairHbondDreidingMorseAngleoffset::coeff(int narg, char **arg)
   double angle_offset_one = angle_offset_global;
   if (narg == 12) angle_offset_one = (180.0 - utils::numeric(FLERR, arg[11], false, lmp)) * MY_PI/180.0;
   if (angle_offset_one < 0.0 || angle_offset_one > 90.0 * MY_PI/180.0)
-    error->all(FLERR,"Illegal angle offset");
+    error->all(FLERR,"Illegal angle offset {}", angle_offset_one);
 
   // grow params array if necessary
 
