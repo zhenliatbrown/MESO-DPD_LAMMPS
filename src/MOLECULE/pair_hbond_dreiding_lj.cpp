@@ -20,7 +20,6 @@
 
 #include "atom.h"
 #include "atom_vec.h"
-#include "comm.h"
 #include "domain.h"
 #include "error.h"
 #include "force.h"
@@ -360,25 +359,16 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
   double cut_angle_one = cut_angle_global;
   if (narg == 10) cut_angle_one = utils::numeric(FLERR, arg[9], false, lmp) * MY_PI/180.0;
 
-   if (comm->me == 0)
-      utils::logmesg(lmp,"---> DEBUG BASECLASS cut_angle_one {} \n", cut_angle_one);
-  
   // grow params array if necessary
 
-   if (comm->me == 0)
-      utils::logmesg(lmp,"---> DEBUG BASECLASS coeff nparams {} maxparam {}\n", nparams, maxparam);
   if (nparams == maxparam) {
     maxparam += CHUNK;
-    params = (Param *) memory->srealloc(params, maxparam*sizeof(Param),
-                                        "pair:params");
+    params = (Param *) memory->srealloc(params, maxparam*sizeof(Param), "pair:params");
 
     // make certain all addional allocated storage is initialized
     // to avoid false positives when checking with valgrind
     memset(params + nparams, 0, CHUNK*sizeof(Param));
   }
-
-   if (comm->me == 0)
-      utils::logmesg(lmp,"---> DEBUG BASECLASS coeff POST MEM nparams {} maxparam {}\n", nparams, maxparam);
 
   params[nparams].epsilon = epsilon_one;
   params[nparams].sigma = sigma_one;
@@ -393,9 +383,6 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
     (params[nparams].cut_outersq-params[nparams].cut_innersq) *
     (params[nparams].cut_outersq-params[nparams].cut_innersq);
 
-   if (comm->me == 0)
-      utils::logmesg(lmp,"BASECLASS PARAMS angle_offset_flag {}\n eps {}\n sigma {}\n ap {}\n cin {}\n cout {}\n cangle {}\n denom_vdw {}\n ",angle_offset_flag, params[nparams].epsilon,params[nparams].sigma, params[nparams].ap,params[nparams].cut_inner, params[nparams].cut_outer, params[nparams].cut_angle, params[nparams].denom_vdw);
-
   // flag type2param with either i,j = D,A or j,i = D,A
 
   int count = 0;
@@ -407,9 +394,6 @@ void PairHbondDreidingLJ::coeff(int narg, char **arg)
         count++;
       }
   nparams++;
-
-   if (comm->me == 0)
-      utils::logmesg(lmp,"---> DEBUG BASECLASS coeff END nparams {} count {}\n", nparams, count);
 
   if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
 }
