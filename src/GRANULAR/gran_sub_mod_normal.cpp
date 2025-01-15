@@ -30,23 +30,24 @@ using namespace LAMMPS_NS;
 using namespace Granular_NS;
 using namespace MathConst;
 
-static constexpr double PISQ = MY_PI * MY_PI;
-static constexpr double PIINV = 1.0 / MY_PI;
-static constexpr double PI27SQ = 27 * PISQ;
-static constexpr double PITOFIVETHIRDS = pow(MY_PI, 5.0 / 3.0);
-static constexpr double CBRT2 = cbrt(2.0);
-static constexpr double SQRTHALFPI = sqrt(MY_PI * 0.5);
-static constexpr double CBRTHALFPI = cbrt(MY_PI * 0.5);
-static constexpr double FOURTHIRDS = 4.0 / 3.0;
-static constexpr double THREEROOT3 = 5.19615242270663202362;    // 3*sqrt(3)
-static constexpr double SIXROOT6 = 14.69693845669906728801;     // 6*sqrt(6)
-static constexpr double INVROOT6 = 0.40824829046386307274;      // 1/sqrt(6)
-static constexpr double JKRPREFIX = 1.2277228507842888;         // cbrt(3*PI**2/16)
-static constexpr int MDR_MAX_IT = 100;                          // Newton-Raphson for MDR
-static constexpr double MDR_EPSILON1 = 1e-10;                   // Newton-Raphson for MDR
-static constexpr double MDR_EPSILON2 = 1e-16;                   // Newton-Raphson for MDR
-static constexpr double MDR_EPSILON3 = 1e-20;                   // For precision checks
-static constexpr double MDR_OVERLAP_LIMIT = 0.75;               // Maximum contact overlap for MDR
+static constexpr double PISQ = 9.8696044010893579923;            // PI^2
+static constexpr double PIINV = 0.318309886183790691216;         // 1/PI
+static constexpr double PI27SQ = 266.479318829412648029;         // 27*PI^2
+static constexpr double PITOFIVETHIRDS = 6.73880859569814116838; // PI^(5/3)
+static constexpr double CBRT2 = 1.25992104989487319067;          // cbrt(2)
+static constexpr double SQRTHALFPI = 1.25331413731550012081;     // sqrt(PI/2)
+static constexpr double CBRTHALFPI = 1.16244735150962652526;     // cbrt(PI/2)
+static constexpr double FOURTHIRDS = 1.33333333333333333333;     // 4/3
+static constexpr double THREEROOT3 = 5.19615242270663202362;     // 3*sqrt(3)
+static constexpr double SIXROOT6 = 14.69693845669906728801;      // 6*sqrt(6)
+static constexpr double INVROOT6 = 0.40824829046386307274;       // 1/sqrt(6)
+static constexpr double JKRPREFIX = 1.2277228507842888;          // cbrt(3*PI**2/16)
+
+static constexpr int MDR_MAX_IT = 100;                           // Newton-Raphson for MDR
+static constexpr double MDR_EPSILON1 = 1e-10;                    // Newton-Raphson for MDR
+static constexpr double MDR_EPSILON2 = 1e-16;                    // Newton-Raphson for MDR
+static constexpr double MDR_EPSILON3 = 1e-20;                    // For precision checks
+static constexpr double MDR_OVERLAP_LIMIT = 0.75;                // Maximum contact overlap for MDR
 
 static const char cite_mdr[] =
     "MDR contact model command: (i) https://doi.org/10.1016/j.jmps.2023.105492 || (ii) https://doi.org/10.1016/j.jmps.2023.105493 || (iii) https://doi.org/10.31224/4289\n\n"
