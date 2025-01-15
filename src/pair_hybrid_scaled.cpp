@@ -617,6 +617,7 @@ void PairHybridScaled::write_restart(FILE *fp)
 
   fwrite(scaleval, sizeof(double), nstyles, fp);
   fwrite(scaleidx, sizeof(int), nstyles, fp);
+  fwrite(atomvar, sizeof(int), nstyles, fp);
 
   int n = scalevars.size();
   fwrite(&n, sizeof(int), 1, fp);
@@ -637,17 +638,21 @@ void PairHybridScaled::read_restart(FILE *fp)
 
   delete[] scaleval;
   delete[] scaleidx;
+  delete[] atomvar;
   scalevars.clear();
   scaleval = new double[nstyles];
   scaleidx = new int[nstyles];
+  atomvar = new int[nstyles];
 
   int n, me = comm->me;
   if (me == 0) {
     utils::sfread(FLERR, scaleval, sizeof(double), nstyles, fp, nullptr, error);
     utils::sfread(FLERR, scaleidx, sizeof(int), nstyles, fp, nullptr, error);
+    utils::sfread(FLERR, atomvar, sizeof(int), nstyles, fp, nullptr, error);
   }
   MPI_Bcast(scaleval, nstyles, MPI_DOUBLE, 0, world);
   MPI_Bcast(scaleidx, nstyles, MPI_INT, 0, world);
+  MPI_Bcast(atomvar, nstyles, MPI_INT, 0, world);
 
   char *tmp;
   if (me == 0) utils::sfread(FLERR, &n, sizeof(int), 1, fp, nullptr, error);
