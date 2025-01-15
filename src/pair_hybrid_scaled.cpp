@@ -32,7 +32,8 @@ using namespace LAMMPS_NS;
 /* ---------------------------------------------------------------------- */
 
 PairHybridScaled::PairHybridScaled(LAMMPS *lmp) :
-    PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr), atomvar(nullptr), atomscale(nullptr)
+    PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr),
+    atomvar(nullptr), atomscale(nullptr)
 {
   nmaxfsum = -1;
 }
@@ -81,7 +82,7 @@ void PairHybridScaled::compute(int eflag, int vflag)
       if (input->variable->equalstyle(m)) {
         vals[k] = input->variable->compute_equal(m);
         vars[k] = -1;
-      // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
+        // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
       } else if (input->variable->atomstyle(m)) {
         vals[k] = 0.0;
         vars[k] = m;
@@ -191,10 +192,10 @@ void PairHybridScaled::compute(int eflag, int vflag)
           tsum[i][2] += scale * t[i][2];
         }
       }
-    // if scale factor is atom-style variable
+      // if scale factor is atom-style variable
     } else {
       int igroupall = 0;
-      input->variable->compute_atom(atomvar[m],igroupall,atomscale,1,0);
+      input->variable->compute_atom(atomvar[m], igroupall, atomscale, 1, 0);
       for (i = 0; i < nall; ++i) {
         const double ascale = atomscale[i];
         fsum[i][0] += ascale * f[i][0];
