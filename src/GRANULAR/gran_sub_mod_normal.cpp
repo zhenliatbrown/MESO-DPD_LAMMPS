@@ -578,7 +578,7 @@ double GranSubModNormalMDR::calculate_forces()
   double delta = gm->delta;               // apparent overlap
 
   double *history = & gm->history[history_index]; // load in all history variables
-  int update = gm->history_update;
+  int history_update = gm->history_update;
 
   // Rigid flat placement scheme
   double *deltamax_offset = & history[DELTA_MAX];
@@ -587,7 +587,7 @@ double GranSubModNormalMDR::calculate_forces()
   double deltap0 = *deltap_offset0;
   double deltap1 = *deltap_offset1;
 
-  if (update && gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
+  if (history_update && gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
   double deltamax = *deltamax_offset;
 
 
@@ -669,11 +669,11 @@ double GranSubModNormalMDR::calculate_forces()
 
     // kinematics
     const double ddelta = delta - *delta_offset;
-    if (update) *delta_offset = delta;
+    if (history_update) *delta_offset = delta;
 
     const double deltao = delta - (R - Ro);
     const double ddeltao = deltao - *deltao_offset;
-    if (update) *deltao_offset = deltao;
+    if (history_update) *deltao_offset = deltao;
 
     double ddelta_MDR, ddelta_BULK;
     if (psi[i] < psi_b) {
@@ -688,11 +688,11 @@ double GranSubModNormalMDR::calculate_forces()
 
     // calculate and update MDR/BULK displacements
     const double delta_MDR = *delta_MDR_offset + ddelta_MDR;
-    if (update) *delta_MDR_offset = delta_MDR;
+    if (history_update) *delta_MDR_offset = delta_MDR;
     const double delta_BULK = MAX(0.0, *delta_BULK_offset + ddelta_BULK);
-    if (update) *delta_BULK_offset = delta_BULK;
+    if (history_update) *delta_BULK_offset = delta_BULK;
 
-    if (update && delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
+    if (history_update && delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
     const double deltamax_MDR = *deltamax_MDR_offset;
 
     // average pressure along yield surface
@@ -700,7 +700,7 @@ double GranSubModNormalMDR::calculate_forces()
 
     if (*Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR) {
     const double phertz = 4 * Eeff * sqrt(delta_MDR) / (3 * MY_PI * sqrt(R));
-      if (update && phertz > pY) {
+      if (history_update && phertz > pY) {
         *Yflag_offset = 1.0;
         *deltaY_offset = delta_MDR;
         *cA_offset = MY_PI * (pow(*deltaY_offset, 2) - *deltaY_offset * R);
@@ -748,7 +748,7 @@ double GranSubModNormalMDR::calculate_forces()
       deltae1D = (delta_MDR - deltamax_MDR + deltae1Dmax + deltaR) / (1 + deltaR / deltae1Dmax);
 
       // added for rigid flat placement
-      if (update) *deltap_offset = deltamax_MDR - (deltae1Dmax + deltaR);
+      if (history_update) *deltap_offset = deltamax_MDR - (deltae1Dmax + deltaR);
     }
 
     double a_na;
@@ -779,7 +779,7 @@ double GranSubModNormalMDR::calculate_forces()
         error->one(FLERR, "F_MDR is NaN, non-adhesive case");
       }
 
-      if (update) *aAdh_offset = a_na;
+      if (history_update) *aAdh_offset = a_na;
     } else {
       // adhesive contact
       double g_aAdh;
@@ -796,7 +796,7 @@ double GranSubModNormalMDR::calculate_forces()
         if (std::isnan(F_MDR))
           error->one(FLERR, "F_MDR is NaN, case 1: no tensile springs");
 
-        if (update) *aAdh_offset = a_fac * a_na;
+        if (history_update) *aAdh_offset = a_fac * a_na;
       } else {
         // case 2+3, tensile springs
         const double lmax = sqrt(MY_2PI * aAdh * gamma * Eeffinv);
@@ -832,7 +832,7 @@ double GranSubModNormalMDR::calculate_forces()
             double aAdh_tmp = aAdh;
             double fa, fa2, fa_tmp, dfda;
             for (int lv1 = 0; lv1 < MDR_MAX_IT; ++lv1) {
-              fa_tmp = deltae1D - A * 0.5 - A * sqrt(Bsq * 0.25 - pow(aAdh_tmp, 2)) * Binv;
+              fa_tmp = deltae1D - A * 0.5 + A * sqrt(Bsq * 0.25 - pow(aAdh_tmp, 2)) * Binv;
               fa = fa_tmp + sqrt(MY_2PI * aAdh_tmp * gamma * Eeffinv);
               if (abs(fa) < MDR_EPSILON1) {
                 break;
@@ -860,7 +860,7 @@ double GranSubModNormalMDR::calculate_forces()
             if (std::isnan(F_MDR))
               error->one(FLERR, "F_MDR is NaN, case 3: tensile springs exceed critical length");
           }
-          if (update) *aAdh_offset = aAdh;
+          if (history_update) *aAdh_offset = aAdh;
         }
       }
     }
@@ -874,7 +874,7 @@ double GranSubModNormalMDR::calculate_forces()
     double Ac;
     (*Yflag_offset == 0.0) ? Ac = MY_PI * delta * R : Ac = MY_PI * (2.0 * delta * R - pow(delta, 2)) + cA;
     if (Ac < 0.0) Ac = 0.0;
-    if (update) {
+    if (history_update) {
       Atot_sum[i] += wij * (Ac - MY_2PI * R * (deltamax_MDR + delta_BULK));
       Acon1[i] += wij * Ac;
     }
@@ -886,7 +886,7 @@ double GranSubModNormalMDR::calculate_forces()
     // total force calculation
     (contactSide == 0) ? F0 = F_MDR + F_BULK : F1 = F_MDR + F_BULK;
 
-    if (update) {
+    if (history_update) {
       // mean surface displacement calculation
       *Ac_offset = wij * Ac;
 
@@ -902,17 +902,17 @@ double GranSubModNormalMDR::calculate_forces()
     const double by = -(Ro - deltao) * gm->nx[1];
     const double bz = -(Ro - deltao) * gm->nx[2];
     const double eps_bar_contact = (fx * bx + fy * by + fz * bz) / (3 * kappa * Velas[i]);
-    if (update) eps_bar[i] += eps_bar_contact;
+    if (history_update) eps_bar[i] += eps_bar_contact;
 
     double desp_bar_contact = eps_bar_contact - *eps_bar_offset;
-    if (update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0) {
+    if (history_update && delta_MDR == deltamax_MDR && *Yflag_offset > 0.0 && F_MDR > 0.0) {
       const double Vo = FOURTHIRDS * MY_PI * pow(Ro, 3);
       dRnumerator[i] -= Vo * (eps_bar_contact - *eps_bar_offset);
       dRnumerator[i] -= wij * MY_PI * ddeltao * (2 * deltao * Ro - pow(deltao, 2) + pow(R, 2) - pow(Ro, 2));
       dRdenominator[i] += wij * 2.0 * MY_PI * R * (deltao + R - Ro);
     }
 
-    if (update) {
+    if (history_update) {
       *eps_bar_offset = eps_bar_contact;
       sigmaxx[i] += fx * bx / Velas[i];
       sigmayy[i] += fy * by / Velas[i];
