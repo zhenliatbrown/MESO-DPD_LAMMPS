@@ -303,7 +303,6 @@ void PairHbondDreidingMorse::coeff(int narg, char **arg)
     (params[nparams].cut_outersq-params[nparams].cut_innersq) *
     (params[nparams].cut_outersq-params[nparams].cut_innersq) *
     (params[nparams].cut_outersq-params[nparams].cut_innersq);
-  // if (angle_offset_flag) params[nparams].angle_offset = angle_offset_one;
 
   // flag type2param with either i,j = D,A or j,i = D,A
 

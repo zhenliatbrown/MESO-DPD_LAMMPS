@@ -24,16 +24,16 @@ PairStyle(hbond/dreiding/lj/angleoffset,PairHbondDreidingLJAngleoffset);
 
 namespace LAMMPS_NS {
 
-  class PairHbondDreidingLJAngleoffset : public PairHbondDreidingLJ {
+class PairHbondDreidingLJAngleoffset : public PairHbondDreidingLJ {
 
-  public:
-   PairHbondDreidingLJAngleoffset(class LAMMPS *);
-   void settings(int, char **) override;
-   void coeff(int, char **) override;
+ public:
+  PairHbondDreidingLJAngleoffset(class LAMMPS *);
+  void settings(int, char **) override;
+  void coeff(int, char **) override;
 
-  protected:
-    double angle_offset_global;
-  };
+ protected:
+  double angle_offset_global;
+};
 
 }    // namespace LAMMPS_NS
 

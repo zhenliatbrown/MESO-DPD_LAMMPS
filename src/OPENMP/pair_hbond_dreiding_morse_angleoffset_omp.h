@@ -29,7 +29,9 @@ PairStyle(hbond/dreiding/morse/angleoffset/omp,PairHbondDreidingMorseAngleoffset
 
 namespace LAMMPS_NS {
 
-class PairHbondDreidingMorseAngleoffsetOMP : public PairHbondDreidingMorseAngleoffset, public ThrOMP {
+class PairHbondDreidingMorseAngleoffsetOMP :
+    public PairHbondDreidingMorseAngleoffset,
+    public ThrOMP {
 
  public:
   PairHbondDreidingMorseAngleoffsetOMP(class LAMMPS *);
