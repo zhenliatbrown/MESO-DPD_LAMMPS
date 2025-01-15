@@ -35,6 +35,10 @@ PairHybridScaled::PairHybridScaled(LAMMPS *lmp) :
     PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr), atomvar(nullptr), atomscale(nullptr)
 {
   nmaxfsum = -1;
+
+  // set comm size needed by this Pair (if atomscaleflag)
+
+  comm_forward = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -195,8 +199,11 @@ void PairHybridScaled::compute(int eflag, int vflag)
     } else {
       int igroupall = 0;
       input->variable->compute_atom(atomvar[m],igroupall,atomscale,1,0);
+      comm->forward_comm(this);
       for (i = 0; i < nall; ++i) {
         const double ascale = atomscale[i];
+        //        if (i >= atom->nlocal)
+        //        printf("id = %lld scale = %g\n", atom->tag[i], ascale);
         fsum[i][0] += ascale * f[i][0];
         fsum[i][1] += ascale * f[i][1];
         fsum[i][2] += ascale * f[i][2];
@@ -709,4 +716,29 @@ void PairHybridScaled::copy_svector(int itype, int jtype)
       }
     }
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int PairHybridScaled::pack_forward_comm(int n, int *list, double *buf, int /*pbc_flag*/, int * /*pbc*/)
+{
+  int i,j,m;
+
+  m = 0;
+  for (i = 0; i < n; i++) {
+    j = list[i];
+    buf[m++] = atomscale[j];
+  }
+  return m;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void PairHybridScaled::unpack_forward_comm(int n, int first, double *buf)
+{
+  int i,m,last;
+
+  m = 0;
+  last = first + n;
+  for (i = first; i < last; i++) atomscale[i] = buf[m++];
 }

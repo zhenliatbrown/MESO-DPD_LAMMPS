@@ -44,6 +44,9 @@ class PairHybridScaled : public PairHybrid {
   void init_svector() override;
   void copy_svector(int, int) override;
 
+  int pack_forward_comm(int, int *, double *, int, int *) override;
+  void unpack_forward_comm(int, int, double *) override;
+
  protected:
   double **fsum, **tsum;
   double *scaleval;
