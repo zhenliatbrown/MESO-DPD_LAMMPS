@@ -12,12 +12,13 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Package      FixPIMDNVT
-   Purpose      Quantum Path Integral Algorithm for Quantum Chemistry
-   Copyright    Voth Group @ University of Chicago
-   Authors      Chris Knight & Yuxing Peng (yuxing at uchicago.edu)
+   Package      FixPIMDBNVT
+   
+   Purpose      Path Integral Molecular Dynamics of Bosons with Nose-Hoover Thermostat
+   Copyright    Hirshberg lab @ Tel Aviv University
+   Authors      Yotam M. Y. Feldman, Ofir Blumer
 
-   Updated      Oct-01-2011
+   Updated      Jan-06-2025
    Version      1.0
 ------------------------------------------------------------------------- */
 
@@ -33,8 +34,7 @@ using namespace LAMMPS_NS;
 
 FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDNVT(lmp, narg, arg),
-    // CR: apply mic (compatible with previous implementation, and with pimd_nvt)
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, false)
+    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
   virial = 0.;
   prim = 0.;
@@ -52,19 +52,18 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDBNVT::kinetic_estimators()
+void FixPIMDBNVT::estimate_energies()
 {
   vir_estimator();
   if (universe->me == 0)
   {
     prim = bosonic_exchange.prim_estimator();
-    // CR: spring_energy is not a kinetic estimator?... rename? separate?
     spring_energy = bosonic_exchange.get_potential();
   }
   else {
-    // CR: Keep the quantity in local variable to avoid recomputing between prim and spring_energy
-    prim = -bosonic_exchange.get_total_spring_energy_for_bead();
-    spring_energy = bosonic_exchange.get_total_spring_energy_for_bead();
+    double total_spring_energy_for_bead = bosonic_exchange.get_total_spring_energy_for_bead();
+    prim = -total_spring_energy_for_bead;
+    spring_energy = total_spring_energy_for_bead;
   }
 }
 
@@ -90,8 +89,7 @@ double FixPIMDBNVT::compute_vector(int n)
     if (0 <= n && n < 3) {
         return FixPIMDNVT::compute_vector(n);
     }
-  // CR: needs to be added also to the documentation.
-  // CR: Reminds that we need to add documentation about the entire bosonic fix
+   
   if (n == 3) return prim;
   return 0.0;
 }

@@ -29,12 +29,15 @@ class FixPIMDBNVT : public FixPIMDNVT {
  public:
     FixPIMDBNVT(class LAMMPS *, int, char **);
     ~FixPIMDBNVT();
+<<<<<<< HEAD
 
+=======
+>>>>>>> 274525ca251d73aa994a03b6f61688146ffe5935
     double compute_vector(int) override;
 
  protected:
     void spring_force() override;
-    void kinetic_estimators() override;
+    void estimate_energies() override;
 
  private:
     BosonicExchange bosonic_exchange;

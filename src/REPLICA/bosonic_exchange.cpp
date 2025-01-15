@@ -1,3 +1,27 @@
+/* ----------------------------------------------------------------------
+   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+   http://lammps.sandia.gov, Sandia National Laboratories
+   Steve Plimpton, sjplimp@sandia.gov
+
+   Copyright (2003) Sandia Corporation.  Under the terms of Contract
+   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+   certain rights in this software.  This software is distributed under
+   the GNU General Public License.
+
+   See the README file in the top-level LAMMPS directory.
+------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------
+   Package      BosonicExchange
+
+   Purpose      Handle Bosonic Exchange in Path Integral Molecular Dynamics
+   Copyright    Hirshberg lab @ Tel Aviv University
+   Authors      Yotam M. Y. Feldman, Ofir Blumer
+
+   Updated      Jan-06-2025
+   Version      1.0
+------------------------------------------------------------------------- */
+
 #include "bosonic_exchange.h"
 
 #include "domain.h"
@@ -7,7 +31,7 @@
 
 using namespace LAMMPS_NS;
 
-BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic, bool iPyConvention) :
+BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic, bool ipy_convention) :
         Pointers(lmp),
         nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic) {
     memory->create(temp_nbosons_array, nbosons + 1, "BosonicExchange: temp_nbosons_array");
@@ -15,9 +39,20 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
     memory->create(V, nbosons + 1, "BosonicExchange: V");
     memory->create(V_backwards, nbosons + 1, "BosonicExchange: V_backwards");
     memory->create(connection_probabilities, nbosons * nbosons, "BosonicExchange: connection probabilities");
-    // CR: use underscore naming convention, not camelCase
-    // CR: need to document the meaning, because it's tricky and weird
-    iPyConvention = iPyConvention;
+    // In the "i-Pi convention" [J. Chem. Phys. 133, 124104 (2010); also J. Chem. Phys. 74, 4078-4095 (1981)], 
+    // the Boltzmann exponents have the form exp[-(beta/P)H], where H is the classical Hamiltonian of the 
+    // ring polymers. This results in a canonical distribution at P times the physical temperature.
+    // In contrast, "Tuckerman's convention" [J. Chem. Phys. 99, 2796-2808 (1993)] uses weights of the form exp(-beta*H),
+    // such that the temperature of the canonical ensemble coincides with the physical temperature.
+    // Notably, the classical Hamiltonians of the two conventions differ, with the spring constant
+    // in the i-Pi convention being P times larger than that in Tuckerman's convention. Additionally, the i-Pi convention
+    // lacks a 1/P prefactor in front of the external potential. The Hamiltonians of the two conventions are related through
+    // H_tuckerman = H_ipi / P. Note however that the expressions for the various estimators are unaffected by this choice,
+    // so as the algorithm for bosonic exchange. The code below was designed to be compatible with both conventions,
+    // and the choice of convention only affects a single calculation within it.
+    //
+    // Setting the following boolian variable to false amounts to adopting Tuckerman's convention.
+    ipy_convention = ipy_convention;
 }
 
 void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
@@ -36,11 +71,13 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
         evaluate_connection_probabilities();
     }
 
-    // CR: bead_num != 0
-    if (0 != bead_num) {
+    if (bead_num != 0) {
         // CR: why not calculate the total spring force inside get_total_spring_energy_for_bead()?
         // CR: Is this a quantity that is queries more than once per step?
         // CR: see also comment in fix_pimdb_nvt.cpp
+        // OB: It should be calculate here, if it is calculated later the energies turn up weird.
+        // I am not 100% remember why, but I remember there was a problem with the order of this calculation
+        // and the current implementation works and is also consistent with the distinguishable nvt code.
         calc_total_spring_energy_for_bead();
     }
 }
@@ -58,7 +95,7 @@ BosonicExchange::~BosonicExchange() {
 /* ---------------------------------------------------------------------- */
 
 void BosonicExchange::diff_two_beads(const double* x1, int l1, const double* x2, int l2,
-                              double diff[3]) {
+                              double diff[3]) const {
     l1 = l1 % nbosons;
     l2 = l2 % nbosons;
     double delx2 = x2[3 * l2 + 0] - x1[3 * l1 + 0];
@@ -228,7 +265,7 @@ double BosonicExchange::get_Vn(int n) const {
 
 /* ---------------------------------------------------------------------- */
 
-void BosonicExchange::spring_force(double** f) {
+void BosonicExchange::spring_force(double** f) const {
     if (bead_num == np - 1) {
         spring_force_last_bead(f);
     } else if (bead_num == 0) {
@@ -259,8 +296,7 @@ void BosonicExchange::evaluate_connection_probabilities() {
 
 /* ---------------------------------------------------------------------- */
 
-void BosonicExchange::spring_force_last_bead(double** f)
-{
+void BosonicExchange::spring_force_last_bead(double** f) const {
     const double* x_first_bead = x_next;
     const double* x_last_bead = x;
 
@@ -294,8 +330,7 @@ void BosonicExchange::spring_force_last_bead(double** f)
 
 /* ---------------------------------------------------------------------- */
 
-void BosonicExchange::spring_force_first_bead(double** f)
-{
+void BosonicExchange::spring_force_first_bead(double** f) const {
     const double* x_first_bead = x;
     const double* x_last_bead = x_prev;
 
@@ -329,8 +364,7 @@ void BosonicExchange::spring_force_first_bead(double** f)
 
 /* ---------------------------------------------------------------------- */
 
-void BosonicExchange::spring_force_interior_bead(double **f)
-{
+void BosonicExchange::spring_force_interior_bead(double **f) const {
     for (int l = 0; l < nbosons; l++) {
         double sum_x = 0.0;
         double sum_y = 0.0;
@@ -382,7 +416,7 @@ double BosonicExchange::prim_estimator()
     temp_nbosons_array[m] = sig / sig_denom_m;
   }
 
-  int convention_correction = (iPyConvention ? 1 : np);
+  int convention_correction = (ipy_convention ? 1 : np);
   return 0.5 * domain->dimension * nbosons * convention_correction / beta + temp_nbosons_array[nbosons];
 }
 

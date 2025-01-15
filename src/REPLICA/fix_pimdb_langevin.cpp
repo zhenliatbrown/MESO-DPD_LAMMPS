@@ -13,11 +13,12 @@
 
 /* ----------------------------------------------------------------------
    Package      FixPIMDBLangevin
-   Purpose      TODO
-   Copyright    TODO
-   Authors      TODO
 
-   Updated      TODO
+   Purpose      Path Integral Molecular Dynamics of Bosons with Langevin Thermostat
+   Copyright    Hirshberg lab @ Tel Aviv University
+   Authors      Yotam M. Y. Feldman, Ofir Blumer
+
+   Updated      Jan-06-2025
    Version      1.0
 ------------------------------------------------------------------------- */
 
@@ -41,23 +42,38 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-enum{PIMD,NMPIMD,CMD};
-
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDLangevin(lmp, narg, arg),
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, true)
 {
-  if (method != PIMD) {
-    error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
-  }
+    for (int i = 3; i < narg - 1; i += 2) {
+        if ((strcmp(arg[i], "method") == 0) && (strcmp(arg[i+1], "pimd") != 0)) {
+            error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
+        }
+        else if (strcmp(arg[i], "scale") == 0) {
+            error->universe_all(FLERR, "The scale parameter of the PILE_L thermostat is not supported for pimdb, and should be removed.");
+        }
+        else if ((strcmp(arg[i], "iso") == 0) || (strcmp(arg[i], "aniso") == 0) || (strcmp(arg[i], "barostat") == 0) || (strcmp(arg[i], "taup") == 0)) {
+            error->universe_all(FLERR, "Barostat parameters are not available for pimdb.");
+        }
+    }
 
-  size_vector = 6;
+    if (fmmode != PHYSICAL) {
+        error->universe_all(FLERR, "The only available fmmode for pimdb is physical, please remove the fmmode keyword.");
+    }
+    if (ensemble != NVE && ensemble != NVT) {
+        error->universe_all(FLERR, "The only available ensembles for pimdb are nve and nvt, please choose one of these ensembles.");
+    }
 
-  nbosons    = atom->nlocal;
+    method = PIMD;     
 
-  memory->create(f_tag_order, nbosons, 3, "FixPIMDBLangevin:f_tag_order");
+    size_vector = 6;
+
+    nbosons = atom->nlocal;
+
+    memory->create(f_tag_order, nbosons, 3, "FixPIMDBLangevin:f_tag_order");
 }
 
 /* ---------------------------------------------------------------------- */

@@ -22,6 +22,15 @@ FixStyle(pimd/langevin,FixPIMDLangevin);
 
 #include "fix.h"
 
+enum { PIMD, NMPIMD };
+enum { PHYSICAL, NORMAL };
+enum { BAOAB, OBABO };
+enum { ISO, ANISO, TRICLINIC };
+enum { PILE_L };
+enum { MTTK, BZP };
+enum { NVE, NVT, NPH, NPT };
+enum { SINGLE_PROC, MULTI_PROC };
+
 namespace LAMMPS_NS {
 
 class FixPIMDLangevin : public Fix {

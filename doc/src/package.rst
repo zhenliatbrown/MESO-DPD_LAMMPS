@@ -504,7 +504,7 @@ as it is for non-accelerated pair styles
 The *binsize* keyword sets the size of bins used to bin atoms during
 neighbor list builds. The same value can be set by the
 :doc:`neigh_modify binsize <neigh_modify>` command. Making it an option
-in the package kokkos command allows it to be set from the command line.
+in the package kokkos command allows it to be set from the command-line.
 The default value for CPUs is 0.0, which means the LAMMPS default will be
 used, which is bins = 1/2 the size of the pairwise cutoff + neighbor skin
 distance. This is fine when neighbor lists are built on the CPU. For GPU
@@ -576,7 +576,7 @@ changed to *no* since the *sort* keyword does not support *host* mode. Not
 all fix styles with extra atom data support *device* mode and in that case
 a warning will be given and atom sorting will run in *no* mode instead.
 
-.. versionadded:: TBD
+.. versionadded:: 17Apr2024
 
 The *atom/map* keyword determines whether the host or device builds the
 atom_map, see the :doc:`atom_modify map <atom_modify>` command.  The
@@ -664,7 +664,7 @@ too.
    Also note that if the :doc:`-sf hybrid intel omp command-line switch <Run_options>` is used, it invokes a "package intel" command, followed by a
    "package omp" command, both with a setting of *Nthreads* = 0. Likewise
    for a hybrid suffix for gpu and omp. Note that KOKKOS also supports
-   setting the number of OpenMP threads from the command line using the
+   setting the number of OpenMP threads from the command-line using the
    "-k on" :doc:`command-line switch <Run_options>`. The default for
    KOKKOS is 1 thread per MPI task, so any other number of threads should
    be explicitly set using the "-k on" command-line switch (and this

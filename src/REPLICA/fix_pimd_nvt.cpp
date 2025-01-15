@@ -275,7 +275,7 @@ void FixPIMDNVT::post_force(int /*flag*/)
     for (int j = 0; j < 3; j++) atom->f[i][j] /= np;
 
   comm_exec(atom->x);
-  kinetic_estimators();
+  estimate_energies();
   spring_force();
 
   if (method == CMD || method == NMPIMD) {
@@ -532,7 +532,7 @@ void FixPIMDNVT::nmpimd_transform(double **src, double **des, double *vector)
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDNVT::kinetic_estimators(){
+void FixPIMDNVT::estimate_energies(){
   vir_estimator();
 }
 

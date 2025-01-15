@@ -319,7 +319,7 @@ on.  The default is step 0.  Often input values can be 0.0 at time 0,
 so setting *start* to a larger value can avoid including a 0.0 in
 a running or windowed histogram.
 
-.. versionadded:: TBD
+.. versionadded:: 17Apr2024
    new keyword *append*
 
 The *file* or *append* keywords allow a filename to be specified.  If
@@ -376,10 +376,10 @@ can only be accessed on timesteps that are multiples of :math:`N_\text{freq}`
 since that is when a histogram is generated.  The global vector has four
 values:
 
-* 1 = total counts in the histogram
-* 2 = values that were not histogrammed (see *beyond* keyword)
-* 3 = min value of all input values, including ones not histogrammed
-* 4 = max value of all input values, including ones not histogrammed
+  #. total counts in the histogram
+  #. values that were not histogrammed (see *beyond* keyword)
+  #. min value of all input values, including ones not histogrammed
+  #. max value of all input values, including ones not histogrammed
 
 The global array has :math:`N_\text{bins}` rows and three columns.  The
 first column has the bin coordinate, the second column has the count of
