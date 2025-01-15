@@ -45,6 +45,7 @@ static constexpr double JKRPREFIX = 1.2277228507842888;         // cbrt(3*PI**2/
 static constexpr int MDR_MAX_IT = 100;                          // Newton-Raphson for MDR
 static constexpr double MDR_EPSILON1 = 1e-10;                   // Newton-Raphson for MDR
 static constexpr double MDR_EPSILON2 = 1e-16;                   // Newton-Raphson for MDR
+static constexpr double MDR_EPSILON3 = 1e-20;                   // For precision checks
 static constexpr double MDR_OVERLAP_LIMIT = 0.75;               // Maximum contact overlap for MDR
 
 static const char cite_mdr[] =
@@ -599,7 +600,7 @@ double GranSubModNormalMDR::calculate_forces()
       // displacement partitioning only necessary for particle-particle contact
 
       // itag and jtag persist after neighbor list builds, use tags to compare to match
-      //   contact history variables consistently across steps for particle pair.
+      //   contact history variables consistently across steps for a particle pair.
       if ((contactSide == 0 && itag_true > jtag_true) || (contactSide != 0 && itag_true < jtag_true)) {
           gm->i = i_true;
           gm->j = j_true;
@@ -799,6 +800,7 @@ double GranSubModNormalMDR::calculate_forces()
         // case 2+3, tensile springs
         const double lmax = sqrt(MY_2PI * aAdh * gamma * Eeffinv);
         g_aAdh = A * 0.5 - A * Binv * sqrt(Bsq * 0.25 - pow(aAdh, 2));
+        g_aAdh = round_up_negative_epsilon(g_aAdh);
 
         double tmp = 27 * A4 * B4 * gamma * Eeffinv;
         tmp -= 2 * pow(B, 6) * gamma3 * PISQ * pow(Eeffinv, 3);
@@ -848,6 +850,8 @@ double GranSubModNormalMDR::calculate_forces()
             aAdh = aAdh_tmp;
 
             g_aAdh = A * 0.5 - A * Binv * sqrt(Bsq * 0.25 - pow(aAdh, 2));
+            g_aAdh = round_up_negative_epsilon(g_aAdh);
+
             const double deltaeAdh = g_aAdh;
             const double F_na = calculate_nonadhesive_mdr_force(deltaeAdh, Ainv, Eeff, A, B);
             const double F_Adhes = 2.0 * Eeff * (deltae1D - deltaeAdh) * aAdh;
@@ -882,7 +886,7 @@ double GranSubModNormalMDR::calculate_forces()
     (contactSide == 0) ? F0 = F_MDR + F_BULK : F1 = F_MDR + F_BULK;
 
     if (update) {
-      // mean surface dipslacement calculation
+      // mean surface displacement calculation
       *Ac_offset = wij * Ac;
 
       // radius update scheme quantity calculation
@@ -963,4 +967,14 @@ double GranSubModNormalMDR::calculate_nonadhesive_mdr_force(double delta, double
   F_na *= 0.25 * Eeff * A * B;
 
   return F_na;
+}
+
+/* ----------------------------------------------------------------------
+   round values within (-EPSILON,0.0) due to machine precision errors to zero
+------------------------------------------------------------------------- */
+
+double GranSubModNormalMDR::round_up_negative_epsilon(double value)
+{
+  if (value < 0.0 && value > -MDR_EPSILON3) value = 0.0;
+  return value;
 }

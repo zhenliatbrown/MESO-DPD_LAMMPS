@@ -158,6 +158,7 @@ namespace Granular_NS {
     char *id_fix;
 
     inline double calculate_nonadhesive_mdr_force(double, double, double, double, double);
+    inline double round_up_negative_epsilon(double);
   };
 
 }    // namespace Granular_NS
