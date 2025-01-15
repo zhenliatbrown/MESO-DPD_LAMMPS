@@ -32,7 +32,8 @@ using namespace LAMMPS_NS;
 /* ---------------------------------------------------------------------- */
 
 PairHybridScaled::PairHybridScaled(LAMMPS *lmp) :
-    PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr), atomvar(nullptr), atomscale(nullptr)
+    PairHybrid(lmp), fsum(nullptr), tsum(nullptr), scaleval(nullptr), scaleidx(nullptr),
+    atomvar(nullptr), atomscale(nullptr)
 {
   nmaxfsum = -1;
 
@@ -85,7 +86,7 @@ void PairHybridScaled::compute(int eflag, int vflag)
       if (input->variable->equalstyle(m)) {
         vals[k] = input->variable->compute_equal(m);
         vars[k] = -1;
-      // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
+        // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
       } else if (input->variable->atomstyle(m)) {
         vals[k] = 0.0;
         vars[k] = m;
@@ -195,10 +196,10 @@ void PairHybridScaled::compute(int eflag, int vflag)
           tsum[i][2] += scale * t[i][2];
         }
       }
-    // if scale factor is atom-style variable
+      // if scale factor is atom-style variable
     } else {
       int igroupall = 0;
-      input->variable->compute_atom(atomvar[m],igroupall,atomscale,1,0);
+      input->variable->compute_atom(atomvar[m], igroupall, atomscale, 1, 0);
       comm->forward_comm(this);
       for (i = 0; i < nall; ++i) {
         const double ascale = atomscale[i];
@@ -624,6 +625,7 @@ void PairHybridScaled::write_restart(FILE *fp)
 
   fwrite(scaleval, sizeof(double), nstyles, fp);
   fwrite(scaleidx, sizeof(int), nstyles, fp);
+  fwrite(atomvar, sizeof(int), nstyles, fp);
 
   int n = scalevars.size();
   fwrite(&n, sizeof(int), 1, fp);
@@ -644,17 +646,21 @@ void PairHybridScaled::read_restart(FILE *fp)
 
   delete[] scaleval;
   delete[] scaleidx;
+  delete[] atomvar;
   scalevars.clear();
   scaleval = new double[nstyles];
   scaleidx = new int[nstyles];
+  atomvar = new int[nstyles];
 
   int n, me = comm->me;
   if (me == 0) {
     utils::sfread(FLERR, scaleval, sizeof(double), nstyles, fp, nullptr, error);
     utils::sfread(FLERR, scaleidx, sizeof(int), nstyles, fp, nullptr, error);
+    utils::sfread(FLERR, atomvar, sizeof(int), nstyles, fp, nullptr, error);
   }
   MPI_Bcast(scaleval, nstyles, MPI_DOUBLE, 0, world);
   MPI_Bcast(scaleidx, nstyles, MPI_INT, 0, world);
+  MPI_Bcast(atomvar, nstyles, MPI_INT, 0, world);
 
   char *tmp;
   if (me == 0) utils::sfread(FLERR, &n, sizeof(int), 1, fp, nullptr, error);
