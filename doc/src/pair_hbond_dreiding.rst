@@ -40,7 +40,7 @@ Syntax
 * inner_distance_cutoff = global inner cutoff for Donor-Acceptor interactions (distance units)
 * outer_distance_cutoff = global cutoff for Donor-Acceptor interactions (distance units)
 * angle_cutoff = global angle cutoff for Acceptor-Hydrogen-Donor interactions (degrees)
-* (with style angleoffset) equilibrium_angle = global equilibrium angle for Acceptor-Hydrogen-Donor interactions (degrees) 
+* (with style angleoffset) equilibrium_angle = global equilibrium angle for Acceptor-Hydrogen-Donor interactions (degrees)
 
 Examples
 """"""""
@@ -207,7 +207,7 @@ follows:
 * angle cutoff (degrees)
 
 For both the *hbond/dreiding/lj/angleoffset* and *hbond/dreiding/morse/angleoffset* styles an additional parameter is added:
-* equilibrium angle (degrees) 
+* equilibrium angle (degrees)
 
 For all styles, a single hydrogen atom type K can be specified, or a wild-card asterisk
 can be used in place of or in conjunction with the K arguments to

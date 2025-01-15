@@ -42,7 +42,7 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-PairHbondDreidingLJAngleoffset::PairHbondDreidingLJAngleoffset(LAMMPS *lmp) 
+PairHbondDreidingLJAngleoffset::PairHbondDreidingLJAngleoffset(LAMMPS *lmp)
     : PairHbondDreidingLJ(lmp) {
 
   angle_offset_flag = 1;
