@@ -4,14 +4,164 @@ Error and warning details
 Many errors or warnings are self-explanatory and thus straightforward to
 resolve.  However, there are also cases, where there is no single cause
 and explanation, where LAMMPS can only detect symptoms of an error but
-not the exact cause, or where the explanation needs to be more detailed than
-what can be fit into a message printed by the program.  The following are
-discussions of such cases.
+not the exact cause, or where the explanation needs to be more detailed
+than what can be fit into a message printed by the program.  The
+following are discussions of such cases.
 
 - :ref:`Unknown identifier in data file <err0001>`
 - :ref:`Incorrect format in ... section of data file <err0002>`
 - :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
 - :ref:`Out of range atoms - cannot compute ... <err0004>`
+
+------
+
+General troubleshooting advice
+------------------------------
+
+Below are suggestions that can help to understand the causes of problems
+with simulations leading to errors or unexpected results.
+
+Create a small test system
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Debugging problems often requires running a simulation many times with
+small modifications, thus it can be a huge time saver to first assemble
+a small test system input that has the same issue, but will take much
+time until it triggers the error condition.  Also, it will be easier to
+see what happens.
+
+Visualize your trajectory
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To better understand what is causing problems, it is often very useful
+to visualize the system close to the point of failure.  It may be
+necessary to have LAMMPS output trajectory frames rather frequently.  To
+avoid gigantic files, you can use :doc:`dump_modify delay <dump_modify>`
+to delay output until the critical section is reached, and you can use a
+smaller test system (see above).
+
+Parallel versus serial
+^^^^^^^^^^^^^^^^^^^^^^
+
+Issues where something is "lost" or "missing" often exhibit that issue
+only when running in parallel.  That doesn't mean there is no problem,
+only the symptoms are not triggering an error quickly.  Correspondingly,
+errors may be triggered faster with more processors and thus smaller
+sub-domains.
+
+Fast moving atoms
+^^^^^^^^^^^^^^^^^
+
+Fast moving atoms may be "lost" or "missing" when their velocity becomes
+so large that they can cross a sub-domain within one timestep.  This
+often happens when atoms are too close, but atoms may also "move" too
+fast from sub-domain to sub-domain if the box changes rapidly, e.g. when
+setting a large an initial box with :doc:`shrink-wrap boundary
+conditions <boundary>` that collapses on the first step (in this case
+the solution is often using 'm' instead of 's' as boundary condition).
+
+To reduce the impact of "close contacts", one can remove those atoms or
+molecules with something like :doc:`delete_atoms overlap 0.1 all all
+<delete_atoms>`.  With periodic boundaries, a close contact pair of atoms
+may be on opposite sides of the simulation box.  Another option would be
+to first run a minimization (aka quench) before starting the MD.  Reducing
+the time step can also help.  Many times, one just needs to "ease" the
+system into a balanced state and can then switch to more aggressive settings.
+
+The speed of atoms during an MD depends on the steepness of the
+potential function and their mass.  Since the positions and velocities
+of atoms are computed with finite timesteps, they choice of timestep can
+be too large for a stable numeric integration of the trajectory.  In
+those cases using (temporarily) :doc:`fix nve/limit <fix_nve_limit>` or
+:doc:`fix dt/reset <fix_dt_reset>` can help to avoid too large updates
+or adapt the timestep according to the displacements.
+
+
+Pressure, forces, positions becoming NaN of Inf
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some potentials can overflow or have a division by zero with close contacts
+or bad geometries (for the given force styles in use) leading to forces
+that can no longer be represented as numbers.  Those will show as "NaN" or
+"Inf".  On most machines, the program will continue, but there is no way
+to recover from it and those NaN or Inf values will propagate.  So-called
+:doc:`"soft-core" potentials <pair_fep_soft>` or the :doc:`"soft" repulsive-only
+pair style <pair_soft>` are less prone for this behavior (depending on the
+settings in use) and can be used at the beginning of a simulation.  Also,
+single precision numbers can overflow much faster, so for the GPU or INTEL
+package it may be beneficial to run with double precision initially before
+switching to mixed or single precision for faster execution when the system
+has relaxed.
+
+Communication cutoff
+^^^^^^^^^^^^^^^^^^^^
+
+The communication cutoff determines the "overlap" between sub-domains
+and atoms in these regions are referred to in LAMMPS as "ghost atoms".
+This region has to be large enough to contain all atoms of a bond,
+angle, dihedral or improper with just one atom in the actual sub-domain.
+Typically, this cutoff is set to the largest cutoff from the :doc:`pair
+style(s) <pair_style>` plus the :doc:`neighbor list skin distance
+<neighbor>` and will be more than sufficient for all bonded
+interactions.  But if the pair style cutoff is small this may bot be
+enough.  LAMMPS will print a warning in this case using some heuristic
+based on the equilibrium bond length, but that may not be sufficient for
+cases where the force constants are small and thus bonds may be
+stretched very far.  The communication cutoff can be adjusted with
+:doc:`comm_modify cutoff \<value\> <comm_modify>`, but setting this too
+large will waste CPU time and memory.
+
+Neighbor list settings
+^^^^^^^^^^^^^^^^^^^^^^
+
+Every time LAMMPS rebuilds the neighbor lists, LAMMPS will also check
+for "lost" or "missing" atoms.  Thus it can help to use very
+conservative :doc:`neighbor list settings <neigh_modify>` and then
+examine the neighbor list statistics if the neighbor list rebuild can be
+safely delayed.  Rebuilding the neighbor list less frequently
+(i.e. through increasing the *delay* or *every* setting has diminishing
+returns and increasing risks).
+
+Ignoring lost atoms
+^^^^^^^^^^^^^^^^^^^
+
+It is tempting to use the :doc:`thermo_modify lost ignore <thermo_modify>`
+to avoid that LAMMPS stops with an error.  This setting should, however,
+*only* be used when atoms *should* leave the system.  In general, ignoring
+a problem does not solve it.
+
+Units
+^^^^^
+
+A frequent cause for a variety of problems is due to using the wrong
+:doc:`units <units>` settings for a particular potentials, especially
+when reading them from a potential file.  Most of the (example)
+potentials bundled with LAMMPS have a "UNITS:" tag that allows LAMMPS to
+check of the units are consistent with what is intended, but potential
+files from publications or potential parameter databases may lack this
+metadata information and thus will not error out or warn when using the
+wrong setting.  Most potential files usually use "metal" units, but some
+are parameterized for other settings, most notably :doc:`ReaxFF
+potentials <pair_reaxff>` that use "real" units.
+
+Also, individual parameters for :doc:`pair_coeff <pair_coeff>` commands
+taken from publications or other MD software, may need to be converted
+and sometimes in unexpected ways.  Thus some careful checking is
+recommended.
+
+No error message printed
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some cases - especially when running in parallel with MPI - LAMMPS
+may stop without displaying an error.  But that does not mean, that
+there was no error message, instead it is highly likely that the message
+was written to a buffer and LAMMPS was aborted before the buffer was
+output.  Usually, output buffers are output for every line of output,
+but sometimes, this is delayed until 4096 or 8192 bytes of output have
+been accumulated.  This buffering for screen and logfile output can be
+disabled by using the :ref:`-nb or -nonbuf <nonbuf>` command-line flag.
+This is most often needed when debugging crashing multi-replica
+calculations.
 
 ------
 
@@ -122,4 +272,3 @@ close contact atoms, or run a minimization before the MD.  It can also
 help to temporarily use a cutoff-Coulomb pair style and no kspace style
 until the system has somewhat equilibrated and then switch to the
 long-range solver.
-
