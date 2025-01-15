@@ -57,6 +57,7 @@ PairHbondDreidingLJ::PairHbondDreidingLJ(LAMMPS *lmp) : Pair(lmp)
   pvector = new double[2];
 
   angle_offset_flag = 0;
+  angle_offset_global = 0.0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -309,12 +310,19 @@ void PairHbondDreidingLJ::allocate()
 
 void PairHbondDreidingLJ::settings(int narg, char **arg)
 {
-  if (narg != 4) error->all(FLERR,"Illegal pair_style command");
+
+  // narg = 4 for standard form and narg = 5 if angleoffset variant (from EXTRA-MOLECULE)
+  if (narg != 4 && narg != 5) error->all(FLERR,"Illegal pair_style command");
 
   ap_global = utils::inumeric(FLERR,arg[0],false,lmp);
   cut_inner_global = utils::numeric(FLERR,arg[1],false,lmp);
   cut_outer_global = utils::numeric(FLERR,arg[2],false,lmp);
   cut_angle_global = utils::numeric(FLERR,arg[3],false,lmp) * MY_PI/180.0;
+
+  // update when using angleoffset variant
+  if (angle_offset_flag) {
+    angle_offset_global = (180.0 - utils::numeric(FLERR, arg[4], false, lmp)) * MY_PI/180.0;
+  }
 }
 
 /* ----------------------------------------------------------------------

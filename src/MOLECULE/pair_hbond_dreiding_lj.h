@@ -40,6 +40,7 @@ class PairHbondDreidingLJ : public Pair {
   double cut_inner_global, cut_outer_global, cut_angle_global;
   int ap_global;
   int angle_offset_flag;          // 1 if angle offset variant used
+  double angle_offset_global;          // updated if angle offset variant used
 
   struct Param {
     double epsilon, sigma;

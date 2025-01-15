@@ -28,11 +28,8 @@ class PairHbondDreidingLJAngleoffset : public PairHbondDreidingLJ {
 
  public:
   PairHbondDreidingLJAngleoffset(class LAMMPS *);
-  void settings(int, char **) override;
   void coeff(int, char **) override;
 
- protected:
-  double angle_offset_global;
 };
 
 }    // namespace LAMMPS_NS

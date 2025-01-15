@@ -47,23 +47,6 @@ PairHbondDreidingMorseAngleoffset::PairHbondDreidingMorseAngleoffset(LAMMPS *lmp
   angle_offset_global = 0.0;
 }
 
-
-/* ----------------------------------------------------------------------
-   global settings
-------------------------------------------------------------------------- */
-
-void PairHbondDreidingMorseAngleoffset::settings(int narg, char **arg)
-{
-  if (narg != 5) error->all(FLERR,"Illegal pair_style command");
-
-  // use first four settings args in parent method to update other variables
-
-  PairHbondDreidingMorse::settings(4,arg);
-
-  angle_offset_global = (180.0 - utils::numeric(FLERR, arg[4], false, lmp)) * MY_PI/180.0;
-
-}
-
 // /* ----------------------------------------------------------------------
 //    set coeffs for one or more type pairs
 // ------------------------------------------------------------------------- */
