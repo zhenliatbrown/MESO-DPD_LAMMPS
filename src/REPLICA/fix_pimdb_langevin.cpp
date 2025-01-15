@@ -84,16 +84,23 @@ FixPIMDBLangevin::~FixPIMDBLangevin() {
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDBLangevin::spring_force() {
-    double ff = fbond * atom->mass[atom->type[0]]; // TODO: ensure that all masses are the same
-    int nlocal = atom->nlocal;
-    double* me_bead_positions = *(atom->x);
-    double* last_bead_positions = &bufsortedall[x_last * nlocal][0];
-    double* next_bead_positions = &bufsortedall[x_next * nlocal][0];
+void FixPIMDBLangevin::prepare_coordinates()
+{
+  inter_replica_comm(atom->x);
+  double ff = fbond * atom->mass[atom->type[0]];
+  int nlocal = atom->nlocal;
+  double* me_bead_positions = *(atom->x);
+  double* last_bead_positions = &bufsortedall[x_last * nlocal][0];
+  double* next_bead_positions = &bufsortedall[x_next * nlocal][0];
 
-    bosonic_exchange.prepare_with_coordinates(me_bead_positions,
+  bosonic_exchange.prepare_with_coordinates(me_bead_positions,
                                               last_bead_positions, next_bead_positions,
                                               beta_np, 1 / beta, ff);
+}
+ 
+/* ---------------------------------------------------------------------- */
+
+void FixPIMDBLangevin::spring_force() {
 
     for (int i = 0; i < nbosons; i++) {
         f_tag_order[i][0] = 0.0;

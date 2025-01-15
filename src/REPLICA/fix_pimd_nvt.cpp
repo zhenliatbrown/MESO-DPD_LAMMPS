@@ -269,12 +269,19 @@ void FixPIMDNVT::final_integrate()
 
 /* ---------------------------------------------------------------------- */
 
+void FixPIMDNVT::prepare_coordinates()
+{
+  comm_exec(atom->x);
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixPIMDNVT::post_force(int /*flag*/)
 {
   for (int i = 0; i < atom->nlocal; i++)
     for (int j = 0; j < 3; j++) atom->f[i][j] /= np;
 
-  comm_exec(atom->x);
+  prepare_coordinates();
   estimate_energies();
   spring_force();
 

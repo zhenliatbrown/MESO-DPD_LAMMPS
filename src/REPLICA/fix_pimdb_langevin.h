@@ -26,7 +26,7 @@ FixStyle(pimdb/langevin,FixPIMDBLangevin);
 namespace LAMMPS_NS {
 
 class FixPIMDBLangevin : public FixPIMDLangevin {
- public:
+public:
     FixPIMDBLangevin(class LAMMPS *, int, char **);
     ~FixPIMDBLangevin();
 
@@ -34,7 +34,8 @@ class FixPIMDBLangevin : public FixPIMDLangevin {
     void compute_spring_energy() override;
     void compute_t_prim() override;
 
-        protected:
+protected:
+    void prepare_coordinates() override;
     void spring_force() override;
 
 private:

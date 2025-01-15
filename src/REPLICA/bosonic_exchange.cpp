@@ -70,16 +70,6 @@ void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_
         Evaluate_V_backwards();
         evaluate_connection_probabilities();
     }
-
-    if (bead_num != 0) {
-        // CR: why not calculate the total spring force inside get_total_spring_energy_for_bead()?
-        // CR: Is this a quantity that is queries more than once per step?
-        // CR: see also comment in fix_pimdb_nvt.cpp
-        // OB: It should be calculate here, if it is calculated later the energies turn up weird.
-        // I am not 100% remember why, but I remember there was a problem with the order of this calculation
-        // and the current implementation works and is also consistent with the distinguishable nvt code.
-        calc_total_spring_energy_for_bead();
-    }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -243,15 +233,11 @@ double BosonicExchange::get_potential() const {
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_total_spring_energy_for_bead() {
-    return spring_energy_for_bead;
-}
-/* ---------------------------------------------------------------------- */
-
-void BosonicExchange::calc_total_spring_energy_for_bead() {
-    spring_energy_for_bead = 0.;
+    double spring_energy_for_bead = 0.;
     for (int i = 0; i < nbosons; i++) {
         spring_energy_for_bead += 0.5 * spring_constant * distance_squared_two_beads(x, i, x_prev, i);
     }
+    return spring_energy_for_bead;
 }
 
 /* ---------------------------------------------------------------------- */

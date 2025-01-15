@@ -46,7 +46,6 @@ namespace LAMMPS_NS {
         void spring_force_interior_bead(double** f) const;
         void Evaluate_VBn();
         void Evaluate_V_backwards();
-        void calc_total_spring_energy_for_bead();
 
         const int nbosons;
         const int np;
@@ -65,7 +64,6 @@ namespace LAMMPS_NS {
         double* connection_probabilities;
 
         double* temp_nbosons_array;
-        double spring_energy_for_bead;
 
         bool ipy_convention;
     };

@@ -64,7 +64,7 @@ class FixPIMDNVT : public Fix {
 
   double omega_np, fbond, spring_energy, sp, virial;
   int x_last, x_next;
-
+  virtual void prepare_coordinates();
   virtual void estimate_energies();
   virtual void spring_force();
   void vir_estimator();

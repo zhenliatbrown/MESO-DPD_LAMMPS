@@ -103,6 +103,7 @@ class FixPIMDLangevin : public Fix {
   int *counts, *displacements;
 
   void comm_init();
+  virtual void prepare_coordinates();
   void inter_replica_comm(double **ptr);
   void virtual spring_force();
 

@@ -513,7 +513,7 @@ void FixPIMDLangevin::setup(int vflag)
     else if (cmode == MULTI_PROC)
       nmpimd_transform(bufbeads, x, M_x2xp[universe->iworld]);
   } else if (method == PIMD) {
-    inter_replica_comm(x);
+    prepare_coordinates();
     spring_force();
   } else {
     error->universe_all(
@@ -670,6 +670,13 @@ void FixPIMDLangevin::final_integrate()
 
 /* ---------------------------------------------------------------------- */
 
+void FixPIMDLangevin::prepare_coordinates()
+{
+  inter_replica_comm(atom->x);
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixPIMDLangevin::post_force(int /*flag*/)
 {
   int nlocal = atom->nlocal;
@@ -703,7 +710,7 @@ void FixPIMDLangevin::post_force(int /*flag*/)
     if (mapflag) {
       for (int i = 0; i < nlocal; i++) { domain->unmap(x[i], image[i]); }
     }
-    inter_replica_comm(x);
+    prepare_coordinates();   
     spring_force();
     compute_spring_energy();
     compute_t_prim();

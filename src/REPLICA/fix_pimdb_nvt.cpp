@@ -69,16 +69,20 @@ void FixPIMDBNVT::estimate_energies()
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDBNVT::spring_force()
+void FixPIMDBNVT::prepare_coordinates()
 {
+  comm_exec(atom->x);
   double **x = atom->x;
-  double **f = atom->f;
-
   double *xlast = buf_beads[x_last];
   double *xnext = buf_beads[x_next];
-  double ff = fbond * atom->mass[atom->type[0]]; 
-  
+  double ff = fbond * atom->mass[atom->type[0]];
   bosonic_exchange.prepare_with_coordinates(*x, xlast, xnext, beta, 1 / beta, -ff);
+}
+
+void FixPIMDBNVT::spring_force()
+{
+  double **f = atom->f;
+
   bosonic_exchange.spring_force(f);
 }
 

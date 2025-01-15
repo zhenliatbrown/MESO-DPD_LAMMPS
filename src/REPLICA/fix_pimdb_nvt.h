@@ -32,6 +32,7 @@ class FixPIMDBNVT : public FixPIMDNVT {
     double compute_vector(int) override;
 
  protected:
+    void prepare_coordinates() override;
     void spring_force() override;
     void estimate_energies() override;
 
