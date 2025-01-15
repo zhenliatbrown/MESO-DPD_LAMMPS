@@ -33,7 +33,7 @@ class PairHbondDreidingMorseAngleoffset : public PairHbondDreidingLJ {
   void coeff(int, char **) override;
 
  protected:
-  double angle_offset_global, angle_offset_one, cut_angle_one; 
+  double angle_offset_global; 
 };
 
 }    // namespace LAMMPS_NS

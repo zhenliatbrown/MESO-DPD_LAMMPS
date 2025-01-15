@@ -47,7 +47,6 @@ PairHbondDreidingLJAngleoffset::PairHbondDreidingLJAngleoffset(LAMMPS *lmp)
 
   angle_offset_flag = 1;
   angle_offset_global = 0.0;
-  angle_offset_one = 0.0;
 }
 
 /* ----------------------------------------------------------------------
