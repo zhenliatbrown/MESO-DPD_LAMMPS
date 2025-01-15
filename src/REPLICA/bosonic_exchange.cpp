@@ -159,9 +159,6 @@ void BosonicExchange::evaluate_cycle_energies()
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_Enk(int m, int k) {
-    // CR: Frankly, there is no reason for this layout. If we can organize it in a more reasonable way, that
-    // CR: would be nice. Not a requirement.
-    // OB: It indeed seemed like black magic to me at the begining.
     int end_of_m = m * (m + 1) / 2;
     return E_kn[end_of_m - k];
 }
