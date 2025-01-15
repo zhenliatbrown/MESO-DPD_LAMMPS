@@ -35,7 +35,7 @@ Syntax
 
    pair_style style N inner_distance_cutoff outer_distance_cutoff angle_cutoff equilibrium_angle
 
-* style = *hbond/dreiding/lj* or *hbond/dreiding/morse* or *hbond/dreiding/lj/angleoffset* or *hbond/dreiding/morse/angleoffset
+* style = *hbond/dreiding/lj* or *hbond/dreiding/morse* or *hbond/dreiding/lj/angleoffset* or *hbond/dreiding/morse/angleoffset*
 * N = power of cosine of angle theta (integer)
 * inner_distance_cutoff = global inner cutoff for Donor-Acceptor interactions (distance units)
 * outer_distance_cutoff = global cutoff for Donor-Acceptor interactions (distance units)
@@ -93,44 +93,53 @@ hydrogen (H) and the donor atoms:
 .. image:: JPG/dreiding_hbond.jpg
    :align: center
 
-These 3-body interactions can be defined for pairs of acceptor and
-donor atoms, based on atom types.  For each donor/acceptor atom pair,
-the third atom in the interaction is a hydrogen permanently bonded to
-the donor atom, e.g. in a bond list read in from a data file via the
+These 3-body interactions can be defined for pairs of acceptor and donor
+atoms, based on atom types.  For each donor/acceptor atom pair, the
+third atom in the interaction is a hydrogen permanently bonded to the
+donor atom, e.g. in a bond list read in from a data file via the
 :doc:`read_data <read_data>` command.  The atom types of possible
 hydrogen atoms for each donor/acceptor type pair are specified by the
 :doc:`pair_coeff <pair_coeff>` command (see below).
 
 Style *hbond/dreiding/lj* is the original DREIDING potential of
-:ref:`(Mayo) <pair-Mayo>`.  It uses a LJ 12/10 functional for the Donor-Acceptor
-interactions. To match the results in the original paper, use n = 4.
+:ref:`(Mayo) <pair-Mayo>`.  It uses a LJ 12/10 functional for the
+Donor-Acceptor interactions. To match the results in the original paper,
+use n = 4.
 
 Style *hbond/dreiding/morse* is an improved version using a Morse
 potential for the Donor-Acceptor interactions. :ref:`(Liu) <Liu>` showed
 that the Morse form gives improved results for Dendrimer simulations,
 when n = 2.
 
-The style variants *hbond/dreiding/lj/angleoffset* and *hbond/dreiding/lj/angleoffset* take the equilibrium angle of the AHD as input, allowing it to reach 180 degrees. This variant option was added to account for cases (especially in some coarse-grained models) in which the equilibrium state of the bonds may equal the minimum energy state. 
+.. versionadded:: TBD
+
+The style variants *hbond/dreiding/lj/angleoffset* and
+*hbond/dreiding/lj/angleoffset* take the equilibrium angle of the AHD as
+input, allowing it to reach 180 degrees. This variant option was added
+to account for cases (especially in some coarse-grained models) in which
+the equilibrium state of the bonds may equal the minimum energy state.
 
 See the :doc:`Howto bioFF <Howto_bioFF>` page for more information
 on the DREIDING force field.
 
 .. note::
 
-   Because the Dreiding hydrogen bond potential is only one portion
-   of an overall force field which typically includes other pairwise
-   interactions, it is common to use it as a sub-style in a :doc:`pair_style hybrid/overlay <pair_hybrid>` command, where another pair style
-   provides the repulsive core interaction between pairs of atoms, e.g. a
-   1/r\^12 Lennard-Jones repulsion.
+   Because the Dreiding hydrogen bond potential is only one portion of
+   an overall force field which typically includes other pairwise
+   interactions, it is common to use it as a sub-style in a
+   :doc:`pair_style hybrid/overlay <pair_hybrid>` command, where another
+   pair style provides the repulsive core interaction between pairs of
+   atoms, e.g. a 1/r\^12 Lennard-Jones repulsion.
 
 .. note::
 
-   When using the hbond/dreiding pair styles with :doc:`pair_style hybrid/overlay <pair_hybrid>`, you should explicitly define pair
+   When using the hbond/dreiding pair styles with :doc:`pair_style
+   hybrid/overlay <pair_hybrid>`, you should explicitly define pair
    interactions between the donor atom and acceptor atoms, (as well as
    between these atoms and ALL other atoms in your system).  Whenever
-   :doc:`pair_style hybrid/overlay <pair_hybrid>` is used, ordinary mixing
-   rules are not applied to atoms like the donor and acceptor atoms
-   because they are typically referenced in multiple pair styles.
+   :doc:`pair_style hybrid/overlay <pair_hybrid>` is used, ordinary
+   mixing rules are not applied to atoms like the donor and acceptor
+   atoms because they are typically referenced in multiple pair styles.
    Neglecting to do this can cause difficult-to-detect physics problems.
 
 .. note::
@@ -142,7 +151,10 @@ on the DREIDING force field.
 
 .. note::
 
-   For the *angle_offset* variants, the referenced angle offset is the supplementary angle of the equilibrium angle parameter. It means if the equilibrium angle is 166.6 degrees, the calculated angle offset is 13.4 degrees.
+   For the *angleoffset* variants, the referenced angle offset is the
+   supplementary angle of the equilibrium angle parameter. It means if
+   the equilibrium angle is 166.6 degrees, the calculated angle offset
+   is 13.4 degrees.
 
 ----------
 
