@@ -419,6 +419,9 @@ Default
 The keyword defaults for fix *pimd/nvt* are method = pimd, fmass = 1.0, sp
 = 1.0, temp = 300.0, and nhc = 2.
 
+The keyord defaults for fix *pimd/langevin* are integrator = obabo, method = nmpimd, ensemble = nvt, fmmode = physical, fmass = 1.0,
+scale = 1, temp = 298.15, thermostat = PILE_L, tau = 1.0, iso = 1.0, taup = 1.0, barostat = BZP, fixcom = yes, and lj = 1 for all its arguments.
+
 ----------
 
 .. _Feynman:

@@ -84,9 +84,9 @@ distinguishable particles. The sum is over all permutations :math:`\sigma`. Reca
 
 .. math::
 
-   E^\sigma = \frac{mP}{2\beta^2 \hbar^2} \sum_{\ell=1}^N \sum_{j=1}^P \left(\bf{q}_\ell^j - \bf{q}_\ell^{j+1}\right)^2,
+   E^\sigma = \frac{mP}{2\beta^2 \hbar^2} \sum_{\ell=1}^N \sum_{j=1}^P \left(\mathbf{q}_\ell^j - \mathbf{q}_\ell^{j+1}\right)^2,
 
-where :math:`P` is the number of beads and :math:`\bf{q}_\ell^{P+1}=\bf{q}_{\sigma(\ell)}^1.` 
+where :math:`P` is the number of beads and :math:`\mathbf{q}_\ell^{P+1}=\mathbf{q}_{\sigma(\ell)}^1.` 
 
 Hirshberg et. al. showed that the ring polymer potential 
 :math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma e ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
@@ -129,9 +129,10 @@ can be accessed by various :doc:`output commands <Howto_output>`. The quantities
    #. potential energy of the bead,
    #. total energy of all beads (conserved if *ensemble* is *nve*)
    #. primitive kinetic energy estimator :ref:`(Hirshberg1) <Hirshberg>`
-   #. virial energy estimator :ref:`(Herman) <HermanBB>`.
+   #. virial energy estimator :ref:`(Herman) <HermanBB>` (see the justification in the supporting information of :ref:`(Hirshberg2) <HirshbergInvernizzi>`).
 
 The first three are different for different log files, and the others are the same for different log files.
+All vector values calculated by fix *pimdb/langevin* are "extensive".
 
 Restrictions
 """"""""""""
@@ -148,6 +149,8 @@ Default
 The keyword defaults for fix *pimdb/nvt* are method = pimd, fmass = 1.0, sp
 = 1.0, temp = 300.0, and nhc = 2.
 
+The keyord defaults for fix *pimdb/langevin* are integrator = obabo, method = pimd, ensemble = nvt, fmass = 1.0,
+temp = 298.15, thermostat = PILE_L, tau = 1.0, fixcom = yes, and lj = 1 for all its arguments.
 ----------
 
 .. _book-Tuckerman:
