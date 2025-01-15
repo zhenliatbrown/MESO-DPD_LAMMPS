@@ -53,7 +53,6 @@ struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero yl
 struct TagPairSNAPComputeZi{};
 struct TagPairSNAPBeta{};
 struct TagPairSNAPComputeBi{};
-struct TagPairSNAPTransformBi{}; // re-order blist from AoSoA to AoS
 struct TagPairSNAPComputeYi{};
 struct TagPairSNAPComputeYiWithZlist{};
 template<int dir>
@@ -68,9 +67,8 @@ struct TagCSNAGridLocalPreUi{};
 struct TagCSNAGridLocalComputeUiSmall{}; // more parallelism, more divergence
 struct TagCSNAGridLocalComputeUiLarge{}; // less parallelism, no divergence
 struct TagCSNAGridLocalTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
-struct TagCSNAGridLocalComputeZi{};
-struct TagCSNAGridLocalComputeBi{};
-struct TagCSNAGridLocalTransformBi{}; // re-order blist from AoSoA to AoS
+template <bool chemsnap> struct TagCSNAGridLocalComputeZi{};
+template <bool chemsnap> struct TagCSNAGridLocalComputeBi{};
 struct TagCSNAGridLocal2Fill{}; // fill the gridlocal array
 //struct TagCSNAGridLocalFill2{}; // fill the gridlocal array using same kinda loop as ComputeForce
 
@@ -113,9 +111,10 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   static constexpr int team_size_compute_ui = 2;
   static constexpr int tile_size_transform_ui = 2;
   static constexpr int tile_size_compute_zi = 2;
+  static constexpr int min_blocks_compute_zi = 0; // no minimum bound
   static constexpr int tile_size_compute_bi = 2;
-  static constexpr int tile_size_transform_bi = 2;
   static constexpr int tile_size_compute_yi = 2;
+  static constexpr int min_blocks_compute_yi = 0; // no minimum bound
   static constexpr int team_size_compute_fused_deidrj = 2;
 #else
   static constexpr int team_size_compute_neigh = 4;
@@ -125,36 +124,46 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   static constexpr int tile_size_transform_ui = 4;
   static constexpr int tile_size_compute_zi = 8;
   static constexpr int tile_size_compute_bi = 4;
-  static constexpr int tile_size_transform_bi = 4;
   static constexpr int tile_size_compute_yi = 8;
   static constexpr int team_size_compute_fused_deidrj = sizeof(real_type) == 4 ? 4 : 2;
+
+  // this empirically reduces perf fluctuations from compiler version to compiler version
+  static constexpr int min_blocks_compute_zi = 4;
+  static constexpr int min_blocks_compute_yi = 4;
 #endif
 
   // Custom MDRangePolicy, Rank3, to reduce verbosity of kernel launches
   // This hides the Kokkos::IndexType<int> and Kokkos::Rank<3...>
   // and reduces the verbosity of the LaunchBound by hiding the explicit
   // multiplication by vector_length
-  template <class Device, int num_tiles, class TagComputeSNAP>
-  using Snap3DRangePolicy = typename Kokkos::MDRangePolicy<Device, Kokkos::IndexType<int>, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, Kokkos::LaunchBounds<vector_length * num_tiles>, TagComputeSNAP>;
+  template <class Device, int num_tiles, class TagComputeSNA, int min_blocks = 0>
+  using Snap3DRangePolicy = typename Kokkos::MDRangePolicy<Device, Kokkos::IndexType<int>, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left>, Kokkos::LaunchBounds<vector_length * num_tiles, min_blocks>, TagComputeSNA>;
 
   // MDRangePolicy for the 3D grid loop:
-  template <class Device, class TagComputeSNAP>
+  template <class Device, class TagComputeSNA>
   using CSNAGridLocal3DPolicy = typename Kokkos::MDRangePolicy<Device, Kokkos::IndexType<int>, Kokkos::Rank<3, Kokkos::Iterate::Left, Kokkos::Iterate::Left>>;
 
   // Testing out team policies
-  template <class Device, int num_teams,  class TagComputeSNAP>
-  using CSNAGridLocalTeamPolicy = typename Kokkos::TeamPolicy<Device, Kokkos::LaunchBounds<vector_length * num_teams>, TagComputeSNAP>;
+  template <class Device, int num_teams,  class TagComputeSNA>
+  using CSNAGridLocalTeamPolicy = typename Kokkos::TeamPolicy<Device, Kokkos::LaunchBounds<vector_length * num_teams>, TagComputeSNA>;
 
   // Custom SnapAoSoATeamPolicy to reduce the verbosity of kernel launches
   // This hides the LaunchBounds abstraction by hiding the explicit
   // multiplication by vector length
-  template <class Device, int num_teams, class TagComputeSNAP>
-  using SnapAoSoATeamPolicy = typename Kokkos::TeamPolicy<Device, Kokkos::LaunchBounds<vector_length * num_teams>, TagComputeSNAP>;
+  template <class Device, int num_teams, class TagComputeSNA>
+  using SnapAoSoATeamPolicy = typename Kokkos::TeamPolicy<Device, Kokkos::LaunchBounds<vector_length * num_teams>, TagComputeSNA>;
+
+  // Helper routine that returns a CPU or a GPU policy as appropriate
+  template <class Device, int num_tiles, class TagComputeSNA, int min_blocks = 0>
+  auto snap_get_policy(const int& chunk_size_div, const int& second_loop) {
+    return Snap3DRangePolicy<Device, num_tiles, TagComputeSNA, min_blocks>({0, 0, 0},
+                                                                 {vector_length, second_loop, chunk_size_div},
+                                                                 {vector_length, num_tiles, 1});
+  }
 
   ComputeSNAGridLocalKokkos(class LAMMPS *, int, char **);
   ~ComputeSNAGridLocalKokkos() override;
 
-  void init() override;
   void setup() override;
   void compute_local() override;
 
@@ -186,7 +195,13 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   void operator() (TagCSNAGridLocalComputeCayleyKlein, const int iatom_mod, const int jnbor, const int iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalPreUi,const int iatom_mod, const int j, const int iatom_div) const;
+  void operator() (TagCSNAGridLocalPreUi, const int& iatom_mod, const int& j, const int& iatom_div) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalPreUi, const int& iatom, const int& j) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalPreUi, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagCSNAGridLocalComputeUiSmall,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridLocalComputeUiSmall>::member_type& team) const;
@@ -195,16 +210,31 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   void operator() (TagCSNAGridLocalComputeUiLarge,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridLocalComputeUiLarge>::member_type& team) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalTransformUi,const int iatom_mod, const int j, const int iatom_div) const;
+  void operator() (TagCSNAGridLocalTransformUi, const int& iatom_mod, const int& idxu, const int& iatom_div) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalComputeZi,const int iatom_mod, const int idxz, const int iatom_div) const;
+  void operator() (TagCSNAGridLocalTransformUi, const int& iatom, const int& idxu) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalComputeBi,const int iatom_mod, const int idxb, const int iatom_div) const;
+  void operator() (TagCSNAGridLocalTransformUi, const int& iatom) const;
 
-  KOKKOS_INLINE_FUNCTION
-  void operator() (TagCSNAGridLocalTransformBi,const int iatom_mod, const int idxb, const int iatom_div) const;
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalComputeZi<chemsnap>, const int& iatom_mod, const int& idxz, const int& iatom_div) const;
+
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalComputeZi<chemsnap>, const int& iatom, const int& idxz) const;
+
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalComputeZi<chemsnap>, const int& iatom) const;
+
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalComputeBi<chemsnap>, const int& iatom_mod, const int& idxb, const int& iatom_div) const;
+
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalComputeBi<chemsnap>, const int& iatom, const int& idxb) const;
+
+  template <bool chemsnap> KOKKOS_INLINE_FUNCTION
+  void operator() (TagCSNAGridLocalComputeBi<chemsnap>, const int& iatom) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagCSNAGridLocal2Fill,const int& ii) const;
@@ -225,7 +255,7 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
 
   Kokkos::View<real_type*, DeviceType> d_radelem;              // element radii
   Kokkos::View<real_type*, DeviceType> d_wjelem;               // elements weights
-  //Kokkos::View<real_type**, Kokkos::LayoutRight, DeviceType> d_coeffelem;           // element bispectrum coefficients
+  Kokkos::View<real_type**, Kokkos::LayoutRight, DeviceType> d_coeffelem;           // element bispectrum coefficients
   Kokkos::View<real_type*, DeviceType> d_sinnerelem;           // element inner cutoff midpoint
   Kokkos::View<real_type*, DeviceType> d_dinnerelem;           // element inner cutoff half-width
   Kokkos::View<T_INT*, DeviceType> d_ninside;                // ninside for all atoms in list
@@ -271,6 +301,8 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   double h0, h1, h2, h3, h4, h5;
   double lo0, lo1, lo2;
 
+  // Make SNAKokkos a friend
+  friend class SNAKokkos<DeviceType, real_type, vector_length>;
 };
 
 // These wrapper classes exist to make the compute style factory happy/avoid having
@@ -287,7 +319,6 @@ class ComputeSNAGridLocalKokkosDevice : public ComputeSNAGridLocalKokkos<DeviceT
 
   ComputeSNAGridLocalKokkosDevice(class LAMMPS *, int, char **);
 
-  void init() override;
   void compute_local() override;
   //void setup() override;
 
@@ -304,7 +335,6 @@ class ComputeSNAGridLocalKokkosHost : public ComputeSNAGridLocalKokkos<DeviceTyp
 
   ComputeSNAGridLocalKokkosHost(class LAMMPS *, int, char **);
 
-  void init() override;
   void compute_local() override;
 
 };

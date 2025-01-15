@@ -29,17 +29,18 @@ static const double MY_PI  = 3.14159265358979323846; // pi
 static const double MY_PI2  = 1.57079632679489661923; // pi/2
 
 template<class DeviceType, typename real_type, int vector_length>
+template<class CopyClass>
 inline
-SNAKokkos<DeviceType, real_type, vector_length>::SNAKokkos(const PairSNAPKokkos<DeviceType, real_type, vector_length>& psk)
-  : rfac0(psk.rfac0), rmin0(psk.rmin0), switch_flag(psk.switchflag),
-    bzero_flag(psk.bzeroflag), chem_flag(psk.chemflag), bnorm_flag(psk.bnormflag),
-    wselfall_flag(psk.wselfallflag), switch_inner_flag(psk.switchinnerflag),
-    quadratic_flag(psk.quadraticflag), twojmax(psk.twojmax), d_coeffelem(psk.d_coeffelem)
+SNAKokkos<DeviceType, real_type, vector_length>::SNAKokkos(const CopyClass& copy)
+  : twojmax(copy.twojmax), d_coeffelem(copy.d_coeffelem), rmin0(copy.rmin0),
+    rfac0(copy.rfac0), switch_flag(copy.switchflag), switch_inner_flag(copy.switchinnerflag),
+    chem_flag(copy.chemflag), bnorm_flag(copy.bnormflag), wselfall_flag(copy.wselfallflag),
+    quadratic_flag(copy.quadraticflag), bzero_flag(copy.bzeroflag)
 {
   wself = static_cast<real_type>(1.0);
 
   if (chem_flag)
-    nelements = psk.nelements;
+    nelements = copy.nelements;
   else
     nelements = 1;
 

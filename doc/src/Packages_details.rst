@@ -2171,8 +2171,8 @@ the :doc:`Build extras <Build_extras>` page.
 * ``src/OPENMP/README``
 * :doc:`Accelerator packages <Speed_packages>`
 * :doc:`OPENMP package <Speed_omp>`
-* :doc:`Command line option -suffix/-sf omp <Run_options>`
-* :doc:`Command line option -package/-pk omp <Run_options>`
+* :doc:`Command-line option -suffix/-sf omp <Run_options>`
+* :doc:`Command-line option -package/-pk omp <Run_options>`
 * :doc:`package omp <package>`
 * Search the :doc:`commands <Commands_all>` pages (:doc:`fix <Commands_fix>`, :doc:`compute <Commands_compute>`,
   :doc:`pair <Commands_pair>`, :doc:`bond, angle, dihedral, improper <Commands_bond>`,

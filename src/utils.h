@@ -509,7 +509,7 @@ This functions adds the following case to :cpp:func:`utils::bounds() <LAMMPS_NS:
 \verbatim embed:rst
 
 This will try to undo the effect from using the :doc:`suffix command <suffix>`
-or the *-suffix/-sf* command line flag and return correspondingly modified string.
+or the *-suffix/-sf* command-line flag and return correspondingly modified string.
 
 \endverbatim
    *
@@ -609,7 +609,7 @@ or the *-suffix/-sf* command line flag and return correspondingly modified strin
    * This can handle strings with single and double quotes, escaped quotes,
    * and escaped codes within quotes, but due to using an STL container and
    * STL strings is rather slow because of making copies. Designed for
-   * parsing command lines and similar text and not for time critical
+   * parsing command-lines and similar text and not for time critical
    * processing.  Use a tokenizer class if performance matters.
    *
 \verbatim embed:rst

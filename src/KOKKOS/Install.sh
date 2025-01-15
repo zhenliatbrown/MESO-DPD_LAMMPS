@@ -7,6 +7,19 @@ mode=$1
 LC_ALL=C
 export LC_ALL
 
+cat <<EOF
+WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING
+WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING
+
+  Support for building the KOKKOS package with the legacy build system using GNU
+  make will be removed in Summer 2025.  Please switch to using CMake to build
+  LAMMPS as soon as possible and report any problems to developers@lammps.org
+  or post a bug report issue at https://github.com/lammps/lammps/issues
+
+WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING
+WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING-WARNING
+EOF
+
 # arg1 = file, arg2 = file it depends on
 
 action () {
@@ -106,6 +119,12 @@ action compute_composition_atom_kokkos.cpp compute_composition_atom.cpp
 action compute_composition_atom_kokkos.h compute_composition_atom.h
 action compute_orientorder_atom_kokkos.cpp
 action compute_orientorder_atom_kokkos.h
+action compute_sna_grid_kokkos.cpp compute_sna_grid.cpp
+action compute_sna_grid_kokkos.h compute_sna_grid.h
+action compute_sna_grid_kokkos_impl.h compute_sna_grid.cpp
+action compute_sna_grid_local_kokkos.cpp compute_sna_grid_local.cpp
+action compute_sna_grid_local_kokkos.h compute_sna_grid_local.h
+action compute_sna_grid_local_kokkos_impl.h compute_sna_grid_local.cpp
 action compute_temp_deform_kokkos.cpp
 action compute_temp_deform_kokkos.h
 action compute_temp_kokkos.cpp
