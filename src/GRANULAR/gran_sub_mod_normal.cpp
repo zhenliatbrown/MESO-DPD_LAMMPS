@@ -587,7 +587,9 @@ double GranSubModNormalMDR::calculate_forces()
   double deltap0 = *deltap_offset0;
   double deltap1 = *deltap_offset1;
 
-  if (history_update && gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
+  // always update deltamax since gm->delta won't change until initial integrate
+  //   also need to define deltamax if an atom is created with an overlap
+  if (gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
   double deltamax = *deltamax_offset;
 
 
