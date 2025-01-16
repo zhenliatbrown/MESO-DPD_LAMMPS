@@ -64,10 +64,10 @@ namespace utils {
    *
    * This function is a helper function for error messages.  It creates
    *
-   *  \param input      pointer to the Input class instance (for access to last command args)
-   *  \param failedarg  index of the faulty argument (-1 to point to the command itself)
-   *  \return           string with two lines: the pre-processed command and a '^' pointing to the faulty argument */
-  std::string point_to_error(Input *input, int failedarg);
+   *  \param input   pointer to the Input class instance (for access to last command args)
+   *  \param faile   index of the faulty argument (-1 to point to the command itself)
+   *  \return        string with two lines: the pre-processed command and a '^' pointing to the faulty argument */
+  std::string point_to_error(Input *input, int failed);
 
   /*! Internal function handling the argument list for logmesg(). */
 
