@@ -150,6 +150,8 @@ namespace Granular_NS {
     double Eeffsq, Eeffinv, Eeffsqinv;
     double gammasq, gamma3, gamma4;
 
+    int warn_flag;
+
     int index_Ro, index_Vgeo, index_Velas, index_Vcaps, index_eps_bar, index_dRnumerator;
     int index_dRdenominator, index_Acon0, index_Acon1, index_Atot, index_Atot_sum, index_ddelta_bar;
     int index_psi, index_sigmaxx, index_sigmayy, index_sigmazz, index_contacts, index_adhesive_length;

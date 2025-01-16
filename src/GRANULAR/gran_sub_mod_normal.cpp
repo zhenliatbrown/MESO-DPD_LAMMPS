@@ -493,6 +493,8 @@ void GranSubModNormalMDR::coeffs_to_local()
   gammasq = gamma * gamma;
   gamma3 = gammasq * gamma;
   gamma4 = gammasq * gammasq;
+
+  warn_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -589,6 +591,7 @@ double GranSubModNormalMDR::calculate_forces()
 
   // always update deltamax since gm->delta won't change until initial integrate
   //   also need to define deltamax if an atom is created with an overlap
+  double deltamaxi = *deltamax_offset;
   if (gm->delta >= *deltamax_offset) *deltamax_offset = gm->delta;
   double deltamax = *deltamax_offset;
 
@@ -702,6 +705,13 @@ double GranSubModNormalMDR::calculate_forces()
 
     if (*Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR) {
     const double phertz = 4 * Eeff * sqrt(delta_MDR) / (3 * MY_PI * sqrt(R));
+      if (!history_update && warn_flag && deltamaxi == 0) {
+        error->all(FLERR, "Warning: The newly inserted particles have pre-existing overlaps that "
+                          "have caused immediate plastic deformation. This could lead to "
+                          "non-physical results in the MDR model, as it handles some aspects "
+                          "related to plastic deformation incrementally.");
+        warn_flag = 0;
+      }
       if (history_update && phertz > pY) {
         *Yflag_offset = 1.0;
         *deltaY_offset = delta_MDR;
