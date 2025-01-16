@@ -706,7 +706,7 @@ double GranSubModNormalMDR::calculate_forces()
     if (*Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR) {
     const double phertz = 4 * Eeff * sqrt(delta_MDR) / (3 * MY_PI * sqrt(R));
       if (!history_update && warn_flag && deltamaxi == 0 && phertz > pY) {
-        error->all(FLERR, "Warning: The newly inserted particles have pre-existing overlaps that "
+        error->warning(FLERR, "The newly inserted particles have pre-existing overlaps that "
                           "have caused immediate plastic deformation. This could lead to "
                           "non-physical results in the MDR model, as it handles some aspects "
                           "related to plastic deformation incrementally.");
