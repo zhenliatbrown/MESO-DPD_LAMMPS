@@ -198,13 +198,11 @@ void PairHybridScaled::compute(int eflag, int vflag)
       }
       // if scale factor is atom-style variable
     } else {
-      int igroupall = 0;
+      const int igroupall = 0;
       input->variable->compute_atom(atomvar[m], igroupall, atomscale, 1, 0);
       comm->forward_comm(this);
       for (i = 0; i < nall; ++i) {
         const double ascale = atomscale[i];
-        //        if (i >= atom->nlocal)
-        //        printf("id = %lld scale = %g\n", atom->tag[i], ascale);
         fsum[i][0] += ascale * f[i][0];
         fsum[i][1] += ascale * f[i][1];
         fsum[i][2] += ascale * f[i][2];
@@ -438,18 +436,35 @@ double PairHybridScaled::single(int i, int j, int itype, int jtype, double rsq, 
   // update scale values from variables where needed
 
   const int nvars = scalevars.size();
+  int atomscaleflag = 0;
   if (nvars > 0) {
     auto vals = new double[nvars];
+    auto vars = new int[nvars];
     for (int k = 0; k < nvars; ++k) {
       int m = input->variable->find(scalevars[k].c_str());
       if (m < 0)
         error->all(FLERR, "Variable '{}' not found when updating scale factors", scalevars[k]);
-      vals[k] = input->variable->compute_equal(m);
+
+      // for equal-style, compute variable, set variable index to -1
+      if (input->variable->equalstyle(m)) {
+        vals[k] = input->variable->compute_equal(m);
+        vars[k] = -1;
+        // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
+      } else if (input->variable->atomstyle(m)) {
+        vals[k] = 0.0;
+        vars[k] = m;
+        atomscaleflag = 1;
+      } else
+        error->all(FLERR, "Variable '{}' has incompatible style", scalevars[k]);
     }
     for (int k = 0; k < nstyles; ++k) {
-      if (scaleidx[k] >= 0) scaleval[k] = vals[scaleidx[k]];
+      if (scaleidx[k] >= 0) {
+        scaleval[k] = vals[scaleidx[k]];
+        atomvar[k] = vars[scaleidx[k]];
+      }
     }
     delete[] vals;
+    delete[] vars;
   }
 
   double fone;
@@ -468,7 +483,18 @@ double PairHybridScaled::single(int i, int j, int itype, int jtype, double rsq, 
 
       double scale = scaleval[map[itype][jtype][m]];
       esum += scale * pstyle->single(i, j, itype, jtype, rsq, factor_coul, factor_lj, fone);
-      fforce += scale * fone;
+
+      // if scale factor is constant or equal-style variable
+      if (scaleidx[m] < 0 || atomvar[m] < 0) {
+        fforce += scale * fone;
+        // if scale factor is atom-style variable, average i and j
+      } else {
+        const int igroupall = 0;
+        input->variable->compute_atom(atomvar[m], igroupall, atomscale, 1, 0);
+        comm->forward_comm(this);
+        const double ascale = 0.5 * (atomscale[i] + atomscale[j]);
+        fforce += ascale * fone;
+      }
     }
   }
 
@@ -491,18 +517,35 @@ void PairHybridScaled::born_matrix(int i, int j, int itype, int jtype, double rs
   // update scale values from variables where needed
 
   const int nvars = scalevars.size();
+  int atomscaleflag = 0;
   if (nvars > 0) {
-    double *vals = new double[nvars];
+    auto vals = new double[nvars];
+    auto vars = new int[nvars];
     for (int k = 0; k < nvars; ++k) {
       int m = input->variable->find(scalevars[k].c_str());
       if (m < 0)
         error->all(FLERR, "Variable '{}' not found when updating scale factors", scalevars[k]);
-      vals[k] = input->variable->compute_equal(m);
+
+      // for equal-style, compute variable, set variable index to -1
+      if (input->variable->equalstyle(m)) {
+        vals[k] = input->variable->compute_equal(m);
+        vars[k] = -1;
+        // for atom-style, store variable index, set variable to 0.0, set atomscaleflag
+      } else if (input->variable->atomstyle(m)) {
+        vals[k] = 0.0;
+        vars[k] = m;
+        atomscaleflag = 1;
+      } else
+        error->all(FLERR, "Variable '{}' has incompatible style", scalevars[k]);
     }
     for (int k = 0; k < nstyles; ++k) {
-      if (scaleidx[k] >= 0) scaleval[k] = vals[scaleidx[k]];
+      if (scaleidx[k] >= 0) {
+        scaleval[k] = vals[scaleidx[k]];
+        atomvar[k] = vars[scaleidx[k]];
+      }
     }
     delete[] vals;
+    delete[] vars;
   }
 
   double du, du2, scale;
@@ -511,18 +554,30 @@ void PairHybridScaled::born_matrix(int i, int j, int itype, int jtype, double rs
   for (int m = 0; m < nmap[itype][jtype]; m++) {
     auto pstyle = styles[map[itype][jtype][m]];
     if (rsq < pstyle->cutsq[itype][jtype]) {
-      if (pstyle->born_matrix_enable == 0)
-        error->one(FLERR, "Pair hybrid sub-style does not support born_matrix call");
+      if (pstyle->single_enable == 0)
+        error->one(FLERR, "Pair hybrid sub-style does not support single call");
 
       if ((special_lj[map[itype][jtype][m]] != nullptr) ||
           (special_coul[map[itype][jtype][m]] != nullptr))
-        error->one(FLERR, "Pair hybrid born_matrix() does not support per sub-style special_bond");
+        error->one(FLERR, "Pair hybrid single() does not support per sub-style special_bond");
 
       du = du2 = 0.0;
-      scale = scaleval[map[itype][jtype][m]];
+      double scale = scaleval[map[itype][jtype][m]];
       pstyle->born_matrix(i, j, itype, jtype, rsq, factor_coul, factor_lj, du, du2);
-      dupair += scale * du;
-      du2pair += scale * du2;
+
+      // if scale factor is constant or equal-style variable
+      if (scaleidx[m] < 0 || atomvar[m] < 0) {
+        dupair += scale * du;
+        du2pair += scale * du2;
+        // if scale factor is atom-style variable, average i and j
+      } else {
+        const int igroupall = 0;
+        input->variable->compute_atom(atomvar[m], igroupall, atomscale, 1, 0);
+        comm->forward_comm(this);
+        const double ascale = 0.5 * (atomscale[i] + atomscale[j]);
+        dupair += ascale * du;
+        du2pair += ascale * du2;
+      }
     }
   }
 }

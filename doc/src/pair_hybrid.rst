@@ -70,6 +70,12 @@ Examples
    pair_coeff 1 1 lj/cut 1.0 1.0 2.5
    pair_coeff 1 1 morse 1.0 1.0 1.0 2.5
 
+   variable peratom1 atom 1/(1+exp(-$k*vx^2)
+   variable peratom2 atom 1-v_peratom1
+   pair_style hybrid/scaled v_peratom1 lj/cut 2.5 v_peratom2 morse 2.5
+   pair_coeff 1 1 lj/cut 1.0 1.0 2.5
+   pair_coeff 1 1 morse 1.0 1.0 1.0 2.5
+
 Description
 """""""""""
 
