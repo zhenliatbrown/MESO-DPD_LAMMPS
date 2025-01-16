@@ -118,7 +118,7 @@ void FixWallGranRegion::init()
 
 void FixWallGranRegion::post_force(int /*vflag*/)
 {
-  int i, m, nc, iwall;
+  int i, n, m, nc, iwall;
   double *forces, *torquesi;
   double meff, vwall[3], w0[3] = {0.0, 0.0, 0.0};
   bool touchflag = false;
@@ -262,7 +262,9 @@ void FixWallGranRegion::post_force(int /*vflag*/)
       if (use_history) model->history = history_many[i][c2r[ic]];
       if (heat_flag) model->Ti = temperature[i];
 
+      if (peratom_flag) model->calculate_svector = 1;
       model->calculate_forces();
+      if (peratom_flag) model->calculate_svector = 0;
 
       forces = model->forces;
       torquesi = model->torquesi;
@@ -283,6 +285,9 @@ void FixWallGranRegion::post_force(int /*vflag*/)
         array_atom[i][5] = x[i][1] - model->dx[1];
         array_atom[i][6] = x[i][2] - model->dx[2];
         array_atom[i][7] = radius[i];
+
+        for (n = 0; n < model->nsvector; n++)
+          array_atom[i][8 + n] = model->svector[n];
       }
     }
   }

@@ -84,7 +84,7 @@ class FixWallGran : public Fix {
 
   // store particle interactions
 
-  int store;
+  int nsvector;
 
   void clear_stored_contacts();
 };

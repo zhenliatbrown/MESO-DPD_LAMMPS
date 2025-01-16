@@ -166,15 +166,15 @@ initially will not experience force until they come into contact
 experience a tensile force up to :math:`3\pi\gamma R`, at which point they
 lose contact.
 
-The *mdr* model is a mechanically-derived contact model designed to capture the 
+The *mdr* model is a mechanically-derived contact model designed to capture the
 contact response between adhesive elastic-plastic particles into large deformation.
 The theoretical foundations of the *mdr* model are detailed in the
-two-part series :ref:`Zunker and Kamrin Part I <Zunker2024I>` and 
-:ref:`Zunker and Kamrin Part II <Zunker2024II>`. Further development 
+two-part series :ref:`Zunker and Kamrin Part I <Zunker2024I>` and
+:ref:`Zunker and Kamrin Part II <Zunker2024II>`. Further development
 and demonstrations of its application to industrially relevant powder
 compaction processes are presented in :ref:`Zunker et al. <Zunker2025>`.
 
-The model requires the following inputs: 
+The model requires the following inputs:
 
    1. *Young's modulus* :math:`E > 0` : The Young's modulus is commonly reported
    for various powders.
@@ -197,12 +197,12 @@ The model requires the following inputs:
    response.
 
    6. *Coefficient of restitution* :math:`0 \le e \le 1` : The coefficient of
-   restitution is a tunable parameter that controls damping in the normal direction. 
+   restitution is a tunable parameter that controls damping in the normal direction.
 
 .. note::
 
    The values for :math:`E`, :math:`\nu`, :math:`Y`, and :math:`\Delta\gamma` (i.e.,
-   :math:`K_{Ic}`) should be selected for zero porosity to reflect the intrinsic 
+   :math:`K_{Ic}`) should be selected for zero porosity to reflect the intrinsic
    material property rather than the bulk powder property.
 
 The *mdr* model produces a nonlinear force-displacement response, therefore the
@@ -218,7 +218,7 @@ Here, :math:`\kappa = E/(3(1-2\nu))` is the bulk modulus and
 .. note::
 
    The *mdr* model requires some specific settings to function properly,
-   please read the following text carefully to ensure all requirements are 
+   please read the following text carefully to ensure all requirements are
    followed.
 
 The *atom_style* must be set to *sphere 1* to enable dynamic particle
@@ -230,7 +230,7 @@ deformation is accumulated, a new enlarged apparent radius is defined to
 ensure that that volume change due to plastic deformation is not lost.
 This apparent radius is stored as the *atom radius* meaning it is used
 for subsequent neighbor list builds and contact detection checks. The
-advantage of this is that multi-neighbor dependent effects such as 
+advantage of this is that multi-neighbor dependent effects such as
 formation of secondary contacts caused by radial expansion are captured
 by the *mdr* model. Setting *atom_style sphere 1* ensures that updates to
 the particle radii are properly reflected throughout the simulation.
@@ -243,14 +243,14 @@ Newton's third law must be set to *off*. This ensures that the neighbor lists
 are constructed properly for the topological penalty algorithm used to screen
 for non-physical contacts occurring through obstructing particles, an issue
 prevalent under large deformation conditions. For more information on this
-algorithm see :ref:`Zunker et al. <Zunker2025>`. 
+algorithm see :ref:`Zunker et al. <Zunker2025>`.
 
 .. code-block:: LAMMPS
 
    newton off
 
-The damping model must be set to *none*. The *mdr* model already has a built 
-in damping model. 
+The damping model must be set to *none*. The *mdr* model already has a built
+in damping model.
 
 .. code-block:: LAMMPS
 
@@ -268,7 +268,7 @@ Additionally, the following *mdr* inputs must match between the
 *pair_style* and *fix wall/gran/region* definitions: :math:`E`,
 :math:`\nu`, :math:`Y`, :math:`\psi_b`, and :math:`e`. The exception
 is :math:`\Delta\gamma`, which may vary, permitting different
-adhesive behaviors between particle-particle and particle-wall interactions.  
+adhesive behaviors between particle-particle and particle-wall interactions.
 
 .. note::
 
@@ -297,7 +297,7 @@ contact. In the input script, these quantities are initialized by calling
    *examples/granular* directory. The first is a die compaction
    simulation involving 200 particles named *in.tableting.200*.
    The second is a triaxial compaction simulation involving 12
-   particles named *in.triaxial.compaction.12*. 
+   particles named *in.triaxial.compaction.12*.
 ----------
 
 In addition, the normal force is augmented by a damping term of the
@@ -806,7 +806,10 @@ supported are:
 2. *radius* : :math:`k_{s}`
 3. *area* : :math:`h_{s}`
 
-If the *heat* keyword is not specified, the model defaults to *none*.
+If the *heat* keyword is not specified, the model defaults to *none*. All
+heat models calculate an additional pairwise quantity accessible by the
+single() function (described below) which is the heat conducted between the
+two particles.
 
 For *heat* *radius*, the heat
 :math:`Q` conducted between two particles is given by
@@ -921,7 +924,7 @@ The single() function of these pair styles returns 0.0 for the energy
 of a pairwise interaction, since energy is not conserved in these
 dissipative potentials.  It also returns only the normal component of
 the pairwise interaction force.  However, the single() function also
-calculates 13 extra pairwise quantities.  The first 3 are the
+calculates at least 13 extra pairwise quantities.  The first 3 are the
 components of the tangential force between particles I and J, acting
 on particle I.  The fourth is the magnitude of this tangential force.
 The next 3 (5-7) are the components of the rolling torque acting on
@@ -929,9 +932,13 @@ particle I. The next entry (8) is the magnitude of the rolling torque.
 The next entry (9) is the magnitude of the twisting torque acting
 about the vector connecting the two particle centers.
 The next 3 (10-12) are the components of the vector connecting
-the centers of the two particles (x_I - x_J). The last quantity (13)
-is the heat flow between the two particles, set to 0 if no heat model
-is active.
+the centers of the two particles (x_I - x_J). If a granular submodel
+calculates additional contact information (e.g. the heat submodels
+calculate the amount of heat exchanged), these quantities are appended
+to the end of this list. First, any extra values from the normal submodel
+are appended followed by the damping, tangential, rolling, twisting, then
+heat models. See the descriptions of specific granular submodels above
+for information on any extra quantities.
 
 These extra quantities can be accessed by the :doc:`compute pair/local <compute_pair_local>` command, as *p1*, *p2*, ...,
 *p12*\ .

@@ -96,6 +96,10 @@ class GranularModel : protected Pointers {
   double magtwist;
   bool touch;
 
+  // Extra output
+  int calculate_svector, nsvector;
+  double *svector;
+
  protected:
   int rolling_defined, twisting_defined, heat_defined; // Flag optional sub models
   int classic_model;                                   // Flag original pair/gran calculations

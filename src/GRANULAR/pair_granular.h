@@ -82,6 +82,8 @@ class PairGranular : public Pair {
   // optional user-specified global cutoff, per-type user-specified cutoffs
   double **cutoff_type;
   double cutoff_global;
+
+  int extra_svector;
 };
 
 }    // namespace LAMMPS_NS
