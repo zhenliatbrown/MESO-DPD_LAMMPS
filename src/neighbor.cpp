@@ -1193,9 +1193,8 @@ void Neighbor::morph_unique()
   for (int i = 0; i < nrequest; i++) {
     irq = requests[i];
 
-    // if cut flag set by requestor and cutoff is different than default,
-    //   or pair-wise cutoff is different for different pairs of atoms types
-    //   set unique flag, otherwise unset cut flag
+    // if cut flag set by requestor and cutoff is larger than minimum for default,
+    //   and the list is not a skip list, set unique flag; otherwise unset cut flag
     // this forces Pair,Stencil,Bin styles to be instantiated separately
     // also add skin to cutoff of perpetual lists
 
@@ -1203,7 +1202,7 @@ void Neighbor::morph_unique()
       if (!irq->occasional)
         irq->cutoff += skin;
 
-      if ((irq->cutoff != cutneighmax) || (cutneighmin != cutneighmax)) {
+      if ((irq->cutoff > cutneighmin) && !irq->skip) {
         irq->unique = 1;
       } else {
         irq->cut = 0;
