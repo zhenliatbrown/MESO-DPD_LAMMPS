@@ -139,6 +139,7 @@ pairclass(nullptr), pairnames(nullptr), pairmasks(nullptr)
   ago = -1;
 
   cutneighmax = 0.0;
+  cutneighmin = BIG;
   cutneighsq = nullptr;
   cutneighghostsq = nullptr;
   cuttype = nullptr;
@@ -1186,6 +1187,7 @@ void Neighbor::morph_unique()
     irq = requests[i];
 
     // if cut flag set by requestor and cutoff is different than default,
+    //   or pair-wise cutoff is different for different pairs of atoms types
     //   set unique flag, otherwise unset cut flag
     // this forces Pair,Stencil,Bin styles to be instantiated separately
     // also add skin to cutoff of perpetual lists
@@ -1194,7 +1196,7 @@ void Neighbor::morph_unique()
       if (!irq->occasional)
         irq->cutoff += skin;
 
-      if (irq->cutoff != cutneighmax) {
+      if ((irq->cutoff != cutneighmax) || (cutneighmin != cutneighmax)) {
         irq->unique = 1;
       } else {
         irq->cut = 0;
@@ -1509,6 +1511,10 @@ void Neighbor::morph_copy_trim()
       // other list is already copied from this one
 
       if (jrq->copy && jrq->copylist == i) continue;
+
+      // cannot copy or trim if some pair-wise cutoffs are too small
+
+      if (irq->cut && !jrq->cut && (irq->cutoff > cutneighmin)) continue;
 
       // trim a list with longer cutoff
 
