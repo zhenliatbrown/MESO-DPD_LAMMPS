@@ -28,6 +28,7 @@ class Input : protected Pointers {
   friend class SimpleCommandsTest_Echo_Test;
 
  public:
+  char *command;               // ptr to current command
   int narg;                    // # of command args
   char **arg;                  // parsed args for command
   class Variable *variable;    // defined variables
@@ -42,7 +43,6 @@ class Input : protected Pointers {
   int get_jump_skip() const { return jump_skip; }
 
  protected:
-  char *command;      // ptr to current command
   int echo_screen;    // 0 = no, 1 = yes
   int echo_log;       // 0 = no, 1 = yes
 

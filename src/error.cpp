@@ -114,7 +114,7 @@ void Error::universe_warn(const std::string &file, int line, const std::string &
    force MPI_Abort if running in multi-partition mode
 ------------------------------------------------------------------------- */
 
-void Error::all(const std::string &file, int line, const std::string &str)
+void Error::all(const std::string &file, int line, int failed, const std::string &str)
 {
   MPI_Barrier(world);
 
@@ -125,9 +125,11 @@ void Error::all(const std::string &file, int line, const std::string &str)
 
   if (me == 0) {
     std::string mesg = "ERROR: " + str;
+
     if (input && input->line) lastcmd = input->line;
     try {
       mesg += fmt::format(" ({}:{})\nLast command: {}\n", truncpath(file),line,lastcmd);
+      if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
     } catch (fmt::format_error &) {
       ; // do nothing
     }
@@ -140,6 +142,7 @@ void Error::all(const std::string &file, int line, const std::string &str)
   if (update) update->whichflag = 0;
 
   std::string msg = fmt::format("ERROR: {} ({}:{})\n", str, truncpath(file), line);
+  if (failed > NOPOINTER) msg += utils::point_to_error(input, failed);
 
   if (universe->nworlds > 1)
     throw LAMMPSAbortException(msg, universe->uworld);
@@ -154,15 +157,21 @@ void Error::all(const std::string &file, int line, const std::string &str)
    forces abort of entire world (and universe) if any proc in world calls
 ------------------------------------------------------------------------- */
 
-void Error::one(const std::string &file, int line, const std::string &str)
+void Error::one(const std::string &file, int line, int failed, const std::string &str)
 {
   int me;
   std::string lastcmd = "(unknown)";
   MPI_Comm_rank(world,&me);
 
   if (input && input->line) lastcmd = input->line;
-  std::string mesg = fmt::format("ERROR on proc {}: {} ({}:{})\nLast command: {}\n",
-                                 me,str,truncpath(file),line,lastcmd);
+  std::string mesg;
+  try {
+    mesg = fmt::format("ERROR on proc {}: {} ({}:{})\nLast command: {}\n",
+                       me,str,truncpath(file),line,lastcmd);
+    if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
+  } catch (fmt::format_error &) {
+    ; // do nothing
+  }
   utils::logmesg(lmp,mesg);
 
   if (universe->nworlds > 1)
@@ -177,27 +186,27 @@ void Error::one(const std::string &file, int line, const std::string &str)
 }
 
 /* ----------------------------------------------------------------------
-   forward vararg version to single string version
+   forward vararg versions to single string version
 ------------------------------------------------------------------------- */
 
-void Error::_all(const std::string &file, int line, fmt::string_view format,
+void Error::_all(const std::string &file, int line, int failed, fmt::string_view format,
                  fmt::format_args args)
 {
   try {
-    all(file,line,fmt::vformat(format, args));
+    all(file, line, failed, fmt::vformat(format, args));
   } catch (fmt::format_error &e) {
-    all(file,line,e.what());
+    all(file, line, NOPOINTER, e.what());
   }
   exit(1); // to trick "smart" compilers into believing this does not return
 }
 
-void Error::_one(const std::string &file, int line, fmt::string_view format,
+void Error::_one(const std::string &file, int line, int failed, fmt::string_view format,
                  fmt::format_args args)
 {
   try {
-    one(file,line,fmt::vformat(format, args));
+    one(file, line, failed, fmt::vformat(format, args));
   } catch (fmt::format_error &e) {
-    one(file,line,e.what());
+    one(file, line, NOPOINTER, e.what());
   }
   exit(1); // to trick "smart" compilers into believing this does not return
 }

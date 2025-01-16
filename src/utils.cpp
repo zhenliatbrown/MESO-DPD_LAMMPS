@@ -132,6 +132,28 @@ void utils::missing_cmd_args(const std::string &file, int line, const std::strin
   if (error) error->all(file, line, "Illegal {} command: missing argument(s)", cmd);
 }
 
+std::string utils::point_to_error(Input *input, int failedarg)
+{
+  if (input) {
+    std::string cmdline = "Preprocessed: ";
+    int indicator = cmdline.size(); // error indicator points to command by default
+    cmdline += input->command;
+    cmdline += ' ';
+
+    // assemble pre-processed command line and update error indicator position, if needed.
+    for (int i = 0; i < input->narg; ++i) {
+      if (i == failedarg) indicator = cmdline.size();
+      cmdline += input->arg[i];
+      cmdline += ' ';
+    }
+    // construct and append error indicator line
+    cmdline += '\n';
+    cmdline += std::string(indicator, ' ');
+    cmdline += "^\n";
+    return cmdline;
+  } else return std::string("(Failed command line text not available)");
+}
+
 /* specialization for the case of just a single string argument */
 
 void utils::logmesg(LAMMPS *lmp, const std::string &mesg)

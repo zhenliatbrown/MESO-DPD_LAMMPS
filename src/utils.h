@@ -28,6 +28,7 @@ namespace LAMMPS_NS {
 
 // forward declarations
 class Error;
+class Input;
 class LAMMPS;
 
 namespace utils {
@@ -58,6 +59,15 @@ namespace utils {
    *  \param error    pointer to Error class instance (for abort) or nullptr */
 
   void missing_cmd_args(const std::string &file, int line, const std::string &cmd, Error *error);
+
+  /*! Create string with last command after pre-processing and pointing to arg with error
+   *
+   * This function is a helper function for error messages.  It creates
+   *
+   *  \param input      pointer to the Input class instance (for access to last command args)
+   *  \param failedarg  index of the faulty argument (-1 to point to the command itself)
+   *  \return           string with two lines: the pre-processed command and a '^' pointing to the faulty argument */
+  std::string point_to_error(Input *input, int failedarg);
 
   /*! Internal function handling the argument list for logmesg(). */
 
