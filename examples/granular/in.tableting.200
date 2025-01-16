@@ -55,8 +55,6 @@ pair_coeff * * mdr ${YoungsModulus} ${PoissonsRatio} ${YieldStress} ${SurfaceEne
 
 variable disp_upper      equal 0.0
 variable disp_lower      equal 0.0
-variable disp_xPlanePos  equal 0.0
-variable disp_xPlaneNeg  equal 0.0
 
 variable wall_contact_string string "granular mdr ${YoungsModulus} ${PoissonsRatio} ${YieldStress} ${SurfaceEnergyWall} ${psi_b} ${CoR} tangential linear_history ${kt_wall} ${xgammat} ${mu_s_wall} rolling sds ${k_roll} ${gamma_roll} ${mu_roll} damping none"
 
