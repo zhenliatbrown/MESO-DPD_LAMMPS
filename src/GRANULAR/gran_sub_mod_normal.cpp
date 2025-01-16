@@ -697,7 +697,7 @@ double GranSubModNormalMDR::calculate_forces()
     const double delta_BULK = MAX(0.0, *delta_BULK_offset + ddelta_BULK);
     if (history_update) *delta_BULK_offset = delta_BULK;
 
-    if (history_update && delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
+    if (delta_MDR > *deltamax_MDR_offset) *deltamax_MDR_offset = delta_MDR;
     const double deltamax_MDR = *deltamax_MDR_offset;
 
     // average pressure along yield surface
@@ -705,7 +705,7 @@ double GranSubModNormalMDR::calculate_forces()
 
     if (*Yflag_offset == 0.0 && delta_MDR >= deltamax_MDR) {
     const double phertz = 4 * Eeff * sqrt(delta_MDR) / (3 * MY_PI * sqrt(R));
-      if (!history_update && warn_flag && deltamaxi == 0) {
+      if (!history_update && warn_flag && deltamaxi == 0 && phertz > pY) {
         error->all(FLERR, "Warning: The newly inserted particles have pre-existing overlaps that "
                           "have caused immediate plastic deformation. This could lead to "
                           "non-physical results in the MDR model, as it handles some aspects "
