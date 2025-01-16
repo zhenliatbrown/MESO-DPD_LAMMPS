@@ -435,7 +435,9 @@ void FixWallGran::post_force(int /*vflag*/)
 
   rwall = 0.0;
 
+  model->calculate_svector = 0;
   if (peratom_flag) {
+    model->calculate_svector = 1;
     clear_stored_contacts();
   }
 
@@ -523,9 +525,7 @@ void FixWallGran::post_force(int /*vflag*/)
     if (use_history) model->history = history_one[i];
     if (heat_flag) model->Ti = temperature[i];
 
-    if (peratom_flag) model->calculate_svector = 1;
     model->calculate_forces();
-    if (peratom_flag) model->calculate_svector = 0;
 
     forces = model->forces;
     torquesi = model->torquesi;

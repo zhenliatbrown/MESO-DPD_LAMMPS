@@ -174,7 +174,11 @@ void FixWallGranRegion::post_force(int /*vflag*/)
     region->set_velocity();
   }
 
-  if (peratom_flag) clear_stored_contacts();
+  model->calculate_svector = 0;
+  if (peratom_flag) {
+    model->calculate_svector = 1;
+    clear_stored_contacts();
+  }
 
   // Define constant wall properties (atom j)
   model->radj = 0.0;
@@ -262,9 +266,7 @@ void FixWallGranRegion::post_force(int /*vflag*/)
       if (use_history) model->history = history_many[i][c2r[ic]];
       if (heat_flag) model->Ti = temperature[i];
 
-      if (peratom_flag) model->calculate_svector = 1;
       model->calculate_forces();
-      if (peratom_flag) model->calculate_svector = 0;
 
       forces = model->forces;
       torquesi = model->torquesi;
