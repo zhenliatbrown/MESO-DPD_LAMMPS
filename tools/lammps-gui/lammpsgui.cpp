@@ -1161,7 +1161,7 @@ void LammpsGui::run_done()
         status->setText("Failed.");
         ui->textEdit->setHighlight(nline, true);
         QMessageBox::critical(this, "LAMMPS-GUI Error",
-                              QString("Error running LAMMPS:\n\n") + errorbuf);
+                              QString("<p>Error running LAMMPS:\n\n<pre>") + errorbuf + "</pre></p>");
     }
     ui->textEdit->setCursor(nline);
     ui->textEdit->setFileList();
