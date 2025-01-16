@@ -331,32 +331,6 @@ void ComputeADF::init()
     if ((neighbor->style == Neighbor::MULTI) || (neighbor->style == Neighbor::MULTI_OLD))
       error->all(FLERR, "Compute adf with custom cutoffs requires neighbor style 'bin' or 'nsq'");
 
-    // check if the pair style cutoff varies
-    double pairmaxcut, pairmincut;
-    double skin = neighbor->skin;
-    double cutoff_user = mycutneigh - skin;
-
-    if (force->pair) {
-      pairmaxcut = 0.0;
-      pairmincut = BIG;
-      for (int i = 1; i <= atom->ntypes; i++)
-        for (int j = i; j <= atom->ntypes; j++) {
-          const double cut = sqrt(force->pair->cutsq[i][j]);
-          pairmaxcut = MAX(pairmaxcut, cut);
-          pairmincut = MIN(pairmincut, cut);
-        }
-    } else {
-      pairmaxcut = pairmincut = cutoff_user;
-    }
-
-    // if the pair-wise cutoff varies for different pairs of types, the neighbor list code
-    // will still re-use the pairwise neighbor list if the *largest* cutoff is sufficient.
-    // this will lead to incorrect results and a larger user cutoff is required.
-
-    if ((cutoff_user > pairmincut) && (cutoff_user <= pairmaxcut))
-      error->all(FLERR,"Compute adf max cutoff {} must be larger than the maximum pair-wise "
-                 "cutoff {} when the pair-wise cutoff varies", cutoff_user, pairmaxcut);
-
     req->set_cutoff(mycutneigh);
   }
 }
