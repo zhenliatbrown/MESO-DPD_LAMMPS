@@ -1100,8 +1100,10 @@ int Neighbor::init_pair()
 
   NeighList *ptr;
 
+  // use counter to avoid getting stuck
   int done = 0;
-  while (!done) {
+  int count = 0;
+  while (!done && (count < 100)) {
     done = 1;
     for (i = 0; i < npair_perpetual; i++) {
       for (k = 0; k < 3; k++) {
@@ -1110,8 +1112,9 @@ int Neighbor::init_pair()
         if (k == 1) ptr = lists[plist[i]]->listskip;
         if (k == 2) ptr = lists[plist[i]]->listfull;
         if (ptr == nullptr) continue;
-        for (m = 0; m < nrequest; m++)
+        for (m = 0; m < nrequest; m++) {
           if (ptr == lists[m]) break;
+        }
         for (j = 0; j < npair_perpetual; j++)
           if (m == plist[j]) break;
         if (j < i) continue;
@@ -1123,7 +1126,11 @@ int Neighbor::init_pair()
       }
       if (!done) break;
     }
+    ++count;
   }
+  if (count == 100)
+    error->all(FLERR, "Failed to reorder neighbor lists to satisfy constraints - "
+               "Contact the LAMMPS developers for assistance");
 
   // debug output
 
