@@ -63,8 +63,6 @@ variable dieHeight2 equal 2*${dieHeight}
 region lowerPunch plane 0 0 0 0 0 1 side in units box move NULL NULL v_disp_lower units box
 region upperPunch plane 0 0 ${dieHeight} 0 0 -1 side in move NULL NULL v_disp_upper units box
 region die cylinder z 0 0 ${dieRadius} 0 ${dieHeight2} side in units box
-variable dieRadiusPlus    equal ${dieRadius}*1.05
-variable dieRadiusPlusNeg equal -${dieRadiusPlus}
 
 fix lowerPunch all wall/gran/region ${wall_contact_string} region lowerPunch contacts
 fix upperPunch all wall/gran/region ${wall_contact_string} region upperPunch contacts
