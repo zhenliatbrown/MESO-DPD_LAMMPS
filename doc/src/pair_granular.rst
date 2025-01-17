@@ -282,7 +282,7 @@ stress components, total surface area involved in
 contact, and individual contact areas. In the input script, these quantities are
 initialized by calling *run 0* and can then be accessed using subsequent *compute*
 commands. The last *compute* command uses *pair/local p13* to calculate the pairwise
-contact areas for each active contact in the *group-ID*. 
+contact areas for each active contact in the *group-ID*.
 
 .. code-block:: LAMMPS
 
