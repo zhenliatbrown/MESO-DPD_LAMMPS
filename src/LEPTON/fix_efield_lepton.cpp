@@ -228,7 +228,6 @@ void FixEfieldLepton::post_force(int vflag)
   double ex, ey, ez;
   double fx, fy, fz;
   double v[6], unwrap[3], dstep[3];
-  double xf, yf, zf, xb, yb, zb;
   double exf, eyf, ezf, exb, eyb, ezb;
   double mu_norm, h_mu;
 
