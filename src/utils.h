@@ -41,6 +41,14 @@ namespace utils {
 
   bool strmatch(const std::string &text, const std::string &pattern);
 
+  /*! Compare two string while ignoring whitespace
+   *
+   *  \param text1 the first text to be compared
+   *  \param text2 the second text to be compared
+   *  \return true if the non-whitespace part of the two strings matches, false if not */
+
+  bool strsame(const std::string &text1, const std::string &text2);
+
   /*! Find sub-string that matches a simplified regex pattern
    *
    *  \param text the text to be matched against the pattern

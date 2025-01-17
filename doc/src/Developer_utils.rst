@@ -166,6 +166,9 @@ and parsing files or arguments.
 .. doxygenfunction:: split_lines
    :project: progguide
 
+.. doxygenfunction:: strsame
+   :project: progguide
+
 .. doxygenfunction:: strmatch
    :project: progguide
 

@@ -46,6 +46,22 @@ TEST(Utils, strdup)
     delete[] copy2;
 }
 
+TEST(Utils, strsame)
+{
+    std::string text1("some_text");
+    std::string text2("some_text");
+    ASSERT_TRUE(utils::strsame(text1,text2));
+    text1 = " some   _\ttext\n ";
+    ASSERT_TRUE(utils::strsame(text1,text2));
+    text2 = "  some _  text\n    ";
+    ASSERT_TRUE(utils::strsame(text1,text2));
+
+    text2 = "some_other_text";
+    ASSERT_FALSE(utils::strsame(text1,text2));
+    text2 = " some other_text";
+    ASSERT_FALSE(utils::strsame(text1,text2));
+}
+
 TEST(Utils, trim)
 {
     auto trimmed = utils::trim("\t some text");

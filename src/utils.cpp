@@ -111,6 +111,29 @@ bool utils::strmatch(const std::string &text, const std::string &pattern)
   return (pos >= 0);
 }
 
+bool utils::strsame(const std::string &text1, const std::string &text2)
+{
+  const char *ptr1 = text1.c_str();
+  const char *ptr2 = text2.c_str();
+
+  while (*ptr1 && *ptr2) {
+
+    // ignore whitespace
+    while (*ptr1 && isblank(*ptr1)) ++ptr1;
+    while (*ptr2 && isblank(*ptr2)) ++ptr2;
+
+    // strings differ
+    if (*ptr1 != *ptr2) return false;
+
+    // reached end of both strings
+    if (!*ptr1 && !*ptr2) return true;
+
+    ++ptr1;
+    ++ptr2;
+  }
+  return true;
+}
+
 /** This function is a companion function to utils::strmatch(). Arguments
  *  and logic is the same, but instead of a boolean, it returns the
  *  sub-string that matches the regex pattern.  There can be only one match.
