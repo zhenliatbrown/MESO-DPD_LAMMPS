@@ -121,16 +121,9 @@ void Error::all(const std::string &file, int line, int failed, const std::string
   std::string lastcmd = "(unknown)";
   std::string mesg = "ERROR: " + str + fmt::format(" ({}:{})\n",  truncpath(file), line);
 
-  if (input && input->line) lastcmd = input->line;
+  // add text about the input following the error message
 
-  if (failed > NOLASTLINE) {
-    try {
-      mesg += fmt::format("Last input line: {}\n", lastcmd);
-      if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
-    } catch (fmt::format_error &) {
-      ; // do nothing
-    }
-  }
+  if (failed > NOLASTLINE) mesg += utils::point_to_error(input, failed);
   if (comm->me == 0) utils::logmesg(lmp,mesg);
 
   // allow commands if an exception was caught in a run
@@ -153,23 +146,11 @@ void Error::all(const std::string &file, int line, int failed, const std::string
 
 void Error::one(const std::string &file, int line, int failed, const std::string &str)
 {
-  int me;
   std::string lastcmd = "(unknown)";
-  MPI_Comm_rank(world,&me);
 
-  if (input && input->line) lastcmd = input->line;
-  std::string mesg;
-  try {
-    if (failed == NOLASTLINE) {
-      mesg = fmt::format("ERROR on proc {}: {} ({}:{})\n", me, str, truncpath(file), line);
-    } else {
-      mesg = fmt::format("ERROR on proc {}: {} ({}:{})\nLast input line: {}\n",
-                         me, str, truncpath(file), line, lastcmd);
-    }
-    if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
-  } catch (fmt::format_error &) {
-    ; // do nothing
-  }
+  std::string mesg = fmt::format("ERROR on proc {}: {} ({}:{})\n", comm->me, str,
+                                 truncpath(file), line);
+  if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
   utils::logmesg(lmp,mesg);
 
   if (universe->nworlds > 1)

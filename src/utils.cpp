@@ -158,39 +158,65 @@ void utils::missing_cmd_args(const std::string &file, int line, const std::strin
 std::string utils::point_to_error(Input *input, int failed)
 {
   if (input) {
-    std::string cmdline = "--> parsed line: ";
-    int indicator = cmdline.size();    // error indicator points to command by default
-    cmdline += input->command;
-    cmdline += ' ';
+    std::string lastline = input->line;
+    std::string lastargs = input->command;
+    std::string cmdline = "Last input line: ";
 
-    // assemble pre-processed command line and update error indicator position, if needed.
-    for (int i = 0; i < input->narg; ++i) {
-      std::string inputarg = input->arg[i];
-      if (i == failed) indicator = cmdline.size();
+    // extended output
+    if (failed > Error::NOPOINTER) {
 
-      // argument contains whitespace. add quotes. check which type of quotes, too
-      if (inputarg.find_first_of(" \t\n") != std::string::npos) {
-        if (inputarg.find_first_of('"') != std::string::npos) {
-          cmdline += "'";
-          cmdline += inputarg;
-          cmdline += "'";
-        } else {
-          cmdline += '"';
-          cmdline += inputarg;
-          cmdline += '"';
-        }
-      } else
-        cmdline += inputarg;
-      cmdline += ' ';
+      // indicator points to command by default
+      int indicator = 0;
+      int quoted = 0;
+      lastargs += ' ';
+
+      // assemble pre-processed command line and update error indicator position, if needed.
+      for (int i = 0; i < input->narg; ++i) {
+        std::string inputarg = input->arg[i];
+        if (i == failed) indicator = lastargs.size();
+
+        // argument contains whitespace. add quotes. check which type of quotes, too
+        if (inputarg.find_first_of(" \t\n") != std::string::npos) {
+          if (i == failed) quoted = 2;
+          if (inputarg.find_first_of('"') != std::string::npos) {
+            lastargs += "'";
+            lastargs += inputarg;
+            lastargs += "'";
+          } else {
+            lastargs += '"';
+            lastargs += inputarg;
+            lastargs += '"';
+          }
+        } else
+          lastargs += inputarg;
+        lastargs += ' ';
+      }
+
+      indicator += cmdline.size();
+      // the string is unchanged by substitution (ignoring whitespace), print output only once
+      if (utils::strsame(lastline, lastargs)) {
+        cmdline += lastargs;
+      } else {
+        cmdline += lastline;
+        cmdline += '\n';
+        // must have the same number of chars as "Last input line: " used in the previous line
+        cmdline += "--> parsed line: ";
+        cmdline += lastargs;
+      }
+
+      // construct and append error indicator line
+      cmdline += '\n';
+      cmdline += std::string(indicator, ' ');
+      cmdline += std::string(strlen(input->arg[failed]) + quoted, '^');
+      cmdline += '\n';
+
+    } else {
+      cmdline += input->line;
+      cmdline += '\n';
     }
-    // construct and append error indicator line
-    cmdline += '\n';
-    cmdline += std::string(indicator, ' ');
-    cmdline += std::string(strlen(input->arg[failed]), '^');
-    cmdline += '\n';
     return cmdline;
   } else
-    return std::string("(Failed command line text not available)");
+    return std::string("(Failed input line text not available)");
 }
 
 /* specialization for the case of just a single string argument */

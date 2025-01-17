@@ -68,7 +68,7 @@ namespace utils {
 
   void missing_cmd_args(const std::string &file, int line, const std::string &cmd, Error *error);
 
-  /*! Create string with last command after pre-processing and pointing to arg with error
+  /*! Create string with last command and optionally pointing to arg with error
    *
    * This function is a helper function for error messages.  It creates
    *
@@ -349,7 +349,7 @@ namespace utils {
 
   template <typename TYPE>
   void bounds(const char *file, int line, const std::string &str, bigint nmin, bigint nmax,
-              TYPE &nlo, TYPE &nhi, Error *error, int failed = -2); // -2 = Error::NOPOINTER
+              TYPE &nlo, TYPE &nhi, Error *error, int failed = -2);    // -2 = Error::NOPOINTER
 
   /*! Same as utils::bounds(), but string may be a typelabel
    *

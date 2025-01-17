@@ -26,6 +26,7 @@ class Input : protected Pointers {
   friend class Error;
   friend class Deprecated;
   friend class SimpleCommandsTest_Echo_Test;
+  friend std::string utils::point_to_error(Input *input, int failed);
 
  public:
   char *command;               // ptr to current command

@@ -1075,7 +1075,7 @@ void FixAveTime::options(int iarg, int narg, char **arg)
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR, "fix ave/time mode", error);
       if (strcmp(arg[iarg+1],"scalar") == 0) mode = SCALAR;
       else if (strcmp(arg[iarg+1],"vector") == 0) mode = VECTOR;
-      else error->all(FLERR,"Unknown fix ave/time mode {}", arg[iarg+1]);
+      else error->all(FLERR,iarg+1,"Unknown fix ave/time mode {}", arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg],"off") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR, "fix ave/time off", error);
