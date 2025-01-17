@@ -941,7 +941,11 @@ calculate the amount of heat exchanged), these quantities are appended
 to the end of this list. First, any extra values from the normal submodel
 are appended followed by the damping, tangential, rolling, twisting, then
 heat models. See the descriptions of specific granular submodels above
-for information on any extra quantities.
+for information on any extra quantities. If two or more models are
+defined by pair coefficients, the size of the array is set by the
+maximum number of extra quantities in a model but the order of quantities
+is determined by each model's specific set of submodels. Any unused
+quantities are zeroed.
 
 These extra quantities can be accessed by the :doc:`compute pair/local <compute_pair_local>` command, as *p1*, *p2*, ...,
 *p12*\ .

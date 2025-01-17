@@ -305,6 +305,7 @@ void GranularModel::init()
 
   for (int i = 0; i < NSUBMODELS; i++) sub_models[i]->init();
 
+  nsvector = 0;
   int index_svector = 0;
   for (int i = 0; i < NSUBMODELS; i++) {
     if (sub_models[i]->nsvector != 0) {
@@ -314,8 +315,10 @@ void GranularModel::init()
     }
   }
 
-  if (nsvector != 0)
+  if (nsvector != 0) {
+    delete[] svector;
     svector = new double[nsvector];
+  }
 }
 
 /* ---------------------------------------------------------------------- */
