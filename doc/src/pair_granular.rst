@@ -272,15 +272,17 @@ adhesive behaviors between particle-particle and particle-wall interactions.
 
 .. note::
 
-   The *mdr* model has a number of custom *property/atom* definitions that
+   The *mdr* model has a number of custom *property/atom* and *pair/local* definitions that
    can be called in the input file. The useful properties for visualization
    and analysis are described below.
 
 In addition to contact forces the *mdr* model also tracks the following
-quantities for each particle: elastic volume change, the average normal
-stress components for each particle, and total surface area involved in
-contact. In the input script, these quantities are initialized by calling
-*run 0* and can then be accessed using subsequent *compute* commands.
+quantities for each particle: elastic volume change, average normal
+stress components, total surface area involved in
+contact, and individual contact areas. In the input script, these quantities are
+initialized by calling *run 0* and can then be accessed using subsequent *compute*
+commands. The last *compute* command uses *pair/local p13* to calculate the pairwise
+contact areas for each active contact in the *group-ID*. 
 
 .. code-block:: LAMMPS
 
@@ -290,6 +292,7 @@ contact. In the input script, these quantities are initialized by calling
    compute ID group-ID property/atom d_sigmayy
    compute ID group-ID property/atom d_sigmazz
    compute ID group-ID property/atom d_Acon1
+   compute ID group-ID pair/local p13
 
 .. note::
 

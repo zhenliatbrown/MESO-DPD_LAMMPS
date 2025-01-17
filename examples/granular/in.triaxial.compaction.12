@@ -15,6 +15,9 @@ boundary f f f
 read_data spheres12.data
 fix integr all nve/sphere
 
+# create pair group for contact area outputs
+group particles_1_12 id 1 12
+
 ########################### PARTICLE MATERIAL PROPERTIES AND FORCE MODEL ###############################
 
 variable atomRadius equal 0.5
@@ -93,6 +96,12 @@ dump dumpParticles all custom ${output_rate} triaxial_compaction_12.dump id type
 #################################### COMPRESS THE PARTICLES  ##################################################
 
 run 0
+
+# print out contact area evolution for particles 1 and 12
+compute Ac_1_12 particles_1_12 pair/local p13
+compute Ac_1_12_sum particles_1_12 reduce sum c_Ac_1_12 inputs local
+variable Ac_1_12 equal c_Ac_1_12_sum
+fix logArea all print 100 "${plane_disp} ${Ac_1_12}" file pair_1_12_contact_area_triaxial12.csv screen no
 
 variable plane_disp equal ${ddisp}*elapsed
 variable plane_disp_neg equal -${ddisp}*elapsed
