@@ -44,7 +44,6 @@ PairHbondDreidingMorseAngleoffset::PairHbondDreidingMorseAngleoffset(LAMMPS *lmp
   PairHbondDreidingMorse(lmp) {
 
   angle_offset_flag = 1;
-  angle_offset_global = 0.0;
 }
 
 // /* ----------------------------------------------------------------------

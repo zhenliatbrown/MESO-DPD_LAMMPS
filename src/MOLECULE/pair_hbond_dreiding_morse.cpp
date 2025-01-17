@@ -246,7 +246,9 @@ void PairHbondDreidingMorse::compute(int eflag, int vflag)
 
 void PairHbondDreidingMorse::coeff(int narg, char **arg)
 {
-  if (narg < 7 || narg > 11)
+  int maxarg = 12;
+  if (angle_offset_flag == 1) maxarg = 12;
+  if (narg < 7 || narg > maxarg)
     error->all(FLERR,"Incorrect args for pair coefficients");
   if (!allocated) allocate();
 

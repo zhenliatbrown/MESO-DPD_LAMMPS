@@ -311,7 +311,7 @@ void PairHbondDreidingLJ::allocate()
 void PairHbondDreidingLJ::settings(int narg, char **arg)
 {
 
-  // narg = 4 for standard form and narg = 5 if angleoffset variant (from EXTRA-MOLECULE)
+  // narg = 4 for standard form, narg = 5 or 6 if angleoffset LJ or Morse variants respectively (from EXTRA-MOLECULE)
   if (narg != 4 && narg != 5) error->all(FLERR,"Illegal pair_style command");
 
   ap_global = utils::inumeric(FLERR,arg[0],false,lmp);
