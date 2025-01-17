@@ -1133,8 +1133,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           a1 = 0.3065;
           s8 = 0.9147;
           a2 = 5.0570;
-          break;
           s6 = 0.64;
+          break;
         case 17:
           a1 = 0.0000;
           s8 = 0.2130;
