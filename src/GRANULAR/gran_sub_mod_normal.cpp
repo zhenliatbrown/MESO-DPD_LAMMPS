@@ -443,6 +443,7 @@ GranSubModNormalMDR::GranSubModNormalMDR(GranularModel *gm, LAMMPS *lmp) :
   num_coeffs = 6;
   contact_radius_flag = 1;
   size_history = 26;
+  nsvector = 1;
   fix_mdr_flag = 0;
   id_fix = nullptr;
 
@@ -578,6 +579,7 @@ double GranSubModNormalMDR::calculate_forces()
   double F0 = 0.0;                        // force on contact side 0
   double F1 = 0.0;                        // force on contact side 1
   double delta = gm->delta;               // apparent overlap
+  double Ac_avg = 0.0;                    // average contact area across both sides
 
   double *history = & gm->history[history_index]; // load in all history variables
   int history_update = gm->history_update;
@@ -890,6 +892,7 @@ double GranSubModNormalMDR::calculate_forces()
       Atot_sum[i] += wij * (Ac - MY_2PI * R * (deltamax_MDR + delta_BULK));
       Acon1[i] += wij * Ac;
     }
+    Ac_avg += wij * Ac;
 
     // bulk force calculation
     double F_BULK;
@@ -931,6 +934,9 @@ double GranSubModNormalMDR::calculate_forces()
       sigmazz[i] += fz * bz / Velas[i];
     }
   }
+
+  // save contact area
+  if (gm->calculate_svector) gm->svector[index_svector] = Ac_avg * 0.5;
 
   gm->i = i_true;
   gm->j = j_true;
