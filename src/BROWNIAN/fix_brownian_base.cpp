@@ -59,7 +59,7 @@ FixBrownianBase::FixBrownianBase(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 5;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "rng") == 0) {
-      if (narg == iarg + 1) utils::missing_cmd_args(FLERR, "fix brownian rng", error);
+      if (narg < iarg + 1) utils::missing_cmd_args(FLERR, "fix brownian rng", error);
       if (strcmp(arg[iarg + 1], "uniform") == 0) {
         noise_flag = 1;
       } else if (strcmp(arg[iarg + 1], "gaussian") == 0) {
@@ -72,7 +72,7 @@ FixBrownianBase::FixBrownianBase(LAMMPS *lmp, int narg, char **arg) :
       }
       iarg = iarg + 2;
     } else if (strcmp(arg[iarg], "dipole") == 0) {
-      if (narg == iarg + 3) utils::missing_cmd_args(FLERR, "fix brownian dipole", error);
+      if (narg < iarg + 3) utils::missing_cmd_args(FLERR, "fix brownian dipole", error);
 
       dipole_flag = 1;
       delete[] dipole_body;
@@ -84,7 +84,7 @@ FixBrownianBase::FixBrownianBase(LAMMPS *lmp, int narg, char **arg) :
       iarg = iarg + 4;
 
     } else if (strcmp(arg[iarg], "gamma_t_eigen") == 0) {
-      if (narg == iarg + 3) utils::missing_cmd_args(FLERR, "fix brownian gamma_t_eigen", error);
+      if (narg < iarg + 3) utils::missing_cmd_args(FLERR, "fix brownian gamma_t_eigen", error);
 
       gamma_t_eigen_flag = 1;
       delete[] gamma_t_inv;

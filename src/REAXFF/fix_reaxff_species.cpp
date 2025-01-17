@@ -204,6 +204,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
       delete[] filedel;
       filedel = utils::strdup(arg[iarg + 1]);
       if (comm->me == 0) {
+        if (fdel) fclose(fdel);
         fdel = fopen(filedel, "w");
         if (!fdel)
           error->one(FLERR, "Cannot open fix reaxff/species delete file {}: {}", filedel,
