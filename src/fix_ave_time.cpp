@@ -68,7 +68,7 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     } else break;
   }
   if (nvalues == 0)
-    error->all(FLERR,"No values from computes, fixes, or variables used in fix ave/time command");
+    error->all(FLERR, 6, "No values from computes, fixes, or variables used in fix ave/time command");
 
   // parse optional keywords
 
@@ -79,7 +79,8 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
 
   int expand = 0;
   char **earg;
-  nvalues = utils::expand_args(FLERR,nvalues,&arg[6],mode,earg,lmp);
+  int *amap;
+  nvalues = utils::expand_args(FLERR,nvalues,&arg[6],mode,earg,lmp,&amap);
   key2col.clear();
 
   if (earg != &arg[6]) expand = 1;
@@ -97,9 +98,10 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     key2col[arg[i]] = i;
 
     if ((val.which == ArgInfo::NONE) || (val.which == ArgInfo::UNKNOWN) || (argi.get_dim() > 1))
-      error->all(FLERR,"Invalid fix ave/time argument: {}", arg[i]);
+      error->all(FLERR, amap[i]+6,"Invalid fix ave/time argument: {}", arg[i]);
 
     val.argindex = argi.get_index1();
+    val.iarg = amap[i] + 6;
     val.varlen = 0;
     val.offcol = 0;
     val.id = argi.get_name();
@@ -122,9 +124,9 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   // for fix inputs, check that fix frequency is acceptable
   // set variable_length if any compute is variable length
 
-  if (nevery <= 0) error->all(FLERR,"Illegal fix ave/time nevery value: {}", nevery);
-  if (nrepeat <= 0) error->all(FLERR,"Illegal fix ave/time nrepeat value: {}", nrepeat);
-  if (nfreq <= 0) error->all(FLERR,"Illegal fix ave/time nfreq value: {}", nfreq);
+  if (nevery <= 0) error->all(FLERR, 3, "Illegal fix ave/time nevery value: {}", nevery);
+  if (nrepeat <= 0) error->all(FLERR, 4, "Illegal fix ave/time nrepeat value: {}", nrepeat);
+  if (nfreq <= 0) error->all(FLERR, 5, "Illegal fix ave/time nfreq value: {}", nfreq);
   if (nfreq % nevery || nrepeat*nevery > nfreq)
     error->all(FLERR,"Inconsistent fix ave/time nevery/nrepeat/nfreq values");
   if (ave != RUNNING && overwrite)
@@ -134,25 +136,29 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
 
     if ((val.which == ArgInfo::COMPUTE) && (mode == SCALAR)) {
       val.val.c = modify->get_compute_by_id(val.id);
-      if (!val.val.c) error->all(FLERR,"Compute ID {} for fix ave/time does not exist", val.id);
+      if (!val.val.c)
+        error->all(FLERR, val.iarg, "Compute ID {} for fix ave/time does not exist", val.id);
       if (val.argindex == 0 && (val.val.c->scalar_flag == 0))
-        error->all(FLERR,"Fix ave/time compute {} does not calculate a scalar", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time compute {} does not calculate a scalar", val.id);
       if (val.argindex && (val.val.c->vector_flag == 0))
-        error->all(FLERR,"Fix ave/time compute {} does not calculate a vector", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time compute {} does not calculate a vector", val.id);
       if (val.argindex && (val.argindex > val.val.c->size_vector) &&
           (val.val.c->size_vector_variable == 0))
-        error->all(FLERR, "Fix ave/time compute {} vector is accessed out-of-range", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time compute {} vector is accessed out-of-range",
+                   val.id);
       if (val.argindex && val.val.c->size_vector_variable) val.varlen = 1;
 
     } else if ((val.which == ArgInfo::COMPUTE) && (mode == VECTOR)) {
       val.val.c = modify->get_compute_by_id(val.id);
-      if (!val.val.c) error->all(FLERR,"Compute ID {} for fix ave/time does not exist", val.id);
+      if (!val.val.c)
+        error->all(FLERR, val.iarg, "Compute ID {} for fix ave/time does not exist", val.id);
       if ((val.argindex == 0) && (val.val.c->vector_flag == 0))
-        error->all(FLERR,"Fix ave/time compute {} does not calculate a vector", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time compute {} does not calculate a vector", val.id);
       if (val.argindex && (val.val.c->array_flag == 0))
-        error->all(FLERR,"Fix ave/time compute {} does not calculate an array", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time compute {} does not calculate an array", val.id);
       if (val.argindex && (val.argindex > val.val.c->size_array_cols))
-        error->all(FLERR,"Fix ave/time compute {} array is accessed out-of-range", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time compute {} array is accessed out-of-range",
+                   val.id);
       if ((val.argindex == 0) && (val.val.c->size_vector_variable)) val.varlen = 1;
       if (val.argindex && (val.val.c->size_array_rows_variable)) val.varlen = 1;
 
@@ -1042,7 +1048,7 @@ void FixAveTime::options(int iarg, int narg, char **arg)
         if (strcmp(arg[iarg],"file") == 0) fp = fopen(arg[iarg+1],"w");
         else fp = fopen(arg[iarg+1],"a");
         if (fp == nullptr)
-          error->one(FLERR,"Cannot open fix ave/time file {}: {}",
+          error->one(FLERR, iarg+1, "Cannot open fix ave/time file {}: {}",
                      arg[iarg+1], utils::getsyserror());
       }
       iarg += 2;
@@ -1051,12 +1057,13 @@ void FixAveTime::options(int iarg, int narg, char **arg)
       if (strcmp(arg[iarg+1],"one") == 0) ave = ONE;
       else if (strcmp(arg[iarg+1],"running") == 0) ave = RUNNING;
       else if (strcmp(arg[iarg+1],"window") == 0) ave = WINDOW;
-      else error->all(FLERR,"Unknown fix ave/time ave keyword {}", arg[iarg+1]);
+      else error->all(FLERR, iarg+1, "Unknown fix ave/time ave keyword {}", arg[iarg+1]);
       if (ave == WINDOW) {
         if (iarg+3 > narg) utils::missing_cmd_args(FLERR, "fix ave/time ave window", error);
         nwindow = utils::inumeric(FLERR,arg[iarg+2],false,lmp);
         if (nwindow <= 0)
-          error->all(FLERR,"Illegal fix ave/time ave window argument {}; must be > 0", nwindow);
+          error->all(FLERR, iarg+2, "Illegal fix ave/time ave window argument {}; must be > 0",
+                     nwindow);
       }
       iarg += 2;
       if (ave == WINDOW) iarg++;

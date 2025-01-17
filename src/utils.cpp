@@ -136,7 +136,7 @@ std::string utils::point_to_error(Input *input, int failed)
 {
   if (input) {
     std::string cmdline = "--> parsed line: ";
-    int indicator = cmdline.size(); // error indicator points to command by default
+    int indicator = cmdline.size();    // error indicator points to command by default
     cmdline += input->command;
     cmdline += ' ';
 
@@ -156,7 +156,8 @@ std::string utils::point_to_error(Input *input, int failed)
           cmdline += inputarg;
           cmdline += '"';
         }
-      } else cmdline += inputarg;
+      } else
+        cmdline += inputarg;
       cmdline += ' ';
     }
     // construct and append error indicator line
@@ -165,7 +166,8 @@ std::string utils::point_to_error(Input *input, int failed)
     cmdline += std::string(strlen(input->arg[failed]), '^');
     cmdline += '\n';
     return cmdline;
-  } else return std::string("(Failed command line text not available)");
+  } else
+    return std::string("(Failed command line text not available)");
 }
 
 /* specialization for the case of just a single string argument */
@@ -682,14 +684,14 @@ tagint utils::tnumeric(const char *file, int line, const char *str, bool do_abor
 // clang-format off
 template <typename TYPE>
 void utils::bounds(const char *file, int line, const std::string &str,
-                   bigint nmin, bigint nmax, TYPE &nlo, TYPE &nhi, Error *error)
+                   bigint nmin, bigint nmax, TYPE &nlo, TYPE &nhi, Error *error, int failed)
 {
   nlo = nhi = -1;
 
   // check for illegal characters
   size_t found = str.find_first_not_of("*-0123456789");
   if (found != std::string::npos) {
-    if (error) error->all(file, line, "Invalid range string: {}", str);
+    if (error) error->all(file, line, failed, "Invalid range string: {}", str);
     return;
   }
 
@@ -712,23 +714,23 @@ void utils::bounds(const char *file, int line, const std::string &str,
 
   if (error) {
     if ((nlo <= 0) || (nhi <= 0))
-      error->all(file, line, "Invalid range string: {}", str);
+      error->all(file, line, failed, "Invalid range string: {}", str);
 
     if (nlo < nmin)
-      error->all(file, line, "Numeric index {} is out of bounds ({}-{})", nlo, nmin, nmax);
+      error->all(file, line, failed, "Numeric index {} is out of bounds ({}-{})", nlo, nmin, nmax);
     else if (nhi > nmax)
-      error->all(file, line, "Numeric index {} is out of bounds ({}-{})", nhi, nmin, nmax);
+      error->all(file, line, failed, "Numeric index {} is out of bounds ({}-{})", nhi, nmin, nmax);
     else if (nlo > nhi)
-      error->all(file, line, "Numeric index {} is out of bounds ({}-{})", nlo, nmin, nhi);
+      error->all(file, line, failed, "Numeric index {} is out of bounds ({}-{})", nlo, nmin, nhi);
   }
 }
 
 template void utils::bounds<>(const char *, int, const std::string &,
-                              bigint, bigint, int &, int &, Error *);
+                              bigint, bigint, int &, int &, Error *, int);
 template void utils::bounds<>(const char *, int, const std::string &,
-                              bigint, bigint, long &, long &, Error *);
+                              bigint, bigint, long &, long &, Error *, int);
 template void utils::bounds<>(const char *, int, const std::string &,
-                              bigint, bigint, long long &, long long &, Error *);
+                              bigint, bigint, long long &, long long &, Error *, int);
 
 // clang-format on
 /* ----------------------------------------------------------------------
@@ -768,7 +770,7 @@ template void utils::bounds_typelabel<>(const char *, int, const std::string &, 
 ------------------------------------------------------------------------- */
 
 int utils::expand_args(const char *file, int line, int narg, char **arg, int mode, char **&earg,
-                       LAMMPS *lmp)
+                       LAMMPS *lmp, int **argmap)
 {
   int iarg;
 
@@ -783,10 +785,16 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
     return narg;
   }
 
+  // determine argument offset
+  int ioffset = 0;
+  for (int i = 0; i < lmp->input->narg; ++i)
+    if (lmp->input->arg[i] == arg[0]) ioffset = i;
+
   // maxarg should always end up equal to newarg, so caller can free earg
 
   int maxarg = narg - iarg;
-  earg = (char **) lmp->memory->smalloc(maxarg * sizeof(char *), "input:earg");
+  earg = (char **) lmp->memory->smalloc(maxarg * sizeof(char *), "expand_args:earg");
+  int *amap = (int *) lmp->memory->smalloc(maxarg * sizeof(int), "expand_args:amap");
 
   int newarg = 0, expandflag, nlo, nhi, nmax;
   std::string id, wc, tail;
@@ -849,16 +857,18 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
       // expand wild card string to nlo/nhi numbers
 
       if (expandflag) {
-        utils::bounds(file, line, wc, 1, nmax, nlo, nhi, lmp->error);
+        utils::bounds(file, line, wc, 1, nmax, nlo, nhi, lmp->error, iarg + ioffset);
 
         if (newarg + nhi - nlo + 1 > maxarg) {
           maxarg += nhi - nlo + 1;
-          earg = (char **) lmp->memory->srealloc(earg, maxarg * sizeof(char *), "input:earg");
+          earg = (char **) lmp->memory->srealloc(earg, maxarg * sizeof(char *), "expand_args:earg");
+          amap = (int *) lmp->memory->srealloc(amap, maxarg * sizeof(char *), "expand_args:amap");
         }
 
         for (int index = nlo; index <= nhi; index++) {
           earg[newarg] =
               utils::strdup(fmt::format("{}:{}:{}[{}]{}", gridid[0], gridid[1], id, index, tail));
+          amap[newarg] = iarg;
           newarg++;
         }
       }
@@ -936,7 +946,7 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
 
         if (index >= 0) {
           if (mode == 0 && lmp->input->variable->vectorstyle(index)) {
-            utils::bounds(file, line, wc, 1, MAXSMALLINT, nlo, nhi, lmp->error);
+            utils::bounds(file, line, wc, 1, MAXSMALLINT, nlo, nhi, lmp->error, iarg + ioffset);
             if (nhi < MAXSMALLINT) {
               nmax = nhi;
               expandflag = 1;
@@ -968,11 +978,12 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
 
         // expand wild card string to nlo/nhi numbers
 
-        utils::bounds(file, line, wc, 1, nmax, nlo, nhi, lmp->error);
+        utils::bounds(file, line, wc, 1, nmax, nlo, nhi, lmp->error, iarg + ioffset);
 
         if (newarg + nhi - nlo + 1 > maxarg) {
           maxarg += nhi - nlo + 1;
-          earg = (char **) lmp->memory->srealloc(earg, maxarg * sizeof(char *), "input:earg");
+          earg = (char **) lmp->memory->srealloc(earg, maxarg * sizeof(char *), "expand_args:earg");
+          amap = (int *) lmp->memory->srealloc(amap, maxarg * sizeof(char *), "expand_args:amap");
         }
 
         for (int index = nlo; index <= nhi; index++) {
@@ -980,6 +991,7 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
             earg[newarg] = utils::strdup(fmt::format("{}2_{}[{}]{}", word[0], id, index, tail));
           else
             earg[newarg] = utils::strdup(fmt::format("{}_{}[{}]{}", word[0], id, index, tail));
+          amap[newarg] = iarg;
           newarg++;
         }
       }
@@ -990,14 +1002,17 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
     if (!expandflag) {
       if (newarg == maxarg) {
         maxarg++;
-        earg = (char **) lmp->memory->srealloc(earg, maxarg * sizeof(char *), "input:earg");
+        earg = (char **) lmp->memory->srealloc(earg, maxarg * sizeof(char *), "expand_args:earg");
+        amap = (int *) lmp->memory->srealloc(amap, maxarg * sizeof(char *), "expand_args:amap");
       }
       earg[newarg] = utils::strdup(word);
+      amap[newarg] = iarg;
       newarg++;
     }
   }
 
-  // printf("NEWARG %d\n",newarg); for (int i = 0; i < newarg; i++) printf("  arg %d: %s\n",i,earg[i]);
+  if (argmap && *argmap) *argmap = amap;
+  // fprintf(stderr, "NEWARG %d\n",newarg); for (int i = 0; i < newarg; i++) printf("  arg %d: %s %d\n",i,earg[i], amap ? amap[i] : -1);
   return newarg;
 }
 

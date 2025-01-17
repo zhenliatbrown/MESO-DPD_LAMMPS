@@ -336,11 +336,12 @@ namespace utils {
    * \param nmax     largest allowed upper bound
    * \param nlo      lower bound
    * \param nhi      upper bound
-   * \param error    pointer to Error class for out-of-bounds messages */
+   * \param error    pointer to Error class for out-of-bounds messages
+   * \param failed   argument index with failed expansion (optional) */
 
   template <typename TYPE>
   void bounds(const char *file, int line, const std::string &str, bigint nmin, bigint nmax,
-              TYPE &nlo, TYPE &nhi, Error *error);
+              TYPE &nlo, TYPE &nhi, Error *error, int failed = -2); // -2 = Error::NOPOINTER
 
   /*! Same as utils::bounds(), but string may be a typelabel
    *
@@ -386,17 +387,23 @@ This functions adds the following case to :cpp:func:`utils::bounds() <LAMMPS_NS:
    *  caller. Otherwise arg and earg will point to the same address
    *  and no explicit de-allocation is needed by the caller.
    *
-   * \param file  name of source file for error message
-   * \param line  line number in source file for error message
-   * \param narg  number of arguments in current list
-   * \param arg   argument list, possibly containing wildcards
-   * \param mode  select between global vectors(=0) and arrays (=1)
-   * \param earg  new argument list with wildcards expanded
-   * \param lmp   pointer to top-level LAMMPS class instance
+   *  The *argmap* pointer may be used to return an array of integers
+   *  mapping the arguments after the expansion to their original index.
+   *  If this pointer is NULL (the default) than this map is not created.
+   *  Otherwise, it must be deallocated by the calling code.
+   *
+   * \param file    name of source file for error message
+   * \param line    line number in source file for error message
+   * \param narg    number of arguments in current list
+   * \param arg     argument list, possibly containing wildcards
+   * \param mode    select between global vectors(=0) and arrays (=1)
+   * \param earg    new argument list with wildcards expanded
+   * \param lmp     pointer to top-level LAMMPS class instance
+   * \param argmap  pointer integer list mapping the expanded indices to the input (optional)
    * \return      number of arguments in expanded list */
 
   int expand_args(const char *file, int line, int narg, char **arg, int mode, char **&earg,
-                  LAMMPS *lmp);
+                  LAMMPS *lmp, int **argmap = nullptr);
 
   /*! Expand type label string into its equivalent numeric type
    *
