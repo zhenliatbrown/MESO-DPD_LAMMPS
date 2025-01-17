@@ -178,3 +178,51 @@ with and without the communication and a Gflop rate is computed.  The
 3d rate is with communication; the 1d rate is without (just the 1d
 FFTs).  Thus you can estimate what fraction of your FFT time was spent
 in communication, roughly 75% in the example above.
+
+Error message output
+====================
+
+Depending on the error function arguments when it is called in the
+source code, there will be one to four lines of error output.
+
+A single line
+^^^^^^^^^^^^^
+
+The line starts with "ERROR: ", followed by the error message and
+information about the location in the source where the error function
+was called in parenthesis on the right (here: line 131 of the file
+src/fix_print.cpp). Example:
+
+.. parsed-literal::
+
+   ERROR: Fix print timestep variable nevery returned a bad timestep: 9900 (src/fix_print.cpp:131)
+
+Two lines
+^^^^^^^^^
+
+In addition to the single line output, also the last line of the input
+will be repeated.  If a command is spread over multiple lines in the
+input using the continuation character '&', then the error will print
+the entire concatenated line.  However, there is no further processing
+of that line.  Example:
+
+.. parsed-literal::
+
+   ERROR: Unrecognized fix style 'printf' (src/modify.cpp:924)
+   Last input line: fix        0 all printf v_nevery 'Step: $(step) ${step}'
+
+Four lines
+^^^^^^^^^^
+
+In addition to the two line output, the last command is printed a second
+time, but *after* all variables were substituted and the line separated
+into "words" as they are passed internally to the called command.  This line
+is followed by a line with caret character markers '^' to indicate which
+"word" in the parsed input is causing the failure.  Example:
+
+.. parsed-literal::
+   
+   ERROR: Illegal fix print nevery value -100; must be > 0 (src/fix_print.cpp:41)
+   Last input line: fix        0  all  print ${nevery} 'Step: $(step) ${step}'
+   --> parsed line: fix 0 all print -100 "Step: $(step) ${step}" 
+                                    ^^^^
