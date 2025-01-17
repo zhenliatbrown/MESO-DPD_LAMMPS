@@ -135,15 +135,28 @@ void utils::missing_cmd_args(const std::string &file, int line, const std::strin
 std::string utils::point_to_error(Input *input, int failed)
 {
   if (input) {
-    std::string cmdline = "Preprocessed: ";
+    std::string cmdline = "--> parsed line: ";
     int indicator = cmdline.size(); // error indicator points to command by default
     cmdline += input->command;
     cmdline += ' ';
 
     // assemble pre-processed command line and update error indicator position, if needed.
     for (int i = 0; i < input->narg; ++i) {
+      std::string inputarg = input->arg[i];
       if (i == failed) indicator = cmdline.size();
-      cmdline += input->arg[i];
+
+      // argument contains whitespace. add quotes. check which type of quotes, too
+      if (inputarg.find_first_of(" \t\n") != std::string::npos) {
+        if (inputarg.find_first_of('"') != std::string::npos) {
+          cmdline += "'";
+          cmdline += inputarg;
+          cmdline += "'";
+        } else {
+          cmdline += '"';
+          cmdline += inputarg;
+          cmdline += '"';
+        }
+      } else cmdline += inputarg;
       cmdline += ' ';
     }
     // construct and append error indicator line

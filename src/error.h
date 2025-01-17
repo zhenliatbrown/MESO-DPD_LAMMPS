@@ -28,6 +28,7 @@ class Error : protected Pointers {
   void universe_warn(const std::string &, int, const std::string &);
 
   static constexpr int NOPOINTER = -2;
+  static constexpr int NOLASTLINE = -3;
 
   // regular error calls
 

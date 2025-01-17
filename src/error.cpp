@@ -118,36 +118,30 @@ void Error::all(const std::string &file, int line, int failed, const std::string
 {
   MPI_Barrier(world);
 
-  int me;
   std::string lastcmd = "(unknown)";
+  std::string mesg = "ERROR: " + str + fmt::format(" ({}:{})\n",  truncpath(file), line);
 
-  MPI_Comm_rank(world,&me);
+  if (input && input->line) lastcmd = input->line;
 
-  if (me == 0) {
-    std::string mesg = "ERROR: " + str;
-
-    if (input && input->line) lastcmd = input->line;
+  if (failed > NOLASTLINE) {
     try {
-      mesg += fmt::format(" ({}:{})\nLast command: {}\n", truncpath(file),line,lastcmd);
+      mesg += fmt::format("Last input line: {}\n", lastcmd);
       if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
     } catch (fmt::format_error &) {
       ; // do nothing
     }
-    utils::logmesg(lmp,mesg);
   }
+  if (comm->me == 0) utils::logmesg(lmp,mesg);
 
   // allow commands if an exception was caught in a run
   // update may be a null pointer when catching command-line errors
 
   if (update) update->whichflag = 0;
 
-  std::string msg = fmt::format("ERROR: {} ({}:{})\n", str, truncpath(file), line);
-  if (failed > NOPOINTER) msg += utils::point_to_error(input, failed);
-
   if (universe->nworlds > 1)
-    throw LAMMPSAbortException(msg, universe->uworld);
+    throw LAMMPSAbortException(mesg, universe->uworld);
   else
-    throw LAMMPSException(msg);
+    throw LAMMPSException(mesg);
 }
 
 /* ----------------------------------------------------------------------
@@ -166,8 +160,12 @@ void Error::one(const std::string &file, int line, int failed, const std::string
   if (input && input->line) lastcmd = input->line;
   std::string mesg;
   try {
-    mesg = fmt::format("ERROR on proc {}: {} ({}:{})\nLast command: {}\n",
-                       me,str,truncpath(file),line,lastcmd);
+    if (failed == NOLASTLINE) {
+      mesg = fmt::format("ERROR on proc {}: {} ({}:{})\n", me, str, truncpath(file), line);
+    } else {
+      mesg = fmt::format("ERROR on proc {}: {} ({}:{})\nLast input line: {}\n",
+                         me, str, truncpath(file), line, lastcmd);
+    }
     if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
   } catch (fmt::format_error &) {
     ; // do nothing
