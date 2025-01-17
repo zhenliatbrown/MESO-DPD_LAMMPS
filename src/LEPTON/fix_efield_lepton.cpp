@@ -45,7 +45,8 @@ FixEfieldLepton::FixEfieldLepton(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), idregion(nullptr), region(nullptr)
 {
   if (domain->xperiodic || domain->yperiodic || domain->zperiodic) {
-    error->warning(FLERR, "Fix {} uses unwrapped coordinates", style);
+    if (comm->me == 0)
+      error->warning(FLERR, "Fix {} uses unwrapped coordinates", style);
   }
   if (narg < 4) utils::missing_cmd_args(FLERR, std::string("fix ") + style, error);
 
@@ -65,12 +66,13 @@ FixEfieldLepton::FixEfieldLepton(LAMMPS *lmp, int narg, char **arg) :
         utils::missing_cmd_args(FLERR, std::string("fix ") + style + " region", error);
       region = domain->get_region_by_id(arg[iarg + 1]);
       if (!region) error->all(FLERR, "Region {} for fix {} does not exist", arg[iarg + 1], style);
+      delete[] idregion;
       idregion = utils::strdup(arg[iarg + 1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "step") == 0) {
       if (iarg + 2 > narg)
         utils::missing_cmd_args(FLERR, std::string("fix ") + style + "step", error);
-      h = utils::numeric(FLERR, arg[iarg+1], false, lmp);
+      h = utils::numeric(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else {
       error->all(FLERR, "Unknown keyword for fix {} command: {}", style, arg[iarg]);
@@ -126,7 +128,8 @@ void FixEfieldLepton::init()
   }
 
   if (utils::strmatch(update->integrate_style, "^respa")) {
-    ilevel_respa = (dynamic_cast<Respa *>(update->integrate))->nlevels - 1;
+    auto respa = dynamic_cast<Respa *>(update->integrate);
+    if (respa) ilevel_respa = respa->nlevels - 1;
     if (respa_level >= 0) ilevel_respa = MIN(respa_level, ilevel_respa);
   }
 
@@ -134,7 +137,8 @@ void FixEfieldLepton::init()
   char *unit_style = update->unit_style;
   qe2f = force->qe2f;
   mue2e = qe2f;
-  if (strcmp(unit_style, "electron") == 0 || strcmp(unit_style, "micro") == 0 || strcmp(unit_style, "nano") == 0) {
+  if (strcmp(unit_style, "electron") == 0 || strcmp(unit_style, "micro") == 0 ||
+      strcmp(unit_style, "nano") == 0) {
     error->all(FLERR, "Fix {} does not support {} units", style, unit_style);
   }
 }
@@ -145,9 +149,11 @@ void FixEfieldLepton::setup(int vflag)
 {
   if (utils::strmatch(update->integrate_style, "^respa")) {
     auto respa = dynamic_cast<Respa *>(update->integrate);
-    respa->copy_flevel_f(ilevel_respa);
-    post_force_respa(vflag, ilevel_respa, 0);
-    respa->copy_f_flevel(ilevel_respa);
+    if (respa) {
+      respa->copy_flevel_f(ilevel_respa);
+      post_force_respa(vflag, ilevel_respa, 0);
+      respa->copy_f_flevel(ilevel_respa);
+    }
   } else {
     post_force(vflag);
   }
@@ -179,14 +185,14 @@ void FixEfieldLepton::post_force(int vflag)
   auto dphi_x = parsed.differentiate("x").createCompiledExpression();
   auto dphi_y = parsed.differentiate("y").createCompiledExpression();
   auto dphi_z = parsed.differentiate("z").createCompiledExpression();
-  std::array<Lepton::CompiledExpression*, 3> dphis = {&dphi_x, &dphi_y, &dphi_z};
+  std::array<Lepton::CompiledExpression *, 3> dphis = {&dphi_x, &dphi_y, &dphi_z};
 
   // array of vectors of ptrs to Lepton variable references
   std::array<std::vector<double *>, 3> var_ref_ptrs{};
 
   // fill ptr-vectors with Lepton refs as needed
-  const char* DIM_NAMES[] = {"x", "y", "z"};
-  if (atom->q_flag){
+  const char *DIM_NAMES[] = {"x", "y", "z"};
+  if (atom->q_flag) {
     phi = parsed.createCompiledExpression();
     for (size_t d = 0; d < 3; d++) {
       try {
@@ -205,13 +211,13 @@ void FixEfieldLepton::post_force(int vflag)
         double *ptr = &((*dphis[j]).getVariableReference(DIM_NAMES[d]));
         var_ref_ptrs[d].push_back(ptr);
         e_uniform = false;
-      }
-      catch (Lepton::Exception &) {
+      } catch (Lepton::Exception &) {
         // do nothing
       }
     }
   if (!e_uniform && atom->mu_flag && h < 0) {
-    error->all(FLERR, "Fix {} requires keyword `step' for dipoles in a non-uniform electric field", style);
+    error->all(FLERR, "Fix {} requires keyword `step' for dipoles in a non-uniform electric field",
+               style);
   }
 
   // virial setup
@@ -243,9 +249,7 @@ void FixEfieldLepton::post_force(int vflag)
 
       // put unwrapped coords into Lepton variable refs
       for (size_t d = 0; d < 3; d++) {
-        for (auto & var_ref_ptr : var_ref_ptrs[d]) {
-          *var_ref_ptr = unwrap[d];
-        }
+        for (auto &var_ref_ptr : var_ref_ptrs[d]) { *var_ref_ptr = unwrap[d]; }
       }
 
       // evaluate e-field, used by q and mu
@@ -264,8 +268,8 @@ void FixEfieldLepton::post_force(int vflag)
       }
 
       if (atom->mu_flag) {
-      // dipoles
-        mu_norm = sqrt(mu[i][0]*mu[i][0] + mu[i][1]*mu[i][1] + mu[i][2]*mu[i][2]);
+        // dipoles
+        mu_norm = sqrt(mu[i][0] * mu[i][0] + mu[i][1] * mu[i][1] + mu[i][2] * mu[i][2]);
         if (mu_norm > EPSILON) {
           // torque = mu cross E
           t[i][0] += mue2e * (ez * mu[i][1] - ey * mu[i][2]);
@@ -284,9 +288,7 @@ void FixEfieldLepton::post_force(int vflag)
 
             // one step forwards, two steps back ;)
             for (size_t d = 0; d < 3; d++) {
-              for (auto & var_ref_ptr : var_ref_ptrs[d]) {
-                *var_ref_ptr += dstep[d];
-              }
+              for (auto &var_ref_ptr : var_ref_ptrs[d]) { *var_ref_ptr += dstep[d]; }
             }
 
             exf = -dphi_x.evaluate();
@@ -294,9 +296,7 @@ void FixEfieldLepton::post_force(int vflag)
             ezf = -dphi_z.evaluate();
 
             for (size_t d = 0; d < 3; d++) {
-              for (auto & var_ref_ptr : var_ref_ptrs[d]) {
-                *var_ref_ptr -= 2*dstep[d];
-              }
+              for (auto &var_ref_ptr : var_ref_ptrs[d]) { *var_ref_ptr -= 2 * dstep[d]; }
             }
 
             exb = -dphi_x.evaluate();

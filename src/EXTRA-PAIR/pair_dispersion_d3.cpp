@@ -481,8 +481,6 @@ void PairDispersionD3::compute(int eflag, int vflag)
     int jnum = numneigh[i];
     int *jlist = firstneigh[i];
 
-    // fprintf(stderr, "> i, type[i], CN[i], C6[i,i] :  %d, %d, %f, %f\n", atom->tag[i], type[i], cn[i], get_dC6(type[i],type[i],cn[i],cn[i])[0]/(autoev*pow(autoang,6)));
-
     for (int jj = 0; jj < jnum; jj++) {
 
       int j = jlist[jj];
@@ -513,6 +511,7 @@ void PairDispersionD3::compute(int eflag, int vflag)
 
         double t6, t8, damp6, damp8, e6, e8;
         double tmp6, tmp8, fpair1, fpair2, fpair;
+        t6 = t8 = e6 = e8 = evdwl = fpair = fpair1 = fpair2 = 0.0;
 
         switch (dampingCode) {
           case 1: {    // zero
