@@ -238,6 +238,9 @@ Convenience functions
 .. doxygenfunction:: missing_cmd_args
    :project: progguide
 
+.. doxygenfunction:: point_to_error
+   :project: progguide
+
 .. doxygenfunction:: flush_buffers(LAMMPS *lmp)
    :project: progguide
 
