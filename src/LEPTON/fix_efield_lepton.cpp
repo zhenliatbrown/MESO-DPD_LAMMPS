@@ -58,6 +58,9 @@ FixEfieldLepton::FixEfieldLepton(LAMMPS *lmp, int narg, char **arg) :
   respa_level_support = 1;
   ilevel_respa = 0;
 
+  qe2f = force->qe2f;
+  mue2e = qe2f;
+
   // optional args
   int iarg = 4;
   while (iarg < narg) {
@@ -133,10 +136,8 @@ void FixEfieldLepton::init()
     if (respa_level >= 0) ilevel_respa = MIN(respa_level, ilevel_respa);
   }
 
-  // unit conversion factors and restrictions (see issue #1377)
+  // unit conversion restrictions (see issue #1377)
   char *unit_style = update->unit_style;
-  qe2f = force->qe2f;
-  mue2e = qe2f;
   if (strcmp(unit_style, "electron") == 0 || strcmp(unit_style, "micro") == 0 ||
       strcmp(unit_style, "nano") == 0) {
     error->all(FLERR, "Fix {} does not support {} units", style, unit_style);

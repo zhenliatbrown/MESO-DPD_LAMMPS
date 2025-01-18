@@ -62,7 +62,9 @@ static constexpr double autoev = 27.21140795;    // atomic units (Hartree) to eV
    Constructor (Required)
 ------------------------------------------------------------------------- */
 
-PairDispersionD3::PairDispersionD3(LAMMPS *lmp) : Pair(lmp)
+PairDispersionD3::PairDispersionD3(LAMMPS *lmp) :
+    Pair(lmp), r2r4(nullptr), rcov(nullptr), mxci(nullptr), r0ab(nullptr), c6ab(nullptr),
+    cn(nullptr), dc6(nullptr)
 {
   nmax = 0;
   comm_forward = 2;
@@ -72,6 +74,8 @@ PairDispersionD3::PairDispersionD3(LAMMPS *lmp) : Pair(lmp)
   manybody_flag = 1;
   one_coeff = 1;
   single_enable = 0;
+
+  s6 = s8 = s18 = rs6 = rs8 = rs18 = a1 = a2 = alpha = alpha6 = alpha8 = 0.0;
 }
 
 /* ----------------------------------------------------------------------
