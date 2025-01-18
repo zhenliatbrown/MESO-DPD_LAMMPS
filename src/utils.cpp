@@ -183,7 +183,7 @@ void utils::missing_cmd_args(const std::string &file, int line, const std::strin
 
 std::string utils::point_to_error(Input *input, int failed)
 {
-  if (input) {
+  if (input && input->line && input->command) {
     std::string lastline = utils::strcompress(input->line);
     std::string lastargs = input->command;
     std::string cmdline = "Last input line: ";
@@ -237,12 +237,12 @@ std::string utils::point_to_error(Input *input, int failed)
       cmdline += '\n';
 
     } else {
-      cmdline += input->line;
+      cmdline += lastline;
       cmdline += '\n';
     }
     return cmdline;
   } else
-    return std::string("(Failed input line text not available)");
+    return std::string("");
 }
 
 /* specialization for the case of just a single string argument */
