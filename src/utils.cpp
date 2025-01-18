@@ -119,8 +119,8 @@ bool utils::strsame(const std::string &text1, const std::string &text2)
   while (*ptr1 && *ptr2) {
 
     // ignore whitespace
-    while (*ptr1 && isblank(*ptr1)) ++ptr1;
-    while (*ptr2 && isblank(*ptr2)) ++ptr2;
+    while (*ptr1 && isspace(*ptr1)) ++ptr1;
+    while (*ptr2 && isspace(*ptr2)) ++ptr2;
 
     // strings differ
     if (*ptr1 != *ptr2) return false;
@@ -132,6 +132,32 @@ bool utils::strsame(const std::string &text1, const std::string &text2)
     ++ptr2;
   }
   return true;
+}
+
+std::string utils::strcompress(const std::string &text)
+{
+  const char *ptr = text.c_str();
+  std::string output;
+
+  // remove leading whitespace
+  while (*ptr && isspace(*ptr)) ++ptr;
+
+  while (*ptr) {
+    // copy non-blank characters
+    while (*ptr && !isspace(*ptr)) output += *ptr++;
+
+    if (!*ptr) break;
+
+    // add one blank only
+    if (isspace(*ptr)) output += ' ';
+
+    // skip additional blanks
+    while (*ptr && isspace(*ptr)) ++ptr;
+  }
+
+  // remove trailing blank
+  if (output.back() == ' ') output.erase(output.size() - 1, 1);
+  return output;
 }
 
 /** This function is a companion function to utils::strmatch(). Arguments
@@ -158,7 +184,7 @@ void utils::missing_cmd_args(const std::string &file, int line, const std::strin
 std::string utils::point_to_error(Input *input, int failed)
 {
   if (input) {
-    std::string lastline = input->line;
+    std::string lastline = utils::strcompress(input->line);
     std::string lastargs = input->command;
     std::string cmdline = "Last input line: ";
 
