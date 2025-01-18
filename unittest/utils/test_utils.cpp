@@ -79,7 +79,7 @@ TEST(Utils, strcompress)
     compressed = utils::strcompress("some other  text \r\n");
     ASSERT_THAT(compressed, StrEq("some other text"));
 
-    compressed = utils::strcompress("\v some	 text \f");
+    compressed = utils::strcompress("\v some  \t\t  text \f");
     ASSERT_THAT(compressed, StrEq("some text"));
 
     compressed = utils::strcompress("   some\t text    ");
