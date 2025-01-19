@@ -402,9 +402,9 @@ This functions adds the following case to :cpp:func:`utils::bounds() <LAMMPS_NS:
    *  caller. Otherwise arg and earg will point to the same address
    *  and no explicit de-allocation is needed by the caller.
    *
-   *  The *argmap* pointer may be used to return an array of integers
-   *  mapping the arguments after the expansion to their original index.
-   *  If this pointer is NULL (the default) than this map is not created.
+   *  The *argmap* pointer to an int pointer may be used to accept an array
+   *  of integers mapping the arguments after the expansion to their original
+   *  index.  If this pointer is NULL (the default) than this map is not created.
    *  Otherwise, it must be deallocated by the calling code.
    *
    * \param file    name of source file for error message
@@ -414,7 +414,7 @@ This functions adds the following case to :cpp:func:`utils::bounds() <LAMMPS_NS:
    * \param mode    select between global vectors(=0) and arrays (=1)
    * \param earg    new argument list with wildcards expanded
    * \param lmp     pointer to top-level LAMMPS class instance
-   * \param argmap  pointer integer list mapping the expanded indices to the input (optional)
+   * \param argmap  pointer to integer pointer for mapping expanded indices to input (optional)
    * \return      number of arguments in expanded list */
 
   int expand_args(const char *file, int line, int narg, char **arg, int mode, char **&earg,
@@ -429,9 +429,9 @@ This functions adds the following case to :cpp:func:`utils::bounds() <LAMMPS_NS:
    *  pointer is returned.
    *  If a string is returned, the calling code must free it with delete[].
    *
-   * \param file  name of source file for error message
-   * \param line  line number in source file for error message
-   * \param str   type string to be expanded
+   * \param file   name of source file for error message
+   * \param line   line number in source file for error message
+   * \param str    type string to be expanded
    * \param mode  select labelmap using constants from Atom class
    * \param lmp   pointer to top-level LAMMPS class instance
    * \return      pointer to expanded string or null pointer */

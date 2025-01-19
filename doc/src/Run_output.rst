@@ -203,26 +203,39 @@ Two lines
 In addition to the single line output, also the last line of the input
 will be repeated.  If a command is spread over multiple lines in the
 input using the continuation character '&', then the error will print
-the entire concatenated line.  However, there is no further processing
-of that line.  Example:
+the entire concatenated line.  For readability all whitespace is
+compressed to single blanks.  Example:
 
 .. parsed-literal::
 
    ERROR: Unrecognized fix style 'printf' (src/modify.cpp:924)
-   Last input line: fix        0 all printf v_nevery 'Step: $(step) ${step}'
+   Last input line: fix 0 all printf v_nevery "Step: $(step) ${step}"
 
-Four lines
-^^^^^^^^^^
+Three lines
+^^^^^^^^^^^
 
-In addition to the two line output, the last command is printed a second
-time, but *after* all variables were substituted and the line separated
-into "words" as they are passed internally to the called command.  This line
-is followed by a line with caret character markers '^' to indicate which
-"word" in the parsed input is causing the failure.  Example:
+In addition to the two line output from above, a third line is added
+that uses caret character markers '^' to indicate which "word" in the
+input failed.  Example:
 
 .. parsed-literal::
 
    ERROR: Illegal fix print nevery value -100; must be > 0 (src/fix_print.cpp:41)
-   Last input line: fix        0  all  print ${nevery} 'Step: $(step) ${step}'
+   Last input line: fix 0 all print -100 "Step: $(step) ${stepx}"
+                                    ^^^^
+
+Four lines
+^^^^^^^^^^
+
+The three line output is expanded to four lines, if the the input is
+modified through input pre-processing, e.g. when substituting
+variables. Now the last command is printed once in the original form and
+a second time after substitutions are applied.  The caret character
+markers '^' are applied to the second version.  Example:
+
+.. parsed-literal::
+
+   ERROR: Illegal fix print nevery value -100; must be > 0 (src/fix_print.cpp:41)
+   Last input line: fix 0 all print ${nevery} 'Step: $(step) ${step}'
    --> parsed line: fix 0 all print -100 "Step: $(step) ${step}"
                                     ^^^^

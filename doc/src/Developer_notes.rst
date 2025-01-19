@@ -268,12 +268,14 @@ There are multiple "signatures" that can be called:
   command would be the last line, but is unrelated to the error.
 
 - ``Error::all(FLERR, idx, "Error message")``: this is for argument
-  parsing where "idx" is the index of the argument for a LAMMPS command
-  that is causing the failure (use -1 for the command itself). The
-  output will then not only be the last input line, but also the command
-  and arguments *after* they have been pre-processed and split into
-  individual arguments and a textual indicator pointing to the specific
-  word that failed.
+  parsing where "idx" is the index (starting at 0) of the argument for a
+  LAMMPS command that is causing the failure (use -1 for the command
+  itself).  The output may also include the last input line *before* and
+  *after*, if they differ due to substituting variables.  A textual
+  indicator is pointing to the specific word that failed.  Using the
+  constant ``Error::NOPOINTER`` in place of the *idx* argument will
+  suppress the marker and then the behavior is like the *idx* argument
+  is not provided.
 
 FLERR is a macro containing the filename and line where the Error class
 is called and that information is appended to the error message.  This
@@ -284,6 +286,13 @@ number of arguments, one for each placeholder. This format string and
 the arguments are then handed for formatting to the `{fmt} library
 <https://fmt.dev>`_ (which is bundled with LAMMPS) and thus allow
 processing similar to the "format()" functionality in Python.
+
+.. note::
+
+   For commands like :doc:`fix ave/time <fix_ave_time>` that accept
+   wildcard arguments, the :cpp:func:`utils::expand_args` function
+   may be passed as an optional argument where the function will provide
+   a map to the original arguments from the expanded argument indices.
 
 For complex errors, that can have multiple causes and which cannot be
 explained in a single line, you can append to the error message, the
