@@ -2974,14 +2974,14 @@ double lammps_eval(void *handle, const char *expr)
    and to flag computes that store invocation times as having been invoked
 
 *See also*
-    :cpp:func:`lammps_compute_addstep_all`
-    :cpp:func:`lammps_compute_addstep`
+    :cpp:func:`lammps_addstep_compute_all`
+    :cpp:func:`lammps_addstep_compute`
 
 \endverbatim
 
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
  */
-void lammps_compute_clearstep(void * handle) {
+void lammps_clearstep_compute(void * handle) {
   auto lmp = (LAMMPS *) handle;
   lmp->modify->clearstep_compute();
 }
@@ -3000,17 +3000,17 @@ void lammps_compute_clearstep(void * handle) {
    do not loop only over n_timeflag, since may not be set yet
 
 *See also*
-    :cpp:func:`lammps_compute_clearstep`
-    :cpp:func:`lammps_compute_addstep`
+    :cpp:func:`lammps_clearstep_compute`
+    :cpp:func:`lammps_addstep_compute`
 
 \endverbatim
 
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
- * \param newstep  next timestep the compute will be invoked
+ * \param newstep  pointer to bigint of next timestep the compute will be invoked
  */
-void lammps_compute_addstep_all(void * handle, bigint newstep) {
+void lammps_addstep_compute_all(void * handle, void * newstep) {
   auto lmp = (LAMMPS *) handle;
-  lmp->modify->addstep_compute_all(newstep);
+  lmp->modify->addstep_compute_all(*static_cast<bigint*>(newstep));
 }
 /* ---------------------------------------------------------------------- */
 
@@ -3025,17 +3025,17 @@ void lammps_compute_addstep_all(void * handle, bigint newstep) {
    called everywhere that computes are used, after computes are invoked
 
 *See also*
-    :cpp:func:`lammps_compute_addstep_all`
-    :cpp:func:`lammps_compute_clearstep`
+    :cpp:func:`lammps_addstep_compute_all`
+    :cpp:func:`lammps_clearstep_compute`
 
 \endverbatim
 
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
  * \param newstep  next timestep the compute will be invoked
  */
-void lammps_compute_addstep(void * handle, bigint newstep) {
+void lammps_addstep_compute(void * handle, void * newstep) {
   auto lmp = (LAMMPS *) handle;
-  lmp->modify->addstep_compute(newstep);
+  lmp->modify->addstep_compute(*static_cast<bigint*>(newstep));
 }
 
 // ----------------------------------------------------------------------

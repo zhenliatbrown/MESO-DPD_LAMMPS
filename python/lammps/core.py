@@ -422,9 +422,9 @@ class lammps(object):
     self.lib.lammps_extract_variable_datatype.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_extract_variable_datatype.restype = c_int
 
-    self.lib.lammps_compute_clearstep.argtype = [c_void_p]
-    self.lib.lammps_compute_addstep.argtype = [c_void_p, self.c_bigint]
-    self.lib.lammps_compute_addstep_all.argtype = [c_void_p, self.c_bigint]
+    self.lib.lammps_clearstep_compute.argtype = [c_void_p]
+    self.lib.lammps_addstep_compute.argtype = [c_void_p, c_void_p]
+    self.lib.lammps_addstep_compute_all.argtype = [c_void_p, c_void_p]
 
     self.lib.lammps_eval.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_eval.restype = c_double
@@ -1598,21 +1598,23 @@ class lammps(object):
 
   # -------------------------------------------------------------------------
 
-  def compute_clearstep(self, nextstep):
+  def clearstep_compute(self, nextstep):
     with ExceptionCheck(self):
-      return self.lib.lammps_compute_clearstep(self.lmp)
+      return self.lib.lammps_clearstep_compute(self.lmp)
 
   # -------------------------------------------------------------------------
 
-  def compute_addstep(self, nextstep):
+  def addstep_compute(self, nextstep):
     with ExceptionCheck(self):
-      return self.lib.lammps_compute_addstep(self.lmp, nextstep)
+      nextstep = self.c_bigint(nextstep)
+      return self.lib.lammps_addstep_compute(self.lmp, pointer(nextstep))
 
   # -------------------------------------------------------------------------
 
-  def compute_addstep_all(self, nextstep):
+  def addstep_compute_all(self, nextstep):
     with ExceptionCheck(self):
-      return self.lib.lammps_compute_addstep_all(self.lmp, nextstep)
+      nextstep = self.c_bigint(nextstep)
+      return self.lib.lammps_addstep_compute_all(self.lmp, pointer(nextstep))
 
   # -------------------------------------------------------------------------
 

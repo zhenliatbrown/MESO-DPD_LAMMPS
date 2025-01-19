@@ -191,14 +191,9 @@ int lammps_set_internal_variable(void *handle, const char *name, double value);
 int lammps_variable_info(void *handle, int idx, char *buf, int bufsize);
 double lammps_eval(void *handle, const char *expr);
 
-void lammps_compute_clearstep(void *handle);
-#if defined(LAMMPS_SMALLSMALL)
-void lammps_compute_addstep_all(void *handle, int nextstep);
-void lammps_compute_addstep(void *handle, int nextstep);
-#else
-void lammps_compute_addstep_all(void *handle, int64_t nextstep);
-void lammps_compute_addstep(void *handle, int64_t nextstep);
-#endif
+void lammps_clearstep_compute(void *handle);
+void lammps_addstep_compute_all(void *handle, void * nextstep);
+void lammps_addstep_compute(void *handle, void * nextstep);
 
 /* ----------------------------------------------------------------------
  * Library functions for scatter/gather operations of data
