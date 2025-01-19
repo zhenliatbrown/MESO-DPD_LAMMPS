@@ -860,10 +860,12 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
     return narg;
   }
 
-  // determine argument offset
+  // determine argument offset, if possible
   int ioffset = 0;
-  for (int i = 0; i < lmp->input->narg; ++i)
-    if (lmp->input->arg[i] == arg[0]) ioffset = i;
+  if (lmp->input->arg) {
+    for (int i = 0; i < lmp->input->narg; ++i)
+      if (lmp->input->arg[i] == arg[0]) ioffset = i;
+  }
 
   // maxarg should always end up equal to newarg, so caller can free earg
 
@@ -1052,7 +1054,6 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
       if (expandflag) {
 
         // expand wild card string to nlo/nhi numbers
-
         utils::bounds(file, line, wc, 1, nmax, nlo, nhi, lmp->error, iarg + ioffset);
 
         if (newarg + nhi - nlo + 1 > maxarg) {
@@ -1086,7 +1087,11 @@ int utils::expand_args(const char *file, int line, int narg, char **arg, int mod
     }
   }
 
-  if (argmap && *argmap) *argmap = amap;
+  if (argmap)
+    *argmap = amap;
+  else
+    lmp->memory->sfree(amap);
+
   // fprintf(stderr, "NEWARG %d\n",newarg); for (int i = 0; i < newarg; i++) printf("  arg %d: %s %d\n",i,earg[i], amap ? amap[i] : -1);
   return newarg;
 }

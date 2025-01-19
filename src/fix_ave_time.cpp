@@ -79,7 +79,7 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
 
   int expand = 0;
   char **earg;
-  int *amap;
+  int *amap = nullptr;
   nvalues = utils::expand_args(FLERR,nvalues,&arg[6],mode,earg,lmp,&amap);
   key2col.clear();
 
@@ -101,7 +101,8 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
       error->all(FLERR, amap[i]+6,"Invalid fix ave/time argument: {}", arg[i]);
 
     val.argindex = argi.get_index1();
-    val.iarg = amap[i] + 6;
+    if (expand) val.iarg = amap[i] + 6;
+    else val.iarg = i + 6;
     val.varlen = 0;
     val.offcol = 0;
     val.id = argi.get_name();
@@ -278,6 +279,7 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   if (expand) {
     for (int i = 0; i < nvalues; i++) delete[] earg[i];
     memory->sfree(earg);
+    memory->sfree(amap);
   }
 
   // allocate memory for averaging
