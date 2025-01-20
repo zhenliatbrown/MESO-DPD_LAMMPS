@@ -60,7 +60,9 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   // then read options so know mode = SCALAR/VECTOR before re-reading values
 
   nvalues = 0;
-  int iarg = 6;
+  // the first six arguments have fixed positions
+  const int ioffset = 6;
+  int iarg = ioffset;
   while (iarg < narg) {
     if (utils::strmatch(arg[iarg],"^[cfv]_")) {
       nvalues++;
@@ -68,9 +70,10 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     } else break;
   }
   if (nvalues == 0)
-    error->all(FLERR, 6, "No values from computes, fixes, or variables used in fix ave/time command");
+    error->all(FLERR, ioffset,
+               "No values from computes, fixes, or variables used in fix ave/time command");
 
-  // parse optional keywords
+  // parse optional keywords which must follow the data
 
   options(iarg,narg,arg);
 
@@ -80,10 +83,10 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   int expand = 0;
   char **earg;
   int *amap = nullptr;
-  nvalues = utils::expand_args(FLERR,nvalues,&arg[6],mode,earg,lmp,&amap);
+  nvalues = utils::expand_args(FLERR,nvalues,&arg[ioffset],mode,earg,lmp,&amap);
   key2col.clear();
 
-  if (earg != &arg[6]) expand = 1;
+  if (earg != &arg[ioffset]) expand = 1;
   arg = earg;
 
   // parse values
@@ -98,11 +101,11 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     key2col[arg[i]] = i;
 
     if ((val.which == ArgInfo::NONE) || (val.which == ArgInfo::UNKNOWN) || (argi.get_dim() > 1))
-      error->all(FLERR, amap[i]+6,"Invalid fix ave/time argument: {}", arg[i]);
+      error->all(FLERR, amap[i] + ioffset,"Invalid fix ave/time argument: {}", arg[i]);
 
     val.argindex = argi.get_index1();
-    if (expand) val.iarg = amap[i] + 6;
-    else val.iarg = i + 6;
+    if (expand) val.iarg = amap[i] + ioffset;
+    else val.iarg = i + ioffset;
     val.varlen = 0;
     val.offcol = 0;
     val.id = argi.get_name();
@@ -118,7 +121,7 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   for (int i = 0; i < noff; i++) {
     if (offlist[i] < 1 || offlist[i] > nvalues)
       error->all(FLERR,"Invalid fix ave/time off column: {}", offlist[i]);
-    values[offlist[i]-1].offcol = 1;
+    values[offlist[i] - 1].offcol = 1;
   }
 
   // setup and error check
@@ -167,47 +170,54 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
       val.val.f = modify->get_fix_by_id(val.id);
       if (!val.val.f) error->all(FLERR,"Fix ID {} for fix ave/time does not exist", val.id);
       if ((val.argindex == 0) && (val.val.f->scalar_flag == 0))
-        error->all(FLERR,"Fix ave/time fix {} does not calculate a scalar", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} does not calculate a scalar", val.id);
       if (val.argindex && (val.val.f->vector_flag == 0))
-        error->all(FLERR,"Fix ave/time fix {} does not calculate a vector", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} does not calculate a vector", val.id);
       if (val.argindex && (val.val.f->size_vector_variable))
-        error->all(FLERR,"Fix ave/time fix {} vector cannot be variable length", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} vector cannot be variable length", val.id);
       if (val.argindex && (val.argindex > val.val.f->size_vector))
-        error->all(FLERR,"Fix ave/time fix {} vector is accessed out-of-range", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} vector is accessed out-of-range", val.id);
       if (nevery % val.val.f->global_freq)
-        error->all(FLERR, "Fix {} for fix ave/time not computed at compatible time", val.id);
+        error->all(FLERR, val.iarg, "Fix {} for fix ave/time not computed at compatible time",
+                   val.id);
 
     } else if ((val.which == ArgInfo::FIX) && (mode == VECTOR)) {
       val.val.f = modify->get_fix_by_id(val.id);
-      if (!val.val.f) error->all(FLERR,"Fix ID {} for fix ave/time does not exist", val.id);
+      if (!val.val.f)
+        error->all(FLERR, val.iarg, "Fix ID {} for fix ave/time does not exist", val.id);
       if ((val.argindex == 0) && (val.val.f->vector_flag == 0))
-        error->all(FLERR,"Fix ave/time fix {} does not calculate a vector", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} does not calculate a vector", val.id);
       if (val.argindex && (val.val.f->array_flag == 0))
-        error->all(FLERR,"Fix ave/time fix {} does not calculate an array", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} does not calculate an array", val.id);
       if (val.argindex && (val.val.f->size_array_rows_variable))
-        error->all(FLERR,"Fix ave/time fix {} array cannot have variable row length", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} array cannot have variable row length",
+                   val.id);
       if (val.argindex && (val.argindex > val.val.f->size_array_cols))
-        error->all(FLERR,"Fix ave/time fix {} array is accessed out-of-range", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time fix {} array is accessed out-of-range", val.id);
       if (nevery % val.val.f->global_freq)
-        error->all(FLERR, "Fix {} for fix ave/time not computed at compatible time", val.id);
+        error->all(FLERR, val.iarg, "Fix {} for fix ave/time not computed at compatible time",
+                   val.id);
 
     } else if ((val.which == ArgInfo::VARIABLE) && (mode == SCALAR)) {
       int ivariable = input->variable->find(val.id.c_str());
       if (ivariable < 0)
-        error->all(FLERR,"Variable name {} for fix ave/time does not exist", val.id);
+        error->all(FLERR, val.iarg, "Variable name {} for fix ave/time does not exist", val.id);
       if ((val.argindex == 0) && (input->variable->equalstyle(ivariable) == 0))
-        error->all(FLERR,"Fix ave/time variable {} is not equal-style variable", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time variable {} is not equal-style variable", val.id);
       if ((val.argindex) && (input->variable->vectorstyle(ivariable) == 0))
-        error->all(FLERR,"Fix ave/time variable {} is not vector-style variable", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time variable {} is not vector-style variable",
+                   val.id);
 
     } else if ((val.which == ArgInfo::VARIABLE) && (mode == VECTOR)) {
       int ivariable = input->variable->find(val.id.c_str());
       if (ivariable < 0)
-        error->all(FLERR,"Variable name {} for fix ave/time does not exist", val.id);
+        error->all(FLERR, val.iarg, "Variable name {} for fix ave/time does not exist", val.id);
       if ((val.argindex == 0) && (input->variable->vectorstyle(ivariable) == 0))
-        error->all(FLERR,"Fix ave/time variable {} is not vector-style variable", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time variable {} is not vector-style variable",
+                   val.id);
       if (val.argindex)
-        error->all(FLERR,"Fix ave/time mode vector variable {} cannot be indexed", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/time mode vector variable {} cannot be indexed",
+                   val.id);
       val.varlen = 1;
     }
   }
@@ -265,7 +275,9 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
       fprintf(fp,"\n");
     }
     if (yaml_flag) fputs("---\n",fp);
-    if (ferror(fp)) error->one(FLERR,"Error writing file header: {}", utils::getsyserror());
+    if (ferror(fp))
+      error->one(FLERR, Error::NOLASTLINE, "Error writing fix ave/time ID {} file header: {}",
+                 id, utils::getsyserror());
     filepos = platform::ftell(fp);
   }
 
@@ -385,12 +397,12 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
           extvalue = 0;
         }
         if (extvalue == -1)
-          error->all(FLERR,"Fix ave/time cannot set output array intensive/extensive "
-                     "from these inputs");
+          error->all(FLERR, Error::NOLASTLINE, "Fix ave/time cannot set output array "
+                     "intensive/extensive from these inputs");
         if (extarray < -1) extarray = extvalue;
         else if (extvalue != extarray)
-          error->all(FLERR,"Fix ave/time cannot set output array intensive/extensive "
-                     "from these inputs");
+          error->all(FLERR, Error::NOLASTLINE, "Fix ave/time cannot set output array "
+                     "intensive/extensive from these inputs");
       }
     }
   }
@@ -470,15 +482,17 @@ void FixAveTime::init()
     if (val.which == ArgInfo::COMPUTE) {
       val.val.c = modify->get_compute_by_id(val.id);
       if (!val.val.c)
-        error->all(FLERR,"Compute ID {} for fix ave/time does not exist", val.id);
+        error->all(FLERR, Error::NOLASTLINE, "Compute ID {} for fix ave/time does not exist",
+                   val.id);
     } else if (val.which == ArgInfo::FIX) {
       val.val.f = modify->get_fix_by_id(val.id);
       if (!val.val.f)
-        error->all(FLERR,"Fix ID {} for fix ave/time does not exist", val.id);
+        error->all(FLERR, Error::NOLASTLINE, "Fix ID {} for fix ave/time does not exist", val.id);
     } else if (val.which == ArgInfo::VARIABLE) {
       val.val.v = input->variable->find(val.id.c_str());
       if (val.val.v < 0)
-        error->all(FLERR,"Variable name {} for fix ave/time does not exist", val.id);
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix ave/time does not exist",
+                   val.id);
     }
   }
 
@@ -663,14 +677,16 @@ void FixAveTime::invoke_scalar(bigint ntimestep)
       fmt::print(fp,"{}",ntimestep);
       for (i = 0; i < nvalues; i++) fprintf(fp,format,vector_total[i]/norm);
       fprintf(fp,"\n");
-      if (ferror(fp)) error->one(FLERR,"Error writing out time averaged data");
+      if (ferror(fp))
+        error->one(FLERR, Error::NOLASTLINE, "Error writing out time averaged data: {}",
+                   utils::getsyserror());
     }
     fflush(fp);
 
     if (overwrite) {
       bigint fileend = platform::ftell(fp);
       if ((fileend > 0) && (platform::ftruncate(fp,fileend)))
-        error->warning(FLERR,"Error while tuncating output: {}", utils::getsyserror());
+        error->warning(FLERR, "Error while tuncating output: {}", utils::getsyserror());
     }
   }
 }
@@ -775,7 +791,8 @@ void FixAveTime::invoke_vector(bigint ntimestep)
       double *varvec;
       int nvec = input->variable->compute_vector(val.val.v,&varvec);
       if (nvec != nrows)
-        error->all(FLERR,"Fix ave/time vector-style variable {} changed length", val.id);
+        error->all(FLERR, Error::NOLASTLINE, "Fix ave/time vector-style variable {} changed length",
+                   val.id);
       for (int i = 0; i < nrows; i++)
         column[i] = varvec[i];
     }
@@ -889,7 +906,7 @@ void FixAveTime::invoke_vector(bigint ntimestep)
     if (overwrite) {
       bigint fileend = platform::ftell(fp);
       if ((fileend > 0) && (platform::ftruncate(fp,fileend)))
-        error->warning(FLERR,"Error while tuncating output: {}", utils::getsyserror());
+        error->warning(FLERR, "Error while tuncating output: {}", utils::getsyserror());
     }
   }
 }
@@ -920,7 +937,7 @@ int FixAveTime::column_length(int dynamic)
       }
       if (length == 0) length = lengthone;
       else if (lengthone != length)
-        error->all(FLERR,"Fix ave/time columns are inconsistent lengths");
+        error->all(FLERR, Error::NOLASTLINE, "Fix ave/time columns have inconsistent lengths");
     }
   }
 
@@ -943,10 +960,10 @@ int FixAveTime::column_length(int dynamic)
       if (all_variable_length) {
         if (length == 0) length = lengthone;
         else if (lengthone != length)
-          error->all(FLERR,"Fix ave/time columns are inconsistent lengths");
+          error->all(FLERR, Error::NOLASTLINE, "Fix ave/time columns have inconsistent lengths");
       } else {
         if (lengthone != nrows)
-          error->all(FLERR,"Fix ave/time columns are inconsistent lengths");
+          error->all(FLERR, Error::NOLASTLINE, "Fix ave/time columns have inconsistent lengths");
       }
     }
   }
@@ -1010,7 +1027,7 @@ int FixAveTime::modify_param(int narg, char **arg)
       }
     }
     if ((icol < 0) || (icol >= (int) values.size()))
-      error->all(FLERR, "Thermo_modify colname column {} invalid", arg[1]);
+      error->all(FLERR, 1 + 1, "Thermo_modify colname column {} invalid", arg[1]);
     values[icol].keyword = arg[2];
     return 3;
   }
