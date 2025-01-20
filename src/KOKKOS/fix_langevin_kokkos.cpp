@@ -337,6 +337,7 @@ void FixLangevinKokkos<DeviceType>::post_force(int /*vflag*/)
   rmass = atomKK->k_rmass.view<DeviceType>();
   f = atomKK->k_f.template view<DeviceType>();
   v = atomKK->k_v.template view<DeviceType>();
+  mass = atomKK->k_mass.template view<DeviceType>();
   type = atomKK->k_type.template view<DeviceType>();
   mask = atomKK->k_mask.template view<DeviceType>();
 
@@ -957,6 +958,8 @@ void FixLangevinKokkos<DeviceType>::end_of_step()
   dt = update->dt;
   ftm2v = force->ftm2v;
   v = atomKK->k_v.template view<DeviceType>();
+  rmass = atomKK->k_rmass.template view<DeviceType>();
+  mass = atomKK->k_mass.template view<DeviceType>();
   mask = atomKK->k_mask.template view<DeviceType>();
   int nlocal = atomKK->nlocal;
 
@@ -973,9 +976,12 @@ void FixLangevinKokkos<DeviceType>::end_of_step()
 
   if (gjfflag) {
     if (rmass.data()) {
+      atomKK->sync(execution_space,RMASS_MASK);
       FixLangevinKokkosEndOfStepFunctor<DeviceType,1> functor(this);
       Kokkos::parallel_for(nlocal,functor);
     } else {
+      atomKK->sync(execution_space,TYPE_MASK);
+      type = atomKK->k_type.template view<DeviceType>();
       mass = atomKK->k_mass.view<DeviceType>();
       FixLangevinKokkosEndOfStepFunctor<DeviceType,0> functor(this);
       Kokkos::parallel_for(nlocal,functor);
@@ -1006,10 +1012,10 @@ void FixLangevinKokkos<DeviceType>::end_of_step_item(int i) const {
                 dtfm * 0.5 * (gjfsib * d_flangevin(i,0) - d_franprev(i,0)) +
                 (gjfsib * gjfa * 0.5 + dt * 0.25 / t_period / gjfsib) * d_lv(i,0);
       v(i,1) = 0.5 * gjfsib * gjfsib * (v(i,1) + dtfm * f(i,1) / gjfa) +
-                dtfm * 0.5 * (gjfsib * d_flangevin(i,0) - d_franprev(i,1)) +
+                dtfm * 0.5 * (gjfsib * d_flangevin(i,1) - d_franprev(i,1)) +
                 (gjfsib * gjfa * 0.5 + dt * 0.25 / t_period / gjfsib) * d_lv(i,1);
       v(i,2) = 0.5 * gjfsib * gjfsib * (v(i,2) + dtfm * f(i,2) / gjfa) +
-                dtfm * 0.5 * (gjfsib * d_flangevin(i,0) - d_franprev(i,2)) +
+                dtfm * 0.5 * (gjfsib * d_flangevin(i,2) - d_franprev(i,2)) +
                 (gjfsib * gjfa * 0.5 + dt * 0.25 / t_period / gjfsib) * d_lv(i,2);
     }
     d_lv(i,0) = tmp[0];
