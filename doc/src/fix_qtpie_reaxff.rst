@@ -35,6 +35,8 @@ Examples
 Description
 """""""""""
 
+.. versionadded:: 19Nov2024
+
 The QTPIE charge equilibration method is an extension of the QEq charge
 equilibration method. With QTPIE, the partial charges on individual atoms
 are computed by minimizing the electrostatic energy of the system in the

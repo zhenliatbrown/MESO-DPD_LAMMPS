@@ -344,7 +344,7 @@ void FixQEqReaxFF::allocate_matrix()
   int mincap;
   double safezone;
 
-  if (reaxflag) {
+  if (reaxflag && reaxff) {
     mincap = reaxff->api->system->mincap;
     safezone = reaxff->api->system->safezone;
   } else {
