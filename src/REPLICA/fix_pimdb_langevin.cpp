@@ -121,8 +121,9 @@ void FixPIMDBLangevin::spring_force() {
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::compute_spring_energy() {
-    total_spring_energy = bosonic_exchange.get_potential();
-    se_bead = (universe->iworld == np - 1 ? total_spring_energy : 0.0);
+    se_bead = (universe->iworld == 0 ? bosonic_exchange.get_potential() : bosonic_exchange.get_total_spring_energy_for_bead());
+    MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+    total_spring_energy /= universe->procs_per_world[universe->iworld];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -131,6 +132,8 @@ void FixPIMDBLangevin::compute_t_prim()
 {
     if (universe->iworld == 0)
         t_prim = bosonic_exchange.prim_estimator();
+    else
+        t_prim = -bosonic_exchange.get_total_spring_energy_for_bead();
 }
 
 /* ---------------------------------------------------------------------- */
