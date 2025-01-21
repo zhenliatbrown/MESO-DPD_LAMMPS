@@ -27,7 +27,6 @@
 #include "neigh_list.h"
 #include "neigh_request.h"
 #include "neighbor_kokkos.h"
-//#include "sna_kokkos.h"
 #include "domain.h"
 #include "domain_kokkos.h"
 #include "sna.h"
@@ -131,14 +130,10 @@ ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridKokkos
 template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridKokkos()
 {
-  //printf(">>> ComputeSNAGridKokkos destruct begin copymode %d\n", copymode);
   if (copymode) return;
-  //printf(">>> After copymode\n");
 
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
-  //memoryKK->destroy_kokkos(k_grid,grid);
   memoryKK->destroy_kokkos(k_gridall, gridall);
-  //memoryKK->destroy_kokkos(k_gridlocal, gridlocal);
 }
 
 // Setup
@@ -161,7 +156,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::setup()
   array = gridall;
 
   d_gridlocal = k_gridlocal.template view<DeviceType>();
-  //d_grid = k_grid.template view<DeviceType>();
   d_gridall = k_gridall.template view<DeviceType>();
 }
 
@@ -199,23 +193,14 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
 
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user
   // `total_range` is the number of grid points which may be larger than chunk size.
-  //printf(">>> total_range: %d\n", total_range);
   chunk_size = MIN(chunksize, total_range);
   chunk_offset = 0;
-  //snaKK.grow_rij(chunk_size, ntotal);
   snaKK.grow_rij(chunk_size, max_neighs);
-
-  //chunk_size = total_range;
 
   // Pre-compute ceil(chunk_size / vector_length) for code cleanliness
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
   if (triclinic) {
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     h0 = domain->h[0];
     h1 = domain->h[1];
     h2 = domain->h[2];
@@ -232,7 +217,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
     if (chunk_size > total_range - chunk_offset)
       chunk_size = total_range - chunk_offset;
 
-    //printf(">>> chunk_offset: %d\n", chunk_offset);
 
     //ComputeNeigh
     {
@@ -333,9 +317,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::compute_array()
   k_gridlocal.template modify<DeviceType>();
   k_gridlocal.template sync<LMPHostType>();
 
-  //k_grid.template modify<DeviceType>();
-  //k_grid.template sync<LMPHostType>();
-
   k_gridall.template modify<DeviceType>();
   k_gridall.template sync<LMPHostType>();
 }
@@ -396,7 +377,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
 
   // index ii already captures the proper grid point
   //int igrid = iz * (nx * ny) + iy * nx + ix;
-  //printf("%d %d\n", ii, igrid);
 
   // grid2x converts igrid to ix,iy,iz like we've done before
   // multiply grid integers by grid spacing delx, dely, delz
@@ -414,11 +394,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
 
     // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
     xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
     xgrid[2] = h2*xgrid[2] + lo2;
@@ -435,14 +410,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
   int ielem = 0;
   if (chemflag) ielem = d_map[itype];
   //const double radi = d_radelem[ielem];
-
-  // We need a DomainKokkos::lamda2x parallel for loop here, but let's ignore for now.
-  // The purpose here is to transform for triclinic boxes.
-  /*
-  if (triclinic){
-    printf("We are triclinic %f %f %f\n", xtmp, ytmp, ztmp);
-  }
-  */
 
   // Compute the number of neighbors, store rsq
   int ninside = 0;
@@ -463,29 +430,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     if (jtype >= 0)
       ninside++;
   }
-
-  /*
-  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
-    [&] (const int j, int& count) {
-    const F_FLOAT dx = x(j,0) - xtmp;
-    const F_FLOAT dy = x(j,1) - ytmp;
-    const F_FLOAT dz = x(j,2) - ztmp;
-
-    int jtype = type(j);
-    const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
-
-    // don't include atoms that share location with grid point
-    if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
-      jtype = -1; // use -1 to signal it's outside the radius
-    }
-
-    type_cache[j] = jtype;
-
-    if (jtype >= 0)
-     count++;
-
-  }, ninside);
-  */
 
   d_ninside(ii) = ninside;
 
@@ -521,75 +465,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
       offset++;
     }
   }
-
-  /*
-  int offset = 0;
-  for (int j = 0; j < ntotal; j++){
-    const int jtype = type_cache[j];
-    if (jtype >= 0) {
-      printf(">>> offset: %d\n", offset);
-      const F_FLOAT dx = x(j,0) - xtmp;
-      const F_FLOAT dy = x(j,1) - ytmp;
-      const F_FLOAT dz = x(j,2) - ztmp;
-      int jtype = type(j);
-      int jelem = 0;
-      if (chemflag) jelem = d_map[jtype];
-      snaKK.rij(ii,offset,0) = static_cast<real_type>(dx);
-      snaKK.rij(ii,offset,1) = static_cast<real_type>(dy);
-      snaKK.rij(ii,offset,2) = static_cast<real_type>(dz);
-      // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
-      // actually since the views here have values starting at 0, let's use jelem
-      snaKK.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
-      snaKK.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
-      snaKK.inside(ii,offset) = j;
-      if (switchinnerflag) {
-        snaKK.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
-        snaKK.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
-      }
-      if (chemflag)
-        snaKK.element(ii,offset) = jelem;
-      else
-        snaKK.element(ii,offset) = 0;
-      offset++;
-    }
-  }
-  */
-
-  /*
-  Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,ntotal),
-    [&] (const int j, int& offset, bool final) {
-
-    const int jtype = type_cache[j];
-
-    if (jtype >= 0) {
-      if (final) {
-        const F_FLOAT dx = x(j,0) - xtmp;
-        const F_FLOAT dy = x(j,1) - ytmp;
-        const F_FLOAT dz = x(j,2) - ztmp;
-        int jtype = type(j);
-        int jelem = 0;
-        if (chemflag) jelem = d_map[jtype];
-        snaKK.rij(ii,offset,0) = static_cast<real_type>(dx);
-        snaKK.rij(ii,offset,1) = static_cast<real_type>(dy);
-        snaKK.rij(ii,offset,2) = static_cast<real_type>(dz);
-        // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
-        // actually since the views here have values starting at 0, let's use jelem
-        snaKK.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
-        snaKK.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
-        snaKK.inside(ii,offset) = j;
-        if (switchinnerflag) {
-          snaKK.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
-          snaKK.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
-        }
-        if (chemflag)
-          snaKK.element(ii,offset) = jelem;
-        else
-          snaKK.element(ii,offset) = 0;
-      }
-      offset++;
-    }
-  });
-  */
 }
 
 /* ----------------------------------------------------------------------
@@ -821,11 +696,6 @@ void ComputeSNAGridKokkos<DeviceType, real_type, vector_length>::operator() (Tag
     // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
 
     // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
     xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
     xgrid[2] = h2*xgrid[2] + lo2;

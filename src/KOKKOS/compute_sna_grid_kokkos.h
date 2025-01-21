@@ -29,38 +29,13 @@ ComputeStyle(sna/grid/kk/host,ComputeSNAGridKokkosDevice<LMPHostType>);
 
 #include "compute_sna_grid.h"
 #include "kokkos_type.h"
-//#include "pair_snap.h"
-//#include "kokkos_type.h"
-//#include "neigh_list_kokkos.h"
 #include "sna_kokkos.h"
-//#include "pair_kokkos.h"
 
 namespace LAMMPS_NS {
 
 // Routines for both the CPU and GPU backend
-//template<int NEIGHFLAG, int EVFLAG>
-//struct TagPairSNAPComputeForce{};
-
 
 // GPU backend only
-/*
-struct TagPairSNAPComputeNeigh{};
-struct TagPairSNAPComputeCayleyKlein{};
-struct TagPairSNAPPreUi{};
-struct TagPairSNAPComputeUiSmall{}; // more parallelism, more divergence
-struct TagPairSNAPComputeUiLarge{}; // less parallelism, no divergence
-struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
-struct TagPairSNAPComputeZi{};
-struct TagPairSNAPBeta{};
-struct TagPairSNAPComputeBi{};
-struct TagPairSNAPComputeYi{};
-struct TagPairSNAPComputeYiWithZlist{};
-template<int dir>
-struct TagPairSNAPComputeFusedDeidrjSmall{}; // more parallelism, more divergence
-template<int dir>
-struct TagPairSNAPComputeFusedDeidrjLarge{}; // less parallelism, no divergence
-*/
-//struct TagPairSNAPPreUi{};
 struct TagCSNAGridComputeNeigh{};
 struct TagCSNAGridComputeCayleyKlein{};
 struct TagCSNAGridPreUi{};
@@ -70,26 +45,11 @@ struct TagCSNAGridTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero yl
 template <bool chemsnap> struct TagCSNAGridComputeZi{};
 template <bool chemsnap> struct TagCSNAGridComputeBi{};
 struct TagCSNAGridLocalFill{}; // fill the gridlocal array
-//struct TagCSNAGridLocalFill2{}; // fill the gridlocal array using same kinda loop as ComputeForce
 
 struct TagComputeSNAGridLoop{};
 struct TagComputeSNAGrid3D{};
-//struct TagCSNAGridTeam{};
 
 // CPU backend only
-/*
-struct TagPairSNAPComputeNeighCPU{};
-struct TagPairSNAPPreUiCPU{};
-struct TagPairSNAPComputeUiCPU{};
-struct TagPairSNAPTransformUiCPU{};
-struct TagPairSNAPComputeZiCPU{};
-struct TagPairSNAPBetaCPU{};
-struct TagPairSNAPComputeBiCPU{};
-struct TagPairSNAPZeroYiCPU{};
-struct TagPairSNAPComputeYiCPU{};
-struct TagPairSNAPComputeDuidrjCPU{};
-struct TagPairSNAPComputeDeidrjCPU{};
-*/
 struct TagComputeSNAGridLoopCPU{};
 
 //template<class DeviceType>
@@ -180,7 +140,6 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
 
   // operator function for example team policy
   //KOKKOS_INLINE_FUNCTION
-  //void operator() (TagCSNAGridTeam, const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridTeam>::member_type& team) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagComputeSNAGridLoop, const int& ) const;
@@ -190,9 +149,6 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
 
   KOKKOS_INLINE_FUNCTION
   void operator() (TagCSNAGridComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridComputeNeigh>::member_type& team) const;
-
-  // PrintNeigh
-  //void operator() (TagPrintNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagPrintNeigh>::member_type& team) const;
 
   // 3D case - used by parallel_for
   KOKKOS_INLINE_FUNCTION
@@ -294,11 +250,6 @@ class ComputeSNAGridKokkos : public ComputeSNAGrid {
   class DomainKokkos *domainKK;
 
   // triclinic vars
-  /*
-  xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-  xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-  xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-  */
   double h0, h1, h2, h3, h4, h5;
   double lo0, lo1, lo2;
 
@@ -344,45 +295,3 @@ class ComputeSNAGridKokkosHost : public ComputeSNAGridKokkos<DeviceType, SNAP_KO
 
 #endif
 #endif
-
-// The following will compile with the chunk in cpp file but we're gonna try wrapper like pair snap.
-/*
-#ifdef COMPUTE_CLASS
-// clang-format off
-ComputeStyle(sna/grid/kk,ComputeSNAGridKokkos<LMPDeviceType>);
-ComputeStyle(sna/grid/kk/device,ComputeSNAGridKokkos<LMPDeviceType>);
-ComputeStyle(sna/grid/kk/host,ComputeSNAGridKokkos<LMPHostType>);
-// clang-format on
-#else
-
-// clang-format off
-#ifndef LMP_COMPUTE_SNA_GRID_KOKKOS_H
-#define LMP_COMPUTE_SNA_GRID_KOKKOS_H
-
-#include "compute_sna_grid.h"
-#include "kokkos_type.h"
-
-namespace LAMMPS_NS {
-
-//template<int CSTYLE, int NCOL>
-//struct TagComputeCoordAtom{};
-
-template<class DeviceType>
-class ComputeSNAGridKokkos : public ComputeSNAGrid {
- public:
-  typedef DeviceType device_type;
-  typedef ArrayTypes<DeviceType> AT;
-
-  ComputeSNAGridKokkos(class LAMMPS *, int, char **);
-  ~ComputeSNAGridKokkos() override;
-
- private:
-
-};
-
-}
-
-#endif
-#endif
-*/
-

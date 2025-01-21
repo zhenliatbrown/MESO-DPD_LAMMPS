@@ -89,14 +89,12 @@ ComputeGaussianGridLocal::ComputeGaussianGridLocal(LAMMPS *lmp, int narg, char *
 
 ComputeGaussianGridLocal::~ComputeGaussianGridLocal()
 {
-  //printf(">>> ComputeGaussianGridLocal begin destruct copymode %d\n", copymode);
   if (copymode) return;
   memory->destroy(radelem);
   memory->destroy(sigmaelem);
   memory->destroy(prefacelem);
   memory->destroy(argfacelem);
   memory->destroy(cutsq);
-  //printf(">>> ComputeGaussianGridLocal end destruct\n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -111,8 +109,6 @@ void ComputeGaussianGridLocal::init()
 
 void ComputeGaussianGridLocal::compute_local()
 {
-  //printf(">>> compute_local CPU\n");
-  //printf(">>> size_local_cols_base, size_local_cols: %d %d\n", size_local_cols_base, size_local_cols);
   invoked_local = update->ntimestep;
 
   // compute gaussian for each gridpoint

@@ -29,38 +29,13 @@ ComputeStyle(sna/grid/local/kk/host,ComputeSNAGridLocalKokkosDevice<LMPHostType>
 
 #include "compute_sna_grid_local.h"
 #include "kokkos_type.h"
-//#include "pair_snap.h"
-//#include "kokkos_type.h"
-//#include "neigh_list_kokkos.h"
 #include "sna_kokkos.h"
-//#include "pair_kokkos.h"
 
 namespace LAMMPS_NS {
 
 // Routines for both the CPU and GPU backend
-//template<int NEIGHFLAG, int EVFLAG>
-//struct TagPairSNAPComputeForce{};
-
 
 // GPU backend only
-/*
-struct TagPairSNAPComputeNeigh{};
-struct TagPairSNAPComputeCayleyKlein{};
-struct TagPairSNAPPreUi{};
-struct TagPairSNAPComputeUiSmall{}; // more parallelism, more divergence
-struct TagPairSNAPComputeUiLarge{}; // less parallelism, no divergence
-struct TagPairSNAPTransformUi{}; // re-order ulisttot from SoA to AoSoA, zero ylist
-struct TagPairSNAPComputeZi{};
-struct TagPairSNAPBeta{};
-struct TagPairSNAPComputeBi{};
-struct TagPairSNAPComputeYi{};
-struct TagPairSNAPComputeYiWithZlist{};
-template<int dir>
-struct TagPairSNAPComputeFusedDeidrjSmall{}; // more parallelism, more divergence
-template<int dir>
-struct TagPairSNAPComputeFusedDeidrjLarge{}; // less parallelism, no divergence
-*/
-//struct TagPairSNAPPreUi{};
 struct TagCSNAGridLocalComputeNeigh{};
 struct TagCSNAGridLocalComputeCayleyKlein{};
 struct TagCSNAGridLocalPreUi{};
@@ -70,25 +45,11 @@ struct TagCSNAGridLocalTransformUi{}; // re-order ulisttot from SoA to AoSoA, ze
 template <bool chemsnap> struct TagCSNAGridLocalComputeZi{};
 template <bool chemsnap> struct TagCSNAGridLocalComputeBi{};
 struct TagCSNAGridLocal2Fill{}; // fill the gridlocal array
-//struct TagCSNAGridLocalFill2{}; // fill the gridlocal array using same kinda loop as ComputeForce
 
 struct TagComputeSNAGridLocalLoop{};
 struct TagComputeSNAGridLocal3D{};
 
 // CPU backend only
-/*
-struct TagPairSNAPComputeNeighCPU{};
-struct TagPairSNAPPreUiCPU{};
-struct TagPairSNAPComputeUiCPU{};
-struct TagPairSNAPTransformUiCPU{};
-struct TagPairSNAPComputeZiCPU{};
-struct TagPairSNAPBetaCPU{};
-struct TagPairSNAPComputeBiCPU{};
-struct TagPairSNAPZeroYiCPU{};
-struct TagPairSNAPComputeYiCPU{};
-struct TagPairSNAPComputeDuidrjCPU{};
-struct TagPairSNAPComputeDeidrjCPU{};
-*/
 struct TagComputeSNAGridLocalLoopCPU{};
 
 //template<class DeviceType>
@@ -184,9 +145,6 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   KOKKOS_INLINE_FUNCTION
   void operator() (TagCSNAGridLocalComputeNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagCSNAGridLocalComputeNeigh>::member_type& team) const;
 
-  // PrintNeigh
-  //void operator() (TagPrintNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagPrintNeigh>::member_type& team) const;
-
   // 3D case - used by parallel_for
   KOKKOS_INLINE_FUNCTION
   void operator()(TagComputeSNAGridLocal3D, const int& iz, const int& iy, const int& ix) const;
@@ -274,16 +232,6 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   DAT::tdual_float_2d k_alocal;
   typename AT::t_float_2d d_alocal;
 
-  /*
-  DAT::tdual_float_2d k_grid;
-  DAT::tdual_float_2d k_gridall;
-  typename AT::t_float_2d d_grid;
-  typename AT::t_float_2d d_gridall;
-
-  DAT::tdual_float_4d k_gridlocal;
-  typename AT::t_float_4d d_gridlocal;
-  */
-
 
   // Utility routine which wraps computing per-team scratch size requirements for
   // ComputeNeigh, ComputeUi, and ComputeFusedDeidrj
@@ -293,11 +241,6 @@ class ComputeSNAGridLocalKokkos : public ComputeSNAGridLocal {
   class DomainKokkos *domainKK;
 
   // triclinic vars
-  /*
-  xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-  xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-  xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-  */
   double h0, h1, h2, h3, h4, h5;
   double lo0, lo1, lo2;
 
@@ -320,7 +263,6 @@ class ComputeSNAGridLocalKokkosDevice : public ComputeSNAGridLocalKokkos<DeviceT
   ComputeSNAGridLocalKokkosDevice(class LAMMPS *, int, char **);
 
   void compute_local() override;
-  //void setup() override;
 
 };
 

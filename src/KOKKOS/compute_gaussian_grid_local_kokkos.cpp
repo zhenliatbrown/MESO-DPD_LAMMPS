@@ -54,17 +54,12 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
 
   host_flag = (execution_space == Host);
 
-  // TODO: Extract cutsq in double loop below, no need for cutsq_tmp
-
-  //cutsq_tmp = cutsq[1][1];
-
   for (int i = 1; i <= atom->ntypes; i++) {
     for (int j = 1; j <= atom->ntypes; j++){
       k_cutsq.h_view(i,j) = k_cutsq.h_view(j,i) = cutsq[i][j]; //cutsq_tmp;
       k_cutsq.template modify<LMPHostType>();
     }
   }
-  //printf(">>> 1\n");
   // Set up element lists
   int n = atom->ntypes;
   MemKK::realloc_kokkos(d_radelem,"ComputeSNAGridKokkos::radelem",n);
@@ -72,13 +67,11 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
   MemKK::realloc_kokkos(d_prefacelem,"ComputeSNAGridKokkos::prefacelem",n+1);
   MemKK::realloc_kokkos(d_argfacelem,"ComputeSNAGridKokkos::argfacelem",n+1);
   MemKK::realloc_kokkos(d_map,"ComputeSNAGridKokkos::map",n+1);
-  //printf(">>> 2\n");
   auto h_radelem = Kokkos::create_mirror_view(d_radelem);
   auto h_sigmaelem = Kokkos::create_mirror_view(d_sigmaelem);
   auto h_prefacelem = Kokkos::create_mirror_view(d_prefacelem);
   auto h_argfacelem = Kokkos::create_mirror_view(d_argfacelem);
   auto h_map = Kokkos::create_mirror_view(d_map);
-  //printf(">>> 3\n");
   // start from index 1 because of how compute sna/grid is
   for (int i = 1; i <= atom->ntypes; i++) {
     h_radelem(i-1) = radelem[i];
@@ -86,21 +79,11 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
     h_prefacelem(i-1) = prefacelem[i];
     h_argfacelem(i-1) = argfacelem[i];
   }
-  //printf(">>> 4\n");
-  // In pair snap some things like `map` get allocated regardless of chem flag.
-  // In this compute, however, map does not get allocated in parent classes.
-  /*
-  for (int i = 1; i <= atom->ntypes; i++) {
-    h_map(i) = map[i];
-  }
-  */
-  //printf(">>> 5\n");
   Kokkos::deep_copy(d_radelem,h_radelem);
   Kokkos::deep_copy(d_sigmaelem,h_sigmaelem);
   Kokkos::deep_copy(d_prefacelem, h_prefacelem);
   Kokkos::deep_copy(d_argfacelem, h_argfacelem);
   Kokkos::deep_copy(d_map,h_map);
-  //printf(">>> 6\n");
 
 }
 
@@ -109,14 +92,12 @@ ComputeGaussianGridLocalKokkos<DeviceType>::ComputeGaussianGridLocalKokkos(LAMMP
 template<class DeviceType>
 ComputeGaussianGridLocalKokkos<DeviceType>::~ComputeGaussianGridLocalKokkos()
 {
-  //printf(">>> ComputeGaussianGridLocalKokkos destruct begin, copymode %d\n", copymode);
   if (copymode) return;
 
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
   memoryKK->destroy_kokkos(k_alocal,alocal);
   //gridlocal_allocated = 0;
 
-  //printf(">>> ComputeGaussianGridLocalKokkos end\n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -125,25 +106,12 @@ template<class DeviceType>
 void ComputeGaussianGridLocalKokkos<DeviceType>::setup()
 {
 
-  // Do not call ComputeGrid::setup(), we don't wanna allocate the grid array there.
-  // Instead, call ComputeGrid::set_grid_global and set_grid_local to set the n indices.
-
-  //ComputeGrid::set_grid_global();
-  //ComputeGrid::set_grid_local();
   ComputeGridLocal::setup();
 
   // allocate arrays
-  //printf(">>> rows cols kokkos init: %d %d\n", size_local_rows, size_local_cols);
   memoryKK->create_kokkos(k_alocal, alocal, size_local_rows, size_local_cols, "grid:alocal");
-
-  //gridlocal_allocated = 1;
-  //array = gridall;
-
   array_local = alocal;
-
   d_alocal = k_alocal.template view<DeviceType>();
-  //d_grid = k_grid.template view<DeviceType>();
-  //d_gridall = k_gridall.template view<DeviceType>();
 
 }
 
@@ -160,8 +128,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::init()
 template<class DeviceType>
 void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
 {
-  //printf(">>> compute_local Kokkos begin\n");
-
   if (host_flag) {
     return;
   }
@@ -202,11 +168,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
     team_size_default = 1; // cost will increase with increasing team size //32;//max_neighs;
 
   if (triclinic){
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     h0 = domain->h[0];
     h1 = domain->h[1];
     h2 = domain->h[2];
@@ -228,9 +189,7 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
       int vector_length = vector_length_default;
       int team_size = team_size_default;
       check_team_size_for<TagComputeGaussianGridLocalNeigh>(chunk_size,team_size,vector_length);
-      //printf(">>> Check 1 %d %d %d\n", chunk_size, team_size, vector_length);
       typename Kokkos::TeamPolicy<DeviceType, TagComputeGaussianGridLocalNeigh> policy_neigh(chunk_size,team_size,vector_length);
-      //printf(">>> Check 2\n");
       Kokkos::parallel_for("ComputeGaussianGridLocalNeigh",policy_neigh,*this);
     }
 
@@ -243,8 +202,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::compute_local()
   k_alocal.template modify<DeviceType>();
   k_alocal.template sync<LMPHostType>();
 
-  //printf(">>> k_alocal: %f\n", k_alocal.h_view(0,6));
-
 }
 
 /* ---------------------------------------------------------------------- */
@@ -254,7 +211,6 @@ KOKKOS_INLINE_FUNCTION
 void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianGridLocalNeigh,const typename Kokkos::TeamPolicy<DeviceType, TagComputeGaussianGridLocalNeigh>::member_type& team) const
 {
   const int ii = team.league_rank();
-  //printf("%d\n", ii);
 
   if (ii >= chunk_size) return;
 
@@ -284,7 +240,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
 
   // index ii already captures the proper grid point
   //int igrid = iz * (nx * ny) + iy * nx + ix;
-  //printf("%d %d\n", ii, igrid);
 
   // grid2x converts igrid to ix,iy,iz like we've done before
   // multiply grid integers by grid spacing delx, dely, delz
@@ -302,11 +257,6 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
     // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
 
     // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
     xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
     xgrid[2] = h2*xgrid[2] + lo2;
@@ -348,13 +298,10 @@ void ComputeGaussianGridLocalKokkos<DeviceType>::operator() (TagComputeGaussianG
     const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
 
     if (rsq < rnd_cutsq(jtype, jtype) ) {
-      //printf("%f %f\n", d_prefacelem(jtype-1), d_argfacelem(jtype-1));
       int icol = size_local_cols_base + jtype - 1;
       d_alocal(igrid, icol) += d_prefacelem(jtype-1) * exp(-rsq * d_argfacelem(jtype-1));
     }
   }
-
-  //printf("%f\n", d_alocal(igrid, 6));
 }
 
 /* ----------------------------------------------------------------------

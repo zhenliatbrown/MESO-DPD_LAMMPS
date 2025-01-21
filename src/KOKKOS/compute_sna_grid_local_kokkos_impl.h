@@ -27,7 +27,6 @@
 #include "neigh_list.h"
 #include "neigh_request.h"
 #include "neighbor_kokkos.h"
-//#include "sna_kokkos.h"
 #include "domain.h"
 #include "domain_kokkos.h"
 #include "sna.h"
@@ -131,15 +130,10 @@ ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::ComputeSNAGridL
 template<class DeviceType, typename real_type, int vector_length>
 ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::~ComputeSNAGridLocalKokkos()
 {
-  //printf(">>> ComputeSNAGridLocalKokkos destruct begin copymode %d\n", copymode);
   if (copymode) return;
-  //printf(">>> After copymode\n");
 
   memoryKK->destroy_kokkos(k_cutsq,cutsq);
   memoryKK->destroy_kokkos(k_alocal,alocal);
-  //memoryKK->destroy_kokkos(k_grid,grid);
-  //memoryKK->destroy_kokkos(k_gridall, gridall);
-  //memoryKK->destroy_kokkos(k_gridlocal, gridlocal);
 }
 
 // Setup
@@ -148,28 +142,11 @@ template<class DeviceType, typename real_type, int vector_length>
 void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::setup()
 {
 
-  // Do not call ComputeGrid::setup(), we don't wanna allocate the grid array there.
-  // Instead, call ComputeGrid::set_grid_global and set_grid_local to set the n indices.
-
-  //ComputeGrid::set_grid_global();
-  //ComputeGrid::set_grid_local();
-  //ComputeSNAGridLocal::setup();
   ComputeGridLocal::setup();
 
   // allocate arrays
-  //memoryKK->create_kokkos(k_gridall, gridall, size_array_rows, size_array_cols, "grid:gridall");
   memoryKK->create_kokkos(k_alocal, alocal, size_local_rows, size_local_cols, "grid:alocal");
-
-  // do not use or allocate gridlocal for now
-
-  //gridlocal_allocated = 0;
-  //array = gridall;
-
   array_local = alocal;
-
-  //d_gridlocal = k_gridlocal.template view<DeviceType>();
-  //d_grid = k_grid.template view<DeviceType>();
-  //d_gridall = k_gridall.template view<DeviceType>();
   d_alocal = k_alocal.template view<DeviceType>();
 }
 
@@ -182,8 +159,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
     ComputeSNAGridLocal::compute_array();
     return;
   }
-
-  //printf(">>> ComputeSNAGridLocalKokkos::compute_local begin\n");
 
   copymode = 1;
 
@@ -205,12 +180,10 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
 
   ntotal = atomKK->nlocal + atomKK->nghost;
   // Allocate view for number of neighbors per grid point
-  //printf(">>> total_range: %d\n", total_range);
   MemKK::realloc_kokkos(d_ninside,"ComputeSNAGridLocalKokkos:ninside",total_range);
 
   // "chunksize" variable is default 32768 in compute_sna_grid.cpp, and set by user
   // `total_range` is the number of grid points which may be larger than chunk size.
-  //printf(">>> total_range: %d\n", total_range);
   chunk_size = MIN(chunksize, total_range);
   chunk_offset = 0;
   //snaKK.grow_rij(chunk_size, ntotal);
@@ -222,11 +195,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
   const int chunk_size_div = (chunk_size + vector_length - 1) / vector_length;
 
   if (triclinic) {
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     h0 = domain->h[0];
     h1 = domain->h[1];
     h2 = domain->h[2];
@@ -243,7 +211,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::compute_lo
     if (chunk_size > total_range - chunk_offset)
       chunk_size = total_range - chunk_offset;
 
-    //printf(">>> chunk_offset: %d\n", chunk_offset);
 
     //ComputeNeigh
     {
@@ -401,7 +368,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
 
   // index ii already captures the proper grid point
   //int igrid = iz * (nx * ny) + iy * nx + ix;
-  //printf("%d %d\n", ii, igrid);
 
   // grid2x converts igrid to ix,iy,iz like we've done before
   // multiply grid integers by grid spacing delx, dely, delz
@@ -419,11 +385,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
     // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
 
     // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
     xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
     xgrid[2] = h2*xgrid[2] + lo2;
@@ -454,14 +415,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
   if (chemflag) ielem = d_map[itype];
   //const double radi = d_radelem[ielem];
 
-  // We need a DomainKokkos::lamda2x parallel for loop here, but let's ignore for now.
-  // The purpose here is to transform for triclinic boxes.
-  /*
-  if (triclinic){
-    printf("We are triclinic %f %f %f\n", xtmp, ytmp, ztmp);
-  }
-  */
-
   // Compute the number of neighbors, store rsq
   int ninside = 0;
 
@@ -481,29 +434,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
     if (jtype >= 0)
       ninside++;
   }
-
-  /*
-  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team,ntotal),
-    [&] (const int j, int& count) {
-    const F_FLOAT dx = x(j,0) - xtmp;
-    const F_FLOAT dy = x(j,1) - ytmp;
-    const F_FLOAT dz = x(j,2) - ztmp;
-
-    int jtype = type(j);
-    const F_FLOAT rsq = dx*dx + dy*dy + dz*dz;
-
-    // don't include atoms that share location with grid point
-    if (rsq >= rnd_cutsq(itype,jtype) || rsq < 1e-20) {
-      jtype = -1; // use -1 to signal it's outside the radius
-    }
-
-    type_cache[j] = jtype;
-
-    if (jtype >= 0)
-     count++;
-
-  }, ninside);
-  */
 
   d_ninside(ii) = ninside;
 
@@ -539,75 +469,6 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
       offset++;
     }
   }
-
-  /*
-  int offset = 0;
-  for (int j = 0; j < ntotal; j++){
-    const int jtype = type_cache[j];
-    if (jtype >= 0) {
-      printf(">>> offset: %d\n", offset);
-      const F_FLOAT dx = x(j,0) - xtmp;
-      const F_FLOAT dy = x(j,1) - ytmp;
-      const F_FLOAT dz = x(j,2) - ztmp;
-      int jtype = type(j);
-      int jelem = 0;
-      if (chemflag) jelem = d_map[jtype];
-      snaKK.rij(ii,offset,0) = static_cast<real_type>(dx);
-      snaKK.rij(ii,offset,1) = static_cast<real_type>(dy);
-      snaKK.rij(ii,offset,2) = static_cast<real_type>(dz);
-      // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
-      // actually since the views here have values starting at 0, let's use jelem
-      snaKK.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
-      snaKK.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
-      snaKK.inside(ii,offset) = j;
-      if (switchinnerflag) {
-        snaKK.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
-        snaKK.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
-      }
-      if (chemflag)
-        snaKK.element(ii,offset) = jelem;
-      else
-        snaKK.element(ii,offset) = 0;
-      offset++;
-    }
-  }
-  */
-
-  /*
-  Kokkos::parallel_scan(Kokkos::ThreadVectorRange(team,ntotal),
-    [&] (const int j, int& offset, bool final) {
-
-    const int jtype = type_cache[j];
-
-    if (jtype >= 0) {
-      if (final) {
-        const F_FLOAT dx = x(j,0) - xtmp;
-        const F_FLOAT dy = x(j,1) - ytmp;
-        const F_FLOAT dz = x(j,2) - ztmp;
-        int jtype = type(j);
-        int jelem = 0;
-        if (chemflag) jelem = d_map[jtype];
-        snaKK.rij(ii,offset,0) = static_cast<real_type>(dx);
-        snaKK.rij(ii,offset,1) = static_cast<real_type>(dy);
-        snaKK.rij(ii,offset,2) = static_cast<real_type>(dz);
-        // pair snap uses jelem here, but we use jtype, see compute_sna_grid.cpp
-        // actually since the views here have values starting at 0, let's use jelem
-        snaKK.wj(ii,offset) = static_cast<real_type>(d_wjelem[jelem]);
-        snaKK.rcutij(ii,offset) = static_cast<real_type>((2.0 * d_radelem[jelem])*rcutfac);
-        snaKK.inside(ii,offset) = j;
-        if (switchinnerflag) {
-          snaKK.sinnerij(ii,offset) = 0.5*(d_sinnerelem[ielem] + d_sinnerelem[jelem]);
-          snaKK.dinnerij(ii,offset) = 0.5*(d_dinnerelem[ielem] + d_dinnerelem[jelem]);
-        }
-        if (chemflag)
-          snaKK.element(ii,offset) = jelem;
-        else
-          snaKK.element(ii,offset) = 0;
-      }
-      offset++;
-    }
-  });
-  */
 }
 
 /* ----------------------------------------------------------------------
@@ -839,22 +700,11 @@ void ComputeSNAGridLocalKokkos<DeviceType, real_type, vector_length>::operator()
     // Because calling a __host__ function("lamda2x") from a __host__ __device__ function("operator()") is not allowed
 
     // Using domainKK-> gives segfault, use domain-> instead since we're just accessing floats.
-    /*
-    xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-    xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-    xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-    */
     xgrid[0] = h0*xgrid[0] + h5*xgrid[1] + h4*xgrid[2] + lo0;
     xgrid[1] = h1*xgrid[1] + h3*xgrid[2] + lo1;
     xgrid[2] = h2*xgrid[2] + lo2;
   }
 
-  //const F_FLOAT xtmp = xgrid[0];
-  //const F_FLOAT ytmp = xgrid[1];
-  //const F_FLOAT ztmp = xgrid[2];
-  //d_gridall(igrid,0) = xtmp;
-  //d_gridall(igrid,1) = ytmp;
-  //d_gridall(igrid,2) = ztmp;
 
   const auto idxb_max = snaKK.idxb_max;
 

@@ -58,8 +58,6 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
   void operator() (TagComputeGaussianGridLocalNeigh, const typename Kokkos::TeamPolicy<DeviceType, TagComputeGaussianGridLocalNeigh>::member_type& team) const;
 
  private:
-  //double adof, mvv2e, mv2d, boltz;
-
   Kokkos::View<double*, DeviceType> d_radelem;              // element radii
   Kokkos::View<double*, DeviceType> d_sigmaelem;
   Kokkos::View<double*, DeviceType> d_prefacelem;
@@ -73,21 +71,6 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
       Kokkos::MemoryTraits<Kokkos::RandomAccess> > t_fparams_rnd;
   t_fparams_rnd rnd_cutsq;
 
-  /*
-  typename AT::t_x_array x;
-  typename AT::t_v_array v;
-  typename ArrayTypes<DeviceType>::t_float_1d rmass;
-  typename ArrayTypes<DeviceType>::t_float_1d mass;
-  typename ArrayTypes<DeviceType>::t_int_1d type;
-  typename ArrayTypes<DeviceType>::t_int_1d mask;
-  */
-
-  //typename AT::t_neighbors_2d d_neighbors;
-  //typename AT::t_int_1d d_ilist;
-  //typename AT::t_int_1d d_numneigh;
-
-  //DAT::tdual_float_2d k_result;
-  //typename AT::t_float_2d d_result;
 
   int max_neighs, inum, chunk_size, chunk_offset;
   int host_flag;
@@ -103,11 +86,6 @@ template <class DeviceType> class ComputeGaussianGridLocalKokkos : public Comput
   typename AT::t_float_2d d_alocal;
 
   // triclinic vars
-  /*
-  xgrid[0] = domain->h[0]*xgrid[0] + domain->h[5]*xgrid[1] + domain->h[4]*xgrid[2] + domain->boxlo[0];
-  xgrid[1] = domain->h[1]*xgrid[1] + domain->h[3]*xgrid[2] + domain->boxlo[1];
-  xgrid[2] = domain->h[2]*xgrid[2] + domain->boxlo[2];
-  */
   double h0, h1, h2, h3, h4, h5;
   double lo0, lo1, lo2;
 };
