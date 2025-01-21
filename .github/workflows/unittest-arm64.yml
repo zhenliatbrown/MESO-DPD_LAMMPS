@@ -3,12 +3,7 @@ name: "Unittest for Linux on ARM64"
 
 on:
   push:
-    branches:
-      - develop
-      - arm-cpu-unittest
-  pull_request:
-    branches:
-      - develop
+    branches: [develop]
 
   workflow_dispatch:
 
@@ -19,7 +14,7 @@ concurrency:
 jobs:
   build:
     name: Linux ARM64 Unit Test
-    if: ${{ github.repository == 'akohlmey/lammps' }}
+    if: ${{ github.repository == 'lammps/lammps' }}
     runs-on: ubuntu-22.04-arm
     env:
       CCACHE_DIR: ${{ github.workspace }}/.ccache
