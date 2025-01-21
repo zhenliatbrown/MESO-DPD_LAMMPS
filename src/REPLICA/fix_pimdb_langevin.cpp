@@ -132,8 +132,6 @@ void FixPIMDBLangevin::compute_t_prim()
 {
     if (universe->iworld == 0)
         t_prim = bosonic_exchange.prim_estimator();
-    else
-        t_prim = -bosonic_exchange.get_total_spring_energy_for_bead();
 }
 
 /* ---------------------------------------------------------------------- */
