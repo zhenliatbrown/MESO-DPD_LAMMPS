@@ -136,7 +136,7 @@ namespace LAMMPS_NS {
     typename tdual_double_1d_3n::t_dev d_fsumall;
     typename tdual_double_1d_3n::t_host h_fsumall;
 
-    double boltz,dt,mvv2e,ftm2v,fran_prop_const;
+    double boltz,dt,mvv2e,ftm2v,fran_prop_const,fran_prop_const_gjf;
 
     void compute_target();
 

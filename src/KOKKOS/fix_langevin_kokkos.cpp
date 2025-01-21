@@ -369,7 +369,8 @@ void FixLangevinKokkos<DeviceType>::post_force(int /*vflag*/)
   dt = update->dt;
   mvv2e = force->mvv2e;
   ftm2v = force->ftm2v;
-  fran_prop_const = sqrt(24.0*boltz/t_period/dt/mvv2e);
+  fran_prop_const = sqrt(2.0*boltz/t_period/dt/mvv2e);
+  fran_prop_const_gjf = sqrt(24.0*boltz/t_period/dt/mvv2e);
 
   compute_target(); // modifies tforce vector, hence sync here
   k_tforce.template sync<DeviceType>();
@@ -753,20 +754,30 @@ FSUM FixLangevinKokkos<DeviceType>::post_force_item(int i) const
 
   if (mask[i] & groupbit) {
     rand_type rand_gen = rand_pool.get_state();
+
     if (Tp_TSTYLEATOM) tsqrt_t = sqrt(d_tforce[i]);
     if (Tp_RMASS) {
       gamma1 = -rmass[i] / t_period / ftm2v;
-      gamma2 = sqrt(rmass[i]) * fran_prop_const / ftm2v;
-      gamma1 *= 1.0/d_ratio[type[i]];
+      if (Tp_GJF)
+        gamma2 = sqrt(rmass[i]) * fran_prop_const_gjf / ftm2v;
+      else
+        gamma2 = sqrt(rmass[i]) * fran_prop_const / ftm2v;
+      gamma1 *= 1.0/ratio[type[i]];
       gamma2 *= 1.0/sqrt(d_ratio[type[i]]) * tsqrt_t;
     } else {
       gamma1 = d_gfactor1[type[i]];
       gamma2 = d_gfactor2[type[i]] * tsqrt_t;
     }
 
-    fran[0] = gamma2 * (rand_gen.drand() - 0.5); //(random->uniform()-0.5);
-    fran[1] = gamma2 * (rand_gen.drand() - 0.5); //(random->uniform()-0.5);
-    fran[2] = gamma2 * (rand_gen.drand() - 0.5); //(random->uniform()-0.5);
+    if (Tp_GJF) {
+      fran[0] = gamma2 * rand_gen.normal(); //random->gaussian()
+      fran[1] = gamma2 * rand_gen.normal(); //random->gaussian()
+      fran[2] = gamma2 * rand_gen.normal(); //random->gaussian()
+    } else {
+      fran[0] = gamma2 * (rand_gen.drand() - 0.5); //(random->uniform()-0.5);
+      fran[1] = gamma2 * (rand_gen.drand() - 0.5); //(random->uniform()-0.5);
+      fran[2] = gamma2 * (rand_gen.drand() - 0.5); //(random->uniform()-0.5);
+    }
 
     if (Tp_BIAS) {
       fdrag[0] = gamma1*v(i,0);
