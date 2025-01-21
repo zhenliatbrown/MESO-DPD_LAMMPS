@@ -191,6 +191,8 @@ FixLangevin::FixLangevin(LAMMPS *lmp, int narg, char **arg) :
 
 FixLangevin::~FixLangevin()
 {
+  if (copymode) return;
+
   delete random;
   delete[] tstr;
   delete[] gfactor1;

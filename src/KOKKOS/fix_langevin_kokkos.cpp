@@ -39,7 +39,12 @@ enum { CONSTANT, EQUAL, ATOM };
 
 template<class DeviceType>
 FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixLangevin(lmp, narg, arg),rand_pool(seed + comm->me)
+  FixLangevin(lmp, narg, arg),
+#ifdef LMP_KOKKOS_DEBUG_RNG
+  rand_pool(seed + comm->me, lmp)
+#else
+  rand_pool(seed + comm->me)
+#endif
 {
   kokkosable = 1;
   fuse_integrate_flag = 1;
@@ -48,6 +53,9 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
   int ntypes = atomKK->ntypes;
 
   // allocate per-type arrays for force prefactors
+  delete[] gfactor1;
+  delete[] gfactor2;
+  delete[] ratio;
   memoryKK->create_kokkos(k_gfactor1,gfactor1,ntypes+1,"langevin:gfactor1");
   memoryKK->create_kokkos(k_gfactor2,gfactor2,ntypes+1,"langevin:gfactor2");
   memoryKK->create_kokkos(k_ratio,ratio,ntypes+1,"langevin:ratio");
@@ -80,7 +88,7 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
   }
 
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
-  datamask_read =  V_MASK | F_MASK | MASK_MASK | RMASS_MASK | TYPE_MASK;
+  datamask_read = V_MASK | F_MASK | MASK_MASK | RMASS_MASK | TYPE_MASK;
   datamask_modify = F_MASK;
 }
 
@@ -89,6 +97,8 @@ FixLangevinKokkos<DeviceType>::FixLangevinKokkos(LAMMPS *lmp, int narg, char **a
 template<class DeviceType>
 FixLangevinKokkos<DeviceType>::~FixLangevinKokkos()
 {
+  if (copymode) return;
+
   memoryKK->destroy_kokkos(k_gfactor1,gfactor1);
   memoryKK->destroy_kokkos(k_gfactor2,gfactor2);
   memoryKK->destroy_kokkos(k_ratio,ratio);
@@ -98,6 +108,10 @@ FixLangevinKokkos<DeviceType>::~FixLangevinKokkos()
     memoryKK->destroy_kokkos(k_lv,lv);
   }
   memoryKK->destroy_kokkos(k_tforce,tforce);
+
+#ifdef LMP_KOKKOS_DEBUG_RNG
+  rand_pool.destroy();
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -118,6 +132,10 @@ void FixLangevinKokkos<DeviceType>::init()
   // prefactors are modified in the init
   k_gfactor1.modify_host();
   k_gfactor2.modify_host();
+
+#ifdef LMP_KOKKOS_DEBUG_RNG
+  rand_pool.init(random,seed + comm->me);
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1097,24 +1115,6 @@ void FixLangevinKokkos<DeviceType>::sort_kokkos(Kokkos::BinSort<KeyViewType, Bin
 }
 
 /* ---------------------------------------------------------------------- */
-
-template<class DeviceType>
-void FixLangevinKokkos<DeviceType>::cleanup_copy()
-{
-  random = nullptr;
-  tstr = nullptr;
-  gfactor1 = nullptr;
-  gfactor2 = nullptr;
-  ratio = nullptr;
-  id_temp = nullptr;
-  flangevin = nullptr;
-  tforce = nullptr;
-  gjfflag = 0;
-  franprev = nullptr;
-  lv = nullptr;
-  id = style = nullptr;
-  vatom = nullptr;
-}
 
 namespace LAMMPS_NS {
 template class FixLangevinKokkos<LMPDeviceType>;
