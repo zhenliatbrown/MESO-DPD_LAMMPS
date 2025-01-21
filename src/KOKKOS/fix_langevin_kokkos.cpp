@@ -153,6 +153,9 @@ void FixLangevinKokkos<DeviceType>::setup(int vflag)
     auto rmass = atomKK->k_rmass.view<DeviceType>();
     auto mass = atomKK->k_mass.view<DeviceType>();
     auto type = atomKK->k_type.view<DeviceType>();
+    auto groupbit = this->groupbit;
+    auto gjfa = this->gjfa;
+    auto gjfsib = this->gjfsib;
 
     if (atom->rmass) {
       atomKK->sync(execution_space,V_MASK|F_MASK|MASK_MASK|RMASS_MASK);
@@ -256,6 +259,7 @@ void FixLangevinKokkos<DeviceType>::setup(int vflag)
     auto rmass = atomKK->k_rmass.view<DeviceType>();
     auto mass = atomKK->k_mass.view<DeviceType>();
     auto type = atomKK->k_type.view<DeviceType>();
+    auto groupbit = this->groupbit;
 
     k_lv.template sync<DeviceType>();
     auto l_lv = d_lv;
