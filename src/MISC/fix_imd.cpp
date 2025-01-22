@@ -1654,7 +1654,7 @@ void FixIMD::handle_output_v3() {
   if (imdsinfo->coords) {
     commdata *recvcoord = nullptr;
     memory->destroy(coord_data);
-    coord_data = memory->smalloc(nme*size_one, "imd:coord_data");
+    coord_data = memory->smalloc((bigint)nme * size_one, "imd:coord_data");
     buf = static_cast<struct commdata *>(coord_data);
     int idx = 0;
     if (imdsinfo->unwrap) {
@@ -1720,7 +1720,7 @@ void FixIMD::handle_output_v3() {
   if (imdsinfo->velocities) {
     commdata *recvvel = nullptr;
     memory->destroy(vel_data);
-    vel_data = memory->smalloc(nme*size_one, "imd:vel_data");
+    vel_data = memory->smalloc((bigint)nme * size_one, "imd:vel_data");
     buf = static_cast<struct commdata *>(vel_data);
     int idx = 0;
     for (int i = 0; i < nlocal; ++i) {
@@ -1755,7 +1755,7 @@ void FixIMD::handle_output_v3() {
   if (imdsinfo->forces) {
     commdata *recvforce = nullptr;
     memory->destroy(force_data);
-    force_data = memory->smalloc(nme*size_one, "imd:force_data");
+    force_data = memory->smalloc((bigint)nme * size_one, "imd:force_data");
     buf = static_cast<struct commdata *>(force_data);
     int idx = 0;
     for (int i = 0; i < nlocal; ++i) {
