@@ -273,15 +273,19 @@ TYPE create_kokkos(TYPE &data, typename TYPE::value_type ***&array,
                    int n1, int n2, int n3, const char *name)
 {
   data = TYPE(std::string(name),n1,n2,n3);
-  bigint nbytes = ((bigint) sizeof(typename TYPE::value_type **)) * n1;
+  bigint nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n1 * n2;
+  typename TYPE::value_type **plane = (typename TYPE::value_type **) smalloc(nbytes,name);
+  nbytes = ((bigint) sizeof(typename TYPE::value_type **)) * n1;
   array = (typename TYPE::value_type ***) smalloc(nbytes,name);
 
+  bigint m;
   for (int i = 0; i < n1; i++) {
     if (n2 == 0) {
       array[i] = nullptr;
     } else {
-      nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n2;
-      array[i] = (typename TYPE::value_type **) smalloc(nbytes,name);
+      m = ((bigint) i) * n2;
+      array[i] = &plane[m];
+
       for (int j = 0; j < n2; j++) {
         if (n3 == 0)
            array[i][j] = nullptr;
@@ -300,15 +304,19 @@ template <typename TYPE, typename HTYPE>
 {
   data = TYPE(std::string(name),n1,n2);
   h_data = Kokkos::create_mirror_view(data);
-  bigint nbytes = ((bigint) sizeof(typename TYPE::value_type **)) * n1;
+  bigint nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n1 * n2;
+  typename TYPE::value_type **plane = (typename TYPE::value_type **) smalloc(nbytes,name);
+  nbytes = ((bigint) sizeof(typename TYPE::value_type **)) * n1;
   array = (typename TYPE::value_type ***) smalloc(nbytes,name);
 
+  bigint m;
   for (int i = 0; i < n1; i++) {
     if (n2 == 0) {
       array[i] = nullptr;
     } else {
-      nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n2;
-      array[i] = (typename TYPE::value_type **) smalloc(nbytes,name);
+      m = ((bigint) i) * n2;
+      array[i] = &plane[m];
+
       for (int j = 0; j < n2; j++) {
         if (n3 == 0)
            array[i][j] = nullptr;
@@ -340,15 +348,19 @@ TYPE grow_kokkos(TYPE &data, typename TYPE::value_type ***&array,
 {
   if (array == nullptr) return create_kokkos(data,array,n1,n2,n3,name);
   data.resize(n1,n2,n3);
-  bigint nbytes = ((bigint) sizeof(typename TYPE::value_type **)) * n1;
-  array = (typename TYPE::value_type ***) smalloc(nbytes,name);
+  bigint nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n1 * n2;
+  typename TYPE::value_type **plane = (typename TYPE::value_type **) srealloc(array[0],nbytes,name);
+  nbytes = ((bigint) sizeof(typename TYPE::value_type **)) * n1;
+  array = (typename TYPE::value_type ***) srealloc(array,nbytes,name);
 
+  bigint m;
   for (int i = 0; i < n1; i++) {
     if (n2 == 0) {
       array[i] = nullptr;
     } else {
-      nbytes = ((bigint) sizeof(typename TYPE::value_type *)) * n2;
-      array[i] = (typename TYPE::value_type **) smalloc(nbytes,name);
+      m = ((bigint) i) * n2;
+      array[i] = &plane[m];
+
       for (int j = 0; j < n2; j++) {
         if (n3 == 0)
            array[i][j] = nullptr;
@@ -368,10 +380,9 @@ template <typename TYPE>
 void destroy_kokkos(TYPE data, typename TYPE::value_type*** &array)
 {
   if (array == nullptr) return;
-  int n1 = data.extent(0);
-  for (int i = 0; i < n1; ++i)
-    sfree(array[i]);
   data = TYPE();
+
+  sfree(array[0]);
   sfree(array);
   array = nullptr;
 }
@@ -463,7 +474,7 @@ template <typename TYPE>
 TYPE create_kokkos(TYPE &data, int n1, int n2, int n3, int n4, int n5 , int n6 ,const char *name)
 {
   data = TYPE();
-  data = TYPE(std::string(name) ,n1,n2,n3,n4,n5,n6);
+  data = TYPE(std::string(name),n1,n2,n3,n4,n5,n6);
   return data;
 }
 
@@ -472,4 +483,3 @@ TYPE create_kokkos(TYPE &data, int n1, int n2, int n3, int n4, int n5 , int n6 ,
 }
 
 #endif
-
