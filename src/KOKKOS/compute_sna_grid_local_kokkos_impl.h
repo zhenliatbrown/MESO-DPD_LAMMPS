@@ -11,8 +11,7 @@
 ------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------
-   Contributing authors: Christian Trott (SNL), Stan Moore (SNL),
-                         Evan Weinberg (NVIDIA)
+   Contributing authors: Andrew Rohskopf (SNL)
 ------------------------------------------------------------------------- */
 
 #include "compute_sna_grid_local_kokkos.h"
