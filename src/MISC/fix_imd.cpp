@@ -581,9 +581,8 @@ FixIMD::FixIMD(LAMMPS *lmp, int narg, char **arg) :
       msglen += 3*4*num_coords+IMDHEADERSIZE;
     }
     msgdata = new char[msglen];
-  }
-  else {
-    msglen = 3*sizeof(float)*num_coords+IMDHEADERSIZE;
+  } else {
+    msglen = 3*(int)sizeof(float)*num_coords+IMDHEADERSIZE;
     msgdata = new char[msglen];
   }
 
