@@ -872,7 +872,9 @@ void LAMMPS::create()
   else
     atom->create_avec("atomic",0,nullptr,1);
 
-  group = new Group(this);
+  if (kokkos) group = new GroupKokkos(this);
+  else group = new Group(this);
+
   force = new Force(this);    // must be after group, to create temperature
 
   if (kokkos) modify = new ModifyKokkos(this);
