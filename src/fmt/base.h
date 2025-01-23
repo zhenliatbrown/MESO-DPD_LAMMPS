@@ -111,10 +111,7 @@
 #endif
 
 // Detect consteval, C++20 constexpr extensions and std::is_constant_evaluated.
-// LAMMPS customization. Using consteval is not compatible with how we use libfmt
-#if 1
-#  define FMT_USE_CONSTEVAL 0
-#elif !defined(__cpp_lib_is_constant_evaluated)
+#if !defined(__cpp_lib_is_constant_evaluated)
 #  define FMT_USE_CONSTEVAL 0
 #elif FMT_CPLUSPLUS < 201709L
 #  define FMT_USE_CONSTEVAL 0
