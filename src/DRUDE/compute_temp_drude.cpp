@@ -192,6 +192,13 @@ void ComputeTempDrude::compute_vector()
                 kineng_core_loc += mtot_inv * ecore;
                 kineng_drude_loc += mtot_inv * mcore * mdrude * edrude;
             }
+        if (j < 0) {
+          if (drudeid[i] == 0) {
+            error->one(FLERR, "Drude atom for core atom ID {} is not defined", atom->tag[i]);
+          } else {
+            error->one(FLERR, "Drude atom ID {} for core atom ID {} is out of range", drudeid[i],
+                     atom->tag[i]);
+          }
         }
     }
 
