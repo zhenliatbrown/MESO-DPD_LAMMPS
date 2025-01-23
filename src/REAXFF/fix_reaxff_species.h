@@ -39,7 +39,7 @@ class FixReaxFFSpecies : public Fix {
   void init() override;
   void init_list(int, class NeighList *) override;
   void setup(int) override;
-  void post_integrate() override;
+  void end_of_step() override;
   double compute_vector(int) override;
 
  protected:

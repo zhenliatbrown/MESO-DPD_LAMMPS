@@ -339,7 +339,7 @@ FixReaxFFSpecies::~FixReaxFFSpecies()
 int FixReaxFFSpecies::setmask()
 {
   int mask = 0;
-  mask |= POST_INTEGRATE;
+  mask |= END_OF_STEP;
   return mask;
 }
 
@@ -356,7 +356,7 @@ void FixReaxFFSpecies::setup(int /*vflag*/)
   memory->destroy(Name);
   memory->create(Name, nutypes, "reaxff/species:Name");
 
-  post_integrate();
+  end_of_step();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -411,7 +411,7 @@ void FixReaxFFSpecies::init_list(int /*id*/, NeighList *ptr)
 
 /* ---------------------------------------------------------------------- */
 
-void FixReaxFFSpecies::post_integrate()
+void FixReaxFFSpecies::end_of_step()
 {
   Output_ReaxFF_Bonds(update->ntimestep, fp);
   if (comm->me == 0) fflush(fp);
