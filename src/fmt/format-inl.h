@@ -84,7 +84,7 @@ using std::locale;
 using std::numpunct;
 using std::use_facet;
 
-template <typename Locale>
+template <typename Locale, enable_if_t<(sizeof(Locale::collate) != 0), int>>
 locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
   static_assert(std::is_same<Locale, locale>::value, "");
 }
@@ -134,9 +134,7 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
 
 FMT_FUNC void report_error(const char* message) {
 #if FMT_USE_EXCEPTIONS
-  // Use FMT_THROW instead of throw to avoid bogus unreachable code warnings
-  // from MSVC.
-  FMT_THROW(format_error(message));
+  throw format_error(message);
 #else
   fputs(message, stderr);
   abort();
