@@ -2591,9 +2591,7 @@ class bigint {
   }
 
  public:
-  // LAMMPS customization. NVCC wrongly complains about calling a non-constepr function
-  // so we comment out constexpr here for now.
-  /* FMT_CONSTEXPR */ bigint() : exp_(0) {}
+  FMT_CONSTEXPR bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
 
   bigint(const bigint&) = delete;
