@@ -137,16 +137,12 @@ void Compute::modify_params(int narg, char **arg)
 
   int iarg = 0;
   while (iarg < narg) {
-    // added more specific keywords in Mar17
-    // at some point, remove generic extra and dynamic
-    if (strcmp(arg[iarg],"extra") == 0 ||
-        strcmp(arg[iarg],"extra/dof") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal compute_modify command");
+    if (strcmp(arg[iarg],"extra/dof") == 0) {
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"compute_modify extra/dof", error);
       extra_dof = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
-    } else if (strcmp(arg[iarg],"dynamic") == 0 ||
-               strcmp(arg[iarg],"dynamic/dof") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal compute_modify command");
+    } else if (strcmp(arg[iarg],"dynamic/dof") == 0) {
+      if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"compute_modify dynamic/dof", error);
       dynamic_user = utils::logical(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
     } else {
