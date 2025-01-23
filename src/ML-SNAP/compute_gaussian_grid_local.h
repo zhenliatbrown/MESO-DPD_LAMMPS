@@ -13,21 +13,21 @@
 
 #ifdef COMPUTE_CLASS
 // clang-format off
-ComputeStyle(sna/grid/local,ComputeSNAGridLocal);
+ComputeStyle(gaussian/grid/local,ComputeGaussianGridLocal);
 // clang-format on
 #else
 
-#ifndef LMP_COMPUTE_SNA_GRID_LOCAL_H
-#define LMP_COMPUTE_SNA_GRID_LOCAL_H
+#ifndef LMP_COMPUTE_GAUSSIAN_GRID_LOCAL_H
+#define LMP_COMPUTE_GAUSSIAN_GRID_LOCAL_H
 
 #include "compute_grid_local.h"
 
 namespace LAMMPS_NS {
 
-class ComputeSNAGridLocal : public ComputeGridLocal {
+class ComputeGaussianGridLocal : public ComputeGridLocal {
  public:
-  ComputeSNAGridLocal(class LAMMPS *, int, char **);
-  ~ComputeSNAGridLocal() override;
+  ComputeGaussianGridLocal(class LAMMPS *, int, char **);
+  ~ComputeGaussianGridLocal() override;
   void init() override;
   void compute_local() override;
   double memory_usage() override;
@@ -35,21 +35,14 @@ class ComputeSNAGridLocal : public ComputeGridLocal {
  protected:
   int ncoeff;
   double **cutsq;
-  double rcutfac;
-  double *radelem;
-  double *wjelem;
+  double rcutfac;     // global cut-off scale
+  double *radelem;    // cut-off radius of each atom type
+  double *sigmaelem;  // Gaussian width of each atom type
+  double *prefacelem; // Gaussian prefactor of each atom type
+  double *argfacelem; // Gaussian argument factor of each atom type
   int *map;    // map types to [0,nelements)
-  int nelements, chemflag;
-  int switchinnerflag;
-  double *sinnerelem;
-  double *dinnerelem;
-  class SNA *snaptr;
+  int nelements;
   double cutmax;
-  int quadraticflag;
-  double rfac0, rmin0;
-  int twojmax, switchflag, bzeroflag, bnormflag, wselfallflag;
-  int chunksize;
-  int parallel_thresh;
 };
 
 }    // namespace LAMMPS_NS
