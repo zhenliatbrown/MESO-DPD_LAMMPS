@@ -1236,6 +1236,7 @@ fp
 fphi
 fPIC
 fplo
+fprintf
 Fqq
 Fraige
 framerate
