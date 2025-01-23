@@ -313,6 +313,11 @@ way than the varargs mechanism of the C library.  Finally, {fmt} has
 been included into the C++20 language standard, so changes to adopt it
 are future-proof.
 
+The long-term plan is to switch to using ``std::format()`` instead of
+``fmt::format()`` when the minimum C++ standard required for LAMMPS will
+be set to C++20. See the :ref:`basic build instructions <compile>` for
+more details.
+
 Formatted strings are frequently created by calling the
 ``fmt::format()`` function, which will return a string as a
 ``std::string`` class instance.  In contrast to the ``%`` placeholder in
