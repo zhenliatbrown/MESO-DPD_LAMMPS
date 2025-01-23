@@ -21,7 +21,7 @@
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 110101
+#define FMT_VERSION 110100
 
 // Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
@@ -162,20 +162,6 @@
 #else
 #  define FMT_TRY if (true)
 #  define FMT_CATCH(x) if (false)
-#endif
-
-#ifdef FMT_NO_UNIQUE_ADDRESS
-// Use the provided definition.
-#elif FMT_CPLUSPLUS < 202002L
-// Not supported.
-#elif FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
-#  define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
-// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
-#elif FMT_MSC_VERSION >= 1929 && !FMT_CLANG_VERSION
-#  define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
-#endif
-#ifndef FMT_NO_UNIQUE_ADDRESS
-#  define FMT_NO_UNIQUE_ADDRESS
 #endif
 
 #if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
@@ -2630,11 +2616,10 @@ template <typename Context> class basic_format_args {
 };
 
 // A formatting context.
-class context {
+class context : private detail::locale_ref {
  private:
   appender out_;
   format_args args_;
-  FMT_NO_UNIQUE_ADDRESS detail::locale_ref loc_;
 
  public:
   /// The character type for the output.
@@ -2650,7 +2635,7 @@ class context {
   /// in the object so make sure they have appropriate lifetimes.
   FMT_CONSTEXPR context(iterator out, format_args args,
                         detail::locale_ref loc = {})
-      : out_(out), args_(args), loc_(loc) {}
+      : locale_ref(loc), out_(out), args_(args) {}
   context(context&&) = default;
   context(const context&) = delete;
   void operator=(const context&) = delete;
@@ -2669,7 +2654,7 @@ class context {
   // Advances the begin iterator to `it`.
   FMT_CONSTEXPR void advance_to(iterator) {}
 
-  FMT_CONSTEXPR auto locale() const -> detail::locale_ref { return loc_; }
+  FMT_CONSTEXPR auto locale() const -> detail::locale_ref { return *this; }
 };
 
 template <typename Char = char> struct runtime_format_string {
@@ -2686,8 +2671,7 @@ template <typename Char = char> struct runtime_format_string {
  */
 inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 
-/// A compile-time format string. Use `format_string` in the public API to
-/// prevent type deduction.
+/// A compile-time format string.
 template <typename... T> struct fstring {
  private:
   static constexpr int num_static_named_args =
