@@ -149,7 +149,12 @@ void Compute::modify_params(int narg, char **arg)
       if (iarg+2 > narg) error->all(FLERR,"Illegal compute_modify command");
       dynamic_user = utils::logical(FLERR,arg[iarg+1],false,lmp);
       iarg += 2;
-    } else error->all(FLERR,"Illegal compute_modify command");
+    } else {
+      int n = modify_param(narg-iarg, &arg[iarg]);
+        if (n== 0)
+          error->all(FLERR, iarg + 1, "Compute {} {} does not support compute_modify {} command",
+                     id, style, arg[iarg]);
+    }
   }
 }
 
