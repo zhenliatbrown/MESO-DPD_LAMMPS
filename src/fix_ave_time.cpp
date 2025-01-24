@@ -83,7 +83,7 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   int expand = 0;
   char **earg;
   int *amap = nullptr;
-  nvalues = utils::expand_args(FLERR,nvalues,&arg[ioffset],mode,earg,lmp,&amap);
+  nvalues = utils::expand_args(FLERR, nvalues, &arg[ioffset], mode, earg, lmp, &amap);
   key2col.clear();
 
   if (earg != &arg[ioffset]) expand = 1;
