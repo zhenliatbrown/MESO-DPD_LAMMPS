@@ -179,40 +179,6 @@ output are compressed to a single blank by calling :cpp:func:`strcompress()`
    *
    *  \param errorcode   number pointing to a paragraph in the manual */
 
-  /*! Internal function handling the argument list for print(). */
-
-  void fmtargs_print(FILE *fp, fmt::string_view format, fmt::format_args args);
-
-  /*! Write formatted message to file
-   *
-   * This function implements a version of fprintf() that uses {fmt} formatting
-   *
-   *  \param fp     stdio FILE pointer
-   *  \param format format string of message to be printed
-   *  \param args   arguments to format string */
-
-  template <typename... Args> void print(FILE *fp, const std::string &format, Args &&...args)
-  {
-    fmtargs_print(fp, format, fmt::make_format_args(args...));
-  }
-
-  /*! \overload
-   *
-   *  \param fp     stdio FILE pointer
-   *  \param mesg   string with message to be printed */
-
-  void print(FILE *fp, const std::string &mesg);
-
-  /*! Return text redirecting the user to a specific paragraph in the manual
-   *
-   * The LAMMPS manual contains detailed explanations for errors and
-   * warnings where a simple error message may not be sufficient.  These can
-   * be reached through URLs with a numeric code.  This function creates the
-   * corresponding text to be included into the error message that redirects
-   * the user to that URL.
-   *
-   *  \param errorcode   number pointing to a paragraph in the manual */
-
   std::string errorurl(int errorcode);
 
   /*! Flush output buffers
