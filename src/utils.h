@@ -120,8 +120,8 @@ output are compressed to a single blank by calling :cpp:func:`strcompress()`
    *
    * This function simplifies the repetitive task of outputting some
    * message to both the screen and/or the log file. The template
-   * wrapper with fmtlib format and argument processing allows
-   * this function to work similar to ``fmt::print()``.
+   * wrapper with {fmt} formatting and argument processing allows
+   * this function to work similar to :cpp:func:`utils::print() <LAMMPS_NS::utils::print>`.
    *
    *  \param lmp    pointer to LAMMPS class instance
    *  \param format format string of message to be printed
@@ -150,6 +150,40 @@ output are compressed to a single blank by calling :cpp:func:`strcompress()`
 .. versionadded:: TBD
 
 \endverbatim
+   *
+   * This function implements a version of fprintf() that uses {fmt} formatting
+   *
+   *  \param fp     stdio FILE pointer
+   *  \param format format string of message to be printed
+   *  \param args   arguments to format string */
+
+  template <typename... Args> void print(FILE *fp, const std::string &format, Args &&...args)
+  {
+    fmtargs_print(fp, format, fmt::make_format_args(args...));
+  }
+
+  /*! \overload
+   *
+   *  \param fp     stdio FILE pointer
+   *  \param mesg   string with message to be printed */
+
+  void print(FILE *fp, const std::string &mesg);
+
+  /*! Return text redirecting the user to a specific paragraph in the manual
+   *
+   * The LAMMPS manual contains detailed explanations for errors and
+   * warnings where a simple error message may not be sufficient.  These can
+   * be reached through URLs with a numeric code.  This function creates the
+   * corresponding text to be included into the error message that redirects
+   * the user to that URL.
+   *
+   *  \param errorcode   number pointing to a paragraph in the manual */
+
+  /*! Internal function handling the argument list for print(). */
+
+  void fmtargs_print(FILE *fp, fmt::string_view format, fmt::format_args args);
+
+  /*! Write formatted message to file
    *
    * This function implements a version of fprintf() that uses {fmt} formatting
    *
