@@ -103,7 +103,7 @@ void Error::universe_warn(const std::string &file, int line, const std::string &
   ++numwarn;
   if ((maxwarn != 0) && ((numwarn > maxwarn) || (allwarn > maxwarn) || (maxwarn < 0))) return;
   if (universe->uscreen)
-    fmt::print(universe->uscreen,"WARNING on proc {}: {} ({}:{})\n",
+    utils::print(universe->uscreen,"WARNING on proc {}: {} ({}:{})\n",
                universe->me,str,truncpath(file),line);
 }
 
