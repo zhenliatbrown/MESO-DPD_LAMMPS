@@ -947,6 +947,8 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
   int ndel, ndelone, count, count_tmp;
   int *Nameall;
   int *mask = atom->mask;
+  double *mass = atom->mass;
+  double *rmass = atom->rmass;
   double localmass, totalmass;
   std::string species_str;
 
@@ -999,7 +1001,8 @@ void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
         Name[itype]++;
         count++;
         marklist[nmarklist++] = i;
-        localmass += atom->mass[atom->type[i]];
+        if (rmass) localmass += rmass[i];
+        else localmass += atom->mass[atom->type[i]];
       }
     }
 
