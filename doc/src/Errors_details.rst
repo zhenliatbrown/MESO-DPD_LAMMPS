@@ -12,6 +12,8 @@ following are discussions of such cases.
 - :ref:`Incorrect format in ... section of data file <err0002>`
 - :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
 - :ref:`Out of range atoms - cannot compute ... <err0004>`
+- :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0005>`
+- :ref:`Too many neighbor bins <err0006>`
 
 ------
 
@@ -272,3 +274,29 @@ close contact atoms, or run a minimization before the MD.  It can also
 help to temporarily use a cutoff-Coulomb pair style and no kspace style
 until the system has somewhat equilibrated and then switch to the
 long-range solver.
+
+.. _err0005:
+
+Cannot use neighbor bins - box size \<\< cutoff
+-----------------------------------------------
+
+LAMMPS is unable to build neighbor bins since the size of the box is
+much smaller than an interaction cutoff in at least one of its dimensions.
+Typically, this error is triggered in approximately planar systems with
+one very thin dimension. If a cubic neighbor bin had to fit exactly within
+the thin dimension, then an inordinate amount of bins would be created to
+fill space. This error can be avoided using the generally slower
+:doc:`nsq neighbor style <neighbor>` or by increasing the size of the
+smallest box lengths.
+
+.. _err0006:
+
+Too many neighbor bins
+----------------------
+
+The simulation box has become too large relative to the size of a
+neighbor bin and LAMMPS is unable to store the needed number of
+bins. This typically implies the simulation box has expanded too far.
+This can happen when some atoms move rapidly apart with shrinkwrap
+boundaries or when a fix (like fix deform or a barostat) excessively
+grows the simulation box.
