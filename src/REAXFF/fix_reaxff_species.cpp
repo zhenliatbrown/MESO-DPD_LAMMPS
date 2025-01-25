@@ -836,7 +836,8 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
   int count, count_tmp, m, n, k;
   int *Nameall;
   int *mask = atom->mask;
-  double totq, totq_tmp, avx[3], avx_tmp, box[3], halfbox[3];
+  double *rmass = atom->rmass;
+  double totq, totq_tmp, com[3], com_tmp, thism, totm, box[3], halfbox[3];
   double **spec_atom = f_SPECBOND->array_atom;
 
   if (multipos) OpenPos();
@@ -864,7 +865,8 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
 
     count = 0;
     totq = 0.0;
-    for (n = 0; n < 3; n++) avx[n] = 0.0;
+    totm = 0.0;
+    for (n = 0; n < 3; n++) com[n] = 0.0;
     for (n = 0; n < nutypes; n++) Name[n] = 0;
 
     for (i = 0; i < nlocal; i++) {
@@ -881,7 +883,10 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
         if ((spec_atom[i][2] - x0[i].y) > halfbox[1]) spec_atom[i][2] -= box[1];
         if ((x0[i].z - spec_atom[i][3]) > halfbox[2]) spec_atom[i][3] += box[2];
         if ((spec_atom[i][3] - x0[i].z) > halfbox[2]) spec_atom[i][3] -= box[2];
-        for (n = 0; n < 3; n++) avx[n] += spec_atom[i][n + 1];
+        if (rmass) thism = rmass[i];
+        else thism = atom->mass[atom->type[i]];
+        for (n = 0; n < 3; n++) com[n] += spec_atom[i][n+1]*thism;
+        totm += thism;
       }
     }
 
@@ -890,13 +895,17 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
     totq = totq_tmp;
 
     for (n = 0; n < 3; n++) {
-      avx_tmp = 0.0;
-      MPI_Reduce(&avx[n], &avx_tmp, 1, MPI_DOUBLE, MPI_SUM, 0, world);
-      avx[n] = avx_tmp;
+      com_tmp = 0.0;
+      MPI_Reduce(&com[n], &com_tmp, 1, MPI_DOUBLE, MPI_SUM, 0, world);
+      com[n] = com_tmp;
     }
 
     MPI_Reduce(&count, &count_tmp, 1, MPI_INT, MPI_SUM, 0, world);
     count = count_tmp;
+
+    com_tmp = 0.0;
+    MPI_Reduce(&totm, &com_tmp, 1, MPI_DOUBLE, MPI_SUM, 0, world);
+    totm = com_tmp;
 
     MPI_Reduce(Name, Nameall, nutypes, MPI_INT, MPI_SUM, 0, world);
     for (n = 0; n < nutypes; n++) Name[n] = Nameall[n];
@@ -911,14 +920,14 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
       }
       if (count > 0) {
         for (k = 0; k < 3; k++) {
-          avx[k] /= count;
-          if (avx[k] >= domain->boxhi[k]) avx[k] -= box[k];
-          if (avx[k] < domain->boxlo[k]) avx[k] += box[k];
+          com[k] /= totm;
+          if (com[k] >= domain->boxhi[k]) com[k] -= box[k];
+          if (com[k] < domain->boxlo[k]) com[k] += box[k];
 
-          avx[k] -= domain->boxlo[k];
-          avx[k] /= box[k];
+          com[k] -= domain->boxlo[k];
+          com[k] /= box[k];
         }
-        fprintf(pos, "\t%.8f \t%.8f \t%.8f \t%.8f", totq, avx[0], avx[1], avx[2]);
+        fprintf(pos, "\t%.8f \t%.8f \t%.8f \t%.8f", totq, com[0], com[1], com[2]);
       }
       fprintf(pos, "\n");
     }
