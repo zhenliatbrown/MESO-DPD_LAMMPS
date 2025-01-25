@@ -855,7 +855,7 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
                update->ntimestep, Nmole, Nspec, domain->boxlo[0], domain->boxhi[0],
                domain->boxlo[1], domain->boxhi[1], domain->boxlo[2], domain->boxhi[2]);
 
-    fprintf(pos, "ID\tAtom_Count\tType\tAve_q\t\tCoM_x\t\tCoM_y\t\tCoM_z\n");
+    fprintf(pos, "ID\tAtom_Count\tType\tTot_q\t\tCoM_x\t\tCoM_y\t\tCoM_z\n");
   }
 
   Nameall = nullptr;
