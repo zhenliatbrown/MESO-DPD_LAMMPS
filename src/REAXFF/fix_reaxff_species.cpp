@@ -26,6 +26,7 @@
 #include "domain.h"
 #include "error.h"
 #include "fix_ave_atom.h"
+#include "fix_property_atom.h"
 #include "force.h"
 #include "group.h"
 #include "input.h"
@@ -141,13 +142,6 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
   }
 
   x0 = nullptr;
-  clusterID = nullptr;
-
-  int ntmp = atom->nmax;
-  memory->create(x0, ntmp, "reaxff/species:x0");
-  memory->create(clusterID, ntmp, "reaxff/species:clusterID");
-  memset(clusterID, 0, sizeof(double) * ntmp);
-  vector_atom = clusterID;
 
   nmax = 0;
   setupflag = 0;
@@ -304,7 +298,6 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
 FixReaxFFSpecies::~FixReaxFFSpecies()
 {
   memory->destroy(BOCut);
-  memory->destroy(clusterID);
   memory->destroy(x0);
 
   memory->destroy(nd);
@@ -330,6 +323,7 @@ FixReaxFFSpecies::~FixReaxFFSpecies()
   try {
     modify->delete_compute(fmt::format("SPECATOM_{}", id));
     modify->delete_fix(fmt::format("SPECBOND_{}", id));
+    modify->delete_fix(fmt::format("clusterID_{}", id));
   } catch (std::exception &) {
   }
 }
@@ -339,7 +333,7 @@ FixReaxFFSpecies::~FixReaxFFSpecies()
 int FixReaxFFSpecies::setmask()
 {
   int mask = 0;
-  mask |= END_OF_STEP;
+  mask |= POST_INTEGRATE;
   return mask;
 }
 
@@ -356,7 +350,7 @@ void FixReaxFFSpecies::setup(int /*vflag*/)
   memory->destroy(Name);
   memory->create(Name, nutypes, "reaxff/species:Name");
 
-  end_of_step();
+  post_integrate();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -387,6 +381,20 @@ void FixReaxFFSpecies::init()
     auto fixcmd = fmt::format("SPECBOND_{} all ave/atom {} {} {}", id, nevery, nrepeat, nfreq);
     for (int i = 1; i < 32; ++i) fixcmd += fmt::format(" c_SPECATOM_{}[{}]", id, i);
     f_SPECBOND = dynamic_cast<FixAveAtom *>(modify->add_fix(fixcmd));
+
+    // create a fix to point to fix_property_atom for storing clusterID
+    fixcmd = fmt::format("clusterID_{} all property/atom d_clusterID ghost yes", id);
+    f_clusterID = dynamic_cast<FixPropertyAtom *>(modify->add_fix(fixcmd));
+
+    // per-atom property for clusterID
+    int flag,cols;
+    int index1 = atom->find_custom("clusterID",flag,cols);
+    clusterID = atom->dvector[index1];
+    vector_atom = clusterID;
+
+    int ntmp = atom->nmax;
+    memory->create(x0, ntmp, "reaxff/species:x0");
+
     setupflag = 1;
   }
 
@@ -411,7 +419,7 @@ void FixReaxFFSpecies::init_list(int /*id*/, NeighList *ptr)
 
 /* ---------------------------------------------------------------------- */
 
-void FixReaxFFSpecies::end_of_step()
+void FixReaxFFSpecies::post_integrate()
 {
   Output_ReaxFF_Bonds(update->ntimestep, fp);
   if (comm->me == 0) fflush(fp);
@@ -439,11 +447,7 @@ void FixReaxFFSpecies::Output_ReaxFF_Bonds(bigint ntimestep, FILE * /*fp*/)
   if (atom->nmax > nmax) {
     nmax = atom->nmax;
     memory->destroy(x0);
-    memory->destroy(clusterID);
     memory->create(x0, nmax, "reaxff/species:x0");
-    memory->create(clusterID, nmax, "reaxff/species:clusterID");
-    memset(clusterID, 0, sizeof(double) * nmax);
-    vector_atom = clusterID;
   }
 
   for (int i = 0; i < nmax; i++) { x0[i].x = x0[i].y = x0[i].z = 0.0; }
@@ -1177,7 +1181,7 @@ double FixReaxFFSpecies::memory_usage()
 {
   double bytes;
 
-  bytes = 4 * nmax * sizeof(double);    // clusterID + x0
+  bytes = 3 * nmax * sizeof(double);    // x0
 
   return bytes;
 }

@@ -39,7 +39,7 @@ class FixReaxFFSpecies : public Fix {
   void init() override;
   void init_list(int, class NeighList *) override;
   void setup(int) override;
-  void end_of_step() override;
+  void post_integrate() override;
   double compute_vector(int) override;
 
  protected:
@@ -88,6 +88,7 @@ class FixReaxFFSpecies : public Fix {
 
   class NeighList *list;
   class FixAveAtom *f_SPECBOND;
+  class FixPropertyAtom *f_clusterID;
   class PairReaxFF *reaxff;
 };
 }    // namespace LAMMPS_NS
