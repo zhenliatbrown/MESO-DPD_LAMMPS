@@ -85,6 +85,7 @@ void Error::universe_one(const std::string &file, int line, const std::string &s
   std::string mesg = fmt::format("ERROR on proc {}: {} ({}:{})\n",
                                  universe->me,str,truncpath(file),line);
   if (universe->uscreen) fputs(mesg.c_str(),universe->uscreen);
+  utils::flush_buffers(lmp);
 
   // allow commands if an exception was caught in a run
   // update may be a null pointer when catching command-line errors
@@ -125,6 +126,7 @@ void Error::all(const std::string &file, int line, int failed, const std::string
 
   if (failed > NOLASTLINE) mesg += utils::point_to_error(input, failed);
   if (comm->me == 0) utils::logmesg(lmp,mesg);
+  utils::flush_buffers(lmp);
 
   // allow commands if an exception was caught in a run
   // update may be a null pointer when catching command-line errors
@@ -157,6 +159,7 @@ void Error::one(const std::string &file, int line, int failed, const std::string
     if (universe->uscreen)
       fputs(mesg.c_str(),universe->uscreen);
 
+  utils::flush_buffers(lmp);
   // allow commands if an exception was caught in a run
   // update may be a null pointer when catching command-line errors
 
@@ -255,6 +258,7 @@ void Error::_message(const std::string &file, int line, fmt::string_view format,
 
 void Error::done(int status)
 {
+  utils::flush_buffers(lmp);
   MPI_Barrier(world);
 
   if (output) delete output;
