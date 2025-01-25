@@ -836,7 +836,7 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
   int count, count_tmp, m, n, k;
   int *Nameall;
   int *mask = atom->mask;
-  double avq, avq_tmp, avx[3], avx_tmp, box[3], halfbox[3];
+  double totq, totq_tmp, avx[3], avx_tmp, box[3], halfbox[3];
   double **spec_atom = f_SPECBOND->array_atom;
 
   if (multipos) OpenPos();
@@ -863,7 +863,7 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
   for (m = 1; m <= Nmole; m++) {
 
     count = 0;
-    avq = 0.0;
+    totq = 0.0;
     for (n = 0; n < 3; n++) avx[n] = 0.0;
     for (n = 0; n < nutypes; n++) Name[n] = 0;
 
@@ -874,7 +874,7 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
         itype = ele2uele[atom->type[i] - 1];
         Name[itype]++;
         count++;
-        avq += spec_atom[i][0];
+        totq += spec_atom[i][0];
         if ((x0[i].x - spec_atom[i][1]) > halfbox[0]) spec_atom[i][1] += box[0];
         if ((spec_atom[i][1] - x0[i].x) > halfbox[0]) spec_atom[i][1] -= box[0];
         if ((x0[i].y - spec_atom[i][2]) > halfbox[1]) spec_atom[i][2] += box[1];
@@ -885,9 +885,9 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
       }
     }
 
-    avq_tmp = 0.0;
-    MPI_Allreduce(&avq, &avq_tmp, 1, MPI_DOUBLE, MPI_SUM, world);
-    avq = avq_tmp;
+    totq_tmp = 0.0;
+    MPI_Allreduce(&totq, &totq_tmp, 1, MPI_DOUBLE, MPI_SUM, world);
+    totq = totq_tmp;
 
     for (n = 0; n < 3; n++) {
       avx_tmp = 0.0;
@@ -910,7 +910,6 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
         }
       }
       if (count > 0) {
-        avq /= count;
         for (k = 0; k < 3; k++) {
           avx[k] /= count;
           if (avx[k] >= domain->boxhi[k]) avx[k] -= box[k];
@@ -919,7 +918,7 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
           avx[k] -= domain->boxlo[k];
           avx[k] /= box[k];
         }
-        fprintf(pos, "\t%.8f \t%.8f \t%.8f \t%.8f", avq, avx[0], avx[1], avx[2]);
+        fprintf(pos, "\t%.8f \t%.8f \t%.8f \t%.8f", totq, avx[0], avx[1], avx[2]);
       }
       fprintf(pos, "\n");
     }
