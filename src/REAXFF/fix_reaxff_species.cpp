@@ -432,6 +432,12 @@ void FixReaxFFSpecies::Output_ReaxFF_Bonds(bigint ntimestep, FILE * /*fp*/)
 {
   int Nmole, Nspec;
 
+  // per-atom property for clusterID
+  int flag,cols;
+  int index1 = atom->find_custom("clusterID",flag,cols);
+  clusterID = atom->dvector[index1];
+  vector_atom = clusterID;
+
   // point to fix_ave_atom
   f_SPECBOND->end_of_step();
 
