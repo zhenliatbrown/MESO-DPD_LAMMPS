@@ -399,7 +399,7 @@ void FixReaxFFSpecies::init()
   }
 
   // check for valid variable name for delete Nlimit keyword
-  if (delete_Nsteps > 0) {
+  if (delete_Nsteps > 0 && delete_Nlimit_varid > -1) {
     delete_Nlimit_varid = input->variable->find(delete_Nlimit_varname.c_str());
     if (delete_Nlimit_varid < 0)
       error->all(FLERR, "Fix reaxff/species: Variable name {} does not exist",
