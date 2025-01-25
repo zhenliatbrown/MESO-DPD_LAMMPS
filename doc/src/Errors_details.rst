@@ -14,6 +14,7 @@ following are discussions of such cases.
 - :ref:`Out of range atoms - cannot compute ... <err0004>`
 - :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0005>`
 - :ref:`Too many neighbor bins <err0006>`
+- :ref:`Domain too large for neighbor bins <err0007>`
 
 ------
 
@@ -282,8 +283,8 @@ Cannot use neighbor bins - box size \<\< cutoff
 
 LAMMPS is unable to build neighbor bins since the size of the box is
 much smaller than an interaction cutoff in at least one of its dimensions.
-Typically, this error is triggered in approximately planar systems with
-one very thin dimension. If a cubic neighbor bin had to fit exactly within
+Typically, this error is triggered when the simulation box has one very
+thin dimension. If a cubic neighbor bin had to fit exactly within
 the thin dimension, then an inordinate amount of bins would be created to
 fill space. This error can be avoided using the generally slower
 :doc:`nsq neighbor style <neighbor>` or by increasing the size of the
@@ -300,3 +301,14 @@ bins. This typically implies the simulation box has expanded too far.
 This can happen when some atoms move rapidly apart with shrinkwrap
 boundaries or when a fix (like fix deform or a barostat) excessively
 grows the simulation box.
+
+.. _err0007:
+
+Domain too large for neighbor bins
+----------------------------------
+
+The domain has become extremely large so that neighbor bins cannot
+be used. Too many neighbor bins would need to be created to fill space
+Most likely, one or more atoms have been blown out of the simulation
+box to a great distance or a fix (like fix deform or a barostat) has
+excessively grown the simulation box.

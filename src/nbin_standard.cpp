@@ -130,7 +130,7 @@ void NBinStandard::setup_bins(int style)
 
   if (bbox[0]*binsizeinv > MAXSMALLINT || bbox[1]*binsizeinv > MAXSMALLINT ||
       bbox[2]*binsizeinv > MAXSMALLINT)
-    error->all(FLERR,"Domain too large for neighbor bins");
+    error->all(FLERR,"Domain too large for neighbor bins{}", utils::errorurl(7));
 
   // create actual bins
   // always have one bin even if cutoff > bbox
