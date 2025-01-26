@@ -474,7 +474,12 @@ void FixReaxFFSpecies::Output_ReaxFF_Bonds(bigint ntimestep, FILE * /*fp*/)
     if (comm->me == 0) fflush(pos);
   }
 
-  if (delflag) DeleteSpecies(Nmole, Nspec);
+  if (delflag) {
+    DeleteSpecies(Nmole, Nspec);
+
+    // reset molecule ID to index from 1
+    SortMolecule(Nmole);
+  }
 
   nvalid += nfreq;
 }
