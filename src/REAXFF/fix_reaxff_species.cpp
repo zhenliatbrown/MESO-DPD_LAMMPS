@@ -82,7 +82,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
   peratom_freq = 1;
 
   compressed = 0;
-  nvalid = -1;
+  nvalid = update->ntimestep;
 
   ntypes = atom->ntypes;
   eletype.resize(ntypes);
