@@ -82,7 +82,7 @@ FixReaxFFSpecies::FixReaxFFSpecies(LAMMPS *lmp, int narg, char **arg) :
   peratom_freq = 1;
 
   compressed = 0;
-  nvalid = update->ntimestep;
+  nvalid = -1;
 
   ntypes = atom->ntypes;
   eletype.resize(ntypes);
@@ -366,9 +366,6 @@ void FixReaxFFSpecies::init()
 
   reaxff->fixspecies_flag = 1;
 
-  // reset next output timestep if not yet set or timestep has been reset
-  if (nvalid != update->ntimestep) nvalid = update->ntimestep + nfreq;
-
   if (!setupflag) {
     // create a compute to store properties
     modify->add_compute(fmt::format("SPECATOM_{} all SPEC/ATOM q x y z vx vy vz abo01 abo02 "
@@ -441,7 +438,7 @@ void FixReaxFFSpecies::Output_ReaxFF_Bonds(bigint ntimestep, FILE * /*fp*/)
   // point to fix_ave_atom
   f_SPECBOND->end_of_step();
 
-  if (ntimestep != nvalid) {
+  if (ntimestep != nvalid && nvalid != -1) {
     // push back delete_Tcount on every step
     if (delete_Nsteps > 0)
       for (int i = delete_Nsteps - 1; i > 0; i--) delete_Tcount[i] = delete_Tcount[i - 1];
@@ -474,14 +471,14 @@ void FixReaxFFSpecies::Output_ReaxFF_Bonds(bigint ntimestep, FILE * /*fp*/)
     if (comm->me == 0) fflush(pos);
   }
 
-  if (delflag) {
+  if (delflag && nvalid != -1) {
     DeleteSpecies(Nmole, Nspec);
 
     // reset molecule ID to index from 1
     SortMolecule(Nmole);
   }
 
-  nvalid += nfreq;
+  nvalid = ntimestep + nfreq;
 }
 
 /* ---------------------------------------------------------------------- */
