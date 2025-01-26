@@ -940,18 +940,24 @@ void FixReaxFFSpecies::WritePos(int Nmole, int Nspec)
 
 void FixReaxFFSpecies::DeleteSpecies(int Nmole, int Nspec)
 {
-  int ndeletions;
+  int i, ndeletions;
   int headroom = -1;
   if (delete_Nsteps > 0) {
-    if (delete_Tcount[delete_Nsteps - 1] == -1) return;
+    if (delete_Tcount[delete_Nsteps - 1] == -1) {
+      for (i = delete_Nsteps - 1; i > 0; i--) delete_Tcount[i] = delete_Tcount[i - 1];
+      return;
+    }
     ndeletions = delete_Tcount[0] - delete_Tcount[delete_Nsteps - 1];
     if (delete_Nlimit_varid > -1)
       delete_Nlimit = input->variable->compute_equal(delete_Nlimit_varid);
     headroom = MAX(0, delete_Nlimit - ndeletions);
-    if (headroom == 0) return;
+    if (headroom == 0) {
+      for (i = delete_Nsteps - 1; i > 0; i--) delete_Tcount[i] = delete_Tcount[i - 1];
+      return;
+    }
   }
 
-  int i, j, m, n, itype, cid;
+  int j, m, n, itype, cid;
   int ndel, ndelone, count, count_tmp;
   int *Nameall;
   int *mask = atom->mask;
