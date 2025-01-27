@@ -119,13 +119,18 @@ void Error::all(const std::string &file, int line, int failed, const std::string
 {
   MPI_Barrier(world);
 
+  // must get rank from communicator since "comm" instance may not yet exist
+
+  int me = 0;
+  MPI_Comm_rank(world, &me);
+
   std::string lastcmd = "(unknown)";
   std::string mesg = "ERROR: " + str + fmt::format(" ({}:{})\n",  truncpath(file), line);
 
   // add text about the input following the error message
 
   if (failed > NOLASTLINE) mesg += utils::point_to_error(input, failed);
-  if (comm->me == 0) utils::logmesg(lmp,mesg);
+  if (me == 0) utils::logmesg(lmp,mesg);
   utils::flush_buffers(lmp);
 
   // allow commands if an exception was caught in a run
@@ -150,8 +155,12 @@ void Error::one(const std::string &file, int line, int failed, const std::string
 {
   std::string lastcmd = "(unknown)";
 
-  std::string mesg = fmt::format("ERROR on proc {}: {} ({}:{})\n", comm->me, str,
-                                 truncpath(file), line);
+  // must get rank from communicator since "comm" instance may not yet exist
+
+  int me = 0;
+  MPI_Comm_rank(world, &me);
+
+  std::string mesg = fmt::format("ERROR on proc {}: {} ({}:{})\n", me, str, truncpath(file), line);
   if (failed > NOPOINTER) mesg += utils::point_to_error(input, failed);
   utils::logmesg(lmp,mesg);
 
