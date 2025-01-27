@@ -1607,14 +1607,14 @@ class lammps(object):
   def addstep_compute(self, nextstep):
     with ExceptionCheck(self):
       nextstep = self.c_bigint(nextstep)
-      return self.lib.lammps_addstep_compute(self.lmp, pointer(nextstep))
+      return self.lib.lammps_addstep_compute(self.lmp, POINTER(nextstep))
 
   # -------------------------------------------------------------------------
 
   def addstep_compute_all(self, nextstep):
     with ExceptionCheck(self):
       nextstep = self.c_bigint(nextstep)
-      return self.lib.lammps_addstep_compute_all(self.lmp, pointer(nextstep))
+      return self.lib.lammps_addstep_compute_all(self.lmp, POINTER(nextstep))
 
   # -------------------------------------------------------------------------
 
