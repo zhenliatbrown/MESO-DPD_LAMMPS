@@ -16,7 +16,7 @@
 
    Purpose      Path Integral Molecular Dynamics of Bosons with Langevin Thermostat
    Copyright    Hirshberg lab @ Tel Aviv University
-   Authors      Yotam M. Y. Feldman, Ofir Blumer
+   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman
 
    Updated      Jan-06-2025
    Version      1.0
@@ -69,6 +69,7 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
 
     method = PIMD;     
 
+    // CR: let's add a test that it fails if the user asks for a property larger than this (also in nvt)
     size_vector = 6;
 
     nbosons = atom->nlocal;
@@ -121,6 +122,7 @@ void FixPIMDBLangevin::spring_force() {
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::compute_spring_energy() {
+    // CR: in both cases you call bosonic_exchange.something, so put this logic inside bosonic_exchange
     se_bead = (universe->iworld == 0 ? bosonic_exchange.get_potential() : bosonic_exchange.get_total_spring_energy_for_bead());
     MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
     total_spring_energy /= universe->procs_per_world[universe->iworld];
@@ -132,6 +134,7 @@ void FixPIMDBLangevin::compute_t_prim()
 {
     if (universe->iworld == 0)
         t_prim = bosonic_exchange.prim_estimator();
+    // CR: else assign 0 (to not be dependent on the context of the call, and this is a choice you're making here)
 }
 
 /* ---------------------------------------------------------------------- */

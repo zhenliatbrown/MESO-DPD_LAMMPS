@@ -16,7 +16,7 @@
    
    Purpose      Path Integral Molecular Dynamics of Bosons with Nose-Hoover Thermostat
    Copyright    Hirshberg lab @ Tel Aviv University
-   Authors      Yotam M. Y. Feldman, Ofir Blumer
+   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman
 
    Updated      Jan-06-2025
    Version      1.0
@@ -54,6 +54,7 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 
 void FixPIMDBNVT::estimate_energies()
 {
+  // CR: call super function instead of calling again to vir_estimator
   vir_estimator();
   if (universe->me == 0)
   {
@@ -93,7 +94,10 @@ double FixPIMDBNVT::compute_vector(int n)
     if (0 <= n && n < 3) {
         return FixPIMDNVT::compute_vector(n);
     }
-   
-  if (n == 3) return prim;
-  return 0.0;
+
+    if (n == 3) {
+        return prim;
+    }
+
+    return 0.0;
 }

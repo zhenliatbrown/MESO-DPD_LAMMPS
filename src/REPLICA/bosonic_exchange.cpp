@@ -15,8 +15,9 @@
    Package      BosonicExchange
 
    Purpose      Handle Bosonic Exchange in Path Integral Molecular Dynamics
+                according to J. Chem. Phys. 159, 154107 (2023) (doi:10.1063/5.0173749)
    Copyright    Hirshberg lab @ Tel Aviv University
-   Authors      Yotam M. Y. Feldman, Ofir Blumer
+   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman
 
    Updated      Jan-06-2025
    Version      1.0
@@ -53,6 +54,7 @@ BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num,
     //
     // Setting the following boolian variable to false amounts to adopting Tuckerman's convention.
     ipy_convention = ipy_convention;
+    // CR: I'm not sure the credit in the naming is the best, let's discuss
 }
 
 void BosonicExchange::prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
@@ -171,7 +173,7 @@ void BosonicExchange::Evaluate_VBn()
 
         for (int k = m; k > 0; k--) {
             double val = get_Enk(m,k) + V[m-k];
-            Elongest = std::min(Elongest, val);
+            Elongest = std::min(Elongest, val); // Numerical stability (Xiong & Xiong, doi:10.1103/PhysRevE.106.025309)
             temp_nbosons_array[k - 1] = val;
         }
 
@@ -233,6 +235,7 @@ double BosonicExchange::get_potential() const {
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_total_spring_energy_for_bead() {
+    // CR: this function doesn't make sense for the last bead because of exchange?
     double spring_energy_for_bead = 0.;
     for (int i = 0; i < nbosons; i++) {
         spring_energy_for_bead += 0.5 * spring_constant * distance_squared_two_beads(x, i, x_prev, i);
@@ -381,9 +384,9 @@ double BosonicExchange::prim_estimator()
     double sig = 0.0;
     temp_nbosons_array[m] = 0.0;
 
-    // Numerical stability (Xiong & Xiong method)
     double Elongest = std::numeric_limits<double>::max();
 
+      // Numerical stability (Xiong & Xiong, doi:10.1103/PhysRevE.106.025309)
     for (int k = m; k > 0; k--) {
       Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
     }
