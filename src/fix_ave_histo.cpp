@@ -195,7 +195,6 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR,"{} overwrite keyword requires ave running setting", mycmd);
 
   int kindglobal,kindperatom,kindlocal;
-  int i = 0;
   for (auto &val : values) {
     kindglobal = kindperatom = kindlocal = 0;
 
