@@ -187,7 +187,7 @@ void *lammps_open(int argc, char **argv, MPI_Comm comm, void **ptr)
   } catch(LAMMPSException &e) {
     lammps_last_global_errormessage = e.what();
 
-    fmt::print(stderr, "LAMMPS Exception: {}", e.what());
+    utils::print(stderr, "LAMMPS Exception: {}", e.what());
     if (ptr) *ptr = nullptr;
   }
   return (void *) lmp;

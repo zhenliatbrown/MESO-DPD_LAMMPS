@@ -62,7 +62,9 @@ static constexpr double autoev = 27.21140795;    // atomic units (Hartree) to eV
    Constructor (Required)
 ------------------------------------------------------------------------- */
 
-PairDispersionD3::PairDispersionD3(LAMMPS *lmp) : Pair(lmp)
+PairDispersionD3::PairDispersionD3(LAMMPS *lmp) :
+    Pair(lmp), r2r4(nullptr), rcov(nullptr), mxci(nullptr), r0ab(nullptr), c6ab(nullptr),
+    cn(nullptr), dc6(nullptr)
 {
   nmax = 0;
   comm_forward = 2;
@@ -72,6 +74,8 @@ PairDispersionD3::PairDispersionD3(LAMMPS *lmp) : Pair(lmp)
   manybody_flag = 1;
   one_coeff = 1;
   single_enable = 0;
+
+  s6 = s8 = s18 = rs6 = rs8 = rs18 = a1 = a2 = alpha = alpha6 = alpha8 = 0.0;
 }
 
 /* ----------------------------------------------------------------------
@@ -481,8 +485,6 @@ void PairDispersionD3::compute(int eflag, int vflag)
     int jnum = numneigh[i];
     int *jlist = firstneigh[i];
 
-    // fprintf(stderr, "> i, type[i], CN[i], C6[i,i] :  %d, %d, %f, %f\n", atom->tag[i], type[i], cn[i], get_dC6(type[i],type[i],cn[i],cn[i])[0]/(autoev*pow(autoang,6)));
-
     for (int jj = 0; jj < jnum; jj++) {
 
       int j = jlist[jj];
@@ -513,6 +515,7 @@ void PairDispersionD3::compute(int eflag, int vflag)
 
         double t6, t8, damp6, damp8, e6, e8;
         double tmp6, tmp8, fpair1, fpair2, fpair;
+        t6 = t8 = e6 = e8 = evdwl = fpair = fpair1 = fpair2 = 0.0;
 
         switch (dampingCode) {
           case 1: {    // zero
@@ -1134,8 +1137,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           a1 = 0.3065;
           s8 = 0.9147;
           a2 = 5.0570;
-          break;
           s6 = 0.64;
+          break;
         case 17:
           a1 = 0.0000;
           s8 = 0.2130;

@@ -87,7 +87,8 @@ static constexpr char YAML[] = "step temp ke pe ebond eangle edihed eimp evdwl e
 #define FORMAT_FLOAT_YAML_DEFAULT "%.15g"
 #define FORMAT_INT_YAML_DEFAULT "%d"
 
-#define FORMAT_MULTI_HEADER "------------ Step {:14} ----- CPU = {:12.7g} (sec) -------------"
+static constexpr char FORMAT_MULTI_HEADER[] =
+  "------------ Step {:14} ----- CPU = {:12.7g} (sec) -------------";
 
 enum { SCALAR, VECTOR, ARRAY };
 
