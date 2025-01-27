@@ -20,17 +20,15 @@ namespace LAMMPS_NS {
 
     class BosonicExchange : protected Pointers {
     public:
-        BosonicExchange(class LAMMPS *, int nbosons, int np, int bead_num, bool mic, bool ipy_convention);
+        BosonicExchange(class LAMMPS *, int nbosons, int np, int bead_num, bool mic, bool beta_convention);
         ~BosonicExchange();
 
-        // CR: remove parameter kT
         void prepare_with_coordinates(const double* x, const double* x_prev, const double* x_next,
-                                      double beta, double kT, double spring_constant);
+                                      double beta, double spring_constant);
 
         double get_potential() const;
-        double get_total_spring_energy_for_bead(); // CR: const
-        // CR: no usages of this function? Should at most return the potential on all particles, the rest should be encapsulated in the class (method should be private)
-        double get_Vn(int n) const;
+        double get_interior_bead_spring_energy() const;
+        double get_bead_spring_energy() const;
 
         void spring_force(double** f) const;
 
@@ -39,8 +37,8 @@ namespace LAMMPS_NS {
     private:
         void evaluate_cycle_energies();
         void diff_two_beads(const double* x1, int l1, const double* x2, int l2, double diff[3]) const;
-        double distance_squared_two_beads(const double* x1, int l1, const double* x2, int l2); // CR: const
-        double get_Enk(int m, int k); // CR: const
+        double distance_squared_two_beads(const double* x1, int l1, const double* x2, int l2) const; 
+        double get_Enk(int m, int k) const;
         void set_Enk(int m, int k, double val);
         void evaluate_connection_probabilities();
         void spring_force_last_bead(double** f) const;
@@ -53,6 +51,19 @@ namespace LAMMPS_NS {
         const int np;
         const int bead_num;
         const bool apply_minimum_image;
+     // In the "reduced-beta convention" [e.g. in J. Chem. Phys. 133, 124104 (2010); also J. Chem. Phys. 74, 4078-4095 (1981)], 
+     // the Boltzmann exponents have the form exp[-(beta/P)H], where H is the classical Hamiltonian of the 
+     // ring polymers. This results in a canonical distribution at P times the physical temperature.
+     // In contrast, the "physical-beta convention" [e.g. in J. Chem. Phys. 99, 2796-2808 (1993)] uses weights of the form exp(-beta*H),
+     // such that the temperature of the canonical ensemble coincides with the physical temperature.
+     // Notably, the classical Hamiltonians of the two conventions differ, with the spring constant
+     // in the reduced-beta convention being P times larger than that in the physical-beta convention. Additionally, the reduced-beta convention
+     // lacks a 1/P prefactor in front of the external potential. The Hamiltonians of the two conventions are related through
+     // H_physical = H_reduced / P. Note however that the expressions for the various estimators are unaffected by this choice,
+     // so as the algorithm for bosonic exchange. The code below was designed to be compatible with both conventions,
+     // and the choice of convention only affects a single calculation within it.
+     // Setting the following boolian variable to false amounts to adopting the physical-beta convention.
+        const bool beta_convention;
 
         double spring_constant;
         double beta;
@@ -66,12 +77,7 @@ namespace LAMMPS_NS {
         double* connection_probabilities;
 
         double* temp_nbosons_array;
-
-        bool ipy_convention; // CR: const. Also put earlier with all the other fields
-        // CR: spelled iPi (but perhaps rename anyways)
     };
-
-
 }
 
 #endif

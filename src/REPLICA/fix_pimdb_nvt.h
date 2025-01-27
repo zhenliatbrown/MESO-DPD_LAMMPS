@@ -34,7 +34,7 @@ class FixPIMDBNVT : public FixPIMDNVT {
  protected:
     void prepare_coordinates() override;
     void spring_force() override;
-    void estimate_energies() override;
+    void pre_spring_force_estimators() override;
 
  private:
     BosonicExchange bosonic_exchange;

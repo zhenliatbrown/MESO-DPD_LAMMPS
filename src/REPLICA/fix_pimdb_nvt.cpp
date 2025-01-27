@@ -52,20 +52,11 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDBNVT::estimate_energies()
+void FixPIMDBNVT::pre_spring_force_estimators()
 {
-  // CR: call super function instead of calling again to vir_estimator
-  vir_estimator();
-  if (universe->me == 0)
-  {
-    prim = bosonic_exchange.prim_estimator();
-    spring_energy = bosonic_exchange.get_potential();
-  }
-  else {
-    double total_spring_energy_for_bead = bosonic_exchange.get_total_spring_energy_for_bead();
-    prim = -total_spring_energy_for_bead;
-    spring_energy = total_spring_energy_for_bead;
-  }
+  FixPIMDNVT::pre_spring_force_estimators();
+  spring_energy = bosonic_exchange.get_bead_spring_energy();
+  prim = (universe->me == 0 ? bosonic_exchange.prim_estimator() : -bosonic_exchange.get_interior_bead_spring_energy());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -77,7 +68,7 @@ void FixPIMDBNVT::prepare_coordinates()
   double *xlast = buf_beads[x_last];
   double *xnext = buf_beads[x_next];
   double ff = fbond * atom->mass[atom->type[0]];
-  bosonic_exchange.prepare_with_coordinates(*x, xlast, xnext, beta, 1 / beta, -ff);
+  bosonic_exchange.prepare_with_coordinates(*x, xlast, xnext, beta, -ff);
 }
 
 void FixPIMDBNVT::spring_force()
@@ -97,6 +88,9 @@ double FixPIMDBNVT::compute_vector(int n)
 
     if (n == 3) {
         return prim;
+    }
+    else {
+        error->universe_all(FLERR, "Fix only has 4 outputs!");
     }
 
     return 0.0;

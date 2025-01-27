@@ -282,8 +282,7 @@ void FixPIMDNVT::post_force(int /*flag*/)
     for (int j = 0; j < 3; j++) atom->f[i][j] /= np;
 
   prepare_coordinates();
-  // CR: rename to pre_spring_force_estimators() (better conveys the reason for this function)
-  estimate_energies();
+  pre_spring_force_estimators();
   spring_force();
 
   if (method == CMD || method == NMPIMD) {
@@ -540,7 +539,7 @@ void FixPIMDNVT::nmpimd_transform(double **src, double **des, double *vector)
 
 /* ---------------------------------------------------------------------- */
 
-void FixPIMDNVT::estimate_energies(){
+void FixPIMDNVT::pre_spring_force_estimators(){
   vir_estimator();
 }
 

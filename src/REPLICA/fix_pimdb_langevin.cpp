@@ -45,7 +45,7 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
-    FixPIMDLangevin(lmp, narg, arg),
+    FixPIMDLangevin(lmp, narg, arg), nbosons(atom->nlocal),
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, true)
 {
     for (int i = 3; i < narg - 1; i += 2) {
@@ -69,10 +69,7 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
 
     method = PIMD;     
 
-    // CR: let's add a test that it fails if the user asks for a property larger than this (also in nvt)
     size_vector = 6;
-
-    nbosons = atom->nlocal;
 
     memory->create(f_tag_order, nbosons, 3, "FixPIMDBLangevin:f_tag_order");
 }
@@ -96,7 +93,7 @@ void FixPIMDBLangevin::prepare_coordinates()
 
   bosonic_exchange.prepare_with_coordinates(me_bead_positions,
                                               last_bead_positions, next_bead_positions,
-                                              beta_np, 1 / beta, ff);
+                                              beta_np, ff);
 }
  
 /* ---------------------------------------------------------------------- */
@@ -122,8 +119,7 @@ void FixPIMDBLangevin::spring_force() {
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::compute_spring_energy() {
-    // CR: in both cases you call bosonic_exchange.something, so put this logic inside bosonic_exchange
-    se_bead = (universe->iworld == 0 ? bosonic_exchange.get_potential() : bosonic_exchange.get_total_spring_energy_for_bead());
+    se_bead = bosonic_exchange.get_bead_spring_energy();
     MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
     total_spring_energy /= universe->procs_per_world[universe->iworld];
 }
@@ -132,9 +128,7 @@ void FixPIMDBLangevin::compute_spring_energy() {
 
 void FixPIMDBLangevin::compute_t_prim()
 {
-    if (universe->iworld == 0)
-        t_prim = bosonic_exchange.prim_estimator();
-    // CR: else assign 0 (to not be dependent on the context of the call, and this is a choice you're making here)
+    t_prim = (universe->iworld == 0 ? bosonic_exchange.prim_estimator() : 0);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -143,6 +137,9 @@ double FixPIMDBLangevin::compute_vector(int n)
 {
     if (0 <= n && n < 6) {
         return FixPIMDLangevin::compute_vector(n);
+    }
+    else {
+        error->universe_all(FLERR, "Fix only has 6 outputs!");
     }
     return 0.0;
 }

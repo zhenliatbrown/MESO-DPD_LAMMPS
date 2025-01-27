@@ -39,7 +39,7 @@ protected:
     void spring_force() override;
 
 private:
-  int nbosons; // CR: const
+  const int nbosons;
   BosonicExchange bosonic_exchange;
   double** f_tag_order;
 };
