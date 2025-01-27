@@ -2981,7 +2981,7 @@ double lammps_eval(void *handle, const char *expr)
 
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
  */
-void lammps_clearstep_compute(void * handle) {
+void lammps_clearstep_compute(void *handle) {
   auto lmp = (LAMMPS *) handle;
   lmp->modify->clearstep_compute();
 }
@@ -3008,9 +3008,10 @@ void lammps_clearstep_compute(void * handle) {
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
  * \param newstep  pointer to bigint of next timestep the compute will be invoked
  */
-void lammps_addstep_compute_all(void * handle, void * newstep) {
+void lammps_addstep_compute_all(void *handle, void *newstep) {
   auto lmp = (LAMMPS *) handle;
-  lmp->modify->addstep_compute_all(*static_cast<bigint*>(newstep));
+  auto ns = (bigint *) newstep;
+  if (lmp && lmp->modify && ns) lmp->modify->addstep_compute_all(*ns);
 }
 /* ---------------------------------------------------------------------- */
 
@@ -3033,9 +3034,10 @@ void lammps_addstep_compute_all(void * handle, void * newstep) {
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *``.
  * \param newstep  next timestep the compute will be invoked
  */
-void lammps_addstep_compute(void * handle, void * newstep) {
+void lammps_addstep_compute(void *handle, void *newstep) {
   auto lmp = (LAMMPS *) handle;
-  lmp->modify->addstep_compute(*static_cast<bigint*>(newstep));
+  auto ns = (bigint *) newstep;
+  if (lmp && lmp->modify && ns) lmp->modify->addstep_compute(*ns);
 }
 
 // ----------------------------------------------------------------------
