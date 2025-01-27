@@ -46,7 +46,7 @@ using namespace FixConst;
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDLangevin(lmp, narg, arg), nbosons(atom->nlocal),
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, true)
+    bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, false)
 {
     for (int i = 3; i < narg - 1; i += 2) {
         if ((strcmp(arg[i], "method") == 0) && (strcmp(arg[i+1], "pimd") != 0)) {
@@ -128,7 +128,7 @@ void FixPIMDBLangevin::compute_spring_energy() {
 
 void FixPIMDBLangevin::compute_t_prim()
 {
-    t_prim = (universe->iworld == 0 ? bosonic_exchange.prim_estimator() : 0);
+    t_prim = bosonic_exchange.prim_estimator();
 }
 
 /* ---------------------------------------------------------------------- */

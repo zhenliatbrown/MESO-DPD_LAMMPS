@@ -27,7 +27,6 @@ namespace LAMMPS_NS {
                                       double beta, double spring_constant);
 
         double get_potential() const;
-        double get_interior_bead_spring_energy() const;
         double get_bead_spring_energy() const;
 
         void spring_force(double** f) const;
@@ -37,6 +36,7 @@ namespace LAMMPS_NS {
     private:
         void evaluate_cycle_energies();
         void diff_two_beads(const double* x1, int l1, const double* x2, int l2, double diff[3]) const;
+        double get_interior_bead_spring_energy() const;
         double distance_squared_two_beads(const double* x1, int l1, const double* x2, int l2) const; 
         double get_Enk(int m, int k) const;
         void set_Enk(int m, int k, double val);
@@ -62,8 +62,8 @@ namespace LAMMPS_NS {
      // H_physical = H_reduced / P. Note however that the expressions for the various estimators are unaffected by this choice,
      // so as the algorithm for bosonic exchange. The code below was designed to be compatible with both conventions,
      // and the choice of convention only affects a single calculation within it.
-     // Setting the following boolian variable to false amounts to adopting the physical-beta convention.
-        const bool beta_convention;
+     // Setting the following boolian variable to false amounts to adopting the reduced-beta convention.
+        const bool physical_beta_convention;
 
         double spring_constant;
         double beta;

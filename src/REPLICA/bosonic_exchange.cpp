@@ -34,7 +34,7 @@ using namespace LAMMPS_NS;
 
 BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic, bool beta_convention) :
         Pointers(lmp),
-        nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic), beta_convention(beta_convention){
+        nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic), physical_beta_convention(beta_convention){
     memory->create(temp_nbosons_array, nbosons + 1, "BosonicExchange: temp_nbosons_array");
     memory->create(E_kn, (nbosons * (nbosons + 1) / 2), "BosonicExchange: E_kn");
     memory->create(V, nbosons + 1, "BosonicExchange: V");
@@ -363,32 +363,36 @@ void BosonicExchange::spring_force_interior_bead(double **f) const {
 
 double BosonicExchange::prim_estimator()
 {
-  temp_nbosons_array[0] = 0.0;
+  double convention_correction = (physical_beta_convention ? 1 : 1.0 / np);
+  if (bead_num == 0) {
+    temp_nbosons_array[0] = 0.0;
 
-  for (int m = 1; m < nbosons + 1; ++m) {
-    double sig = 0.0;
-    temp_nbosons_array[m] = 0.0;
+    for (int m = 1; m < nbosons + 1; ++m) {
+      double sig = 0.0;
+      temp_nbosons_array[m] = 0.0;
 
-    double Elongest = std::numeric_limits<double>::max();
+      double Elongest = std::numeric_limits<double>::max();
 
       // Numerical stability (Xiong & Xiong, doi:10.1103/PhysRevE.106.025309)
-    for (int k = m; k > 0; k--) {
-      Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
-    }
+      for (int k = m; k > 0; k--) {
+        Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
+      }
     
-    for (int k = m; k > 0; --k) {
-      double E_kn_val = get_Enk(m, k);
+      for (int k = m; k > 0; --k) {
+        double E_kn_val = get_Enk(m, k);
 
-      sig += (temp_nbosons_array[m - k] - E_kn_val) * exp(-beta * (E_kn_val + V[m - k] - Elongest));
+        sig += (temp_nbosons_array[m - k] - E_kn_val) * exp(-beta * (E_kn_val + V[m - k] - Elongest));
+      }
+
+      double sig_denom_m = m * exp(-beta * (V[m] - Elongest));
+
+      temp_nbosons_array[m] = sig / sig_denom_m;
     }
-
-    double sig_denom_m = m * exp(-beta * (V[m] - Elongest));
-
-    temp_nbosons_array[m] = sig / sig_denom_m;
+    return convention_correction * (0.5 * domain->dimension * nbosons * np / beta + temp_nbosons_array[nbosons]);
   }
-
-  int convention_correction = (beta_convention ? 1 : np);
-  return 0.5 * domain->dimension * nbosons * convention_correction / beta + temp_nbosons_array[nbosons];
+  else {
+    return -convention_correction * get_bead_spring_energy();
+  }
 }
 
 /* ---------------------------------------------------------------------- */

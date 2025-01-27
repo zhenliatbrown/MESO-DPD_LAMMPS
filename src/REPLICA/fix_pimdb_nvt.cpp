@@ -34,7 +34,7 @@ using namespace LAMMPS_NS;
 
 FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDNVT(lmp, narg, arg),
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
+    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, true)
 {
   virial = 0.;
   prim = 0.;
@@ -56,7 +56,7 @@ void FixPIMDBNVT::pre_spring_force_estimators()
 {
   FixPIMDNVT::pre_spring_force_estimators();
   spring_energy = bosonic_exchange.get_bead_spring_energy();
-  prim = (universe->me == 0 ? bosonic_exchange.prim_estimator() : -bosonic_exchange.get_interior_bead_spring_energy());
+  prim = bosonic_exchange.prim_estimator();
 }
 
 /* ---------------------------------------------------------------------- */
