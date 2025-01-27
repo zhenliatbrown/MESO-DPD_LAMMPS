@@ -98,7 +98,7 @@ dump dumpParticles all custom ${output_rate} triaxial_compaction_12.dump id type
 run 0
 
 # print out contact area evolution for particles 1 and 12
-compute Ac_1_12 particles_1_12 pair/local p13
+compute Ac_1_12 particles_1_12 pair/local p13 cutoff radius
 compute Ac_1_12_sum particles_1_12 reduce sum c_Ac_1_12 inputs local
 variable Ac_1_12 equal c_Ac_1_12_sum
 fix logArea all print 100 "${plane_disp} ${Ac_1_12}" file pair_1_12_contact_area_triaxial12.csv screen no

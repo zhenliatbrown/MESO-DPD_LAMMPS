@@ -728,6 +728,10 @@ double PairGranular::single(int i, int j, int itype, int jtype,
   model->xj = x[j];
   model->radi = radius[i];
   model->radj = radius[j];
+  model->i = i;
+  model->j = j;
+  model->itype = itype;
+  model->jtype = jtype;
   model->history_update = 0; // Don't update history
 
   // If history is needed

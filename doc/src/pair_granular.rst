@@ -282,7 +282,9 @@ stress components, total surface area involved in
 contact, and individual contact areas. In the input script, these quantities are
 initialized by calling *run 0* and can then be accessed using subsequent *compute*
 commands. The last *compute* command uses *pair/local p13* to calculate the pairwise
-contact areas for each active contact in the *group-ID*.
+contact areas for each active contact in the *group-ID*. Due to the use of an apparent
+radius in the *mdr* model, the keyword/arg pair *cutoff radius* must be specified for
+*pair/local* to properly detect existing contacts.
 
 .. code-block:: LAMMPS
 
@@ -292,7 +294,7 @@ contact areas for each active contact in the *group-ID*.
    compute ID group-ID property/atom d_sigmayy
    compute ID group-ID property/atom d_sigmazz
    compute ID group-ID property/atom d_Acon1
-   compute ID group-ID pair/local p13
+   compute ID group-ID pair/local p13 cutoff radius
 
 .. note::
 
