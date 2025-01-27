@@ -127,6 +127,7 @@ MODULE LIBLAMMPS
     PROCEDURE :: set_string_variable    => lmp_set_string_variable
     PROCEDURE :: set_internal_variable  => lmp_set_internal_variable
     PROCEDURE :: eval                   => lmp_eval
+    PROCEDURE :: clearstep_compute      => lmp_clearstep_compute
     PROCEDURE, PRIVATE :: lmp_gather_atoms_int
     PROCEDURE, PRIVATE :: lmp_gather_atoms_double
     GENERIC   :: gather_atoms           => lmp_gather_atoms_int, &
@@ -625,6 +626,12 @@ MODULE LIBLAMMPS
       TYPE(c_ptr), VALUE :: handle, expr
       REAL(c_double) :: lammps_eval
     END FUNCTION lammps_eval
+
+    SUBROUTINE lammps_clearstep_compute(handle) BIND(C)
+      IMPORT :: c_ptr
+      IMPLICIT NONE
+      TYPE(c_ptr), VALUE :: handle
+    END SUBROUTINE lammps_clearstep_compute
 
     SUBROUTINE lammps_gather_atoms(handle, name, TYPE, count, DATA) BIND(C)
       IMPORT :: c_int, c_ptr
@@ -1845,6 +1852,12 @@ CONTAINS
     lmp_eval = lammps_eval(self%handle, Cexpr)
     CALL lammps_free(Cexpr)
   END FUNCTION lmp_eval
+
+  ! equivalent subroutine to lammps_clearstep_compute
+  SUBROUTINE lmp_clearstep_compute(self)
+    CLASS(lammps), INTENT(IN) :: self
+    CALL lammps_clearstep_compute(self%handle)
+  END SUBROUTINE lmp_clearstep_compute
 
   ! equivalent function to lammps_gather_atoms (for integers)
   SUBROUTINE lmp_gather_atoms_int(self, name, count, data)

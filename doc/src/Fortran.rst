@@ -323,6 +323,8 @@ of the contents of the :f:mod:`LIBLAMMPS` Fortran interface to LAMMPS.
    :ftype set_internal_variable: subroutine
    :f eval: :f:func:`eval`
    :ftype eval: function
+   :f clearstep_compute: :f:subr:`clearstep_compute`
+   :ftype clearstep_compute: subroutine
    :f gather_atoms: :f:subr:`gather_atoms`
    :ftype gather_atoms: subroutine
    :f gather_atoms_concat: :f:subr:`gather_atoms_concat`
