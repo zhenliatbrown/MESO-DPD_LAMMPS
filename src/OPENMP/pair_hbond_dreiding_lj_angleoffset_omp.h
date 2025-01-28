@@ -24,26 +24,14 @@ PairStyle(hbond/dreiding/lj/angleoffset/omp,PairHbondDreidingLJAngleoffsetOMP);
 #ifndef LMP_PAIR_HBOND_DREIDING_LJ_ANGLEOFFSET_OMP_H
 #define LMP_PAIR_HBOND_DREIDING_LJ_ANGLEOFFSET_OMP_H
 
-#include "pair_hbond_dreiding_lj_angleoffset.h"
-#include "thr_omp.h"
+#include "pair_hbond_dreiding_lj_omp.h"
 
 namespace LAMMPS_NS {
 
-class PairHbondDreidingLJAngleoffsetOMP : public PairHbondDreidingLJAngleoffset, public ThrOMP {
+class PairHbondDreidingLJAngleoffsetOMP : public PairHbondDreidingLJOMP {
 
  public:
   PairHbondDreidingLJAngleoffsetOMP(class LAMMPS *);
-  ~PairHbondDreidingLJAngleoffsetOMP() override;
-
-  void compute(int, int) override;
-  double memory_usage() override;
-
- protected:
-  double *hbcount_thr, *hbeng_thr;
-
- private:
-  template <int EVFLAG, int EFLAG, int NEWTON_PAIR>
-  void eval(int ifrom, int ito, ThrData *const thr);
 };
 
 }    // namespace LAMMPS_NS
