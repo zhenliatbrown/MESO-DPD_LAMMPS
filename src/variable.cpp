@@ -835,7 +835,8 @@ int Variable::next(int narg, char **arg)
         if (fp == nullptr) goto uloop_again;
 
         buf[0] = buf[1] = '\0';
-        fread(buf,1,64,fp);
+        auto tmp = fread(buf,1,64,fp);
+        (void) tmp; // can be safely ignored, suppress compiler warning in a portable way
         fclose(fp);
 
         if (strlen(buf) > 0) {
