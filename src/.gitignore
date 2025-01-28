@@ -252,6 +252,8 @@
 /*rheo*.cpp
 /*rheo*.h
 
+/compute_gaussian_grid_local.cpp
+/compute_gaussian_grid_local.h
 /compute_grid.cpp
 /compute_grid.h
 /compute_grid_local.cpp

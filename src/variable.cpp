@@ -5227,14 +5227,14 @@ void Variable::print_var_error(const std::string &srcfile, const int lineno,
   if ((ivar >= 0) && (ivar < nvar)) {
     std::string msg = fmt::format("Variable {}: ",names[ivar]) + errmsg;
     if (global)
-      error->all(srcfile,lineno,msg);
+      error->all(srcfile, lineno, Error::NOLASTLINE, msg);
     else
-      error->one(srcfile,lineno,msg);
+      error->one(srcfile, lineno, Error::NOLASTLINE, msg);
   } else {
     if (global)
-      error->all(srcfile,lineno,errmsg);
+      error->all(srcfile,lineno, Error::NOLASTLINE, errmsg);
     else
-      error->one(srcfile,lineno,errmsg);
+      error->one(srcfile,lineno, Error::NOLASTLINE, errmsg);
   }
 }
 
