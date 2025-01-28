@@ -222,6 +222,13 @@ void PairHbondDreidingLJOMP::eval(int iifrom, int iito, ThrData * const thr)
           if (c < -1.0) c = -1.0;
           ac = acos(c);
 
+          if (angle_offset_flag){
+            ac = ac + pm.angle_offset;
+            c = cos(ac);
+            if (c > 1.0) c = 1.0;
+            if (c < -1.0) c = -1.0;
+          }
+
           if (ac > pm.cut_angle && ac < (2.0*MY_PI - pm.cut_angle)) {
             s = sqrt(1.0 - c*c);
             if (s < SMALL) s = SMALL;
