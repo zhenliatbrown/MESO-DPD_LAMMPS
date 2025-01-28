@@ -284,9 +284,9 @@ void ComputeStressCartesian::compute_array()
   // calculate number density and kinetic contribution to pressure
   if (compute_ke) {
     for (int i = 0; i < nlocal; i++) {
-      int bin1 = (int) ((x[i][dir1] - boxlo[dir1]) / bin_width1) % nbins1;
+      int bin1 = (int) floor((x[i][dir1] - boxlo[dir1]) / bin_width1) % nbins1;
       int bin2 = 0;
-      if (dims == 2) bin2 = (int) ((x[i][dir2] - boxlo[dir2]) / bin_width2) % nbins2;
+      if (dims == 2) bin2 = (int) floor((x[i][dir2] - boxlo[dir2]) / bin_width2) % nbins2;
 
       // Apply periodic boundary conditions and avoid out of range access
       if (domain->periodicity[dir1] == 1) {
