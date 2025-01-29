@@ -1694,7 +1694,6 @@ class lammps(object):
 
     with ExceptionCheck(self):
       return self.lib.lammps_eval(self.lmp, newexpr)
-    return None
 
   # -------------------------------------------------------------------------
 

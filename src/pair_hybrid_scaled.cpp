@@ -436,7 +436,6 @@ double PairHybridScaled::single(int i, int j, int itype, int jtype, double rsq, 
   // update scale values from variables where needed
 
   const int nvars = scalevars.size();
-  int atomscaleflag = 0;
   if (nvars > 0) {
     auto vals = new double[nvars];
     auto vars = new int[nvars];
@@ -453,7 +452,6 @@ double PairHybridScaled::single(int i, int j, int itype, int jtype, double rsq, 
       } else if (input->variable->atomstyle(m)) {
         vals[k] = 0.0;
         vars[k] = m;
-        atomscaleflag = 1;
       } else
         error->all(FLERR, "Variable '{}' has incompatible style", scalevars[k]);
     }
@@ -517,7 +515,6 @@ void PairHybridScaled::born_matrix(int i, int j, int itype, int jtype, double rs
   // update scale values from variables where needed
 
   const int nvars = scalevars.size();
-  int atomscaleflag = 0;
   if (nvars > 0) {
     auto vals = new double[nvars];
     auto vars = new int[nvars];
@@ -534,7 +531,6 @@ void PairHybridScaled::born_matrix(int i, int j, int itype, int jtype, double rs
       } else if (input->variable->atomstyle(m)) {
         vals[k] = 0.0;
         vars[k] = m;
-        atomscaleflag = 1;
       } else
         error->all(FLERR, "Variable '{}' has incompatible style", scalevars[k]);
     }
