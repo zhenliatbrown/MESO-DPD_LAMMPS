@@ -32,6 +32,7 @@ class PairHbondDreidingLJAngleoffsetOMP : public PairHbondDreidingLJOMP {
 
  public:
   PairHbondDreidingLJAngleoffsetOMP(class LAMMPS *);
+  void coeff(int, char **) override;
 };
 
 }    // namespace LAMMPS_NS

@@ -33,7 +33,7 @@ class PairHbondDreidingMorseAngleoffsetOMP :
 
  public:
   PairHbondDreidingMorseAngleoffsetOMP(class LAMMPS *);
-  
+  void coeff(int, char **) override;  
 };
 
 }    // namespace LAMMPS_NS
