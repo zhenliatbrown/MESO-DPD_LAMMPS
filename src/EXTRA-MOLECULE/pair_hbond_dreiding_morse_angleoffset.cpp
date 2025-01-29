@@ -46,9 +46,9 @@ PairHbondDreidingMorseAngleoffset::PairHbondDreidingMorseAngleoffset(LAMMPS *lmp
   angle_offset_flag = 1;
 }
 
-// /* ----------------------------------------------------------------------
-//    set coeffs for one or more type pairs
-// ------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ *    set coeffs for one or more type pairs
+ * ---------------------------------------------------------------------- */
 
 void PairHbondDreidingMorseAngleoffset::coeff(int narg, char **arg)
 {

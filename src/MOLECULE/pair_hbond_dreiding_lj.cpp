@@ -85,7 +85,7 @@ void PairHbondDreidingLJ::compute(int eflag, int vflag)
   tagint tagprev;
   double delx,dely,delz,rsq,rsq1,rsq2,r1,r2;
   double factor_hb,force_angle,force_kernel,evdwl,eng_lj,ehbond,force_switch;
-  double c,s,a,b,ac,a11,a12,a22,vx1,vx2,vy1,vy2,vz1,vz2,d;
+  double c,s,a,b,d,ac,a11,a12,a22,vx1,vx2,vy1,vy2,vz1,vz2;
   double fi[3],fj[3],delr1[3],delr2[3];
   double r2inv,r10inv;
   double switch1,switch2;
@@ -196,14 +196,11 @@ void PairHbondDreidingLJ::compute(int eflag, int vflag)
 
             r2inv = 1.0/rsq;
             r10inv = r2inv*r2inv*r2inv*r2inv*r2inv;
-            force_kernel = r10inv*(pm.lj1*r2inv - pm.lj2)*r2inv *
-              powint(c,pm.ap);
-            force_angle = pm.ap * r10inv*(pm.lj3*r2inv - pm.lj4) *
-              powint(c,pm.ap-1)*s;
+            force_kernel = r10inv*(pm.lj1*r2inv - pm.lj2)*r2inv * powint(c,pm.ap);
+            force_angle = pm.ap * r10inv*(pm.lj3*r2inv - pm.lj4) * powint(c,pm.ap-1)*s;
+            force_switch = 0.0;
 
             eng_lj = r10inv*(pm.lj3*r2inv - pm.lj4);
-
-            force_switch=0.0;
 
             if (rsq > pm.cut_innersq) {
               switch1 = (pm.cut_outersq-rsq) * (pm.cut_outersq-rsq) *
