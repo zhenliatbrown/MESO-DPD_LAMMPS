@@ -29,7 +29,7 @@ class PairHbondDreidingMorseAngleoffset : public PairHbondDreidingMorse {
  public:
   PairHbondDreidingMorseAngleoffset(class LAMMPS *);
   void coeff(int, char **) override;
-  
+
 };
 
 }    // namespace LAMMPS_NS
