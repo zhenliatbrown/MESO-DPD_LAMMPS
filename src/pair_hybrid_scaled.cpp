@@ -545,7 +545,7 @@ void PairHybridScaled::born_matrix(int i, int j, int itype, int jtype, double rs
   }
 
   double du, du2;
-  dupair = du2pair;
+  dupair = du2pair = 0.0;
 
   for (int m = 0; m < nmap[itype][jtype]; m++) {
     auto pstyle = styles[map[itype][jtype][m]];
