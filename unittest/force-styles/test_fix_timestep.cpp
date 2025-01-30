@@ -56,10 +56,11 @@ using ::testing::StartsWith;
 
 using namespace LAMMPS_NS;
 
-void cleanup_lammps(LAMMPS *lmp, const TestConfig &cfg)
+void cleanup_lammps(LAMMPS *&lmp, const TestConfig &cfg)
 {
     platform::unlink(cfg.basename + ".restart");
     delete lmp;
+    lmp = nullptr;
 }
 
 LAMMPS *init_lammps(LAMMPS::argv &args, const TestConfig &cfg, const bool use_respa)

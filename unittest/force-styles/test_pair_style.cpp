@@ -54,12 +54,13 @@ using ::testing::StartsWith;
 
 using namespace LAMMPS_NS;
 
-void cleanup_lammps(LAMMPS *lmp, const TestConfig &cfg)
+void cleanup_lammps(LAMMPS *&lmp, const TestConfig &cfg)
 {
     platform::unlink(cfg.basename + ".restart");
     platform::unlink(cfg.basename + ".data");
     platform::unlink(cfg.basename + "-coeffs.in");
     delete lmp;
+    lmp = nullptr;
 }
 
 LAMMPS *init_lammps(LAMMPS::argv &args, const TestConfig &cfg, const bool newton)
