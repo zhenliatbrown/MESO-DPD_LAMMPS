@@ -364,11 +364,14 @@ void BosonicExchange::spring_force_interior_bead(double **f) const {
 double BosonicExchange::prim_estimator()
 {
   double convention_correction = (physical_beta_convention ? 1 : 1.0 / np);
-
+  
+  // Adds the contribution of an interior spring, which is the same as for distinguishable particles.
   if (bead_num != 0) {
-      return -convention_correction * get_bead_spring_energy();
+      return convention_correction * (0.5 * domain->dimension * nbosons / beta - get_interior_bead_spring_energy());
   }
-
+  
+  // For the first bead, add the contribution of the exterior bead (See Equations 4-5 in the 
+  // Supporting Information of Hirshberg et. al., doi.org/10.1073/pnas.1913365116)
   temp_nbosons_array[0] = 0.0;
 
   for (int m = 1; m < nbosons + 1; ++m) {
@@ -393,7 +396,7 @@ double BosonicExchange::prim_estimator()
       temp_nbosons_array[m] = sig / sig_denom_m;
   }
 
-  return convention_correction * (0.5 * domain->dimension * nbosons * np / beta + temp_nbosons_array[nbosons]);
+  return convention_correction * (0.5 * domain->dimension * nbosons / beta + temp_nbosons_array[nbosons]);
 }
 
 /* ---------------------------------------------------------------------- */
