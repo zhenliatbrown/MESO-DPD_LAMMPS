@@ -14,6 +14,7 @@
 #include "bond_bpm_spring_plastic.h"
 
 #include "atom.h"
+#include "citeme.h"
 #include "comm.h"
 #include "domain.h"
 #include "error.h"
@@ -28,6 +29,18 @@
 static constexpr double EPSILON = 1e-10;
 
 using namespace LAMMPS_NS;
+
+static const char cite_bpm_plastic[] =
+    "BPM/spring/plastic bond style: doi:10.1016/j.powtec.2024.120563\n\n"
+    "@Article{Clemmer2025,\n"
+    " author =  {Clemmer, Joel T. and Lechman, Jeremy B.},\n"
+    " title =   {Onset and impact of plastic deformation in granular compaction},\n"
+    " journal = {Powder Technology},\n"
+    " year =    2025,\n"
+    " volume =  452,\n"
+    " number =  28,\n"
+    " pages =   {120563}\n"
+    "}\n\n";
 
 /* ---------------------------------------------------------------------- */
 
@@ -45,6 +58,8 @@ BondBPMSpringPlastic::BondBPMSpringPlastic(LAMMPS *_lmp) :
 
   single_extra = 2;
   svector = new double[2];
+
+  if (lmp->citeme) lmp->citeme->add(cite_bpm_plastic);
 }
 
 /* ---------------------------------------------------------------------- */
