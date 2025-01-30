@@ -119,7 +119,7 @@ the global vector are:
       energy of the quantum system :ref:`(Hirshberg1) <Hirshberg>`.
 
 The vector values calculated by fix *pimdb/nvt* are "extensive", except for the
-temperature, which is "intensive".
+temperature, which is "intensive". 
 
 Fix *pimdb/langevin* computes a global 6-vector, which
 can be accessed by various :doc:`output commands <Howto_output>`. The quantities in the global vector are:
@@ -134,6 +134,9 @@ can be accessed by various :doc:`output commands <Howto_output>`. The quantities
 The first three are different for different log files, and the others are the same for different log files.
 All vector values calculated by fix *pimdb/langevin* are "extensive".
 
+For both *pimdb/nvt* and *pimdb/langevin*, the contribution of the exterior spring to the primitive estimator is printed to the first log file.
+The contribution of the :math:`P-1` interior springs is printed to the other :math:`P-1` log files.
+The contribution of the constant :math:`\frac{PdN}{2 \beta}` (with :math:`d` being the dimentionality) is equally divided over log files.
 Restrictions
 """"""""""""
 
