@@ -220,7 +220,6 @@ double BosonicExchange::get_potential() const {
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_interior_bead_spring_energy() const {
-    assert(bead_num != 0 && "Error: get_interior_bead_spring_energy() called from the first bead!");
     double spring_energy_for_bead = 0.;
     for (int i = 0; i < nbosons; i++) {
         spring_energy_for_bead += 0.5 * spring_constant * distance_squared_two_beads(x, i, x_prev, i);
@@ -365,10 +364,14 @@ void BosonicExchange::spring_force_interior_bead(double **f) const {
 double BosonicExchange::prim_estimator()
 {
   double convention_correction = (physical_beta_convention ? 1 : 1.0 / np);
-  if (bead_num == 0) {
-    temp_nbosons_array[0] = 0.0;
 
-    for (int m = 1; m < nbosons + 1; ++m) {
+  if (bead_num != 0) {
+      return -convention_correction * get_bead_spring_energy();
+  }
+
+  temp_nbosons_array[0] = 0.0;
+
+  for (int m = 1; m < nbosons + 1; ++m) {
       double sig = 0.0;
       temp_nbosons_array[m] = 0.0;
 
@@ -388,12 +391,9 @@ double BosonicExchange::prim_estimator()
       double sig_denom_m = m * exp(-beta * (V[m] - Elongest));
 
       temp_nbosons_array[m] = sig / sig_denom_m;
-    }
-    return convention_correction * (0.5 * domain->dimension * nbosons * np / beta + temp_nbosons_array[nbosons]);
   }
-  else {
-    return -convention_correction * get_bead_spring_energy();
-  }
+
+  return convention_correction * (0.5 * domain->dimension * nbosons * np / beta + temp_nbosons_array[nbosons]);
 }
 
 /* ---------------------------------------------------------------------- */
