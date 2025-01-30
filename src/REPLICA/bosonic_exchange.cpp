@@ -24,11 +24,11 @@
 ------------------------------------------------------------------------- */
 
 #include "bosonic_exchange.h"
-
 #include "domain.h"
 #include "universe.h"
 #include "memory.h"
 #include "error.h"
+#include <cassert>
 
 using namespace LAMMPS_NS;
 
@@ -220,6 +220,7 @@ double BosonicExchange::get_potential() const {
 /* ---------------------------------------------------------------------- */
 
 double BosonicExchange::get_interior_bead_spring_energy() const {
+    assert(bead_num != 0 && "Error: get_interior_bead_spring_energy() called from the first bead!");
     double spring_energy_for_bead = 0.;
     for (int i = 0; i < nbosons; i++) {
         spring_energy_for_bead += 0.5 * spring_constant * distance_squared_two_beads(x, i, x_prev, i);
