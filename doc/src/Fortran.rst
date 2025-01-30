@@ -956,6 +956,7 @@ Procedures Bound to the :f:type:`lammps` Derived Type
       :f:func:`extract_atom` between runs.
 
    .. admonition:: Array index order
+      :class: tip
 
       Two-dimensional arrays returned from :f:func:`extract_atom` will be
       **transposed** from equivalent arrays in C, and they will be indexed
@@ -1068,6 +1069,7 @@ Procedures Bound to the :f:type:`lammps` Derived Type
    you based on data from the :cpp:class:`Compute` class.
 
    .. admonition:: Array index order
+      :class: tip
 
       Two-dimensional arrays returned from :f:func:`extract_compute` will be
       **transposed** from equivalent arrays in C, and they will be indexed
@@ -1326,6 +1328,7 @@ Procedures Bound to the :f:type:`lammps` Derived Type
    :rtype data: polymorphic
 
    .. admonition:: Array index order
+      :class: tip
 
       Two-dimensional global, per-atom, or local array data from
       :f:func:`extract_fix` will be **transposed** from equivalent arrays in
