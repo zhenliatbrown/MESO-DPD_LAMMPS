@@ -1584,6 +1584,7 @@ Impropers
 imulator
 includelink
 incompressible
+incompressibility
 incrementing
 indenter
 indenters
@@ -1763,6 +1764,7 @@ Kadiri
 Kai
 Kalia
 Kamberaj
+Kamrin
 Kantorovich
 Kapfer
 Kapil
@@ -3732,6 +3734,7 @@ tgnpt
 tgnvt
 th
 Thakkar
+Thakur
 Thaokar
 thb
 thei
@@ -3832,6 +3835,7 @@ Tref
 Tretyakov
 tri
 triangleflag
+triaxial
 Tribello
 triclinic
 Triclinic
