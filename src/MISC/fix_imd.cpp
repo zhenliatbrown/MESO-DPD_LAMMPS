@@ -1672,15 +1672,14 @@ void FixIMD::handle_output_v3() {
 
           if (domain->triclinic) {
             buf[idx].tag = tag[i];
-            buf[idx].x = x[i][0]; + ix * xprd + iy * xy + iz * xz;
-            buf[idx].y = x[i][1]; + iy * yprd + iz * yz;
-            buf[idx].z = x[i][2]; + iz * zprd;
-          }
-          else {
+            buf[idx].x   = x[i][0] + ix * xprd + iy * xy + iz * xz;
+            buf[idx].y   = x[i][1] + iy * yprd + iz * yz;
+            buf[idx].z   = x[i][2] + iz * zprd;
+          } else {
             buf[idx].tag = tag[i];
-            buf[idx].x = x[i][0]; + ix * xprd;
-            buf[idx].y = x[i][1]; + iy * yprd;
-            buf[idx].z = x[i][2]; + iz * zprd;
+            buf[idx].x   = x[i][0] + ix * xprd;
+            buf[idx].y   = x[i][1] + iy * yprd;
+            buf[idx].z   = x[i][2] + iz * zprd;
           }
           ++idx;
         }
