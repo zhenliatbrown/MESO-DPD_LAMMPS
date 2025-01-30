@@ -1701,7 +1701,7 @@ class lammps(object):
   def eval(self, expr):
     """ Evaluate a LAMMPS immediate variable expression
 
-    .. versionadded:: TBD
+    .. versionadded:: 4Feb2025
 
     This function is a wrapper around the function :cpp:func:`lammps_eval`
     of the C library interface.  It evaluates and expression like in
