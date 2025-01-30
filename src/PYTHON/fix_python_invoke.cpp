@@ -72,7 +72,11 @@ FixPythonInvoke::FixPythonInvoke(LAMMPS *lmp, int narg, char **arg) :
 
   lmpPtr = PY_VOID_POINTER(lmp);
 
-  modify->addstep_compute_all(nextvalid());
+  // nvalid = next step on which end_of_step or post_force does something
+  // add nextvalid() to all computes that store invocation times
+  // since we don't know a priori which are invoked by python code
+  nvalid = nextvalid();
+  modify->addstep_compute_all(nvalid);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,8 +96,21 @@ int FixPythonInvoke::setmask()
 
 /* ---------------------------------------------------------------------- */
 
+void FixPythonInvoke::init()
+{
+  // need to reset nvalid if nvalid < ntimestep b/c minimize was performed
+
+  if (nvalid < update->ntimestep) {
+    nvalid = nextvalid();
+    modify->addstep_compute_all(nvalid);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixPythonInvoke::end_of_step()
 {
+  // python code may invoke computes so wrap with clear/add
   modify->clearstep_compute();
 
   PyUtils::GIL lock;
@@ -107,7 +124,8 @@ void FixPythonInvoke::end_of_step()
 
   Py_CLEAR(result);
 
-  modify->addstep_compute(nextvalid());
+  nvalid = nextvalid();
+  modify->addstep_compute(nvalid);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -123,6 +141,7 @@ void FixPythonInvoke::post_force(int vflag)
 {
   if (update->ntimestep % nevery != 0) return;
 
+  // python code may invoke computes so wrap with clear/add
   modify->clearstep_compute();
 
   PyUtils::GIL lock;
@@ -137,7 +156,8 @@ void FixPythonInvoke::post_force(int vflag)
 
   Py_CLEAR(result);
 
-  modify->addstep_compute(nextvalid());
+  nvalid = nextvalid();
+  modify->addstep_compute(nvalid);
 }
 
 /* ---------------------------------------------------------------------- */
