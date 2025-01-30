@@ -11,36 +11,25 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifdef FIX_CLASS
+#ifdef PAIR_CLASS
 // clang-format off
-FixStyle(python/invoke,FixPythonInvoke);
-FixStyle(python,FixPythonInvoke);
+PairStyle(hbond/dreiding/morse/angleoffset,PairHbondDreidingMorseAngleoffset);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_PYTHON_INVOKE_H
-#define LMP_FIX_PYTHON_INVOKE_H
+#ifndef LMP_PAIR_HBOND_DREIDING_MORSE_ANGLEOFFSET_H
+#define LMP_PAIR_HBOND_DREIDING_MORSE_ANGLEOFFSET_H
 
-#include "fix.h"
+#include "pair_hbond_dreiding_morse.h"
 
 namespace LAMMPS_NS {
 
-class FixPythonInvoke : public Fix {
- public:
-  FixPythonInvoke(class LAMMPS *, int, char **);
-  ~FixPythonInvoke() override;
-  int setmask() override;
-  void setup(int) override;
-  void init() override;
-  void end_of_step() override;
-  void post_force(int) override;
+class PairHbondDreidingMorseAngleoffset : public PairHbondDreidingMorse {
 
- private:
-  void *lmpPtr;
-  void *pFunc;
-  int selected_callback;
-  bigint nextvalid();
-  bigint nvalid;
+ public:
+  PairHbondDreidingMorseAngleoffset(class LAMMPS *);
+  void coeff(int, char **) override;
+
 };
 
 }    // namespace LAMMPS_NS

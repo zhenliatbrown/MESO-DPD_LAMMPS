@@ -11,36 +11,28 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifdef FIX_CLASS
+/* ----------------------------------------------------------------------
+   Contributing author: Axel Kohlmeyer (Temple U), Don Xu/EiPi Fun
+------------------------------------------------------------------------- */
+
+#ifdef PAIR_CLASS
 // clang-format off
-FixStyle(python/invoke,FixPythonInvoke);
-FixStyle(python,FixPythonInvoke);
+PairStyle(hbond/dreiding/lj/angleoffset/omp,PairHbondDreidingLJAngleoffsetOMP);
 // clang-format on
 #else
 
-#ifndef LMP_FIX_PYTHON_INVOKE_H
-#define LMP_FIX_PYTHON_INVOKE_H
+#ifndef LMP_PAIR_HBOND_DREIDING_LJ_ANGLEOFFSET_OMP_H
+#define LMP_PAIR_HBOND_DREIDING_LJ_ANGLEOFFSET_OMP_H
 
-#include "fix.h"
+#include "pair_hbond_dreiding_lj_omp.h"
 
 namespace LAMMPS_NS {
 
-class FixPythonInvoke : public Fix {
- public:
-  FixPythonInvoke(class LAMMPS *, int, char **);
-  ~FixPythonInvoke() override;
-  int setmask() override;
-  void setup(int) override;
-  void init() override;
-  void end_of_step() override;
-  void post_force(int) override;
+class PairHbondDreidingLJAngleoffsetOMP : public PairHbondDreidingLJOMP {
 
- private:
-  void *lmpPtr;
-  void *pFunc;
-  int selected_callback;
-  bigint nextvalid();
-  bigint nvalid;
+ public:
+  PairHbondDreidingLJAngleoffsetOMP(class LAMMPS *);
+  void coeff(int, char **) override;
 };
 
 }    // namespace LAMMPS_NS
