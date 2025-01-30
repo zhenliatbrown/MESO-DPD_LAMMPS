@@ -1621,7 +1621,7 @@ void FixIMD::handle_output_v3() {
     }
   }
 
-  int ntotal, nmax, nme=0;
+  int ntotal, nme=0;
   for (int i=0; i < nlocal; ++i)
     if (mask[i] & groupbit) ++nme;
 
