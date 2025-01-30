@@ -768,8 +768,7 @@ void FixIMD::setup(int)
 {
   if (imd_version == 2) {
     setup_v2();
-  }
-  else {
+  } else {
     setup_v3();
   }
 }
@@ -914,11 +913,9 @@ void FixIMD::setup_v3()
   struct commdata *buf = nullptr;
   if (imdsinfo->coords) {
     buf = static_cast<struct commdata *>(coord_data);
-  }
-  else if (imdsinfo->velocities) {
+  } else if (imdsinfo->velocities) {
     buf = static_cast<struct commdata *>(vel_data);
-  }
-  else if (imdsinfo->forces) {
+  } else if (imdsinfo->forces) {
     buf = static_cast<struct commdata *>(force_data);
   }
 
@@ -1025,8 +1022,7 @@ void FixIMD::post_force(int /*vflag*/)
   fflush(screen);
   if (imd_version == 2) {
     handle_step_v2();
-  }
-  else if (imd_version == 3) {
+  } else if (imd_version == 3) {
     handle_client_input_v3();
   }
 
@@ -1493,8 +1489,7 @@ void FixIMD::handle_client_input_v3() {
           /* Change IMD waiting behavior mid-session */
           if (length) {
             nowait_flag = 0;
-          }
-          else {
+          } else {
             nowait_flag = 1;
           }
           break;
@@ -1675,8 +1670,8 @@ void FixIMD::handle_output_v3() {
             buf[idx].x = x[i][0]; + ix * xprd + iy * xy + iz * xz;
             buf[idx].y = x[i][1]; + iy * yprd + iz * yz;
             buf[idx].z = x[i][2]; + iz * zprd;
-          }
-          else {
+            buf[idx].x = x[i][0] + ix * xprd + iy * xy + iz * xz;
+          } else {
             buf[idx].tag = tag[i];
             buf[idx].x = x[i][0]; + ix * xprd;
             buf[idx].y = x[i][1]; + iy * yprd;
@@ -1685,8 +1680,7 @@ void FixIMD::handle_output_v3() {
           ++idx;
         }
       }
-    }
-    else {
+    } else {
       for (int i = 0; i < nlocal; ++i) {
         if (mask[i] & groupbit) {
           buf[idx].tag = tag[i];
@@ -2057,10 +2051,11 @@ static int32 imd_readn(void *s, char *ptr, int32 n) {
   nleft = n;
   while (nleft > 0) {
     if ((nread = imdsock_read(s, ptr, nleft)) < 0) {
-      if (errno == EINTR)
+      if (errno == EINTR) {
         nread = 0;         /* and call read() again */
-      else
+      } else {
         return -1;
+      }
     } else if (nread == 0)
       break;               /* EOF */
     nleft -= nread;
@@ -2078,10 +2073,11 @@ static int32 imd_writen(void *s, const char *ptr, int32 n) {
   nleft = n;
   while (nleft > 0) {
     if ((nwritten = imdsock_write(s, ptr, nleft)) <= 0) {
-      if (errno == EINTR)
+      if (errno == EINTR) {
         nwritten = 0;
-      else
+      } else {
         return -1;
+      }
     }
     nleft -= nwritten;
     ptr += nwritten;
