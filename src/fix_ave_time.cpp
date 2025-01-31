@@ -108,18 +108,19 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     val.val.c = nullptr;
 
     if ((val.which == ArgInfo::NONE) || (val.which == ArgInfo::UNKNOWN) || (argi.get_dim() > 1))
-      error->all(FLERR, val.iarg,"Invalid fix ave/time argument: {}", arg[i]);
+      error->all(FLERR, val.iarg, "Invalid fix ave/time argument: {}", arg[i]);
 
     values.push_back(val);
   }
   if (nvalues != (int)values.size())
-    error->all(FLERR, "Could not parse value data consistently for fix ave/time");
+    error->all(FLERR, Error::NOPOINTER,
+               "Could not parse value data consistently for fix ave/time");
 
   // set off columns now that nvalues is finalized
 
   for (int i = 0; i < noff; i++) {
     if (offlist[i] < 1 || offlist[i] > nvalues)
-      error->all(FLERR,"Invalid fix ave/time off column: {}", offlist[i]);
+      error->all(FLERR, Error::NOPOINTER, "Invalid fix ave/time off column: {}", offlist[i]);
     values[offlist[i] - 1].offcol = 1;
   }
 
