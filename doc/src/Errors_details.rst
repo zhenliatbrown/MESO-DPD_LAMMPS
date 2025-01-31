@@ -287,7 +287,7 @@ Too many neighbor bins
 The simulation box has become too large relative to the size of a
 neighbor bin and LAMMPS is unable to store the needed number of
 bins. This typically implies the simulation box has expanded too far.
-This can happen when some atoms move rapidly apart with shrinkwrap
+This can happen when some atoms move rapidly apart with shrink-wrap
 boundaries or when a fix (like fix deform or a barostat) excessively
 grows the simulation box.
 
