@@ -1876,7 +1876,7 @@ void Molecule::check_attributes()
   if (rmassflag && !atom->rmass_flag) mismatch = 1;
 
   if (mismatch && me == 0)
-    error->warning(FLERR, "Molecule attributes do not match system attributes");
+    error->warning(FLERR, "Molecule attributes do not match system attributes" + utils::errorurl(26));
 
   // for all atom styles, check nbondtype,etc
 
@@ -1886,7 +1886,8 @@ void Molecule::check_attributes()
   if (atom->ndihedraltypes < ndihedraltypes) mismatch = 1;
   if (atom->nimpropertypes < nimpropertypes) mismatch = 1;
 
-  if (mismatch) error->all(FLERR, "Molecule topology type exceeds system topology type");
+  if (mismatch)
+    error->all(FLERR, "Molecule topology type exceeds system topology type" + utils::errorurl(25));
 
   // for molecular atom styles, check bond_per_atom,etc + maxspecial
   // do not check for atom style template, since nothing stored per atom
@@ -1898,7 +1899,8 @@ void Molecule::check_attributes()
     if (atom->avec->impropers_allow && atom->improper_per_atom < improper_per_atom) mismatch = 1;
     if (atom->maxspecial < maxspecial) mismatch = 1;
 
-    if (mismatch) error->all(FLERR, "Molecule topology/atom exceeds system topology/atom");
+    if (mismatch)
+      error->all(FLERR, "Molecule topology/atom exceeds system topology/atom" + utils::errorurl(24));
   }
 
   // warn if molecule topology defined but no special settings
