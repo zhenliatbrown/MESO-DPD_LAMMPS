@@ -132,9 +132,9 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   if (nrepeat <= 0) error->all(FLERR, 4, "Illegal fix ave/time nrepeat value: {}", nrepeat);
   if (nfreq <= 0) error->all(FLERR, 5, "Illegal fix ave/time nfreq value: {}", nfreq);
   if (nfreq % nevery || nrepeat*nevery > nfreq)
-    error->all(FLERR,"Inconsistent fix ave/time nevery/nrepeat/nfreq values");
+    error->all(FLERR, Error::NOPOINTER, "Inconsistent fix ave/time nevery/nrepeat/nfreq values");
   if (ave != RUNNING && overwrite)
-    error->all(FLERR,"Fix ave/time overwrite keyword requires ave running setting");
+    error->all(FLERR, Error::NOPOINTER, "Fix ave/time overwrite keyword requires ave running setting");
 
   for (auto &val : values) {
 

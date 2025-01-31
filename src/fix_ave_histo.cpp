@@ -172,9 +172,9 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
   if (nfreq <= 0)
     error->all(FLERR, 5, "Illegal {} nfreq value: {}", mycmd, nfreq);
   if (nfreq % nevery || nrepeat*nevery > nfreq)
-    error->all(FLERR, "Inconsistent {} nevery/nrepeat/nfreq values", mycmd);
+    error->all(FLERR, Error::NOPOINTER, "Inconsistent {} nevery/nrepeat/nfreq values", mycmd);
   if (ave != RUNNING && overwrite)
-    error->all(FLERR,"{} overwrite keyword requires ave running setting", mycmd);
+    error->all(FLERR, Error::NOPOINTER, "{} overwrite keyword requires ave running setting", mycmd);
 
   int kindglobal,kindperatom,kindlocal;
   for (auto &val : values) {
@@ -244,9 +244,9 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
   // for fix inputs, check that fix frequency is acceptable
 
   if (kind == PERATOM && mode == SCALAR)
-    error->all(FLERR, "{} cannot process per-atom values in scalar mode", mycmd);
+    error->all(FLERR, Error::NOPOINTER, "{} cannot process per-atom values in scalar mode", mycmd);
   if (kind == LOCAL && mode == SCALAR)
-    error->all(FLERR,"{} cannot process local values in scalar mode", mycmd);
+    error->all(FLERR, Error::NOPOINTER, "{} cannot process local values in scalar mode", mycmd);
 
   for (auto &val : values) {
     if (val.which == ArgInfo::COMPUTE && kind == GLOBAL && mode == SCALAR) {
@@ -359,7 +359,8 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
     if (title3) fprintf(fp,"%s\n",title3);
     else fprintf(fp,"# Bin Coord Count Count/Total\n");
 
-    if (ferror(fp)) error->one(FLERR, "Error writing file header: {}", utils::getsyserror());
+    if (ferror(fp))
+      error->one(FLERR, Error::NOPOINTER, "Error writing file header: {}", utils::getsyserror());
     filepos = platform::ftell(fp);
   }
 
