@@ -34,16 +34,15 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-enum{ ONE, RUNNING, WINDOW };
-enum{ SCALAR, VECTOR };
+enum { ONE, RUNNING, WINDOW };
+enum { SCALAR, VECTOR };
 
 /* ---------------------------------------------------------------------- */
 
 FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg),
-  nvalues(0), fp(nullptr), offlist(nullptr), format(nullptr), format_user(nullptr),
-  vector(nullptr), vector_total(nullptr), vector_list(nullptr),
-  column(nullptr), array(nullptr), array_total(nullptr), array_list(nullptr)
+    Fix(lmp, narg, arg), nvalues(0), fp(nullptr), offlist(nullptr), format(nullptr), vector(nullptr),
+    vector_total(nullptr), vector_list(nullptr), column(nullptr), array(nullptr),
+    array_total(nullptr), array_list(nullptr)
 {
   if (narg < 7) utils::missing_cmd_args(FLERR, "fix ave/time", error);
 
@@ -447,7 +446,7 @@ FixAveTime::~FixAveTime()
     }
   }
 
-  delete[] format_user;
+  delete[] format;
   delete[] extlist;
 
   if (fp && comm->me == 0) {
@@ -1050,8 +1049,7 @@ void FixAveTime::options(int iarg, int narg, char **arg)
   offlist = nullptr;
   overwrite = 0;
   yaml_flag = yaml_header = false;
-  format_user = nullptr;
-  format = (char *) " %g";
+  format = utils::strdup(" %g");
   title1 = nullptr;
   title2 = nullptr;
   title3 = nullptr;
@@ -1106,9 +1104,8 @@ void FixAveTime::options(int iarg, int narg, char **arg)
       iarg += 1;
     } else if (strcmp(arg[iarg],"format") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR, "fix ave/time format", error);
-      delete[] format_user;
-      format_user = utils::strdup(arg[iarg+1]);
-      format = format_user;
+      delete[] format;
+      format = utils::strdup(arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg],"title1") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR, "fix ave/time title1", error);
