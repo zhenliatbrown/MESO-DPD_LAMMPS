@@ -100,9 +100,6 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     val.which = argi.get_type();
     key2col[arg[i]] = i;
 
-    if ((val.which == ArgInfo::NONE) || (val.which == ArgInfo::UNKNOWN) || (argi.get_dim() > 1))
-      error->all(FLERR, amap[i] + ioffset,"Invalid fix ave/time argument: {}", arg[i]);
-
     val.argindex = argi.get_index1();
     if (expand) val.iarg = amap[i] + ioffset;
     else val.iarg = i + ioffset;
@@ -110,6 +107,9 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
     val.offcol = 0;
     val.id = argi.get_name();
     val.val.c = nullptr;
+
+    if ((val.which == ArgInfo::NONE) || (val.which == ArgInfo::UNKNOWN) || (argi.get_dim() > 1))
+      error->all(FLERR, val.iarg,"Invalid fix ave/time argument: {}", arg[i]);
 
     values.push_back(val);
   }

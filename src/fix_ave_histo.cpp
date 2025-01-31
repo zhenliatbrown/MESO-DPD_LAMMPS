@@ -151,7 +151,7 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
 
       if (argi.get_type() == ArgInfo::NONE) break;
       if ((argi.get_type() == ArgInfo::UNKNOWN) || (argi.get_dim() > 1))
-        error->all(FLERR, amap[i] + ioffset, "Invalid {} argument: {}", mycmd, arg[i]);
+        error->all(FLERR, val.iarg, "Invalid {} argument: {}", mycmd, arg[i]);
 
       val.which = argi.get_type();
       val.argindex = argi.get_index1();
