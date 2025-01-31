@@ -12,9 +12,12 @@ following are discussions of such cases.
 - :ref:`Incorrect format in ... section of data file <err0002>`
 - :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
 - :ref:`Out of range atoms - cannot compute ... <err0004>`
-- :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0005>`
-- :ref:`Too many neighbor bins <err0006>`
-- :ref:`Domain too large for neighbor bins <err0007>`
+- :ref:`Too many neighbor bins <err0009>`
+- :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0015>`
+- :ref:`Domain too large for neighbor bins <err0017>`
+- :ref:`Molecule topology/atom exceeds system topology/atom <err0024>`
+- :ref:`Molecule topology type exceeds system topology type <err0025>`
+- :ref:`Molecule attributes do not match system attributes <err0026>`
 
 ------
 
@@ -276,7 +279,19 @@ help to temporarily use a cutoff-Coulomb pair style and no kspace style
 until the system has somewhat equilibrated and then switch to the
 long-range solver.
 
-.. _err0005:
+.. _err0009:
+
+Too many neighbor bins
+----------------------
+
+The simulation box has become too large relative to the size of a
+neighbor bin and LAMMPS is unable to store the needed number of
+bins. This typically implies the simulation box has expanded too far.
+This can happen when some atoms move rapidly apart with shrinkwrap
+boundaries or when a fix (like fix deform or a barostat) excessively
+grows the simulation box.
+
+.. _err0015:
 
 Cannot use neighbor bins - box size \<\< cutoff
 -----------------------------------------------
@@ -290,19 +305,7 @@ fill space. This error can be avoided using the generally slower
 :doc:`nsq neighbor style <neighbor>` or by increasing the size of the
 smallest box lengths.
 
-.. _err0006:
-
-Too many neighbor bins
-----------------------
-
-The simulation box has become too large relative to the size of a
-neighbor bin and LAMMPS is unable to store the needed number of
-bins. This typically implies the simulation box has expanded too far.
-This can happen when some atoms move rapidly apart with shrinkwrap
-boundaries or when a fix (like fix deform or a barostat) excessively
-grows the simulation box.
-
-.. _err0007:
+.. _err0017:
 
 Domain too large for neighbor bins
 ----------------------------------
@@ -312,3 +315,18 @@ be used. Too many neighbor bins would need to be created to fill space
 Most likely, one or more atoms have been blown out of the simulation
 box to a great distance or a fix (like fix deform or a barostat) has
 excessively grown the simulation box.
+
+.. _err0024:
+
+Molecule topology/atom exceeds system topology/atom
+---------------------------------------------------
+
+.. _err0025:
+
+Molecule topology type exceeds system topology type
+---------------------------------------------------
+
+.. _err0026:
+
+Molecule attributes do not match system attributes
+--------------------------------------------------
