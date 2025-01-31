@@ -113,54 +113,38 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
     value_t val;
     val.id = "";
     val.val.c = nullptr;
+    if (expand) val.iarg = amap[i] + ioffset;
+    else val.iarg = i + ioffset;
 
     if (strcmp(arg[i],"x") == 0) {
       val.which = ArgInfo::X;
       val.argindex = 0;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
     } else if (strcmp(arg[i],"y") == 0) {
       val.which = ArgInfo::X;
       val.argindex = 1;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
     } else if (strcmp(arg[i],"z") == 0) {
       val.which = ArgInfo::X;
       val.argindex = 2;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
 
     } else if (strcmp(arg[i],"vx") == 0) {
       val.which = ArgInfo::V;
       val.argindex = 0;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
     } else if (strcmp(arg[i],"vy") == 0) {
       val.which = ArgInfo::V;
       val.argindex = 1;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
     } else if (strcmp(arg[i],"vz") == 0) {
       val.which = ArgInfo::V;
       val.argindex = 2;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
 
     } else if (strcmp(arg[i],"fx") == 0) {
       val.which = ArgInfo::F;
       val.argindex = 0;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
     } else if (strcmp(arg[i],"fy") == 0) {
       val.which = ArgInfo::F;
       val.argindex = 1;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
     } else if (strcmp(arg[i],"fz") == 0) {
       val.which = ArgInfo::F;
       val.argindex = 2;
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
 
     } else {
       ArgInfo argi(arg[i]);
@@ -171,8 +155,6 @@ FixAveHisto::FixAveHisto(LAMMPS *lmp, int narg, char **arg) :
 
       val.which = argi.get_type();
       val.argindex = argi.get_index1();
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
       val.id = argi.get_name();
     }
     values.push_back(val);
