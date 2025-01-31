@@ -83,7 +83,7 @@ FixAveTime::FixAveTime(LAMMPS *lmp, int narg, char **arg) :
   int expand = 0;
   char **earg;
   int *amap = nullptr;
-  nvalues = utils::expand_args(FLERR,nvalues,&arg[ioffset],mode,earg,lmp,&amap);
+  nvalues = utils::expand_args(FLERR, nvalues, &arg[ioffset], mode, earg, lmp, &amap);
   key2col.clear();
 
   if (earg != &arg[ioffset]) expand = 1;
@@ -667,14 +667,14 @@ void FixAveTime::invoke_scalar(bigint ntimestep)
       if (!yaml_header || overwrite) {
         yaml_header = true;
         fputs("keywords: ['Step', ", fp);
-        for (const auto &val : values) fmt::print(fp, "'{}', ", val.keyword);
+        for (const auto &val : values) utils::print(fp, "'{}', ", val.keyword);
         fputs("]\ndata:\n", fp);
       }
-      fmt::print(fp, "  - [{}, ", ntimestep);
-      for (i = 0; i < nvalues; i++) fmt::print(fp,"{}, ",vector_total[i]/norm);
+      utils::print(fp, "  - [{}, ", ntimestep);
+      for (i = 0; i < nvalues; i++) utils::print(fp,"{}, ",vector_total[i]/norm);
       fputs("]\n", fp);
     } else {
-      fmt::print(fp,"{}",ntimestep);
+      utils::print(fp,"{}",ntimestep);
       for (i = 0; i < nvalues; i++) fprintf(fp,format,vector_total[i]/norm);
       fprintf(fp,"\n");
       if (ferror(fp))
@@ -885,17 +885,17 @@ void FixAveTime::invoke_vector(bigint ntimestep)
       if (!yaml_header || overwrite) {
         yaml_header = true;
         fputs("keywords: [", fp);
-        for (const auto &val : values) fmt::print(fp, "'{}', ", val.keyword);
+        for (const auto &val : values) utils::print(fp, "'{}', ", val.keyword);
         fputs("]\ndata:\n", fp);
       }
-      fmt::print(fp, "  {}:\n", ntimestep);
+      utils::print(fp, "  {}:\n", ntimestep);
       for (int i = 0; i < nrows; i++) {
         fputs("  - [", fp);
-        for (int j = 0; j < nvalues; j++) fmt::print(fp,"{}, ",array_total[i][j]/norm);
+        for (int j = 0; j < nvalues; j++) utils::print(fp,"{}, ",array_total[i][j]/norm);
         fputs("]\n", fp);
       }
     } else {
-      fmt::print(fp,"{} {}\n",ntimestep,nrows);
+      utils::print(fp,"{} {}\n",ntimestep,nrows);
       for (int i = 0; i < nrows; i++) {
         fprintf(fp,"%d",i+1);
         for (int j = 0; j < nvalues; j++) fprintf(fp,format,array_total[i][j]/norm);

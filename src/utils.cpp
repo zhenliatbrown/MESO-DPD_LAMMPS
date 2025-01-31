@@ -263,6 +263,22 @@ void utils::fmtargs_logmesg(LAMMPS *lmp, fmt::string_view format, fmt::format_ar
   }
 }
 
+/* specialization for the case of just a single string argument */
+
+void utils::print(FILE *fp, const std::string &mesg)
+{
+  fputs(mesg.c_str(), fp);
+}
+
+void utils::fmtargs_print(FILE *fp, fmt::string_view format, fmt::format_args args)
+{
+  try {
+    print(fp, fmt::vformat(format, args));
+  } catch (fmt::format_error &) {
+    ; // do nothing
+  }
+}
+
 std::string utils::errorurl(int errorcode)
 {
   return fmt::format("\nFor more information see https://docs.lammps.org/err{:04d}", errorcode);

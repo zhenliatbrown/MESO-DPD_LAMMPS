@@ -422,6 +422,10 @@ class lammps(object):
     self.lib.lammps_extract_variable_datatype.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_extract_variable_datatype.restype = c_int
 
+    self.lib.lammps_clearstep_compute.argtype = [c_void_p]
+    self.lib.lammps_addstep_compute.argtype = [c_void_p, c_void_p]
+    self.lib.lammps_addstep_compute_all.argtype = [c_void_p, c_void_p]
+
     self.lib.lammps_eval.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_eval.restype = c_double
 
@@ -1594,6 +1598,26 @@ class lammps(object):
 
   # -------------------------------------------------------------------------
 
+  def clearstep_compute(self, nextstep):
+    with ExceptionCheck(self):
+      return self.lib.lammps_clearstep_compute(self.lmp)
+
+  # -------------------------------------------------------------------------
+
+  def addstep_compute(self, nextstep):
+    with ExceptionCheck(self):
+      nextstep = self.c_bigint(nextstep)
+      return self.lib.lammps_addstep_compute(self.lmp, POINTER(nextstep))
+
+  # -------------------------------------------------------------------------
+
+  def addstep_compute_all(self, nextstep):
+    with ExceptionCheck(self):
+      nextstep = self.c_bigint(nextstep)
+      return self.lib.lammps_addstep_compute_all(self.lmp, POINTER(nextstep))
+
+  # -------------------------------------------------------------------------
+
   def flush_buffers(self):
     """Flush output buffers
 
@@ -1694,7 +1718,6 @@ class lammps(object):
 
     with ExceptionCheck(self):
       return self.lib.lammps_eval(self.lmp, newexpr)
-    return None
 
   # -------------------------------------------------------------------------
 
