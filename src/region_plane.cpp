@@ -69,7 +69,7 @@ RegPlane::RegPlane(LAMMPS *lmp, int narg, char **arg) :
 
   if (!nxstyle && !nystyle && !nzstyle) nstyle = CONSTANT;
   if (nxstyle && nystyle && nzstyle) nstyle = VARIABLE;
-   
+
   if (nstyle == CONSTANT) {
     normal[0] = xscale * utils::numeric(FLERR, arg[5], false, lmp);
     normal[1] = yscale * utils::numeric(FLERR, arg[6], false, lmp);
