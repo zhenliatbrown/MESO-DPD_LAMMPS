@@ -411,12 +411,9 @@ TEST_F(SimpleCommandsTest, Units)
 #if defined(LMP_PLUGIN)
 TEST_F(SimpleCommandsTest, Plugin)
 {
-    const char *bindir = getenv("LAMMPS_PLUGIN_BIN_DIR");
-    const char *config = getenv("CMAKE_CONFIG_TYPE");
-    if (!bindir) GTEST_SKIP() << "LAMMPS_PLUGIN_BIN_DIR not set";
-    std::string loadfmt = platform::path_join("plugin load ", bindir);
-    if (config) loadfmt = platform::path_join(loadfmt, config);
-    loadfmt = platform::path_join(loadfmt, "{}plugin.so");
+    const char *bindir = getenv("LAMMPS_PLUGIN_DIR");
+    if (!bindir) GTEST_SKIP() << "LAMMPS_PLUGIN_DIR not set";
+    std::string loadfmt = "plugin load {}plugin.so";
     ::testing::internal::CaptureStdout();
     lmp->input->one(fmt::format(loadfmt, "hello"));
     auto text = ::testing::internal::GetCapturedStdout();
@@ -438,8 +435,7 @@ TEST_F(SimpleCommandsTest, Plugin)
     lmp->input->one("plugin list");
     text = ::testing::internal::GetCapturedStdout();
     if (verbose) std::cout << text;
-    ASSERT_THAT(text, ContainsRegex(".*1: command style plugin hello"
-                                    ".*2: fix style plugin nve2.*"));
+    ASSERT_THAT(text, ContainsRegex(".*1: command style plugin hello\n.*2: fix style plugin nve2.*"));
 
     ::testing::internal::CaptureStdout();
     lmp->input->one(fmt::format(loadfmt, "hello"));
