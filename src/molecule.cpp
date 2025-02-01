@@ -58,7 +58,7 @@ Molecule::Molecule(LAMMPS *lmp, int narg, char **arg, int &index) :
 
   id = utils::strdup(arg[0]);
   if (!utils::is_id(id))
-    error->all(FLERR, (int) 0,
+    error->all(FLERR, Error::ARGZEO,
                "Molecule template ID {} must have only alphanumeric or underscore"
                " characters",
                id);
