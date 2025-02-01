@@ -413,21 +413,21 @@ TEST_F(SimpleCommandsTest, Plugin)
 {
     const char *bindir = getenv("LAMMPS_PLUGIN_DIR");
     if (!bindir) GTEST_SKIP() << "LAMMPS_PLUGIN_DIR not set";
-    std::string loadfmt = "plugin load {}plugin.so";
+    std::string loadfmt = "plugin load {}/{}plugin.so";
     ::testing::internal::CaptureStdout();
-    lmp->input->one(fmt::format(loadfmt, "hello"));
+    lmp->input->one(fmt::format(loadfmt, bindir, "hello"));
     auto text = ::testing::internal::GetCapturedStdout();
     if (verbose) std::cout << text;
     ASSERT_THAT(text, ContainsRegex(".*Loading plugin: Hello world command.*"));
 
     ::testing::internal::CaptureStdout();
-    lmp->input->one(fmt::format(loadfmt, "xxx"));
+    lmp->input->one(fmt::format(loadfmt, bindir, "xxx"));
     text = ::testing::internal::GetCapturedStdout();
     if (verbose) std::cout << text;
     ASSERT_THAT(text, ContainsRegex(".*Open of file .*xxx.* failed.*"));
 
     ::testing::internal::CaptureStdout();
-    lmp->input->one(fmt::format(loadfmt, "nve2"));
+    lmp->input->one(fmt::format(loadfmt, bindir, "nve2"));
     text = ::testing::internal::GetCapturedStdout();
     if (verbose) std::cout << text;
     ASSERT_THAT(text, ContainsRegex(".*Loading plugin: NVE2 variant fix style.*"));
@@ -438,7 +438,7 @@ TEST_F(SimpleCommandsTest, Plugin)
     ASSERT_THAT(text, ContainsRegex(".*1: command style plugin hello\n.*2: fix style plugin nve2.*"));
 
     ::testing::internal::CaptureStdout();
-    lmp->input->one(fmt::format(loadfmt, "hello"));
+    lmp->input->one(fmt::format(loadfmt, bindir, "hello"));
     text = ::testing::internal::GetCapturedStdout();
     if (verbose) std::cout << text;
     ASSERT_THAT(text, ContainsRegex(".*Ignoring load of command style hello: "
