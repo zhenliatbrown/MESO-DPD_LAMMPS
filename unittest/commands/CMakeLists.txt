@@ -2,8 +2,8 @@
 
 add_executable(test_simple_commands test_simple_commands.cpp)
 
-# tests for the plugin command require the PLUGIN package and won't work on windows
-if((NOT (CMAKE_SYSTEM_NAME STREQUAL "Windows")) AND PKG_PLUGIN)
+# tests for the plugin command require the PLUGIN package
+if(PKG_PLUGIN)
   add_subdirectory(${LAMMPS_DIR}/examples/plugins ${CMAKE_BINARY_DIR}/build-plugins)
   add_dependencies(test_simple_commands plugins)
   target_compile_definitions(test_simple_commands PRIVATE -DLMP_PLUGIN)
