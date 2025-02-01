@@ -40,7 +40,7 @@ Syntax
        *plane* args = px py pz nx ny nz
          px,py,pz = point on the plane (distance units)
          nx,ny,nz = direction normal to plane (distance units)
-           px,py,pz can be a variable (see below)
+           px,py,pz,nx,ny,nz can be a variable (see below)
        *prism* args = xlo xhi ylo yhi zlo zhi xy xz yz
          xlo,xhi,ylo,yhi,zlo,zhi = bounds of untilted prism (distance units)
          xy = distance to tilt y in x direction (distance units)
@@ -210,9 +210,11 @@ equal-style :doc:`variable <variable>`.  Likewise, for style *sphere*
 and *ellipsoid* the x-, y-, and z- coordinates of the center of the
 sphere/ellipsoid can be specified as an equal-style variable.  And for
 style *cylinder* the two center positions c1 and c2 for the location of
-the cylinder axes can be specified as a equal-style variable.  For style
-*cone* all properties can be defined via equal-style variables.  For
-style *plane* the point can be defined via equal-style variables.
+the cylinder axes can be specified as a equal-style variable.  For styles
+*cone* and *plane* all properties can be defined via equal-style variables.
+For style *plane*, there is the restriction that all three components
+of the direction normal to the plane should be either constant or 
+defined via equal-style variables. 
 
 If the value is a variable, it should be specified as v_name, where
 name is the variable name.  In this case, the variable will be
