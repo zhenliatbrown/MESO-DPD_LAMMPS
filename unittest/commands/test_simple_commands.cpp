@@ -418,7 +418,7 @@ TEST_F(SimpleCommandsTest, Plugin)
     lmp->input->one(fmt::format(loadfmt, bindir, "hello"));
     auto text = ::testing::internal::GetCapturedStdout();
     if (verbose) std::cout << text;
-    ASSERT_THAT(text, ContainsRegex(".*Loading plugin: Hello world command.*"));
+    ASSERT_THAT(text, ContainsRegex(".*\n.*Loading plugin: Hello world command.*"));
 
     ::testing::internal::CaptureStdout();
     lmp->input->one(fmt::format(loadfmt, bindir, "xxx"));
