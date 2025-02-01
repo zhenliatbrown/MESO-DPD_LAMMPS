@@ -1,5 +1,4 @@
-LAMMPS (21 Nov 2023)
-OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+LAMMPS (19 Nov 2024 - Development - patch_19Nov2024-1172-g920337963b-modified)
   using 1 OpenMP thread(s) per MPI task
 # REAX potential for high energy CHON systems
 # .....
@@ -13,7 +12,7 @@ Reading data file ...
   1 by 1 by 1 MPI processor grid
   reading atoms ...
   105 atoms
-  read_data CPU = 0.001 seconds
+  read_data CPU = 0.012 seconds
 
 pair_style      reaxff lmp_control
 pair_coeff      * * ffield.reax.rdx H C O N
@@ -70,7 +69,7 @@ Neighbor list info ...
   2 neighbor lists, perpetual/occasional/extra = 2 0 0
   (1) pair reaxff, perpetual
       attributes: half, newton off, ghost
-      pair build: half/bin/newtoff/ghost
+      pair build: half/bin/ghost/newtoff
       stencil: full/ghost/bin/3d
       bin: standard
   (2) fix qeq/reax, perpetual, copy from (1)
@@ -111,20 +110,20 @@ Per MPI rank memory allocation (min/avg/max) = 16.3 | 16.3 | 16.3 Mbytes
       2800   481.73908     -10082.193      0             -9932.852      -27.838881    
       2900   487.56555     -10082.752      0             -9931.6045      1772.2131    
       3000   510.30601     -10091.368      0             -9933.1706      1273.0501    
-Loop time of 5.35022 on 1 procs for 3000 steps with 105 atoms
+Loop time of 3.73297 on 1 procs for 3000 steps with 105 atoms
 
-Performance: 12.112 ns/day, 1.982 hours/ns, 560.725 timesteps/s, 58.876 katom-step/s
-99.7% CPU use with 1 MPI tasks x 1 OpenMP threads
+Performance: 17.359 ns/day, 1.383 hours/ns, 803.649 timesteps/s, 84.383 katom-step/s
+99.6% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 4.7927     | 4.7927     | 4.7927     |   0.0 | 89.58
-Neigh   | 0.15169    | 0.15169    | 0.15169    |   0.0 |  2.84
-Comm    | 0.011036   | 0.011036   | 0.011036   |   0.0 |  0.21
-Output  | 0.00080628 | 0.00080628 | 0.00080628 |   0.0 |  0.02
-Modify  | 0.3906     | 0.3906     | 0.3906     |   0.0 |  7.30
-Other   |            | 0.003436   |            |       |  0.06
+Pair    | 3.323      | 3.323      | 3.323      |   0.0 | 89.02
+Neigh   | 0.098934   | 0.098934   | 0.098934   |   0.0 |  2.65
+Comm    | 0.0060071  | 0.0060071  | 0.0060071  |   0.0 |  0.16
+Output  | 0.00048946 | 0.00048946 | 0.00048946 |   0.0 |  0.01
+Modify  | 0.30295    | 0.30295    | 0.30295    |   0.0 |  8.12
+Other   |            | 0.001559   |            |       |  0.04
 
 Nlocal:            105 ave         105 max         105 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -137,4 +136,4 @@ Total # of neighbors = 3065
 Ave neighs/atom = 29.190476
 Neighbor list builds = 300
 Dangerous builds not checked
-Total wall time: 0:00:05
+Total wall time: 0:00:03

@@ -1,6 +1,6 @@
-LAMMPS (29 Aug 2024 - Development - patch_29Aug2024-76-g3f232caf9b)
+LAMMPS (19 Nov 2024 - Development - patch_19Nov2024-1172-g920337963b-modified)
   using 1 OpenMP thread(s) per MPI task
-# QTPIE Water
+# ACKS2 Water, CITE: Achtyl et al., Nat. Comm., 6 6539 (2015)
 
 boundary        p p p
 units           real
@@ -12,7 +12,7 @@ Reading data file ...
   1 by 1 by 1 MPI processor grid
   reading atoms ...
   3000 atoms
-  read_data CPU = 0.055 seconds
+  read_data CPU = 0.009 seconds
 
 variable        x index 1
 variable        y index 1
@@ -29,14 +29,15 @@ Replication is creating a 1x1x1 = 1 times larger system...
   replicate CPU = 0.001 seconds
 
 pair_style      reaxff NULL safezone 3.0 mincap 150
-pair_coeff      * * qeq_ff.water O H
+pair_coeff      * * acks2_ff.water O H
+Reading potential file acks2_ff.water with DATE: 2021-09-21
 WARNING: Changed valency_val to valency_boc for X (src/REAXFF/reaxff_ffield.cpp:294)
 neighbor        0.5 bin
 neigh_modify    every 1 delay 0 check yes
 
 velocity all create 300.0 4928459 rot yes dist gaussian
 
-fix             1 all qtpie/reaxff 1 0.0 10.0 1.0e-6 reaxff gauss_exp.txt
+fix             1 all acks2/reaxff 1 0.0 10.0 1.0e-6 reaxff maxiter 1000
 fix             2 all nvt temp 300 300 50.0
 
 timestep        0.5
@@ -49,18 +50,6 @@ CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
 
 Your simulation uses code contributions which should be cited:
 
-- Type Label Framework: https://doi.org/10.1021/acs.jpcb.3c08419
-
-@Article{Gissinger24,
- author = {Jacob R. Gissinger, Ilia Nikiforov, Yaser Afshar, Brendon Waters, Moon-ki Choi, Daniel S. Karls, Alexander Stukowski, Wonpil Im, Hendrik Heinz, Axel Kohlmeyer, and Ellad B. Tadmor},
- title = {Type Label Framework for Bonded Force Fields in LAMMPS},
- journal = {J. Phys. Chem. B},
- year =    2024,
- volume =  128,
- number =  13,
- pages =   {3282–-3297}
-}
-
 - pair reaxff command: doi:10.1016/j.parco.2011.08.005
 
 @Article{Aktulga12,
@@ -71,6 +60,18 @@ Your simulation uses code contributions which should be cited:
  volume =  38,
  number =  {4--5},
  pages =   {245--259}
+}
+
+- fix acks2/reaxff command: doi:10.1137/18M1224684
+
+@Article{O'Hearn2020,
+ author = {K. A. {O'Hearn} and A. Alperen and H. M. Aktulga},
+ title = {Fast Solvers for Charge Distribution Models on Shared Memory Platforms},
+ journal = {SIAM J.\ Sci.\ Comput.},
+ year =    2020,
+ volume =  42,
+ number =  1,
+ pages =   {1--22}
 }
 
 CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
@@ -87,40 +88,40 @@ Neighbor list info ...
       pair build: half/bin/ghost/newtoff
       stencil: full/ghost/bin/3d
       bin: standard
-  (2) fix qtpie/reaxff, perpetual, copy from (1)
+  (2) fix acks2/reaxff, perpetual, copy from (1)
       attributes: half, newton off
       pair build: copy
       stencil: none
       bin: none
-Per MPI rank memory allocation (min/avg/max) = 539.2 | 539.2 | 539.2 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 574.5 | 574.5 | 574.5 Mbytes
    Step          Temp          Press         Density         Volume    
-         0   300            10138.375      1              29915.273    
-        10   295.97879      3575.2769      1              29915.273    
-        20   292.76583      10309.128      1              29915.273    
-Loop time of 10.8138 on 1 procs for 20 steps with 3000 atoms
+         0   300            1572.375       1              29915.273    
+        10   300.61529      8252.5531      1              29915.273    
+        20   294.73872      2502.6392      1              29915.273    
+Loop time of 8.11777 on 1 procs for 20 steps with 3000 atoms
 
-Performance: 0.080 ns/day, 300.383 hours/ns, 1.849 timesteps/s, 5.548 katom-step/s
-99.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+Performance: 0.106 ns/day, 225.494 hours/ns, 2.464 timesteps/s, 7.391 katom-step/s
+99.6% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 4.7177     | 4.7177     | 4.7177     |   0.0 | 43.63
-Neigh   | 0.17607    | 0.17607    | 0.17607    |   0.0 |  1.63
-Comm    | 0.0017295  | 0.0017295  | 0.0017295  |   0.0 |  0.02
-Output  | 8.5431e-05 | 8.5431e-05 | 8.5431e-05 |   0.0 |  0.00
-Modify  | 5.9177     | 5.9177     | 5.9177     |   0.0 | 54.72
-Other   |            | 0.0004911  |            |       |  0.00
+Pair    | 2.5199     | 2.5199     | 2.5199     |   0.0 | 31.04
+Neigh   | 0.084903   | 0.084903   | 0.084903   |   0.0 |  1.05
+Comm    | 0.00099846 | 0.00099846 | 0.00099846 |   0.0 |  0.01
+Output  | 8.0735e-05 | 8.0735e-05 | 8.0735e-05 |   0.0 |  0.00
+Modify  | 5.5116     | 5.5116     | 5.5116     |   0.0 | 67.90
+Other   |            | 0.0002721  |            |       |  0.00
 
 Nlocal:           3000 ave        3000 max        3000 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 Nghost:          11077 ave       11077 max       11077 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:         971830 ave      971830 max      971830 min
+Neighs:         971815 ave      971815 max      971815 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 971830
-Ave neighs/atom = 323.94333
+Total # of neighbors = 971815
+Ave neighs/atom = 323.93833
 Neighbor list builds = 2
 Dangerous builds = 0
-Total wall time: 0:00:12
+Total wall time: 0:00:08
