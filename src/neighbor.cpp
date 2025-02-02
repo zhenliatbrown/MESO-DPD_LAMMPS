@@ -2638,8 +2638,8 @@ void Neighbor::set(int narg, char **arg)
   } else if (strcmp(arg[1],"multi/old") == 0) {
     style = Neighbor::MULTI_OLD;
     if (me == 0)
-      error->warning(FLERR, "Neighbor list style 'multi/old' is deprecated "
-                     "and will be removed soon");
+      error->warning(FLERR, "Neighbor list style 'multi/old' is deprecated and will be removed "
+                     "soon.\nContact the LAMMPS developers if that creates problems for you.");
   } else error->all(FLERR, 1, "Unknown neighbor {} argument: {}", arg[0], arg[1]);
 
   if (style == Neighbor::MULTI_OLD && lmp->citeme) lmp->citeme->add(cite_neigh_multi_old);
