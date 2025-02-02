@@ -178,7 +178,8 @@ std::string utils::strfind(const std::string &text, const std::string &pattern)
 void utils::missing_cmd_args(const std::string &file, int line, const std::string &cmd,
                              Error *error)
 {
-  if (error) error->all(file, line, "Illegal {} command: missing argument(s)", cmd);
+  if (error)
+    error->all(file, line, Error::NOPOINTER, "Illegal {} command: missing argument(s)", cmd);
 }
 
 std::string utils::point_to_error(Input *input, int failed)
