@@ -95,14 +95,18 @@ A suitable build environment is provided with the
 https://download.lammps.org/static/fedora37_musl.sif container image.
 
 ``` sh
-wget https://download.lammps.org/static/fedora37_musl.sif
-apptainer shell fedora37_musl.sif
+rm -rf release-packages
+mkdir release-packages
+cd release-packages
+wget https://download.lammps.org/static/fedora41_musl.sif
+apptainer shell fedora41_musl.sif
 git clone -b release --depth 10 https://github.com/lammps/lammps.git lammps-release
-cmake -S lammps-release/cmake -B build-release -D CMAKE_INSTALL_PREFIX=$PWD/lammps-static -D CMAKE_TOOLCHAIN_FILE=/usr/musl/share/cmake/linux-musl.cmake -C lammps-release/cmake/presets/most.cmake -C lammps-release/cmake/presets/kokkos-openmp.cmake -D DOWNLOAD_POTENTIALS=OFF -D BUILD_MPI=OFF -D BUILD_TESTING=OFF -D CMAKE_BUILD_TYPE=Release -D PKG_ATC=ON -D PKG_AWPMD=ON -D PKG_MANIFOLD=ON -D PKG_MESONT=ON -D PKG_MGPT=ON -D PKG_ML-PACE=ON -D PKG_ML-RANN=ON -D PKG_MOLFILE=ON -D PKG_PTM=ON -D PKG_QTB=ON -D PKG_SMTBQ=ON
-cmake --build build-release --target all --parallel 16
+cmake -S lammps-release/cmake -B build-release -G Ninja -D CMAKE_INSTALL_PREFIX=$PWD/lammps-static -D CMAKE_TOOLCHAIN_FILE=/usr/musl/share/cmake/linux-musl.cmake -C lammps-release/cmake/presets/most.cmake -C lammps-release/cmake/presets/kokkos-openmp.cmake -D DOWNLOAD_POTENTIALS=OFF -D BUILD_MPI=OFF -D BUILD_TESTING=OFF -D CMAKE_BUILD_TYPE=Release -D PKG_ATC=ON -D PKG_AWPMD=ON -D PKG_MANIFOLD=ON -D PKG_MESONT=ON -D PKG_MGPT=ON -D PKG_ML-PACE=ON -D PKG_ML-RANN=ON -D PKG_MOLFILE=ON -D PKG_PTM=ON -D PKG_QTB=ON -D PKG_SMTBQ=ON
+cmake --build build-release --target all
 cmake --build build-release --target install
 /usr/musl/bin/x86_64-linux-musl-strip lammps-static/bin/*
 tar -czvvf lammps-linux-x86_64-19Nov2024.tar.gz lammps-static
+exit # fedora 41 container
 ```
 
 The resulting tar archive can be uploaded to the GitHub release page with:
@@ -111,12 +115,36 @@ The resulting tar archive can be uploaded to the GitHub release page with:
 gh release upload patch_19Nov2024 lammps-linux-x86_64-19Nov2024.tar.gz
 ```
 
+Make sure you have the `flatpak` and `flatpak-builder` packages
+installed locally (they cannot be used from the container) and build a
+LAMMPS and LAMMPS-GUI flatpak bundle in the `release-packages` folder
+with:
+
+``` sh
+flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak-builder  --force-clean --verbose --repo=$PWD/flatpak-repo --install-deps-from=flathub --state-dir=$PWD --user --ccache --default-branch=release flatpak-build lammps-release/tools/lammps-gui/org.lammps.lammps-gui.yml
+flatpak build-bundle --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo --verbose $PWD/flatpak-repo LAMMPS-Linux-x86_64-GUI-19Nov2024.flatpak org.lammps.lammps-gui release
+```
+
+The resulting flatpak bundle file can be uploaded to the GitHub release page with:
+
+```
+gh release upload patch_19Nov2024 LAMMPS-Linux-x86_64-GUI-19Nov2024.flatpak
+```
+
 Also build serial executable packages that also include LAMMPS-GUI for
 Linux, macOS, and Windows, and upload them to the GitHub release.
 
+Clean up:
+
+``` sh
+cd ..
+rm -r release-packages
+```
+
 TODO:
-- update container image to a more recent Fedora version and include libcurl-devel openssl-devel flatpak
-- add detailed commands for building GUI packages on Ubuntu 20.04LTS (move to 22.04LTS?), macOS, Windows cross-compiler, flatpak and upload to GitHub
+- add detailed commands for building GUI packages on Ubuntu 20.04LTS (move to 22.04LTS?),
+  macOS, and Windows cross-compiler and upload to GitHub
 - build all Windows cross-compiled installer packages using lammps-packages repo
 
 ### Update download website
