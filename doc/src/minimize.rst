@@ -89,7 +89,7 @@ be more robust than previous line searches we have tried.  The
 backtracking method is described in Nocedal and Wright's Numerical
 Optimization (Procedure 3.1 on p 41).
 
-The :doc:`minimization styles <min_style>` *quickmin*, and *fire*
+The :doc:`minimization styles <min_style>` *quickmin* and *fire*
 perform damped dynamics using an Euler integration step.  Thus
 they require a :doc:`timestep <timestep>` be defined.
 
