@@ -322,8 +322,23 @@ excessively grown the simulation box.
 Incorrect args for pair coefficients
 ------------------------------------
 
-The parameters in the :doc:`pair_coeff <pair_coeff>`, command for a specified :doc:`pair_style <pair_style>`
-have a missing or erroneous argument. Outside of normal typos, this error can have several sources. In all cases, the first step is to compare one's code to the expected format relevant :doc:`pair_style <pair_style>` page. This can uncover cases where a pair style was changed, but the pair coefficients were not updated. This can happen especially with pair style variants such as :doc:`pair_style eam <pair_style>` vs. :doc:`pair_style eam/alloy <pair_style>` that are very similar but accept different numbers of coefficients. Note also that using multiple pair styles with commands such as :doc:`pair_style hybrid <pair_hybrid>`. Using hybrid pair styles requires adding an extra "label" argument in the :doc:`pair_coeff <pair_coeff>` commands that designates which pair style the command line refers to. Other errors might require a close look at files that are read in by the input script, such as data files or restart files.
+The parameters in the :doc:`pair_coeff <pair_coeff>`, command for a specified
+:doc:`pair_style <pair_style>` have a missing or erroneous argument. Outside of
+normal typos, this error can have several sources. In all cases, the first step
+is to compare the command arguments to the expected format found in the
+corresponding :doc:`pair_style <pair_style>` page. This can reveal cases where,
+for example, a pair style was changed, but the pair coefficients were not
+updated. This can happen especially with pair style variants such as
+:doc:`pair_style eam <pair_eam>` vs. :doc:`pair_style eam/alloy <pair_style>`
+that look very similar but accept different parameters (the latter 'eam/alloy'
+variant takes element type names while 'eam' does not).
+
+Another common source of coefficient errors is when using multiple pair styles
+with commands such as :doc:`pair_style hybrid <pair_hybrid>`. Using hybrid pair
+styles requires adding an extra "label" argument in the coefficient commands
+that designates which pair style the command line refers to, and may require
+different arguments per pair style. Other errors might require a close look at
+files that are read in by the input script, such as data files or restart files.
 
 .. _err0024:
 
