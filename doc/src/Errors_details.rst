@@ -15,6 +15,7 @@ following are discussions of such cases.
 - :ref:`Too many neighbor bins <err0009>`
 - :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0015>`
 - :ref:`Domain too large for neighbor bins <err0017>`
+- :ref:`Incorrect args for pair coefficients <err0021>`
 - :ref:`Molecule topology/atom exceeds system topology/atom <err0024>`
 - :ref:`Molecule topology type exceeds system topology type <err0025>`
 - :ref:`Molecule attributes do not match system attributes <err0026>`
@@ -315,6 +316,14 @@ be used. Too many neighbor bins would need to be created to fill space
 Most likely, one or more atoms have been blown out of the simulation
 box to a great distance or a fix (like fix deform or a barostat) has
 excessively grown the simulation box.
+
+.. _err0021:
+
+Incorrect args for pair coefficients
+------------------------------------
+
+The parameters in the :doc:`pair_coeff <pair_coeff>`, command for a specified :doc:`pair_style <pair_style>`
+have a missing or erroneous argument. Outside of normal typos, this error can have several sources. In all cases, the first step is to compare one's code to the expected format relevant :doc:`pair_style <pair_style>` page. This can uncover cases where a pair style was changed, but the pair coefficients were not updated. This can happen especially with pair style variants such as :doc:`pair_style eam <pair_style>` vs. :doc:`pair_style eam/alloy <pair_style>` that are very similar but accept different numbers of coefficients. Note also that using multiple pair styles with commands such as :doc:`pair_style hybrid <pair_hybrid>`. Using hybrid pair styles requires adding an extra "label" argument in the :doc:`pair_coeff <pair_coeff>` commands that designates which pair style the command line refers to. Other errors might require a close look at files that are read in by the input script, such as data files or restart files.
 
 .. _err0024:
 
