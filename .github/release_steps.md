@@ -2,7 +2,7 @@
 
 The following notes chronicle the current steps for preparing and
 publishing LAMMPS releases.  For definitions of LAMMPS versions and
-releases mean, please refer to [the corresponding section in the LAMMPS
+releases, please refer to [the corresponding section in the LAMMPS
 manual](https://docs.lammps.org/Manual_version.html).
 
 ## LAMMPS Feature Release
