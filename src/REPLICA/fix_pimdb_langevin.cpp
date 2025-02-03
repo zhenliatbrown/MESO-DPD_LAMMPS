@@ -128,6 +128,7 @@ void FixPIMDBLangevin::compute_spring_energy() {
 
 void FixPIMDBLangevin::compute_t_prim()
 {
+    // CR: add communication to continue the langevin convention that the primitive is output the same in all beads
     t_prim = bosonic_exchange.prim_estimator();
 }
 
