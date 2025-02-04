@@ -65,9 +65,9 @@ special_bonds   lj 0.0 1.0 1.0 coul 1.0 1.0 1.0
 
 bond_style      bpm/spring/plastic break no smooth no
 bond_coeff      1 1.0 0 1.0 1.0
-bond_coeff      2 1.0 0 1.0 0.03
-bond_coeff      3 1.0 0 1.0 0.02
-bond_coeff      4 1.0 0 1.0 0.01
+bond_coeff      2 1.0 0 1.0 0.022
+bond_coeff      3 1.0 0 1.0 0.0185
+bond_coeff      4 1.0 0 1.0 0.017
 
 # apply load
 
@@ -76,9 +76,10 @@ region          load block EDGE EDGE 38.0 EDGE EDGE EDGE units box
 group           anchor region anchor
 group           load region load
 
+variable        fload equal ramp(0.0,-0.0005)
 fix             2 anchor setforce 0.0 0.0 0.0
-fix             3 load addforce 0.0 0.0 -0.0005
-fix             4 all viscous 0.001
+fix             3 load addforce 0.0 0.0 v_fload
+fix             4 all viscous 0.0016
 
 compute         zmin1 c1 reduce min z
 compute         zmin2 c2 reduce min z
@@ -86,11 +87,17 @@ compute         zmin3 c3 reduce min z
 compute         zmin4 c4 reduce min z
 
 thermo_style    custom step ke c_zmin1 c_zmin2 c_zmin3 c_zmin4
-#dump            1 all custom 200 atomDump id type x y z
+#dump            1 all custom 1000 atomDump id type x y z
 
+run             30000
+
+# hold load
+
+unfix           3
+fix             3 load addforce 0.0 0.0 -0.0005
 run             50000
 
 # remove load
 
 unfix           3
-run             50000
+run             60000
