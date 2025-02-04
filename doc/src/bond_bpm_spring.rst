@@ -215,7 +215,7 @@ for an overview of LAMMPS output options.
 The vector or array will be floating point values that correspond to
 the specified attribute.
 
-The potential energy and the single() function of this bond style returns
+The potential energy and the single() function of this bond style return
 :math:`k (r - r_0)^2 / 2` as a proxy of the energy of a bonded interaction,
 ignoring any volumetric/smoothing factors or dissipative forces.  The single()
 function also calculates an extra bond quantity, the initial distance
