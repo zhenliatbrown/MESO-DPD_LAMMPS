@@ -11,6 +11,10 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------
+   Contributing author: Joel Clemmer (SNL)
+------------------------------------------------------------------------- */
+
 #include "bond_bpm_rotational.h"
 
 #include "atom.h"
