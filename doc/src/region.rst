@@ -212,9 +212,8 @@ sphere/ellipsoid can be specified as an equal-style variable.  And for
 style *cylinder* the two center positions c1 and c2 for the location of
 the cylinder axes can be specified as a equal-style variable.  For styles
 *cone* and *plane* all properties can be defined via equal-style variables.
-For style *plane*, there is the restriction that all three components
-of the direction normal to the plane should be either constant or
-defined via equal-style variables.
+For style *plane*, the components of the direction vector normal to plane
+should be either all constants or all defined by equal-style variables.
 
 If the value is a variable, it should be specified as v_name, where
 name is the variable name.  In this case, the variable will be
