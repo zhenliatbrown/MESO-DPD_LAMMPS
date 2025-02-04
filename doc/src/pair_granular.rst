@@ -258,7 +258,7 @@ in damping model.
 
 The definition of multiple *mdr* models in the *pair_style* is currently not
 supported. Similarly, the *mdr* model cannot be combined with a different normal
-model in the *pair_style*. Physically this means that only one homogenous
+model in the *pair_style*. Physically this means that only one homogeneous
 collection of particles governed by a single *mdr* model is allowed.
 
 The *mdr* model currently only supports *fix wall/gran/region*, not
@@ -303,6 +303,7 @@ radius in the *mdr* model, the keyword/arg pair *cutoff radius* must be specifie
    simulation involving 200 particles named *in.tableting.200*.
    The second is a triaxial compaction simulation involving 12
    particles named *in.triaxial.compaction.12*.
+
 ----------
 
 In addition, the normal force is augmented by a damping term of the
@@ -941,16 +942,16 @@ particle I. The next entry (8) is the magnitude of the rolling torque.
 The next entry (9) is the magnitude of the twisting torque acting
 about the vector connecting the two particle centers.
 The next 3 (10-12) are the components of the vector connecting
-the centers of the two particles (x_I - x_J). If a granular submodel
-calculates additional contact information (e.g. the heat submodels
+the centers of the two particles (x_I - x_J). If a granular sub-model
+calculates additional contact information (e.g. the heat sub-models
 calculate the amount of heat exchanged), these quantities are appended
-to the end of this list. First, any extra values from the normal submodel
+to the end of this list. First, any extra values from the normal sub-model
 are appended followed by the damping, tangential, rolling, twisting, then
-heat models. See the descriptions of specific granular submodels above
+heat models. See the descriptions of specific granular sub-models above
 for information on any extra quantities. If two or more models are
 defined by pair coefficients, the size of the array is set by the
 maximum number of extra quantities in a model but the order of quantities
-is determined by each model's specific set of submodels. Any unused
+is determined by each model's specific set of sub-models. Any unused
 quantities are zeroed.
 
 These extra quantities can be accessed by the :doc:`compute pair/local <compute_pair_local>` command, as *p1*, *p2*, ...,
@@ -1037,7 +1038,7 @@ reduction. Journal of the Mechanics and Physics of Solids, 183, 105492.
 
 **(Zunker and Kamrin, 2024)** Zunker, W., & Kamrin, K. (2024).
 A mechanically-derived contact model for adhesive elastic-perfectly
-plastic particles, Part II: Contact under high compaction—modeling
+plastic particles, Part II: Contact under high compaction-modeling
 a bulk elastic response. Journal of the Mechanics and Physics of Solids,
 183, 105493.
 
@@ -1046,7 +1047,7 @@ a bulk elastic response. Journal of the Mechanics and Physics of Solids,
 **(Zunker et al, 2025)** Zunker, W., Dunatunga, S., Thakur, S.,
 Tang, P., & Kamrin, K. (2025). Experimentally validated DEM for large
 deformation powder compaction: mechanically-derived contact model and
-screening of non-physical contacts. engrXiv.
+screening of non-physical contacts.
 
 .. _Luding2008:
 
