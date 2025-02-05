@@ -226,6 +226,21 @@ keywords for the simulation box parameters and timestep and elapsed
 time.  Thus it is easy to specify a time-dependent radius or have
 a time dependent position of the sphere or cylinder region.
 
+.. note::
+
+   Whenever a region property, such as a coordinate or an upper/lower
+   bound, is defined via an equal-style variable, it must be ensured
+   that the variable does not cause any of the region boundaries to move
+   too far within a single timestep. Otherwise, bad dynamics will occur.
+   By too far it is meant a small fraction of the approximate distance of
+   closest approach between two particles, which for the case of Lennard-Jones
+   particles is the distance of the energy minimum while for granular
+   particles it is their diameter. An example is a rapidly varying direction
+   vector in region plane since a small change in the normal to plane will
+   shift the region surface far away from the region point by a large displacement.
+   Similarly, bad dynamics can also occur for fast changing variables employed
+   in the move/rotate options.
+
 See the :doc:`Howto tricilinc <Howto_triclinic>` page for a
 geometric description of triclinic boxes, as defined by LAMMPS, and
 how to transform these parameters to and from other commonly used
