@@ -28,9 +28,9 @@ Create a 'next\_release' branch off 'develop' and make the following changes:
   ..versionadded:: or ..versionchanged:: are missing and need to be
   added
 
-Submit this pull request, rebase if needed.  This is the last pull
-request merged for the release and should not contain any other
-changes. (Exceptions: this document, last minute trivial(!) changes).
+Submit this pull request.  This is the last pull request merged for the
+release and should not contain any other changes. (Exceptions: this
+document, last minute trivial(!) changes).
 
 This PR shall not be merged before **all** pending tests have completed
 and cleared.  We currently use a mix of automated tests running on
