@@ -232,7 +232,7 @@ a time dependent position of the sphere or cylinder region.
    bound, is defined via an equal-style variable, the variable should
    not cause any of the region boundaries to move
    too far within a single timestep. Otherwise, bad dynamics will occur.
-   By too far it is meant a small fraction of the approximate distance of
+   "Too far" means a small fraction of the approximate distance of
    closest approach between two particles, which for the case of Lennard-Jones
    particles is the distance of the energy minimum while for granular
    particles it is their diameter. An example is a rapidly varying direction
