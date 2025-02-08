@@ -93,8 +93,8 @@ void Region2VMD::write_region(FILE *fp, Region *region)
         "set gfxmol [mol new]\nmol top $gfxmol\n",
         fp);
   utils::print(fp, "mol rename $gfxmol {{LAMMPS region {}}}\n", region->id);
-  fputs("# set color to desired value. Use 'gray' by default\n"
-        "graphics $gfxmol color gray\n",
+  fputs("# set color to desired value. Use 'silver' by default\n"
+        "graphics $gfxmol color silver\n",
         fp);
   fputs("# set material to desired choice\n"
         "graphics $gfxmol material Transparent\n",
