@@ -23,6 +23,8 @@ Examples
 Description
 """""""""""
 
+.. versionadded:: TBD
+
 Write a `VMD <https:://ks.uiuc.edu/Research/vmd/>`_ Tcl script file with
 commands that aim to create a visualization of :doc:`LAMMPS regions
 <region>`.  There may be multiple region visualizations stored in a
