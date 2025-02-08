@@ -229,8 +229,8 @@ a time dependent position of the sphere or cylinder region.
 .. note::
 
    Whenever a region property, such as a coordinate or an upper/lower
-   bound, is defined via an equal-style variable, it must be ensured
-   that the variable does not cause any of the region boundaries to move
+   bound, is defined via an equal-style variable, the variable should
+   not cause any of the region boundaries to move
    too far within a single timestep. Otherwise, bad dynamics will occur.
    By too far it is meant a small fraction of the approximate distance of
    closest approach between two particles, which for the case of Lennard-Jones
