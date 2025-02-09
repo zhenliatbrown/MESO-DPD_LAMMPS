@@ -155,10 +155,20 @@ void Region2VMD::write_region(FILE *fp, Region *region)
 {
   if (!fp || !region) return;
 
-  if (region->dynamic_check()) {
-    utils::logmesg(lmp, "Cannot (yet) handle moving or rotating regions {}. Skipping... ",
-                   region->id);
+  if (region->rotateflag) {
+    utils::logmesg(lmp, "Cannot (yet) handle rotating region {}. Skipping... ", region->id);
     return;
+  }
+
+  // compute position offset for moving regions
+
+  double dx = 0.0;
+  double dy = 0.0;
+  double dz = 0.0;
+  if (region->moveflag) {
+    dx = region->dx;
+    dy = region->dy;
+    dz = region->dz;
   }
 
   // translate compatible regions to VMD graphics primitives, skip others.
@@ -170,20 +180,25 @@ void Region2VMD::write_region(FILE *fp, Region *region)
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'block'", region->id);
     } else {
       // a block is represented by 12 triangles
+      // comment out VMD command when side is open
       utils::print(fp,
-                   "draw triangle {{{0} {2} {4}}} {{{0} {2} {5}}} {{{0} {3} {4}}}\n"
-                   "draw triangle {{{0} {3} {4}}} {{{0} {3} {5}}} {{{0} {2} {5}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{0} {2} {5}}} {{{1} {2} {4}}}\n"
-                   "draw triangle {{{1} {2} {4}}} {{{1} {2} {5}}} {{{0} {2} {5}}}\n"
-                   "draw triangle {{{1} {2} {4}}} {{{1} {2} {5}}} {{{1} {3} {4}}}\n"
-                   "draw triangle {{{1} {3} {4}}} {{{1} {3} {5}}} {{{1} {2} {5}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{1} {3} {4}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{0} {3} {4}}} {{{1} {3} {4}}}\n"
-                   "draw triangle {{{0} {2} {5}}} {{{1} {2} {5}}} {{{1} {3} {5}}}\n"
-                   "draw triangle {{{0} {2} {5}}} {{{0} {3} {5}}} {{{1} {3} {5}}}\n"
-                   "draw triangle {{{0} {3} {4}}} {{{0} {3} {5}}} {{{1} {3} {5}}}\n"
-                   "draw triangle {{{0} {3} {4}}} {{{1} {3} {4}}} {{{1} {3} {5}}}\n",
-                   block->xlo, block->xhi, block->ylo, block->yhi, block->zlo, block->zhi);
+                   "{6}draw triangle {{{0} {2} {4}}} {{{0} {2} {5}}} {{{0} {3} {4}}}\n"
+                   "{6}draw triangle {{{0} {3} {4}}} {{{0} {3} {5}}} {{{0} {2} {5}}}\n"
+                   "{8}draw triangle {{{0} {2} {4}}} {{{0} {2} {5}}} {{{1} {2} {4}}}\n"
+                   "{8}draw triangle {{{1} {2} {4}}} {{{1} {2} {5}}} {{{0} {2} {5}}}\n"
+                   "{7}draw triangle {{{1} {2} {4}}} {{{1} {2} {5}}} {{{1} {3} {4}}}\n"
+                   "{7}draw triangle {{{1} {3} {4}}} {{{1} {3} {5}}} {{{1} {2} {5}}}\n"
+                   "{10}draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{1} {3} {4}}}\n"
+                   "{10}draw triangle {{{0} {2} {4}}} {{{0} {3} {4}}} {{{1} {3} {4}}}\n"
+                   "{11}draw triangle {{{0} {2} {5}}} {{{1} {2} {5}}} {{{1} {3} {5}}}\n"
+                   "{11}draw triangle {{{0} {2} {5}}} {{{0} {3} {5}}} {{{1} {3} {5}}}\n"
+                   "{9}draw triangle {{{0} {3} {4}}} {{{0} {3} {5}}} {{{1} {3} {5}}}\n"
+                   "{9}draw triangle {{{0} {3} {4}}} {{{1} {3} {4}}} {{{1} {3} {5}}}\n",
+                   block->xlo + dx, block->xhi + dx, block->ylo + dy, block->yhi + dy,
+                   block->zlo + dz, block->zhi + dz, block->open_faces[0] ? "# " : "",
+                   block->open_faces[1] ? "# " : "", block->open_faces[2] ? "# " : "",
+                   block->open_faces[3] ? "# " : "", block->open_faces[4] ? "# " : "",
+                   block->open_faces[5] ? "# " : "");
     }
 
   } else if (regstyle == "cone") {
@@ -191,30 +206,32 @@ void Region2VMD::write_region(FILE *fp, Region *region)
     if (!cone) {
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'cone'", region->id);
     } else {
+      if (cone->open_faces[0] || cone->open_faces[1])
+        error->warning(FLERR, "Drawing open-faced cones is not supported");
       // The VMD cone primitive requires one radius set to zero
       if (cone->radiuslo < SMALL) {
         // a VMD cone uses a single cone primitive
         if (cone->axis == 'x') {
           utils::print(fp, "draw cone {{{1} {2} {3}}} {{{0} {2} {3}}} radius {4} resolution 20\n",
-                       cone->lo, cone->hi, cone->c1, cone->c2, cone->radiushi);
+                       cone->lo + dx, cone->hi + dx, cone->c1 + dy, cone->c2 + dz, cone->radiushi);
         } else if (cone->axis == 'y') {
           utils::print(fp, "draw cone {{{2} {1} {3}}} {{{2} {0} {3}}} radius {4} resolution 20\n",
-                       cone->lo, cone->hi, cone->c1, cone->c2, cone->radiushi);
+                       cone->lo + dy, cone->hi + dy, cone->c1 + dx, cone->c2 + dz, cone->radiushi);
         } else if (cone->axis == 'z') {
           utils::print(fp, "draw cone {{{2} {3} {1}}} {{{2} {3} {0}}} radius {4} resolution 20\n",
-                       cone->lo, cone->hi, cone->c1, cone->c2, cone->radiushi);
+                       cone->lo + dz, cone->hi + dz, cone->c1 + dx, cone->c2 + dy, cone->radiushi);
         }
       } else if (cone->radiushi < SMALL) {
         // a VMD cone uses a single cone primitive
         if (cone->axis == 'x') {
           utils::print(fp, "draw cone {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20\n",
-                       cone->lo, cone->hi, cone->c1, cone->c2, cone->radiuslo);
+                       cone->lo + dx, cone->hi + dx, cone->c1 + dy, cone->c2 + dz, cone->radiuslo);
         } else if (cone->axis == 'y') {
           utils::print(fp, "draw cone {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20\n",
-                       cone->lo, cone->hi, cone->c1, cone->c2, cone->radiuslo);
+                       cone->lo + dy, cone->hi + dy, cone->c1 + dx, cone->c2 + dz, cone->radiuslo);
         } else if (cone->axis == 'z') {
           utils::print(fp, "draw cone {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20\n",
-                       cone->lo, cone->hi, cone->c1, cone->c2, cone->radiuslo);
+                       cone->lo + dz, cone->hi + dz, cone->c1 + dx, cone->c2 + dy, cone->radiuslo);
         }
       } else {
         utils::logmesg(lmp,
@@ -227,16 +244,31 @@ void Region2VMD::write_region(FILE *fp, Region *region)
     if (!cylinder) {
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'cylinder'", region->id);
     } else {
+      std::string filled = "yes";
+      if (cylinder->open_faces[0] && cylinder->open_faces[1]) {
+        filled = "no";
+      } else if (cylinder->open_faces[0] != cylinder->open_faces[1]) {
+        error->warning(FLERR, "Drawing partially open-faced cylinders is not supported by VMD");
+      }
       // a cylinder uses a single cylinder primitive
       if (cylinder->axis == 'x') {
-        utils::print(fp, "draw cylinder {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20\n",
-                     cylinder->lo, cylinder->hi, cylinder->c1, cylinder->c2, cylinder->radius);
+        utils::print(
+            fp,
+            "draw cylinder {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20 filled {5}\n",
+            cylinder->lo + dx, cylinder->hi + dx, cylinder->c1 + dy, cylinder->c2 + dz,
+            cylinder->radius, filled);
       } else if (cylinder->axis == 'y') {
-        utils::print(fp, "draw cylinder {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20\n",
-                     cylinder->lo, cylinder->hi, cylinder->c1, cylinder->c2, cylinder->radius);
+        utils::print(
+            fp,
+            "draw cylinder {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20 filled {5}\n",
+            cylinder->lo + dy, cylinder->hi + dy, cylinder->c1 + dx, cylinder->c2 + dz,
+            cylinder->radius, filled);
       } else if (cylinder->axis == 'z') {
-        utils::print(fp, "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20\n",
-                     cylinder->lo, cylinder->hi, cylinder->c1, cylinder->c2, cylinder->radius);
+        utils::print(
+            fp,
+            "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20 filled {5}\n",
+            cylinder->lo + dz, cylinder->hi + dz, cylinder->c1 + dx, cylinder->c2 + dy,
+            cylinder->radius, filled);
       }
     }
 
@@ -246,24 +278,28 @@ void Region2VMD::write_region(FILE *fp, Region *region)
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'prism'", region->id);
     } else {
       // a prism is represented by 12 triangles
+      // comment out VMD command when side is open
       utils::print(fp,
-                   "draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{7} {3} {4}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{6} {3} {4}}} {{{7} {3} {4}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{8} {9} {5}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{10} {9} {5}}} {{{8} {9} {5}}}\n"
-                   "draw triangle {{{1} {2} {4}}} {{{8} {9} {5}}} {{{7} {3} {4}}}\n"
-                   "draw triangle {{{11} {12} {5}}} {{{8} {9} {5}}} {{{7} {3} {4}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{6} {3} {4}}} {{{13} {12} {5}}}\n"
-                   "draw triangle {{{0} {2} {4}}} {{{10} {9} {5}}} {{{13} {12} {5}}}\n"
-                   "draw triangle {{{10} {9} {5}}} {{{8} {9} {5}}} {{{11} {12} {5}}}\n"
-                   "draw triangle {{{10} {9} {5}}} {{{13} {12} {5}}} {{{11} {12} {5}}}\n"
-                   "draw triangle {{{6} {3} {4}}} {{{7} {3} {4}}} {{{11} {12} {5}}}\n"
-                   "draw triangle {{{6} {3} {4}}} {{{13} {12} {5}}} {{{11} {12} {5}}}\n",
+                   "{14}draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{7} {3} {4}}}\n"
+                   "{14}draw triangle {{{0} {2} {4}}} {{{6} {3} {4}}} {{{7} {3} {4}}}\n"
+                   "{16}draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{8} {9} {5}}}\n"
+                   "{16}draw triangle {{{0} {2} {4}}} {{{10} {9} {5}}} {{{8} {9} {5}}}\n"
+                   "{19}draw triangle {{{1} {2} {4}}} {{{8} {9} {5}}} {{{7} {3} {4}}}\n"
+                   "{19}draw triangle {{{11} {12} {5}}} {{{8} {9} {5}}} {{{7} {3} {4}}}\n"
+                   "{18}draw triangle {{{0} {2} {4}}} {{{6} {3} {4}}} {{{13} {12} {5}}}\n"
+                   "{18}draw triangle {{{0} {2} {4}}} {{{10} {9} {5}}} {{{13} {12} {5}}}\n"
+                   "{15}draw triangle {{{10} {9} {5}}} {{{8} {9} {5}}} {{{11} {12} {5}}}\n"
+                   "{15}draw triangle {{{10} {9} {5}}} {{{13} {12} {5}}} {{{11} {12} {5}}}\n"
+                   "{17}draw triangle {{{6} {3} {4}}} {{{7} {3} {4}}} {{{11} {12} {5}}}\n"
+                   "{17}draw triangle {{{6} {3} {4}}} {{{13} {12} {5}}} {{{11} {12} {5}}}\n",
                    prism->xlo, prism->xhi, prism->ylo, prism->yhi, prism->zlo, prism->zhi,
                    prism->xlo + prism->xy, prism->xhi + prism->xy, prism->xhi + prism->xz,
                    prism->ylo + prism->yz, prism->xlo + prism->xz,
                    prism->xhi + prism->xy + prism->xz, prism->yhi + prism->yz,
-                   prism->xlo + prism->xy + prism->xz);
+                   prism->xlo + prism->xy + prism->xz, prism->open_faces[0] ? "# " : "",
+                   prism->open_faces[1] ? "# " : "", prism->open_faces[2] ? "# " : "",
+                   prism->open_faces[3] ? "# " : "", prism->open_faces[4] ? "# " : "",
+                   prism->open_faces[5] ? "# " : "");
     }
 
   } else if (regstyle == "sphere") {

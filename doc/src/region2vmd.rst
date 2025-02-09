@@ -36,9 +36,8 @@ Description
 .. versionadded:: TBD
 
 Write a `VMD <https:://ks.uiuc.edu/Research/vmd/>`_ Tcl script file with
-commands that aim to create a visualization of :doc:`LAMMPS regions
-<region>`.  There may be multiple region visualizations stored in a
-single file.
+commands that aim to create a visualization of :doc:`regions <region>`.
+There may be multiple region visualizations stored in a single file.
 
 The visualization is implemented by creating a new (and empty) "VMD
 molecule" and then assigning a sequence of VMD graphics primitives to
@@ -132,8 +131,8 @@ pre-defined:
    * RTChrome
 
 The *command* keyword must be followed by a VMD script command as a
-single string in quotes.  This command will be directly inserted into
-the created VMD script.
+single string in quotes.  This VMD command will be directly inserted
+into the created VMD script.
 
 The created file can be loaded into VMD either from the command line
 with the '-e' flag, or from the command prompt with 'play <script
@@ -164,12 +163,18 @@ if LAMMPS was built with that package.  See the :doc:`Build package
 <Build_package>` page for more info.
 
 Only the following region styles are currently supported: *block*,
-*cone*, *cylinder*, *prism*, and *sphere*.  For region style *cone* one
-of the two radii must be zero, since the equivalent VMD graphics
-primitive does not support truncated cones.
+*cone*, *cylinder*, *prism*, and *sphere*. Regions formed from
+unions or intersections of regions are not supported.
 
-Moving or rotating regions as well as unions or intersecting regions are
-also currently not supported.
+For region style *cone* one of the two radii must be zero, since the
+equivalent VMD graphics primitive does not support truncated cones.
+Also the VMD graphics primitive does not support open cones.
+
+For region style *cylinder*, because of a restriction of the equivalent
+VMD graphics primitive, both ends of the cylinder must be open to draw
+an open cylinder, otherwise a closed cylinder is drawn.
+
+Rotating regions are not supported.
 
 Related commands
 """"""""""""""""
