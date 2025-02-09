@@ -27,20 +27,49 @@
 #include "region_cylinder.h"
 #include "region_sphere.h"
 
-#include <cmath>
+#include <cstring>
+#include <unordered_set>
 
 using namespace LAMMPS_NS;
 
 static constexpr double SMALL = 1.0e-10;
 
+static const std::unordered_set<std::string> vmdcolors{
+    "blue",    "red",      "gray",   "orange", "yellow",  "tan",    "silver",  "green",  "white",
+    "pink",    "cyan",     "purple", "lime",   "mauve",   "ochre",  "iceblue", "black",  "yellow2",
+    "yellow3", "green2",   "green3", "cyan2",  "cyan3",   "blue2",  "blue3",   "violet", "violet2",
+    "magenta", "magenta2", "red2",   "red3",   "orange2", "orange3"};
+
+static const std::unordered_set<std::string> vmdmaterials{
+    "Opaque",      "Transparent", "BrushedMetal", "Diffuse",     "Ghost",          "Glass1",
+    "Glass2",      "Glass3",      "Glossy",       "HardPlastic", "MetallicPastel", "Steel",
+    "Translucent", "Edgy",        "EdgyShiny",    "EdgyGlass",   "Goodsell",       "AOShiny",
+    "AOChalky",    "AOEdgy",      "BlownGlass",   "GlassBubble", "RTChrome"};
+
+// class that "owns" the file pointer and closes it when going out of scope.
+// this avoids a lot of redundant checks and calls.
+class AutoClose {
+ public:
+  AutoClose() = delete;
+  AutoClose(const AutoClose &) = delete;
+  AutoClose(const AutoClose &&) = delete;
+  explicit AutoClose(FILE *_fp) : fp(_fp) {};
+  ~AutoClose()
+  {
+    if (fp) fclose(fp);
+  }
+
+ private:
+  FILE *fp;
+};
+
 /* ---------------------------------------------------------------------- */
 
 void Region2VMD::command(int narg, char **arg)
 {
+  if (narg < 3) utils::missing_cmd_args(FLERR, "region2vmd", error);
+
   FILE *fp = nullptr;
-
-  if (narg < 2) utils::missing_cmd_args(FLERR, "region2vmd", error);
-
   if (comm->me == 0) {
     fp = fopen(arg[0], "w");
     if (fp == nullptr) {
@@ -52,21 +81,67 @@ void Region2VMD::command(int narg, char **arg)
     }
   }
 
-  for (int iarg = 1; iarg < narg; ++iarg) {
-    auto *region = domain->get_region_by_id(arg[iarg]);
-    if (!region) {
-      if (fp) fclose(fp);
-      error->all(FLERR, iarg, "Region {} does not exist", arg[iarg]);
+  // automatically close fp when fpowner goes out of scope
+  AutoClose fpowner(fp);
+
+  // defaults
+  std::string color = "silver";
+  std::string material = "Transparent";
+
+  int iarg = 1;
+  std::string thisarg = arg[iarg];
+  while (iarg < narg) {
+    if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "region2vmd", error);
+    thisarg = arg[iarg];
+    ++iarg;
+
+    if (thisarg == "color") {
+      color = arg[iarg];
+     if (const auto &search = vmdcolors.find(color); search == vmdcolors.end())
+        error->all(FLERR, iarg, "Color {} is not a known VMD color", color);
+
+    } else if (thisarg == "material") {
+      material = arg[iarg];
+      if (const auto &search = vmdmaterials.find(material); search == vmdmaterials.end())
+        error->all(FLERR, iarg, "Material {} is not a known VMD material", material);
+
+    } else if (thisarg == "command") {
+      if (fp) {
+        fputs("\n# custom command\n", fp);
+        fputs(arg[iarg], fp);
+        fputs("\n", fp);
+      }
+
+    } else if (thisarg == "region") {
+      auto *region = domain->get_region_by_id(arg[iarg]);
+      if (!region) {
+        error->all(FLERR, iarg, "Region {} does not exist", arg[iarg]);
+      } else {
+        if (fp) {
+          utils::logmesg(lmp, " writing region {} ...", region->id);
+          utils::print(fp, "\n# region {} of style {}\n", region->id, region->style);
+
+          fputs("# create new empty VMD molecule to store the graphics primitives\n"
+                "set gfxmol [mol new]\nmol top $gfxmol\n",
+                fp);
+          utils::print(fp, "mol rename $gfxmol {{LAMMPS region {}}}\n", region->id);
+          fputs("# set color and material\n", fp);
+          utils::print(fp, "graphics $gfxmol color {}\n", color);
+          utils::print(fp, "graphics $gfxmol material {}\n", material);
+          write_region(fp, region);
+        }
+      }
+
     } else {
-      write_region(fp, region);
+      error->all(FLERR, iarg - 1, "Unknown region2vmd keyword {}", thisarg);
     }
+    ++iarg;
   }
 
-  // done, close file
-  if (comm->me == 0) {
+  // done. file will be close automatically
+  if (fp) {
     // reset views and restore previous top molecule
-    fputs("display resetview\nif {$oldtop >= 0} {mol top $oldtop}\n", fp);
-    fclose(fp);
+    fputs("after idle {if {$oldtop >= 0} {mol top $oldtop}; display resetview}\n", fp);
   }
 }
 
@@ -80,25 +155,10 @@ void Region2VMD::write_region(FILE *fp, Region *region)
   if (!fp || !region) return;
 
   if (region->dynamic_check()) {
-    utils::logmesg(lmp, "Cannot (yet) handle moving or rotating region {}. Skipping... ",
+    utils::logmesg(lmp, "Cannot (yet) handle moving or rotating regions {}. Skipping... ",
                    region->id);
     return;
   }
-
-  // create a new (empty) VMD molecule to hold the graphics for this specific region.
-
-  utils::logmesg(lmp, " writing region {} ...", region->id);
-  utils::print(fp, "\n# region {} of style {}\n", region->id, region->style);
-  fputs("# create new empty VMD molecule to store the graphics primitives\n"
-        "set gfxmol [mol new]\nmol top $gfxmol\n",
-        fp);
-  utils::print(fp, "mol rename $gfxmol {{LAMMPS region {}}}\n", region->id);
-  fputs("# set color to desired value. Use 'silver' by default\n"
-        "graphics $gfxmol color silver\n",
-        fp);
-  fputs("# set material to desired choice\n"
-        "graphics $gfxmol material Transparent\n",
-        fp);
 
   // translate compatible regions to VMD graphics primitives, skip others.
 
@@ -108,9 +168,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
     if (!block) {
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'block'", region->id);
     } else {
-
       // a block is represented by 12 triangles
-
       utils::print(fp,
                    "draw triangle {{{0} {2} {4}}} {{{0} {2} {5}}} {{{0} {3} {4}}}\n"
                    "draw triangle {{{0} {3} {4}}} {{{0} {3} {5}}} {{{0} {2} {5}}}\n"
@@ -132,10 +190,9 @@ void Region2VMD::write_region(FILE *fp, Region *region)
     if (!cone) {
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'cone'", region->id);
     } else {
-
       // The VMD cone primitive requires one radius set to zero
       if (cone->radiuslo < SMALL) {
-        // a cone uses a single cone primitive
+        // a VMD cone uses a single cone primitive
         if (cone->axis == 'x') {
           utils::print(fp, "draw cone {{{1} {2} {3}}} {{{0} {2} {3}}} radius {4} resolution 20\n",
                        cone->lo, cone->hi, cone->c1, cone->c2, cone->radiushi);
@@ -147,7 +204,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
                        cone->lo, cone->hi, cone->c1, cone->c2, cone->radiushi);
         }
       } else if (cone->radiushi < SMALL) {
-        // a cone uses a single cone primitive
+        // a VMD cone uses a single cone primitive
         if (cone->axis == 'x') {
           utils::print(fp, "draw cone {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20\n",
                        cone->lo, cone->hi, cone->c1, cone->c2, cone->radiuslo);
@@ -163,6 +220,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
                        "Cannot (yet) translate a truncated cone to VMD graphics. Skipping...\n");
       }
     }
+
   } else if (regstyle == "cylinder") {
     const auto cylinder = dynamic_cast<RegCylinder *>(region);
     if (!cylinder) {
@@ -180,6 +238,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
                      cylinder->lo, cylinder->hi, cylinder->c1, cylinder->c2, cylinder->radius);
       }
     }
+
   } else if (regstyle == "sphere") {
     const auto sphere = dynamic_cast<RegSphere *>(region);
     if (!sphere) {
@@ -189,6 +248,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
       utils::print(fp, "draw sphere {{{} {} {}}} radius {} resolution 20\n", sphere->xc, sphere->yc,
                    sphere->zc, sphere->radius);
     }
+
   } else {
     utils::logmesg(lmp,
                    "Cannot (yet) translate region {} of style {} to VMD graphics. Skipping... ",
