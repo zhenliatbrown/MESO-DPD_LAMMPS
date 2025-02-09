@@ -164,9 +164,9 @@ if LAMMPS was built with that package.  See the :doc:`Build package
 <Build_package>` page for more info.
 
 Only the following region styles are currently supported: *block*,
-*cylinder*, *cone*, *sphere*.  For region style *cone* one of the two
-radii must be zero, since the equivalent VMD graphics primitive does not
-support truncated cones.
+*cone*, *cylinder*, *prism*, and *sphere*.  For region style *cone* one
+of the two radii must be zero, since the equivalent VMD graphics
+primitive does not support truncated cones.
 
 Moving or rotating regions as well as unions or intersecting regions are
 also currently not supported.

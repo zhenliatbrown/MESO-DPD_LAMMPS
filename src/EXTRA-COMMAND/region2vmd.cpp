@@ -25,6 +25,7 @@
 #include "region_block.h"
 #include "region_cone.h"
 #include "region_cylinder.h"
+#include "region_prism.h"
 #include "region_sphere.h"
 
 #include <cstring>
@@ -97,7 +98,7 @@ void Region2VMD::command(int narg, char **arg)
 
     if (thisarg == "color") {
       color = arg[iarg];
-     if (const auto &search = vmdcolors.find(color); search == vmdcolors.end())
+      if (const auto &search = vmdcolors.find(color); search == vmdcolors.end())
         error->all(FLERR, iarg, "Color {} is not a known VMD color", color);
 
     } else if (thisarg == "material") {
@@ -237,6 +238,32 @@ void Region2VMD::write_region(FILE *fp, Region *region)
         utils::print(fp, "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20\n",
                      cylinder->lo, cylinder->hi, cylinder->c1, cylinder->c2, cylinder->radius);
       }
+    }
+
+  } else if (regstyle == "prism") {
+    const auto prism = dynamic_cast<RegPrism *>(region);
+    if (!prism) {
+      error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'prism'", region->id);
+    } else {
+      // a prism is represented by 12 triangles
+      utils::print(fp,
+                   "draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{7} {3} {4}}}\n"
+                   "draw triangle {{{0} {2} {4}}} {{{6} {3} {4}}} {{{7} {3} {4}}}\n"
+                   "draw triangle {{{0} {2} {4}}} {{{1} {2} {4}}} {{{8} {9} {5}}}\n"
+                   "draw triangle {{{0} {2} {4}}} {{{10} {9} {5}}} {{{8} {9} {5}}}\n"
+                   "draw triangle {{{1} {2} {4}}} {{{8} {9} {5}}} {{{7} {3} {4}}}\n"
+                   "draw triangle {{{11} {12} {5}}} {{{8} {9} {5}}} {{{7} {3} {4}}}\n"
+                   "draw triangle {{{0} {2} {4}}} {{{6} {3} {4}}} {{{13} {12} {5}}}\n"
+                   "draw triangle {{{0} {2} {4}}} {{{10} {9} {5}}} {{{13} {12} {5}}}\n"
+                   "draw triangle {{{10} {9} {5}}} {{{8} {9} {5}}} {{{11} {12} {5}}}\n"
+                   "draw triangle {{{10} {9} {5}}} {{{13} {12} {5}}} {{{11} {12} {5}}}\n"
+                   "draw triangle {{{6} {3} {4}}} {{{7} {3} {4}}} {{{11} {12} {5}}}\n"
+                   "draw triangle {{{6} {3} {4}}} {{{13} {12} {5}}} {{{11} {12} {5}}}\n",
+                   prism->xlo, prism->xhi, prism->ylo, prism->yhi, prism->zlo, prism->zhi,
+                   prism->xlo + prism->xy, prism->xhi + prism->xy, prism->xhi + prism->xz,
+                   prism->ylo + prism->yz, prism->xlo + prism->xz,
+                   prism->xhi + prism->xy + prism->xz, prism->yhi + prism->yz,
+                   prism->xlo + prism->xy + prism->xz);
     }
 
   } else if (regstyle == "sphere") {
