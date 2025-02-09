@@ -428,7 +428,7 @@ void FixAdapt::init()
           for (i = ad->ilo; i <= ad->ihi; i++) {
             if (!bond->check_itype(i,bstyle))
               error->all(FLERR,"Fix adapt type bond range is not valid "
-                         "for pair hybrid sub-style {}", bstyle);
+                         "for bond hybrid sub-style {}", bstyle);
           }
         }
       }
@@ -462,7 +462,7 @@ void FixAdapt::init()
           for (i = ad->ilo; i <= ad->ihi; i++) {
             if (!angle->check_itype(i,astyle))
               error->all(FLERR,"Fix adapt type angle range is not valid "
-                         "for pair hybrid sub-style {}", astyle);
+                         "for angle hybrid sub-style {}", astyle);
           }
         }
       }
