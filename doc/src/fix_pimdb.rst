@@ -103,6 +103,8 @@ This potential does not include all :math:`N!` permutations, but samples the sam
 the potential is the one developed by Feldman and Hirshberg, which scales like :math:`N^2+PN` :ref:`(Feldman) <Feldman>`. 
 The forces are calculated as weighted averages over the representative permutations,
 through an algorithm that scales the same as the one for the potential calculation, :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
+The algorithm employs the minimum image convention to approximate the bosonic periodic boundary conditions. 
+An elaborate discussion of the validity of the approximation is available in :ref:`(Higer) <HigerFeldman>`.
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -176,6 +178,10 @@ temp = 298.15, thermostat = PILE_L, tau = 1.0, fixcom = yes, esynch = yes, and l
 .. _Feldman:
 
 **(Feldman)** Y. M. Y. Feldman and B. Hirshberg, “Quadratic scaling bosonic path integral molecular dynamics,” J. Chem. Phys. 159, 154107 (2023)
+
+.. _HigerFeldman:
+
+**(Higer)** J. Higer, Y. M. Y. Feldman, and B. Hirshberg, “Periodic Boundary Conditions for Bosonic Path Integral Molecular Dynamics,” arXiv:2501.17618 (2025)
 
 .. _HermanBB:
 
