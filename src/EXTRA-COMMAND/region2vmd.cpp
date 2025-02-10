@@ -25,6 +25,7 @@
 #include "region_block.h"
 #include "region_cone.h"
 #include "region_cylinder.h"
+#include "region_ellipsoid.h"
 #include "region_prism.h"
 #include "region_sphere.h"
 
@@ -47,6 +48,115 @@ static const std::unordered_set<std::string> vmdmaterials{
     "Glass2",      "Glass3",      "Glossy",       "HardPlastic", "MetallicPastel", "Steel",
     "Translucent", "Edgy",        "EdgyShiny",    "EdgyGlass",   "Goodsell",       "AOShiny",
     "AOChalky",    "AOEdgy",      "BlownGlass",   "GlassBubble", "RTChrome"};
+
+static constexpr char draw_ellipsoid_function[] =
+    "\n# VMD script code to emulate ellipsoids with trinorm graphics objects\n"
+    "proc vmd_draw_ellipsoid {mol level {center {0.0 0.0 0.0}} {radius {1.0 1.0 1.0}}} {\n"
+    "   set orient {1.0 0.0 0.0 0.0}\n"
+    "   set gid {}\n\n"
+    "   # vertices of an octahedron inscribed\n"
+    "   # in a sphere with radius 1.0.\n"
+    "   set vec1 {-1.0  0.0  0.0}\n"
+    "   set vec2 { 1.0  0.0  0.0}\n"
+    "   set vec3 { 0.0 -1.0  0.0}\n"
+    "   set vec4 { 0.0  1.0  0.0}\n"
+    "   set vec5 { 0.0  0.0 -1.0}\n"
+    "   set vec6 { 0.0  0.0  1.0}\n\n"
+    "   # build list of triangles representing\n"
+    "   # the octahedron. the points of the \n"
+    "   # triangles have to be given clockwise from\n"
+    "   # looking at the surface from the outside.\n"
+    "   set trilist [list \\\n"
+    "                [list $vec1 $vec4 $vec5] \\\n"
+    "                [list $vec5 $vec4 $vec2] \\\n"
+    "                [list $vec2 $vec4 $vec6] \\\n"
+    "                [list $vec6 $vec4 $vec1] \\\n"
+    "                [list $vec5 $vec3 $vec1] \\\n"
+    "                [list $vec2 $vec3 $vec5] \\\n"
+    "                [list $vec6 $vec3 $vec2] \\\n"
+    "                [list $vec1 $vec3 $vec6] ]\n\n"
+    "   # refinement iterations to approximate a sphere:\n"
+    "   # each triangle is split into 4 subtriangles\n"
+    "   #        p2\n"
+    "   #        /\\\n"
+    "   #       /  \\\n"
+    "   #    pb/____\\pc\n"
+    "   #     /\\    /\\\n"
+    "   #    /  \\  /  \\\n"
+    "   #   /____\\/____\\\n"
+    "   # p1     pa    p3\n\n"
+    "   # we construct vectors to the three midpoints and rescale\n"
+    "   # them to unit length. then build new triangles enumerating\n"
+    "   # the points in clockwise order again.\n"
+    "   for {set i 0} {$i < $level} {incr i} {\n"
+    "       set newlist {}\n"
+    "       foreach tri $trilist {\n"
+    "           foreach {p1 p2 p3} $tri {}\n"
+    "           set pa [vecnorm [vecadd $p1 $p3]]\n"
+    "           set pb [vecnorm [vecadd $p1 $p2]]\n"
+    "           set pc [vecnorm [vecadd $p2 $p3]]\n"
+    "           lappend newlist [list $p1 $pb $pa]\n"
+    "           lappend newlist [list $pb $p2 $pc]\n"
+    "           lappend newlist [list $pa $pb $pc]\n"
+    "           lappend newlist [list $pa $pc $p3]\n"
+    "       }\n"
+    "       set trilist $newlist\n"
+    "   }\n\n"
+    "   # compute vertex scaling factor to deform a sphere to an ellipsoid\n"
+    "   proc radscale {radius vector} {\n"
+    "       foreach {a b c} $radius {}\n"
+    "       foreach {x y z} $vector {}\n"
+    "       return [expr {sqrt(1.0/($x/$a*$x/$a+$y/$b*$y/$b+$z/$c*$z/$c))}]\n"
+    "   }\n\n"
+    "   # convert quaternion to rotation matrix\n"
+    "   proc quattorot {quat} {\n"
+    "       foreach {w x y z} $quat {}\n"
+    "       set norm [expr {$w*$w + $x*$x + $y*$y +$z*$z}]\n"
+    "       set sc 0.0\n"
+    "       if {$norm > 0.0} { set s [expr {2.0/$norm}] }\n"
+    "       set X [expr {$x*$s}]\n"
+    "       set Y [expr {$y*$s}]\n"
+    "       set Z [expr {$z*$s}]\n"
+    "       return [list \\\n"
+    "           [list [expr {1.0-($y*$y*$s + $z*$z*$s)}] \\\n"
+    "                 [expr {$x*$y*$s - $w*$z*$s}] \\\n"
+    "                 [expr {$x*$z*$s + $w*$y*$s}] ] \\\n"
+    "           [list [expr {$x*$y*$s + $w*$z*$s}] \\\n"
+    "                 [expr {1.0-($x*$x*$s + $z*$z*$s)}] \\\n"
+    "                 [expr {$y*$z*$s - $w*$x*$s}] ] \\\n"
+    "           [list [expr {$x*$z*$s - $w*$y*$s}] \\\n"
+    "                 [expr {$y*$z*$s + $w*$x*$s}] \\\n"
+    "                 [expr {1.0-($x*$x*$s + $y*$y*$s)}] ] ]\n"
+    "   }\n\n"
+    "   # apply rotation matrix to vector\n"
+    "   proc rotvec {mat vec} {\n"
+    "       set new {}\n"
+    "       foreach c $mat {\n"
+    "           lappend new [vecdot $c $vec]\n"
+    "       }\n"
+    "       return $new\n"
+    "   }\n\n"
+    "   foreach tri $trilist {\n"
+    "       foreach {vec1 vec2 vec3} $tri {}\n"
+    "       # rescale to desired radius\n"
+    "       set rad1 [radscale $radius $vec1]\n"
+    "       set rad2 [radscale $radius $vec2]\n"
+    "       set rad3 [radscale $radius $vec3]\n"
+    "       # get and apply rotation matrix\n"
+    "       set mat [quattorot $orient]\n"
+    "       set vec1 [rotvec $mat $vec1]\n"
+    "       set vec2 [rotvec $mat $vec2]\n"
+    "       set vec3 [rotvec $mat $vec3]\n"
+    "       # deform sphereoid and translate\n"
+    "       set pos1 [vecadd [vecscale $rad1 $vec1] $center]\n"
+    "       set pos2 [vecadd [vecscale $rad2 $vec2] $center]\n"
+    "       set pos3 [vecadd [vecscale $rad3 $vec3] $center]\n"
+    "       # since the original vectors to the vertices are those of\n"
+    "       # a unit sphere, we can use them directly as surface normals.\n"
+    "       lappend gid [graphics $mol trinorm $pos1 $pos2 $pos3 $vec1 $vec2 $vec3]\n"
+    "   }\n"
+    "   return $gid\n"
+    "}\n\n";
 
 // class that "owns" the file pointer and closes it when going out of scope.
 // this avoids a lot of redundant checks and calls.
@@ -89,6 +199,7 @@ void Region2VMD::command(int narg, char **arg)
   // defaults
   std::string color = "silver";
   std::string material = "Transparent";
+  bool def_ellipsoid_func = false;
 
   int iarg = 1;
   std::string thisarg = arg[iarg];
@@ -120,6 +231,11 @@ void Region2VMD::command(int narg, char **arg)
         error->all(FLERR, iarg, "Region {} does not exist", arg[iarg]);
       } else {
         if (fp) {
+          // add VMD / Tcl function to draw ellipsoids only once
+          if (!def_ellipsoid_func && (strcmp(region->style, "ellipsoid") == 0)) {
+            fputs(draw_ellipsoid_function, fp);
+            def_ellipsoid_func = true;
+          }
           utils::logmesg(lmp, " writing region {} ...", region->id);
           utils::print(fp, "\n# region {} of style {}\n", region->id, region->style);
 
@@ -339,6 +455,17 @@ void Region2VMD::write_region(FILE *fp, Region *region)
               cylinder->radius, filled);
         }
       }
+    }
+
+  } else if (regstyle == "ellipsoid") {
+    const auto ellipsoid = dynamic_cast<RegEllipsoid *>(region);
+    if (!ellipsoid) {
+      error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'ellipsoid'", region->id);
+    } else {
+      // for ellipsoid we use a custom VMD function that emulates it using trinorm primitives
+      utils::print(fp, "draw ellipsoid 3 {{{} {} {}}} {{{} {} {}}}\n", ellipsoid->xc + dx,
+                   ellipsoid->yc + dy, ellipsoid->zc + dz, ellipsoid->a, ellipsoid->b,
+                   ellipsoid->c);
     }
 
   } else if (regstyle == "prism") {

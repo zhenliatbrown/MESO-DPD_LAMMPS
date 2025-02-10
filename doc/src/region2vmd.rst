@@ -1,6 +1,6 @@
 .. index:: region2vmd
 
-region2cmd command
+region2vmd command
 ==================
 
 Syntax
@@ -163,8 +163,8 @@ if LAMMPS was built with that package.  See the :doc:`Build package
 <Build_package>` page for more info.
 
 Only the following region styles are currently supported: *block*,
-*cone*, *cylinder*, *prism*, and *sphere*. Regions formed from
-unions or intersections of regions are not supported.
+*cone*, *cylinder*, *ellipsoid*, *prism*, and *sphere*. Regions formed
+from unions or intersections of other regions are not supported.
 
 For region style *cone* one of the two radii must be zero, since the
 equivalent VMD graphics primitive does not support truncated cones.
