@@ -170,10 +170,6 @@ For region style *cone* one of the two radii must be zero, since the
 equivalent VMD graphics primitive does not support truncated cones.
 Also the VMD graphics primitive does not support open cones.
 
-For region style *cylinder*, because of a restriction of the equivalent
-VMD graphics primitive, both ends of the cylinder must be open to draw
-an open cylinder, otherwise a closed cylinder is drawn.
-
 Rotating regions are not supported.
 
 Related commands

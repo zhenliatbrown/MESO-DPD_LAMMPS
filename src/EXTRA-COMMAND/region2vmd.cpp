@@ -34,6 +34,7 @@
 using namespace LAMMPS_NS;
 
 static constexpr double SMALL = 1.0e-10;
+static constexpr double DELTA = 1.0e-5;
 
 static const std::unordered_set<std::string> vmdcolors{
     "blue",    "red",      "gray",   "orange", "yellow",  "tan",    "silver",  "green",  "white",
@@ -248,27 +249,95 @@ void Region2VMD::write_region(FILE *fp, Region *region)
       if (cylinder->open_faces[0] && cylinder->open_faces[1]) {
         filled = "no";
       } else if (cylinder->open_faces[0] != cylinder->open_faces[1]) {
-        error->warning(FLERR, "Drawing partially open-faced cylinders is not supported by VMD");
+        filled = "no";
+        // we put a single "lid" on an open cylinder by adding a filled cylinder of zero height
+        double lid = cylinder->lo;
+        if (cylinder->open_faces[0]) lid = cylinder->hi;
+        if (cylinder->axis == 'x') {
+          utils::print(fp,
+                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} resolution 20 "
+                       "filled yes\n",
+                       lid + dx, lid + dx + DELTA, cylinder->c1 + dy, cylinder->c2 + dz,
+                       cylinder->radius);
+        } else if (cylinder->axis == 'y') {
+          utils::print(fp,
+                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} resolution 20 "
+                       "filled yes\n",
+                       lid + dy, lid + dy + DELTA, cylinder->c1 + dx, cylinder->c2 + dz,
+                       cylinder->radius);
+        } else if (cylinder->axis == 'z') {
+          utils::print(fp,
+                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} resolution 20 "
+                       "filled yes\n",
+                       lid + dz, lid + dz + DELTA, cylinder->c1 + dx, cylinder->c2 + dy,
+                       cylinder->radius);
+        }
       }
-      // a cylinder uses a single cylinder primitive
-      if (cylinder->axis == 'x') {
-        utils::print(
-            fp,
-            "draw cylinder {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20 filled {5}\n",
-            cylinder->lo + dx, cylinder->hi + dx, cylinder->c1 + dy, cylinder->c2 + dz,
-            cylinder->radius, filled);
-      } else if (cylinder->axis == 'y') {
-        utils::print(
-            fp,
-            "draw cylinder {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20 filled {5}\n",
-            cylinder->lo + dy, cylinder->hi + dy, cylinder->c1 + dx, cylinder->c2 + dz,
-            cylinder->radius, filled);
-      } else if (cylinder->axis == 'z') {
-        utils::print(
-            fp,
-            "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20 filled {5}\n",
-            cylinder->lo + dz, cylinder->hi + dz, cylinder->c1 + dx, cylinder->c2 + dy,
-            cylinder->radius, filled);
+      if (cylinder->open_faces[2]) {
+        // need to handle two lids case only. Single lid is already done
+        if (!cylinder->open_faces[0] && !cylinder->open_faces[1]) {
+          if (cylinder->axis == 'x') {
+            utils::print(
+                fp,
+                "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} resolution 20 "
+                "filled yes\n",
+                cylinder->lo + dx, cylinder->lo + dx + DELTA, cylinder->c1 + dy, cylinder->c2 + dz,
+                cylinder->radius);
+            utils::print(
+                fp,
+                "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} resolution 20 "
+                "filled yes\n",
+                cylinder->hi + dx, cylinder->hi + dx + DELTA, cylinder->c1 + dy, cylinder->c2 + dz,
+                cylinder->radius);
+          } else if (cylinder->axis == 'y') {
+            utils::print(
+                fp,
+                "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} resolution 20 "
+                "filled yes\n",
+                cylinder->lo + dy, cylinder->lo + dy + DELTA, cylinder->c1 + dx, cylinder->c2 + dz,
+                cylinder->radius);
+            utils::print(
+                fp,
+                "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} resolution 20 "
+                "filled yes\n",
+                cylinder->hi + dy, cylinder->hi + dy + DELTA, cylinder->c1 + dx, cylinder->c2 + dz,
+                cylinder->radius);
+          } else if (cylinder->axis == 'z') {
+            utils::print(
+                fp,
+                "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} resolution 20 "
+                "filled yes\n",
+                cylinder->lo + dz, cylinder->lo + dz + DELTA, cylinder->c1 + dx, cylinder->c2 + dy,
+                cylinder->radius);
+            utils::print(
+                fp,
+                "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} resolution 20 "
+                "filled yes\n",
+                cylinder->hi + dz, cylinder->hi + dz + DELTA, cylinder->c1 + dx, cylinder->c2 + dy,
+                cylinder->radius);
+          }
+        }
+      } else {
+        // a cylinder uses a single cylinder primitive and possibly a single "lid"
+        if (cylinder->axis == 'x') {
+          utils::print(
+              fp,
+              "draw cylinder {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20 filled {5}\n",
+              cylinder->lo + dx, cylinder->hi + dx, cylinder->c1 + dy, cylinder->c2 + dz,
+              cylinder->radius, filled);
+        } else if (cylinder->axis == 'y') {
+          utils::print(
+              fp,
+              "draw cylinder {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20 filled {5}\n",
+              cylinder->lo + dy, cylinder->hi + dy, cylinder->c1 + dx, cylinder->c2 + dz,
+              cylinder->radius, filled);
+        } else if (cylinder->axis == 'z') {
+          utils::print(
+              fp,
+              "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20 filled {5}\n",
+              cylinder->lo + dz, cylinder->hi + dz, cylinder->c1 + dx, cylinder->c2 + dy,
+              cylinder->radius, filled);
+        }
       }
     }
 
