@@ -12,7 +12,9 @@ following are discussions of such cases.
 - :ref:`Incorrect format in ... section of data file <err0002>`
 - :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
 - :ref:`Out of range atoms - cannot compute ... <err0004>`
+- :ref:`Lost atoms ... <err0008>`
 - :ref:`Too many neighbor bins <err0009>`
+- :ref:`Unrecognized pair style ... is part of ... package which is not enabled in this LAMMPS binary  <err0010>`
 - :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0015>`
 - :ref:`Domain too large for neighbor bins <err0017>`
 - :ref:`Incorrect args for pair coefficients (also bond/angle/dihedral/improper coefficients) <err0021>`
@@ -288,9 +290,28 @@ Too many neighbor bins
 The simulation box has become too large relative to the size of a
 neighbor bin and LAMMPS is unable to store the needed number of
 bins. This typically implies the simulation box has expanded too far.
-This can happen when some atoms move rapidly apart with shrink-wrap
-boundaries or when a fix (like fix deform or a barostat) excessively
-grows the simulation box.
+This can happen when some atoms move rapidly apart with shrink-wrap boundaries
+or when a fix (like fix deform or a barostat) excessively grows the simulation
+box.
+
+.. _err0010:
+
+Unrecognized pair style ... is part of ... package which is not enabled in this LAMMPS binary
+---------------------------------------------------------------------------------------------
+
+The LAMMPS executable (binary) being used was not compiled with a package
+containing the specified pair style. This indicates that the executable needs to
+be re-built after enabling the correct package in the relevant Makefile or CMake
+build directory, see :ref:`Section 3. Build LAMMPS <Build>` for more details.
+One can check if the expected package and pair style is present in the
+executable by running it with the ``-help`` (or ``-h``) flag on the command
+line. One common oversight, especially for beginner LAMMPS users, is to enable
+the package, but to forget to run commands to rebuild (e.g., to run the final
+``make`` or ``cmake`` command).
+
+If this error is occurring with an executable that the user does not control
+(e.g., through a module on HPC clusters), the user will need to get in contact
+with the relevant person or people who can update the executable. 
 
 .. _err0015:
 
