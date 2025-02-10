@@ -1,5 +1,5 @@
 .. index:: fix pimdb/langevin
-.. index:: fix pimdb/nvt
+   .. index:: fix pimdb/nvt
 
 fix pimdb/langevin command
 ==========================
@@ -20,7 +20,7 @@ Syntax
 * keywords for style *pimdb/nvt*
 
   .. parsed-literal::
-       *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
+            *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
        *method* value = *pimd* or *nmpimd*
        *fmass* value = scaling factor on mass
        *sp* value = scaling factor on Planck constant
@@ -30,7 +30,7 @@ Syntax
 * keywords for style *pimdb/langevin*
 
   .. parsed-literal::
-       *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj* or *esych*
+            *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj* or *esych*
        *integrator* value = *obabo* or *baoab*
        *ensemble* value = *nvt* or *nve*
        *fmass* value = scaling factor on mass
