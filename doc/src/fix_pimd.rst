@@ -1,5 +1,5 @@
 .. index:: fix pimd/langevin
-.. index:: fix pimd/nvt
+   .. index:: fix pimd/nvt
 
 fix pimd/langevin command
 =========================
@@ -20,7 +20,7 @@ Syntax
 * keywords for style *pimd/nvt*
 
   .. parsed-literal::
-       *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
+            *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
        *method* value = *pimd* or *nmpimd* or *cmd*
        *fmass* value = scaling factor on mass
        *sp* value = scaling factor on Planck constant
@@ -30,7 +30,7 @@ Syntax
 * keywords for style *pimd/langevin*
 
   .. parsed-literal::
-       *keywords* = *method* or *integrator* or *ensemble* or *fmmode* or *fmass* or *scale* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
+            *keywords* = *method* or *integrator* or *ensemble* or *fmmode* or *fmass* or *scale* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
        *method* value = *nmpimd* (default) or *pimd*
        *integrator* value = *obabo* or *baoab*
        *ensemble* value = *nvt* or *nve* or *nph* or *npt*
@@ -250,7 +250,7 @@ system, each running on one of the 4 partitions of processors.  Each
 replica (shown in green) owns one quasi-bead in each ring.
 
 .. image:: JPG/pimd.jpg
-   :align: center
+      :align: center
 
 To run a PIMD simulation with M quasi-beads in each ring polymer using
 N MPI tasks for each partition's domain-decomposition, you would use P

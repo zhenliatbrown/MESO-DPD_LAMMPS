@@ -1,5 +1,5 @@
 .. index:: fix pimdb/langevin
-.. index:: fix pimdb/nvt
+   .. index:: fix pimdb/nvt
 
 fix pimdb/langevin command
 ==========================
@@ -20,7 +20,7 @@ Syntax
 * keywords for style *pimdb/nvt*
 
   .. parsed-literal::
-       *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
+            *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
        *method* value = *pimd* or *nmpimd*
        *fmass* value = scaling factor on mass
        *sp* value = scaling factor on Planck constant
@@ -30,7 +30,7 @@ Syntax
 * keywords for style *pimdb/langevin*
 
   .. parsed-literal::
-       *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj* or *esych*
+            *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj* or *esych*
        *integrator* value = *obabo* or *baoab*
        *ensemble* value = *nvt* or *nve*
        *fmass* value = scaling factor on mass
@@ -70,8 +70,7 @@ The major differences from fix *pimd* in terms of capabilities are:
 
 * Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, which is the default in this fix. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to a value other than *physical*.
 * Fix *pimdb/langevin* currently does not support *ensemble* other than *nve*, *nvt*. The barostat related keywords *iso*, *aniso*, *barostat*, *taup* are not supported.
-* Fix *pimdb/langevin* also has a keyword not available in fix *pimd/langevin*: *esynch*, with default *yes*. If set to *no*, some time consuming synchronization of spring energies and
-the primitive kinetic energy estimator between processors is avoided.
+* Fix *pimdb/langevin* also has a keyword not available in fix *pimd/langevin*: *esynch*, with default *yes*. If set to *no*, some time consuming synchronization of spring energies and the primitive kinetic energy estimator between processors is avoided.
 
 The isomorphism between the partition function of :math:`N` bosonic quantum particles and that of a system of classical ring polymers
 at inverse temperature :math:`\beta`
@@ -144,6 +143,7 @@ All vector values calculated by fix *pimdb/langevin* are "extensive".
 For both *pimdb/nvt* and *pimdb/langevin*, the contribution of the exterior spring to the primitive estimator is printed to the first log file.
 The contribution of the :math:`P-1` interior springs is printed to the other :math:`P-1` log files.
 The contribution of the constant :math:`\frac{PdN}{2 \beta}` (with :math:`d` being the dimentionality) is equally divided over log files.
+
 Restrictions
 """"""""""""
 
@@ -161,6 +161,7 @@ The keyword defaults for fix *pimdb/nvt* are method = pimd, fmass = 1.0, sp
 
 The keyord defaults for fix *pimdb/langevin* are integrator = obabo, method = pimd, ensemble = nvt, fmass = 1.0,
 temp = 298.15, thermostat = PILE_L, tau = 1.0, fixcom = yes, esynch = yes, and lj = 1 for all its arguments.
+
 ----------
 
 .. _book-Tuckerman:
