@@ -15,7 +15,7 @@ following are discussions of such cases.
 - :ref:`Too many neighbor bins <err0009>`
 - :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0015>`
 - :ref:`Domain too large for neighbor bins <err0017>`
-- :ref:`Incorrect args for pair coefficients <err0021>`
+- :ref:`Incorrect args for pair coefficients (also bond/angle/dihedral/improper coefficients) <err0021>`
 - :ref:`Molecule topology/atom exceeds system topology/atom <err0024>`
 - :ref:`Molecule topology type exceeds system topology type <err0025>`
 - :ref:`Molecule attributes do not match system attributes <err0026>`
@@ -288,7 +288,7 @@ Too many neighbor bins
 The simulation box has become too large relative to the size of a
 neighbor bin and LAMMPS is unable to store the needed number of
 bins. This typically implies the simulation box has expanded too far.
-This can happen when some atoms move rapidly apart with shrinkwrap
+This can happen when some atoms move rapidly apart with shrink-wrap
 boundaries or when a fix (like fix deform or a barostat) excessively
 grows the simulation box.
 
@@ -319,15 +319,22 @@ excessively grown the simulation box.
 
 .. _err0021:
 
-Incorrect args for pair coefficients
-------------------------------------
+Incorrect args for pair coefficients (also bond/angle/dihedral/improper coefficients)
+-------------------------------------------------------------------------------------
 
-The parameters in the :doc:`pair_coeff <pair_coeff>`, command for a specified
-:doc:`pair_style <pair_style>` have a missing or erroneous argument. Outside of
-normal typos, this error can have several sources. In all cases, the first step
-is to compare the command arguments to the expected format found in the
-corresponding :doc:`pair_style <pair_style>` page. This can reveal cases where,
-for example, a pair style was changed, but the pair coefficients were not
+The parameters in the :doc:`pair_coeff <pair_coeff>` command for a specified
+:doc:`pair_style <pair_style>` have a missing or erroneous argument. The same
+applies when seeing this error for :doc:`bond_coeff <bond_coeff>`,
+:doc:`angle_coeff <angle_coeff>`,  :doc:`dihedral_coeff <dihedral_coeff>`, or
+:doc:`improper_coeff <improper_coeff>` and their respective style commands when
+using the MOLECULE or EXTRA-MOLECULE packages. The cases below will describe
+some ways to approach pair coefficient errors, but the same strategies will
+apply to bonded systems as well.
+
+Outside of normal typos, this error can have several sources. In all cases, the
+first step is to compare the command arguments to the expected format found in
+the corresponding :doc:`pair_style <pair_style>` page. This can reveal cases
+where, for example, a pair style was changed, but the pair coefficients were not
 updated. This can happen especially with pair style variants such as
 :doc:`pair_style eam <pair_eam>` vs. :doc:`pair_style eam/alloy <pair_style>`
 that look very similar but accept different parameters (the latter 'eam/alloy'
@@ -345,10 +352,10 @@ files that are read in by the input script, such as data files or restart files.
 Molecule topology/atom exceeds system topology/atom
 ---------------------------------------------------
 
-LAMMPS uses :doc:`domain decomposition <Developer_par_part>` to
-distribute data (i.e. atoms) across the MPI processes in parallel runs.
-This includes topology data, that is data about bonds, angles,
-dihedrals, impropers and :doc:`"special" neighbors <special_bonds>`.
+LAMMPS uses :doc:`domain decomposition <Developer_par_part>` to distribute data
+(i.e. atoms) across the MPI processes in parallel runs. This includes topology
+data, that is data about bonds, angles, dihedrals, impropers and :doc:`"special"
+neighbors <special_bonds>`.
 This information is stored with either one or all atoms involved in such
 a topology entry (which of the two option applies depends on the
 :doc:`newton <newton>` setting for bonds. When reading a data file,
