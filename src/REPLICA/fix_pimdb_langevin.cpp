@@ -144,6 +144,7 @@ void FixPIMDBLangevin::compute_t_prim()
     else {
         t_prim = bosonic_exchange.prim_estimator();
     }
+    t_prim = bosonic_exchange.prim_estimator();
 }
 
 /* ---------------------------------------------------------------------- */
