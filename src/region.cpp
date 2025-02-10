@@ -375,7 +375,7 @@ void Region::options(int narg, char **arg)
       openflag = 1;
       iarg += 2;
     } else
-      error->all(FLERR, "Illegal region command argument: {}", arg[iarg]);
+      error->all(FLERR, iarg, "Unknown region command argument: {}", arg[iarg]);
   }
 
   // error check
