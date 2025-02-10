@@ -46,8 +46,9 @@ using namespace FixConst;
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDLangevin(lmp, narg, arg), nbosons(atom->nlocal),
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, false, false)
+    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
+    synch_energies = true;
     for (int i = 3; i < narg - 1; i += 2) {
         if ((strcmp(arg[i], "method") == 0) && (strcmp(arg[i+1], "pimd") != 0)) {
             error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
@@ -57,6 +58,9 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
         }
         else if ((strcmp(arg[i], "iso") == 0) || (strcmp(arg[i], "aniso") == 0) || (strcmp(arg[i], "barostat") == 0) || (strcmp(arg[i], "taup") == 0)) {
             error->universe_all(FLERR, "Barostat parameters are not available for pimdb.");
+        }
+        else if ((strcmp(arg[i], "esynch") == 0) && (strcmp(arg[i + 1], "no") == 0)) {
+            synch_energies = false;
         }
     }
 
@@ -120,15 +124,26 @@ void FixPIMDBLangevin::spring_force() {
 
 void FixPIMDBLangevin::compute_spring_energy() {
     se_bead = bosonic_exchange.get_bead_spring_energy();
-    MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
-    total_spring_energy /= universe->procs_per_world[universe->iworld];
+    if (synch_energies) {
+        MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+        total_spring_energy /= universe->procs_per_world[universe->iworld];
+    }
+    else {
+        total_spring_energy = 0;
+    }
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::compute_t_prim()
 {
-    t_prim = bosonic_exchange.prim_estimator();
+    if (synch_energies) {
+        double prim = bosonic_exchange.prim_estimator();
+        MPI_Allreduce(&prim, &t_prim, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
+    }
+    else {
+        t_prim = bosonic_exchange.prim_estimator();
+    }
 }
 
 /* ---------------------------------------------------------------------- */

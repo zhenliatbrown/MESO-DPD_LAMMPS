@@ -30,7 +30,7 @@ Syntax
 * keywords for style *pimdb/langevin*
 
   .. parsed-literal::
-       *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj*
+       *keywords* = *integrator* or *ensemble* or *fmass* or *temp* or *thermostat* or *tau* or *fixcom* or *lj* or *esych*
        *integrator* value = *obabo* or *baoab*
        *ensemble* value = *nvt* or *nve*
        *fmass* value = scaling factor on mass
@@ -47,6 +47,7 @@ Syntax
           mass = mass scale for reduced units (mass units)
           planck = Planck's constant for other unit style
           mvv2e = mass * velocity^2 to energy conversion factor for other unit style
+       *esynch* value = *yes* or *no*
 
 Examples
 """"""""
@@ -69,7 +70,8 @@ The major differences from fix *pimd* in terms of capabilities are:
 
 * Fix *pimdb/nvt* the only supports the "pimd" and "nmpimd" methods. Fix *pimdb/langevin* only supports the "pimd" method, which is the default in this fix. These restrictions are related to the use of normal modes, which change in bosons. For similar reasons, *fmmode* of *pimd/langevin* should not be used, and would raise an error if set to a value other than *physical*.
 * Fix *pimdb/langevin* currently does not support *ensemble* other than *nve*, *nvt*. The barostat related keywords *iso*, *aniso*, *barostat*, *taup* are not supported.
-
+* Fix *pimdb/langevin* also has a keyword not available in fix *pimd/langevin*: *esynch*, with default *yes*. If set to *no*, some time consuming synchronization of spring energies and
+the primitive kinetic energy estimator between processors is avoided.
 
 The isomorphism between the partition function of :math:`N` bosonic quantum particles and that of a system of classical ring polymers
 at inverse temperature :math:`\beta`
@@ -131,7 +133,10 @@ can be accessed by various :doc:`output commands <Howto_output>`. The quantities
    #. primitive kinetic energy estimator :ref:`(Hirshberg1) <Hirshberg>`
    #. virial energy estimator :ref:`(Herman) <HermanBB>` (see the justification in the supporting information of :ref:`(Hirshberg2) <HirshbergInvernizzi>`).
 
-The first three are different for different log files, and the others are the same for different log files.
+The first three are different for different log files, and the others are the same for different log files,
+except for the primitive kinetic energy estimator when setting *esynch* to *no*. Then, the primitive kinetic energy estimator is obtained by summing over all log files.
+Also note that when *esynch* is set to *no*, the fourth output gives the total energy of all beads excluding the spring elastic energy, 
+which can be obtained from the second output by summing over all log files.
 All vector values calculated by fix *pimdb/langevin* are "extensive".
 
 For both *pimdb/nvt* and *pimdb/langevin*, the contribution of the exterior spring to the primitive estimator is printed to the first log file.
@@ -153,7 +158,7 @@ The keyword defaults for fix *pimdb/nvt* are method = pimd, fmass = 1.0, sp
 = 1.0, temp = 300.0, and nhc = 2.
 
 The keyord defaults for fix *pimdb/langevin* are integrator = obabo, method = pimd, ensemble = nvt, fmass = 1.0,
-temp = 298.15, thermostat = PILE_L, tau = 1.0, fixcom = yes, and lj = 1 for all its arguments.
+temp = 298.15, thermostat = PILE_L, tau = 1.0, fixcom = yes, esynch = yes, and lj = 1 for all its arguments.
 ----------
 
 .. _book-Tuckerman:

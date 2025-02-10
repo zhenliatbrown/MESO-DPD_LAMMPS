@@ -39,11 +39,11 @@ protected:
     void spring_force() override;
 
 private:
-  const int nbosons;
-  BosonicExchange bosonic_exchange;
-  double** f_tag_order;
+    const int nbosons;
+    bool synch_energies;
+    BosonicExchange bosonic_exchange;
+    double** f_tag_order;
 };
-
 
 }
 
