@@ -158,7 +158,7 @@ void BondBPMRotational::store_data()
       type = bond_type[i][m];
 
       //Skip if bond was turned off
-      if (type < 0) continue;
+      if (type <= 0) continue;
 
       // map to find index n for tag
       j = atom->map(atom->bond_atom[i][m]);
@@ -779,7 +779,6 @@ void BondBPMRotational::read_restart_settings(FILE *fp)
 
 double BondBPMRotational::single(int type, double rsq, int i, int j, double &fforce)
 {
-  // Not yet enabled
   if (type <= 0) return 0.0;
 
   int flipped = 0;

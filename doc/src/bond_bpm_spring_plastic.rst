@@ -10,7 +10,7 @@ Syntax
 
    bond_style bpm/spring/plastic keyword value attribute1 attribute2 ...
 
-* optional keyword = *overlay/pair* or *store/local* or *smooth* or *break*
+* optional keyword = *overlay/pair* or *store/local* or *smooth* or *normalize* or *break*
 
   .. parsed-literal::
 
@@ -72,12 +72,12 @@ particles. The force has a magnitude of
 
 where :math:`k` is a stiffness, :math:`r` is the current distance between
 the two particles, and :math:`w` is an optional smoothing factor discussed
-below. If the bond stretches beyond a strain of :math:`\epsilon_p`, it will
-plastically activate and :math:`r_\mathrm{eq}` will evolve to ensure
-:math:`|(r-r_\mathrm{eq})/r_\mathrm{eq}|` never exceeds :math:`\epsilon_p`.
-Therefore, in pure tension, the force initially grows elastically before
-plateauing. See :ref:`(Clemmer) <plastic-Clemmer>` for more details on
-these mechanics.
+below. If the bond stretches beyond a strain of :math:`\epsilon_p` in compression
+or extension, it will plastically activate and :math:`r_\mathrm{eq}` will evolve
+to ensure :math:`|(r-r_\mathrm{eq})/r_\mathrm{eq}|` never exceeds :math:`\epsilon_p`.
+Therefore, if a bond is continually loaded in either tension or compression, the
+force will initially grow elastically before plateauing. See
+:ref:`(Clemmer) <plastic-Clemmer>` for more details on these mechanics.
 
 Bonds will break at a strain of :math:`\epsilon_c`.  This is done by setting
 the bond type to 0 such that forces are no longer computed.
@@ -142,7 +142,7 @@ The potential energy and the single() function of this bond style returns zero.
 The single() function also calculates two extra bond quantities, the initial
 distance :math:`r_0` and the current equilbrium length :math:`r_eq`. These extra
 quantities can be accessed by the :doc:`compute bond/local <compute_bond_local>`
-command as *b1* and *b2*\ .
+command as *b1* and *b2*, respectively.
 
 Restrictions
 """"""""""""

@@ -386,7 +386,7 @@ double PairBPMSpring::single(int i, int j, int itype, int jtype, double rsq, dou
 
   dr = r - cut[itype][jtype];
   fpair = -k[itype][jtype] * dr;
-  double energy = -0.5 * fpair * (r - cut[itype][jtype]);
+  double energy = -0.5 * fpair * dr;
 
   if (anharmonic_flag) {
     double fa = -ka[itype][jtype] * dr * dr * dr;

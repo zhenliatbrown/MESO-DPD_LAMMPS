@@ -136,7 +136,7 @@ void BondBPMSpringPlastic::store_data()
       type = bond_type[i][m];
 
       //Skip if bond was turned off
-      if (type < 0) continue;
+      if (type <= 0) continue;
 
       // map to find index n
       j = atom->map(atom->bond_atom[i][m]);
