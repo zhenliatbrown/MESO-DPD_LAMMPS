@@ -26,6 +26,7 @@
 #include "force.h"
 #include "input.h"
 #include "math_const.h"
+#include "safe_pointers.h"
 #include "update.h"
 
 #include <cmath>
@@ -79,13 +80,13 @@ void AngleWrite::command(int narg, char **arg)
   // otherwise make certain that units are consistent
   // print header in format used by angle_style table
 
-  FILE *fp = nullptr;
+  SafeFilePtr fp;
   std::string coeffs_file = table_file + ".tmp.coeffs";
   if (comm->me == 0) {
 
-    fp = fopen(coeffs_file.c_str(), "w");
-    force->angle->write_data(fp);
-    fclose(fp);
+    FILE *coeffs = fopen(coeffs_file.c_str(), "w");
+    force->angle->write_data(coeffs);
+    fclose(coeffs);
 
     // units sanity check:
     // - if this is the first time we write to this potential file,
@@ -221,7 +222,6 @@ void AngleWrite::command(int narg, char **arg)
 
     // clean up
     delete writer;
-    fclose(fp);
   }
   MPI_Comm_free(&singlecomm);
 }
