@@ -60,6 +60,7 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
             error->universe_all(FLERR, "Barostat parameters are not available for pimdb.");
         }
         else if ((strcmp(arg[i], "esynch") == 0) && (strcmp(arg[i + 1], "no") == 0)) {
+            // CR: validate that the argument of esynch is either "no" or "yes"
             synch_energies = false;
         }
     }
@@ -123,6 +124,7 @@ void FixPIMDBLangevin::spring_force() {
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::compute_spring_energy() {
+    // CR: perform this line only if synch_energies
     se_bead = bosonic_exchange.get_bead_spring_energy();
     if (synch_energies) {
         MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);

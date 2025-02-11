@@ -102,8 +102,8 @@ This potential does not include all :math:`N!` permutations, but samples the sam
 the potential is the one developed by Feldman and Hirshberg, which scales like :math:`N^2+PN` :ref:`(Feldman) <Feldman>`. 
 The forces are calculated as weighted averages over the representative permutations,
 through an algorithm that scales the same as the one for the potential calculation, :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
-The algorithm employs the minimum image convention to approximate the bosonic periodic boundary conditions. 
-An elaborate discussion of the validity of the approximation is available in :ref:`(Higer) <HigerFeldman>`.
+The minimum-image convention is employed on the springs to account for periodic boundary conditions; 
+an elaborate discussion of the validity of the approximation is available in :ref:`(Higer) <HigerFeldman>`.
 
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -130,14 +130,14 @@ can be accessed by various :doc:`output commands <Howto_output>`. The quantities
    #. kinetic energy of the beads,
    #. spring elastic energy of the beads,
    #. potential energy of the bead,
-   #. total energy of all beads (conserved if *ensemble* is *nve*)
+   #. total energy of all beads (conserved if *ensemble* is *nve*) if *esynch* is *yes*
    #. primitive kinetic energy estimator :ref:`(Hirshberg1) <Hirshberg>`
    #. virial energy estimator :ref:`(Herman) <HermanBB>` (see the justification in the supporting information of :ref:`(Hirshberg2) <HirshbergInvernizzi>`).
 
 The first three are different for different log files, and the others are the same for different log files,
 except for the primitive kinetic energy estimator when setting *esynch* to *no*. Then, the primitive kinetic energy estimator is obtained by summing over all log files.
-Also note that when *esynch* is set to *no*, the fourth output gives the total energy of all beads excluding the spring elastic energy, 
-which can be obtained from the second output by summing over all log files.
+Also note that when *esynch* is set to *no*, the fourth output gives the total energy of all beads excluding the spring elastic energy; the total classical energy
+can then be obtained by adding the sum of second output over all log files.
 All vector values calculated by fix *pimdb/langevin* are "extensive".
 
 For both *pimdb/nvt* and *pimdb/langevin*, the contribution of the exterior spring to the primitive estimator is printed to the first log file.
