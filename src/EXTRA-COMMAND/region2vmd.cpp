@@ -21,6 +21,7 @@
 #include "domain.h"
 #include "error.h"
 #include "region.h"
+#include "safe_pointers.h"
 
 #include "region_block.h"
 #include "region_cone.h"
@@ -158,30 +159,14 @@ static constexpr char draw_ellipsoid_function[] =
     "   return $gid\n"
     "}\n\n";
 
-// class that "owns" the file pointer and closes it when going out of scope.
-// this avoids a lot of redundant checks and calls.
-class AutoClose {
- public:
-  AutoClose() = delete;
-  AutoClose(const AutoClose &) = delete;
-  AutoClose(const AutoClose &&) = delete;
-  explicit AutoClose(FILE *_fp) : fp(_fp) {};
-  ~AutoClose()
-  {
-    if (fp) fclose(fp);
-  }
-
- private:
-  FILE *fp;
-};
-
 /* ---------------------------------------------------------------------- */
 
 void Region2VMD::command(int narg, char **arg)
 {
   if (narg < 3) utils::missing_cmd_args(FLERR, "region2vmd", error);
 
-  FILE *fp = nullptr;
+  // automatically close file when it goes out of scope
+  SafeFilePtr fp;
   if (comm->me == 0) {
     fp = fopen(arg[0], "w");
     if (fp == nullptr) {
@@ -194,7 +179,6 @@ void Region2VMD::command(int narg, char **arg)
   }
 
   // automatically close fp when fpowner goes out of scope
-  AutoClose fpowner(fp);
 
   // defaults
   std::string color = "silver";
