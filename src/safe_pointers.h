@@ -44,6 +44,7 @@ class SafeFilePtr {
 
   SafeFilePtr &operator=(FILE *_fp)
   {
+    if (fp && (fp != _fp)) fclose(fp);
     fp = _fp;
     return *this;
   }
