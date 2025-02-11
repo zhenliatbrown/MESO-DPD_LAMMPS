@@ -311,7 +311,7 @@ the package, but to forget to run commands to rebuild (e.g., to run the final
 
 If this error is occurring with an executable that the user does not control
 (e.g., through a module on HPC clusters), the user will need to get in contact
-with the relevant person or people who can update the executable. 
+with the relevant person or people who can update the executable.
 
 .. _err0015:
 
@@ -419,3 +419,24 @@ example, are usually not a per-atom property, but defined through the
 atom type.  Thus it would not be required to have a Masses section and
 the included data would be ignored.  LAMMPS prints this warning to
 inform about this case.
+
+.. _err0030:
+
+Bond (or angle, dihedral, or improper) atoms missing
+----------------------------------------------------
+
+The second atom needed to compute a particular bond (or the third or fourth
+atom for angle, dihedral, or improper) is missing on the indicated timestep
+and processor. Typically, this is because the two bonded atoms have become
+too far apart relative to the communication cutoff distance for ghost atoms.
+Typically, the communication cutoff is set by the pair cutoff, but it can
+be manually adjusted using :doc:`comm_modify <comm_modify>` to accommodate
+larger distances between topologically connected atoms at the cost of increased
+communication and more ghost atoms. However, missing bond atoms may also
+indicate unstable dynamics caused the atoms blow apart such that increasing
+the communication distance will not solve the underlying issue.
+
+If the simulation has open boundary conditions where atoms can leave,
+potentially at different times than other atoms they are bonded to, this
+error can be converted to a warning or turned off using the *lost/bond*
+keyword in the :doc:`thermo_modify <thermo_modify>` command.
