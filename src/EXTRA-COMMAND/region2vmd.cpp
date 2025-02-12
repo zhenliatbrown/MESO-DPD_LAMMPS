@@ -324,7 +324,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
 
           // lo end has a tip
         } else if (cone->radiuslo < SMALL) {
-          double v1[3], v2[3], v3[0], v4[3], v5[3];
+          double v1[3], v2[3], v3[3], v4[3], v5[3];
 
           if (cone->axis == 'x') {
             // set tip coordinate
@@ -412,7 +412,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
 
           // hi end has a tip
         } else if (cone->radiushi < SMALL) {
-          double v1[3], v2[3], v3[0], v4[3], v5[3];
+          double v1[3], v2[3], v3[3], v4[3], v5[3];
 
           if (cone->axis == 'x') {
             // set tip coordinate
@@ -500,7 +500,7 @@ void Region2VMD::write_region(FILE *fp, Region *region)
 
           // truncated cone
         } else if (!cone->open_faces[2]) {
-          double v1[3], v2[3], v3[0], v4[3], v5[3], v6[3], v7[3], v8[3];
+          double v1[3], v2[3], v3[3], v4[3], v5[3], v6[3], v7[3], v8[3];
 
           if (cone->axis == 'x') {
 
