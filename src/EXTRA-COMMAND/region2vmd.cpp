@@ -39,6 +39,7 @@ using namespace LAMMPS_NS;
 
 static constexpr double SMALL = 1.0e-10;
 static constexpr double DELTA = 1.0e-5;
+static constexpr int RESOLUTION = 20;
 
 static const std::unordered_set<std::string> vmdcolors{
     "blue",    "red",      "gray",   "orange", "yellow",  "tan",    "silver",  "green",  "white",
@@ -359,16 +360,19 @@ void Region2VMD::write_region(FILE *fp, Region *region)
       if (!cyl->open_faces[2]) {
         if (cyl->axis == 'x') {
           utils::print(
-              fp, "draw cylinder {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20 {5}\n",
-              cyl->lo + dx, cyl->hi + dx, cyl->c1 + dy, cyl->c2 + dz, cyl->radius, filled);
+              fp, "draw cylinder {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution {5} {6}\n",
+              cyl->lo + dx, cyl->hi + dx, cyl->c1 + dy, cyl->c2 + dz, cyl->radius, RESOLUTION,
+              filled);
         } else if (cyl->axis == 'y') {
           utils::print(
-              fp, "draw cylinder {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20 {5}\n",
-              cyl->lo + dy, cyl->hi + dy, cyl->c1 + dx, cyl->c2 + dz, cyl->radius, filled);
+              fp, "draw cylinder {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution {5} {6}\n",
+              cyl->lo + dy, cyl->hi + dy, cyl->c1 + dx, cyl->c2 + dz, cyl->radius, RESOLUTION,
+              filled);
         } else if (cyl->axis == 'z') {
           utils::print(
-              fp, "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20 {5}\n",
-              cyl->lo + dz, cyl->hi + dz, cyl->c1 + dx, cyl->c2 + dy, cyl->radius, filled);
+              fp, "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution {5} {6}\n",
+              cyl->lo + dz, cyl->hi + dz, cyl->c1 + dx, cyl->c2 + dy, cyl->radius, RESOLUTION,
+              filled);
         }
       }
 
@@ -378,21 +382,21 @@ void Region2VMD::write_region(FILE *fp, Region *region)
         if (cyl->axis == 'x') {
           lid += dx;
           utils::print(fp,
-                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} resolution 20 "
-                       "filled yes\n",
-                       lid, lid + DELTA, cyl->c1 + dy, cyl->c2 + dz, cyl->radius);
+                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cyl->c1 + dy, cyl->c2 + dz, cyl->radius, RESOLUTION);
         } else if (cyl->axis == 'y') {
           lid += dy;
           utils::print(fp,
-                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} resolution 20 "
-                       "filled yes\n",
-                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dz, cyl->radius);
+                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dz, cyl->radius, RESOLUTION);
         } else if (cyl->axis == 'z') {
           lid += dz;
           utils::print(fp,
-                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} resolution 20 "
-                       "filled yes\n",
-                       lid + dz, lid + dz + DELTA, cyl->c1 + dx, cyl->c2 + dy, cyl->radius);
+                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dy, cyl->radius, RESOLUTION);
         }
       }
       if ((filled == "filled no") && !cyl->open_faces[1]) {
@@ -400,21 +404,21 @@ void Region2VMD::write_region(FILE *fp, Region *region)
         if (cyl->axis == 'x') {
           lid += dx;
           utils::print(fp,
-                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} resolution 20 "
-                       "filled yes\n",
-                       lid, lid + DELTA, cyl->c1 + dy, cyl->c2 + dz, cyl->radius);
+                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cyl->c1 + dy, cyl->c2 + dz, cyl->radius, RESOLUTION);
         } else if (cyl->axis == 'y') {
           lid += dy;
           utils::print(fp,
-                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} resolution 20 "
-                       "filled yes\n",
-                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dz, cyl->radius);
+                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dz, cyl->radius, RESOLUTION);
         } else if (cyl->axis == 'z') {
           lid += dz;
           utils::print(fp,
-                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} resolution 20 "
-                       "filled yes\n",
-                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dy, cyl->radius);
+                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cyl->c1 + dx, cyl->c2 + dy, cyl->radius, RESOLUTION);
         }
       }
     }
@@ -545,8 +549,8 @@ void Region2VMD::write_region(FILE *fp, Region *region)
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'sphere'", region->id);
     } else {
       // a sphere uses a single sphere primitive
-      utils::print(fp, "draw sphere {{{} {} {}}} radius {} resolution 20\n", sphere->xc, sphere->yc,
-                   sphere->zc, sphere->radius);
+      utils::print(fp, "draw sphere {{{} {} {}}} radius {} resolution {}\n", sphere->xc, sphere->yc,
+                   sphere->zc, sphere->radius, RESOLUTION);
     }
 
   } else {
