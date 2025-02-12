@@ -20,6 +20,7 @@
 #include "comm.h"
 #include "domain.h"
 #include "error.h"
+#include "math_const.h"
 #include "math_extra.h"
 #include "region.h"
 #include "safe_pointers.h"
@@ -32,14 +33,17 @@
 #include "region_prism.h"
 #include "region_sphere.h"
 
+#include <cmath>
 #include <cstring>
 #include <unordered_set>
 
 using namespace LAMMPS_NS;
 
+using MathConst::MY_2PI;
 static constexpr double SMALL = 1.0e-10;
 static constexpr double DELTA = 1.0e-5;
 static constexpr int RESOLUTION = 20;
+static constexpr double RADINC = MY_2PI / RESOLUTION;
 
 static const std::unordered_set<std::string> vmdcolors{
     "blue",    "red",      "gray",   "orange", "yellow",  "tan",    "silver",  "green",  "white",
@@ -181,8 +185,6 @@ void Region2VMD::command(int narg, char **arg)
     }
   }
 
-  // automatically close fp when fpowner goes out of scope
-
   // defaults
   std::string color = "silver";
   std::string material = "Transparent";
@@ -310,37 +312,363 @@ void Region2VMD::write_region(FILE *fp, Region *region)
     if (!cone) {
       error->one(FLERR, Error::NOLASTLINE, "Region {} is not of style 'cone'", region->id);
     } else {
-      if (cone->open_faces[0] || cone->open_faces[1])
-        error->warning(FLERR, "Drawing open-faced cones is not supported");
-      // The VMD cone primitive requires one radius set to zero
-      if (cone->radiuslo < SMALL) {
-        // a VMD cone uses a single cone primitive
-        if (cone->axis == 'x') {
-          utils::print(fp, "draw cone {{{1} {2} {3}}} {{{0} {2} {3}}} radius {4} resolution 20\n",
-                       cone->lo + dx, cone->hi + dx, cone->c1 + dy, cone->c2 + dz, cone->radiushi);
-        } else if (cone->axis == 'y') {
-          utils::print(fp, "draw cone {{{2} {1} {3}}} {{{2} {0} {3}}} radius {4} resolution 20\n",
-                       cone->lo + dy, cone->hi + dy, cone->c1 + dx, cone->c2 + dz, cone->radiushi);
-        } else if (cone->axis == 'z') {
-          utils::print(fp, "draw cone {{{2} {3} {1}}} {{{2} {3} {0}}} radius {4} resolution 20\n",
-                       cone->lo + dz, cone->hi + dz, cone->c1 + dx, cone->c2 + dy, cone->radiushi);
-        }
-      } else if (cone->radiushi < SMALL) {
-        // a VMD cone uses a single cone primitive
-        if (cone->axis == 'x') {
-          utils::print(fp, "draw cone {{{0} {2} {3}}} {{{1} {2} {3}}} radius {4} resolution 20\n",
-                       cone->lo + dx, cone->hi + dx, cone->c1 + dy, cone->c2 + dz, cone->radiuslo);
-        } else if (cone->axis == 'y') {
-          utils::print(fp, "draw cone {{{2} {0} {3}}} {{{2} {1} {3}}} radius {4} resolution 20\n",
-                       cone->lo + dy, cone->hi + dy, cone->c1 + dx, cone->c2 + dz, cone->radiuslo);
-        } else if (cone->axis == 'z') {
-          utils::print(fp, "draw cone {{{2} {3} {0}}} {{{2} {3} {1}}} radius {4} resolution 20\n",
-                       cone->lo + dz, cone->hi + dz, cone->c1 + dx, cone->c2 + dy, cone->radiuslo);
-        }
+      // draw cone
+      if (!cone->open_faces[2]) {
 
-      } else {
-        utils::logmesg(lmp,
-                       "Cannot (yet) translate a truncated cone to VMD graphics. Skipping...\n");
+        // both radii too small
+        if ((cone->radiuslo < SMALL) && (cone->radiushi < SMALL)) {
+          ;    // nothing to draw
+
+          // lo end has a tip
+        } else if (cone->radiuslo < SMALL) {
+          double v1[3], v2[3], v3[0], v4[3], v5[3];
+
+          if (cone->axis == 'x') {
+            // set tip coordinate
+            v1[0] = cone->lo + dx;
+            v1[1] = cone->c1 + dy;
+            v1[2] = cone->c2 + dz;
+
+            // loop around radius
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v2[0] = cone->hi + dx;
+              v2[1] = cone->c1 + cone->radiushi * sin(RADINC * i) + dy;
+              v2[2] = cone->c2 + cone->radiushi * cos(RADINC * i) + dz;
+              v3[0] = cone->hi + dx;
+              v3[1] = cone->c1 + cone->radiushi * sin(RADINC * (i + 1.0)) + dy;
+              v3[2] = cone->c2 + cone->radiushi * cos(RADINC * (i + 1.0)) + dz;
+              v4[0] = 0.0;
+              v4[1] = sin(RADINC * i);
+              v4[2] = cos(RADINC * i);
+              v5[0] = 0.0;
+              v5[1] = sin(RADINC * (i + 1.0));
+              v5[2] = cos(RADINC * (i + 1.0));
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], 1.0, 0.0,
+                           0.0, v4[0], v4[1], v4[2], v5[0], v5[1], v5[2]);
+            }
+
+          } else if (cone->axis == 'y') {
+            // set tip coordinate
+            v1[0] = cone->c1 + dx;
+            v1[1] = cone->lo + dy;
+            v1[2] = cone->c2 + dz;
+
+            // loop around radius
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v2[0] = cone->c1 + cone->radiushi * sin(RADINC * i) + dx;
+              v2[1] = cone->hi + dy;
+              v2[2] = cone->c2 + cone->radiushi * cos(RADINC * i) + dz;
+              v3[0] = cone->c1 + cone->radiushi * sin(RADINC * (i + 1.0)) + dx;
+              v3[1] = cone->hi + dy;
+              v3[2] = cone->c2 + cone->radiushi * cos(RADINC * (i + 1.0)) + dz;
+              v4[0] = sin(RADINC * i);
+              v4[1] = 0.0;
+              v4[2] = cos(RADINC * i);
+              v5[0] = sin(RADINC * (i + 1.0));
+              v5[1] = 0.0;
+              v5[2] = cos(RADINC * (i + 1.0));
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], 0.0, 1.0,
+                           0.0, v4[0], v4[1], v4[2], v5[0], v5[1], v5[2]);
+            }
+
+          } else if (cone->axis == 'z') {
+            // set tip coordinate
+            v1[0] = cone->c1 + dx;
+            v1[1] = cone->c2 + dy;
+            v1[2] = cone->lo + dz;
+
+            // loop around radius
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v2[0] = cone->c1 + cone->radiushi * sin(RADINC * i) + dx;
+              v2[1] = cone->c2 + cone->radiushi * cos(RADINC * i) + dy;
+              v2[2] = cone->hi + dz;
+              v3[0] = cone->c1 + cone->radiushi * sin(RADINC * (i + 1.0)) + dx;
+              v3[1] = cone->c2 + cone->radiushi * cos(RADINC * (i + 1.0)) + dy;
+              v3[2] = cone->hi + dz;
+              v4[0] = sin(RADINC * i);
+              v4[1] = cos(RADINC * i);
+              v4[2] = 0.0;
+              v5[0] = sin(RADINC * (i + 1.0));
+              v5[1] = cos(RADINC * (i + 1.0));
+              v5[2] = 0.0;
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], 0.0, 0.0,
+                           1.0, v4[0], v4[1], v4[2], v5[0], v5[1], v5[2]);
+            }
+          }
+
+          // hi end has a tip
+        } else if (cone->radiushi < SMALL) {
+          double v1[3], v2[3], v3[0], v4[3], v5[3];
+
+          if (cone->axis == 'x') {
+            // set tip coordinate
+            v1[0] = cone->hi + dx;
+            v1[1] = cone->c1 + dy;
+            v1[2] = cone->c2 + dz;
+
+            // loop around radius
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v2[0] = cone->lo + dx;
+              v2[1] = cone->c1 + cone->radiuslo * sin(RADINC * i) + dy;
+              v2[2] = cone->c2 + cone->radiuslo * cos(RADINC * i) + dz;
+              v3[0] = cone->lo + dx;
+              v3[1] = cone->c1 + cone->radiuslo * sin(RADINC * (i + 1.0)) + dy;
+              v3[2] = cone->c2 + cone->radiuslo * cos(RADINC * (i + 1.0)) + dz;
+              v4[0] = 0.0;
+              v4[1] = sin(RADINC * i);
+              v4[2] = cos(RADINC * i);
+              v5[0] = 0.0;
+              v5[1] = sin(RADINC * (i + 1.0));
+              v5[2] = cos(RADINC * (i + 1.0));
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], 1.0, 0.0,
+                           0.0, v4[0], v4[1], v4[2], v5[0], v5[1], v5[2]);
+            }
+
+          } else if (cone->axis == 'y') {
+            // set tip coordinate
+            v1[0] = cone->c1 + dx;
+            v1[1] = cone->hi + dy;
+            v1[2] = cone->c2 + dz;
+
+            // loop around radius
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v2[0] = cone->c1 + cone->radiuslo * sin(RADINC * i) + dx;
+              v2[1] = cone->lo + dy;
+              v2[2] = cone->c2 + cone->radiuslo * cos(RADINC * i) + dz;
+              v3[0] = cone->c1 + cone->radiuslo * sin(RADINC * (i + 1.0)) + dx;
+              v3[1] = cone->lo + dy;
+              v3[2] = cone->c2 + cone->radiuslo * cos(RADINC * (i + 1.0)) + dz;
+              v4[0] = sin(RADINC * i);
+              v4[1] = 0.0;
+              v4[2] = cos(RADINC * i);
+              v5[0] = sin(RADINC * (i + 1.0));
+              v5[1] = 0.0;
+              v5[2] = cos(RADINC * (i + 1.0));
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], 0.0, 1.0,
+                           0.0, v4[0], v4[1], v4[2], v5[0], v5[1], v5[2]);
+            }
+
+          } else if (cone->axis == 'z') {
+            // set tip coordinate
+            v1[0] = cone->c1 + dx;
+            v1[1] = cone->c2 + dy;
+            v1[2] = cone->hi + dz;
+
+            // loop around radius
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v2[0] = cone->c1 + cone->radiuslo * sin(RADINC * i) + dx;
+              v2[1] = cone->c2 + cone->radiuslo * cos(RADINC * i) + dy;
+              v2[2] = cone->lo + dz;
+              v3[0] = cone->c1 + cone->radiuslo * sin(RADINC * (i + 1.0)) + dx;
+              v3[1] = cone->c2 + cone->radiuslo * cos(RADINC * (i + 1.0)) + dy;
+              v3[2] = cone->lo + dz;
+              v4[0] = sin(RADINC * i);
+              v4[1] = cos(RADINC * i);
+              v4[2] = 0.0;
+              v5[0] = sin(RADINC * (i + 1.0));
+              v5[1] = cos(RADINC * (i + 1.0));
+              v5[2] = 0.0;
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], 0.0, 0.0,
+                           1.0, v4[0], v4[1], v4[2], v5[0], v5[1], v5[2]);
+            }
+          }
+
+          // truncated cone
+        } else if (!cone->open_faces[2]) {
+          double v1[3], v2[3], v3[0], v4[3], v5[3], v6[3], v7[3], v8[3];
+
+          if (cone->axis == 'x') {
+
+            // loop around radii
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v1[0] = cone->hi + dx;
+              v1[1] = cone->c1 + cone->radiushi * sin(RADINC * (i - 0.5)) + dy;
+              v1[2] = cone->c2 + cone->radiushi * cos(RADINC * (i - 0.5)) + dz;
+              v2[0] = cone->lo + dx;
+              v2[1] = cone->c1 + cone->radiuslo * sin(RADINC * i) + dy;
+              v2[2] = cone->c2 + cone->radiuslo * cos(RADINC * i) + dz;
+              v3[0] = cone->hi + dx;
+              v3[1] = cone->c1 + cone->radiushi * sin(RADINC * (i + 0.5)) + dy;
+              v3[2] = cone->c2 + cone->radiushi * cos(RADINC * (i + 0.5)) + dz;
+              v4[0] = cone->lo + dx;
+              v4[1] = cone->c1 + cone->radiuslo * sin(RADINC * (i + 1.0)) + dy;
+              v4[2] = cone->c2 + cone->radiuslo * cos(RADINC * (i + 1.0)) + dz;
+              v5[0] = 0.0;
+              v5[1] = sin(RADINC * (i - 0.5));
+              v5[2] = cos(RADINC * (i - 0.5));
+              v6[0] = 0.0;
+              v6[1] = sin(RADINC * i);
+              v6[2] = cos(RADINC * i);
+              v7[0] = 0.0;
+              v7[1] = sin(RADINC * (i + 0.5));
+              v7[2] = cos(RADINC * (i + 0.5));
+              v8[0] = 0.0;
+              v8[1] = sin(RADINC * (i + 1.0));
+              v8[2] = cos(RADINC * (i + 1.0));
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], v5[0],
+                           v5[1], v5[2], v6[0], v6[1], v6[2], v7[0], v7[1], v7[2]);
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v2[0], v2[1], v2[2], v4[0], v4[1], v4[2], v3[0], v3[1], v3[2], v6[0],
+                           v6[1], v6[2], v8[0], v8[1], v8[2], v7[0], v7[1], v7[2]);
+            }
+
+          } else if (cone->axis == 'y') {
+
+            // loop around radii
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v1[0] = cone->c1 + cone->radiushi * sin(RADINC * (i - 0.5)) + dx;
+              v1[1] = cone->hi + dy;
+              v1[2] = cone->c2 + cone->radiushi * cos(RADINC * (i - 0.5)) + dz;
+              v2[0] = cone->c1 + cone->radiuslo * sin(RADINC * i) + dx;
+              v2[1] = cone->lo + dy;
+              v2[2] = cone->c2 + cone->radiuslo * cos(RADINC * i) + dz;
+              v3[0] = cone->c1 + cone->radiushi * sin(RADINC * (i + 0.5)) + dx;
+              v3[1] = cone->hi + dy;
+              v3[2] = cone->c2 + cone->radiushi * cos(RADINC * (i + 0.5)) + dz;
+              v4[0] = cone->c1 + cone->radiuslo * sin(RADINC * (i + 1.0)) + dx;
+              v4[1] = cone->lo + dy;
+              v4[2] = cone->c2 + cone->radiuslo * cos(RADINC * (i + 1.0)) + dz;
+              v5[0] = sin(RADINC * (i - 0.5));
+              v5[1] = 0.0;
+              v5[2] = cos(RADINC * (i - 0.5));
+              v6[0] = sin(RADINC * i);
+              v6[1] = 0.0;
+              v6[2] = cos(RADINC * i);
+              v7[0] = sin(RADINC * (i + 0.5));
+              v7[1] = 0.0;
+              v7[2] = cos(RADINC * (i + 0.5));
+              v8[0] = sin(RADINC * (i + 1.0));
+              v8[1] = 0.0;
+              v8[2] = cos(RADINC * (i + 1.0));
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], v5[0],
+                           v5[1], v5[2], v6[0], v6[1], v6[2], v7[0], v7[1], v7[2]);
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v2[0], v2[1], v2[2], v4[0], v4[1], v4[2], v3[0], v3[1], v3[2], v6[0],
+                           v6[1], v6[2], v8[0], v8[1], v8[2], v7[0], v7[1], v7[2]);
+            }
+
+          } else if (cone->axis == 'z') {
+
+            // loop around radii
+            for (int i = 0; i < RESOLUTION; ++i) {
+              v1[0] = cone->c1 + cone->radiushi * sin(RADINC * (i - 0.5)) + dx;
+              v1[1] = cone->c2 + cone->radiushi * cos(RADINC * (i - 0.5)) + dy;
+              v1[2] = cone->hi + dz;
+              v2[0] = cone->c1 + cone->radiuslo * sin(RADINC * i) + dx;
+              v2[1] = cone->c2 + cone->radiuslo * cos(RADINC * i) + dy;
+              v2[2] = cone->lo + dz;
+              v3[0] = cone->c1 + cone->radiushi * sin(RADINC * (i + 0.5)) + dx;
+              v3[1] = cone->c2 + cone->radiushi * cos(RADINC * (i + 0.5)) + dy;
+              v3[2] = cone->hi + dz;
+              v4[0] = cone->c1 + cone->radiuslo * sin(RADINC * (i + 1.0)) + dx;
+              v4[1] = cone->c2 + cone->radiuslo * cos(RADINC * (i + 1.0)) + dy;
+              v4[2] = cone->lo + dz;
+              v5[0] = sin(RADINC * (i - 0.5));
+              v5[1] = cos(RADINC * (i - 0.5));
+              v5[2] = 0.0;
+              v6[0] = sin(RADINC * i);
+              v6[1] = cos(RADINC * i);
+              v6[2] = 0.0;
+              v7[0] = sin(RADINC * (i + 0.5));
+              v7[1] = cos(RADINC * (i + 0.5));
+              v7[2] = 0.0;
+              v8[0] = sin(RADINC * (i + 1.0));
+              v8[1] = cos(RADINC * (i + 1.0));
+              v8[2] = 0.0;
+
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2], v5[0],
+                           v5[1], v5[2], v6[0], v6[1], v6[2], v7[0], v7[1], v7[2]);
+              utils::print(fp,
+                           "draw trinorm {{{} {} {}}} {{{} {} {}}} {{{} {} {}}} "
+                           "{{{} {} {}}} {{{} {} {}}} {{{} {} {}}}\n",
+                           v2[0], v2[1], v2[2], v4[0], v4[1], v4[2], v3[0], v3[1], v3[2], v6[0],
+                           v6[1], v6[2], v8[0], v8[1], v8[2], v7[0], v7[1], v7[2]);
+            }
+          }
+        }
+      }
+
+      // draw lids
+      if ((cone->radiuslo > SMALL) && !cone->open_faces[0]) {
+        double lid = cone->lo;
+        if (cone->axis == 'x') {
+          lid += dx;
+          utils::print(fp,
+                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cone->c1 + dy, cone->c2 + dz, cone->radiuslo, RESOLUTION);
+        } else if (cone->axis == 'y') {
+          lid += dy;
+          utils::print(fp,
+                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cone->c1 + dx, cone->c2 + dz, cone->radiuslo, RESOLUTION);
+        } else if (cone->axis == 'z') {
+          lid += dz;
+          utils::print(fp,
+                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cone->c1 + dx, cone->c2 + dy, cone->radiuslo, RESOLUTION);
+        }
+      }
+      if ((cone->radiushi > SMALL) && !cone->open_faces[1]) {
+        double lid = cone->hi;
+        if (cone->axis == 'x') {
+          lid += dx;
+          utils::print(fp,
+                       "draw cylinder {{{0} {2} {3}}} {{{1:.15} {2} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cone->c1 + dy, cone->c2 + dz, cone->radiushi, RESOLUTION);
+        } else if (cone->axis == 'y') {
+          lid += dy;
+          utils::print(fp,
+                       "draw cylinder {{{2} {0} {3}}} {{{2} {1:.15} {3}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cone->c1 + dx, cone->c2 + dz, cone->radiushi, RESOLUTION);
+        } else if (cone->axis == 'z') {
+          lid += dz;
+          utils::print(fp,
+                       "draw cylinder {{{2} {3} {0}}} {{{2} {3} {1:.15}}} radius {4} "
+                       "resolution {5} filled yes\n",
+                       lid, lid + DELTA, cone->c1 + dx, cone->c2 + dy, cone->radiushi, RESOLUTION);
+        }
       }
     }
 
