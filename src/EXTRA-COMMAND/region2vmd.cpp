@@ -266,6 +266,9 @@ void Region2VMD::write_region(FILE *fp, Region *region)
     return;
   }
 
+  // update internal variables
+  region->prematch();
+
   // compute position offset for moving regions
 
   double dx = 0.0;
