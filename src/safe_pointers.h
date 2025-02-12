@@ -33,6 +33,8 @@ Drop in replacement for ``FILE *``. Use as ``SafeFilePtr fp;`` instead of
 class SafeFilePtr {
  public:
   SafeFilePtr() : fp(nullptr) {};
+  SafeFilePtr(FILE *_fp) : fp(_fp) {};
+
   SafeFilePtr(const SafeFilePtr &) = delete;
   SafeFilePtr(const SafeFilePtr &&) = delete;
   SafeFilePtr &operator=(const SafeFilePtr &) = delete;
