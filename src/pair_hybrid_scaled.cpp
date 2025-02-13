@@ -308,6 +308,7 @@ void PairHybridScaled::settings(int narg, char **arg)
     delete[] compute_tally;
     delete[] scaleval;
     delete[] scaleidx;
+    delete[] atomvar;
     scalevars.clear();
   }
 
