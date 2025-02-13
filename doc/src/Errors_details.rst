@@ -331,7 +331,7 @@ Unrecognized pair style ... is part of ... package which is not enabled in this 
 The LAMMPS executable (binary) being used was not compiled with a package
 containing the specified pair style. This indicates that the executable needs to
 be re-built after enabling the correct package in the relevant Makefile or CMake
-build directory, see :ref:`Section 3. Build LAMMPS <Build>` for more details.
+build directory, see :doc:`Section 3. Build LAMMPS <Build>` for more details.
 One can check if the expected package and pair style is present in the
 executable by running it with the ``-help`` (or ``-h``) flag on the command
 line. One common oversight, especially for beginner LAMMPS users, is to enable
