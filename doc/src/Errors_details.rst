@@ -58,6 +58,35 @@ only the symptoms are not triggering an error quickly.  Correspondingly,
 errors may be triggered faster with more processors and thus smaller
 sub-domains.
 
+Segmentation Fault
+^^^^^^^^^^^^^^^^^^
+
+A segmentation fault is an error reported by the **operating system**
+and not LAMMPS itself.  It happens when a process tries to access a
+memory address that is not available.  This can have **many** reasons:
+memory has not been allocated, a memory buffer is not large enough, a
+memory address is computed from an incorrect index, a memory buffer is
+used after it has been freed, some general memory corruption.  When
+investigating a segmentation fault (aka segfault), it is important to
+determine which process is causing it; it may not always be LAMMPS.  For
+example, some MPI library implementation report a segmentation fault
+from their "mpirun" or "mpiexec" command when the application has been
+terminated unexpectedly.
+
+While a segmentation fault is likely an indication of a bug in LAMMPS,
+it need not always be; it can also be the consequence of too aggressive
+simulation settings.  For time critical code paths, LAMMPS will assume
+the user has chosen the settings carefully and will not make any checks
+to avoid to avoid performance penalties.
+
+A crucial step in resolving segmentation faults is to identify the exact
+location in the code where this happens.  Please see `Errors_debug` for
+a couple of examples showing how to do this on a Linux machine.  With
+this information, a simple way to reproduce the segmentation fault, and
+the information about the :doc:`exact LAMMPS version <Manual_version>`
+and platform you are running on, you can contact the LAMMPS developers
+or post in the LAMMPS forum to get assistance.
+
 Fast moving atoms
 ^^^^^^^^^^^^^^^^^
 
