@@ -209,7 +209,7 @@ endif()
 ########################################################################
 # User input options                                                   #
 ########################################################################
-# backward compatibility with CMake before 3.12 and older LAMMPS documentation
+# backward compatibility with older LAMMPS documentation
 if (PYTHON_EXECUTABLE)
   set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
 endif()
@@ -930,7 +930,7 @@ endif()
 include(Testing)
 include(CodeCoverage)
 include(CodingStandard)
-find_package(ClangFormat 11.0)
+find_package(ClangFormat 11.0 QUIET)
 
 if(ClangFormat_FOUND)
   add_custom_target(format-src
