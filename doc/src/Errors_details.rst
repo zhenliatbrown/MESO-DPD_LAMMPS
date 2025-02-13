@@ -311,6 +311,11 @@ help to temporarily use a cutoff-Coulomb pair style and no kspace style
 until the system has somewhat equilibrated and then switch to the
 long-range solver.
 
+.. _err0008:
+
+Lost atoms ...
+--------------
+
 .. _err0009:
 
 Too many neighbor bins
