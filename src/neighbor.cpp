@@ -865,6 +865,13 @@ int Neighbor::init_pair()
     }
   }
 
+  // update cutneighmin based on individual neighbor list requests
+
+  for (i = 0; i < nrequest; ++i) {
+    if (requests[i]->cut) cutneighmin = MIN(cutneighmin, requests[i]->cutoff +
+                                            (requests[i]->occasional ? 0.0 : skin));
+  }
+
   // morph requests in various ways
   // purpose is to avoid duplicate or inefficient builds
   // also sort requests by cutoff distance for trimming
