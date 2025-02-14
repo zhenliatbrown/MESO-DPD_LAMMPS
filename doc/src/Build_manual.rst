@@ -162,7 +162,7 @@ are usually installed by default, the following packages are required:
    - dvipng
    - ellipse
    - fncychap
-   - fontawesom
+   - fontawesome
    - framed
    - geometry
    - gyre
