@@ -675,7 +675,7 @@ as detailed in :ref:`Vyas et al <Vyas2025>`, to address inaccuracies arising fro
 lag between position and velocity updates in the standard Velocity-Verlet method.
 These inaccuracies are particularly significant in polydisperse frictional flows with
 large-to-small size ratios greater than three. By synchronizing position and velocity updates
-for force evaluation and refining tangential force calculations, the method ensures more
+for force evaluation and refining tangential force calculations, the *synchronized_verlet* method ensures more
 accurate and physically consistent outcomes without any significant influence on computational cost.
 
 ----------
@@ -958,6 +958,6 @@ AIChE Journal, 47(5), 1052-1059.
 
 .. _Vyas2025:
 
-**(Vyas et al, 2025)**  Vyas D. R., Ottino J. M., Lueptow R. M., Umbanhowar P. B. (2025).
+**(Vyas et al, 2025)**  Vyas D. R., Ottino J. M., Lueptow R. M., & Umbanhowar P. B. (2025).
 Improved Velocity-Verlet Algorithm for the Discrete Element Method.
-Computer Physics Communications, xx xx
+Computer Physics Communications, 109524. 
