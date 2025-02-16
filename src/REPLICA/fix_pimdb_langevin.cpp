@@ -26,7 +26,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <chrono>
-#include <iostream>
 #include <fstream>
 #include "fix_pimdb_langevin.h"
 #include "universe.h"
@@ -45,11 +44,11 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
-    FixPIMDLangevin(lmp, narg, arg), nbosons(atom->nlocal),
+    FixPIMDLangevin(lmp, narg, arg, true), nbosons(atom->nlocal),
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
     synch_energies = true;
-    for (int i = 3; i < narg - 1; i += 2) {
+    for (int i = 3; i < narg - 1; i++) {
         if ((strcmp(arg[i], "method") == 0) && (strcmp(arg[i+1], "pimd") != 0)) {
             error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
         }
@@ -59,9 +58,16 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
         else if ((strcmp(arg[i], "iso") == 0) || (strcmp(arg[i], "aniso") == 0) || (strcmp(arg[i], "barostat") == 0) || (strcmp(arg[i], "taup") == 0)) {
             error->universe_all(FLERR, "Barostat parameters are not available for pimdb.");
         }
-        else if ((strcmp(arg[i], "esynch") == 0) && (strcmp(arg[i + 1], "no") == 0)) {
-            // CR: validate that the argument of esynch is either "no" or "yes"
-            synch_energies = false;
+        else if (strcmp(arg[i], "esynch") == 0) {
+            if (strcmp(arg[i + 1], "yes") == 0) {
+                synch_energies = true;
+            }
+            else if (strcmp(arg[i + 1], "no") == 0) {
+                synch_energies = false;
+            }
+            else {
+                error->universe_all(FLERR, "The esynch parameter can only recieve yes or no!");
+            }
         }
     }
 
@@ -124,8 +130,8 @@ void FixPIMDBLangevin::spring_force() {
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::compute_spring_energy() {
-    // CR: perform this line only if synch_energies
     se_bead = bosonic_exchange.get_bead_spring_energy();
+
     if (synch_energies) {
         MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
         total_spring_energy /= universe->procs_per_world[universe->iworld];

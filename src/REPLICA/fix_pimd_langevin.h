@@ -35,7 +35,7 @@ namespace LAMMPS_NS {
 
 class FixPIMDLangevin : public Fix {
  public:
-  FixPIMDLangevin(class LAMMPS *, int, char **);
+  FixPIMDLangevin(class LAMMPS *, int, char **, bool = false);
   ~FixPIMDLangevin() override;
 
   int setmask() override;
