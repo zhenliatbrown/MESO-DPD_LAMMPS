@@ -239,7 +239,7 @@ FixPIMDLangevin::FixPIMDLangevin(LAMMPS *lmp, int narg, char **arg, bool enable_
         removecomflag = 1;
       else if (strcmp(arg[i + 1], "no") == 0)
         removecomflag = 0;
-    } else if (((strcmp(arg[i], "esynch") == 0) && (!enable_esynch)) || (strcmp(arg[i], "esynch") != 0)) {
+    } else if (!((strcmp(arg[i], "esynch") == 0) && (enable_esynch))) {
         error->universe_all(FLERR, fmt::format("Unknown keyword {} for fix {}", arg[i], style));
     }
   }
