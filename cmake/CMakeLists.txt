@@ -225,6 +225,12 @@ if(DEFINED ENV{VIRTUAL_ENV} AND NOT Python_EXECUTABLE)
     "   Setting Python interpreter to: ${Python_EXECUTABLE}")
 endif()
 
+find_package(Python COMPONENTS Interpreter QUIET)
+# NOTE: RHEL 8.0 and Ubuntu 18.04LTS ship with Python 3.6, Python 3.8 was EOL in 2024
+if(Python_VERSION VERSION_LESS 3.6)
+  message(FATAL_ERROR "LAMMPS requires Python 3.6 or later")
+endif()
+
 set(LAMMPS_MACHINE "" CACHE STRING "Suffix to append to lmp binary (WON'T enable any features automatically")
 mark_as_advanced(LAMMPS_MACHINE)
 if(LAMMPS_MACHINE)
