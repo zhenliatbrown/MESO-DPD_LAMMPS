@@ -398,9 +398,13 @@ variant takes element type names while 'eam' does not).
 Another common source of coefficient errors is when using multiple pair styles
 with commands such as :doc:`pair_style hybrid <pair_hybrid>`. Using hybrid pair
 styles requires adding an extra "label" argument in the coefficient commands
-that designates which pair style the command line refers to, and may require
-different arguments per pair style. Other errors might require a close look at
-files that are read in by the input script, such as data files or restart files.
+that designates which pair style the command line refers to. Moreover, if
+the same pair style is used multiple times, this label must be followed by
+an additional numeric argument. Also, different pair styles may require
+different arguments.
+
+This error message might also require a close look at other LAMMPS input files
+that are read in by the input script, such as data files or restart files.
 
 .. _err0024:
 
