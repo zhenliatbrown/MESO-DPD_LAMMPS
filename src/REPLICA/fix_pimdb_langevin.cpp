@@ -48,7 +48,7 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
     synch_energies = true;
-    for (int i = 3; i < narg - 1; i++) {
+    for (int i = 3; i < narg - 1; i++) { // CR: why i += 2 changed to i++?
         if ((strcmp(arg[i], "method") == 0) && (strcmp(arg[i+1], "pimd") != 0)) {
             error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
         }
@@ -66,7 +66,7 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
                 synch_energies = false;
             }
             else {
-                error->universe_all(FLERR, "The esynch parameter can only recieve yes or no!");
+                error->universe_all(FLERR, "The esynch parameter can only receive yes or no!");
             }
         }
     }
