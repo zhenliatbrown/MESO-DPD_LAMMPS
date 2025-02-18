@@ -420,6 +420,48 @@ different arguments.
 This error message might also require a close look at other LAMMPS input files
 that are read in by the input script, such as data files or restart files.
 
+.. _err0021:
+
+Energy was not tallied on needed timestep (also virial, per-atom energy, per-atom virial)
+-----------------------------------------------------------------------------------------
+
+This error is generated when LAMMPS attempts to access an out-of-date
+or non-existent energy, pressure, or virial.
+For efficiency reasons,
+LAMMPS does *not* calculate these quantities when the forces are calculated
+on every timestep or iteration.  Global quantities are only calculated
+when they are needed for :doc:`thermo <thermo_style>` output (at the beginning, end,
+and at regular intervals specified by the :doc:`thermo <thermo>` command). Similarly,
+per-atom quantities are only calculated if they are needed to write per-atom
+energy or virial to a dump file.
+This system works fine for simple input scripts. 
+However, the many user-specified `variable`, `fix`, and `compute` commands
+that LAMMPS provides make it difficult to anticipate when a quantity will
+be requested. In some use cases, LAMMPS will figure out that a quantity is needed
+and arrange for it to be calculated on that timestep e.g. if it is requested by
+:doc:`fix ave/time <fix_ave_time>` or similar commands.
+If that fails, it can be detected by a mismatch
+between the current timestep and when a quantity was last calculated,
+in which case an error message of this type is generated.
+
+The most common cause of this type of error is requesting a quantity before
+the start of the simulation.
+
+.. code-block:: LAMMPS
+
+   # run 0 post no               # this will fix the error
+   variable e equal pe           # requesting energy compute
+   print "Potential energy = $e" # this will generate the error
+   run 1000                      # start of simulation
+
+This situation can be avoided by adding in a "run 0" command, as explained in
+more detail in the "Variable Accuracy" section of the
+:doc:`variable <variable>` doc page.
+
+Another cause is requesting a quantity on a timestep that is not
+a thermo or dump output timestep. This can often be
+remedied by increasing the frequency of thermo or dump output.
+
 .. _err0024:
 
 Molecule topology/atom exceeds system topology/atom
