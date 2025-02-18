@@ -954,4 +954,4 @@ AIChE Journal, 47(5), 1052-1059.
 
 **(Vyas et al, 2025)**  Vyas D. R., Ottino J. M., Lueptow R. M., & Umbanhowar P. B. (2025).
 Improved Velocity-Verlet Algorithm for the Discrete Element Method.
-Computer Physics Communications, 109524. 
+Computer Physics Communications, 109524.

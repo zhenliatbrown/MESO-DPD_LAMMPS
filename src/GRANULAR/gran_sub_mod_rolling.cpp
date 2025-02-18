@@ -96,7 +96,7 @@ void GranSubModRollingSDS::calculate_forces()
       rolldotn = dot3(hist_temp, gm->nx);
       frameupdate = (fabs(rolldotn) * k) > (EPSILON * Frcrit);
       if (frameupdate) rotate_rescale_vec(hist_temp, gm->nx, hist_temp);
-    }    
+    }
   }
 
   scaleadd3(-k, hist_temp, -gamma, gm->vrl, gm->fr);
