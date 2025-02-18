@@ -8,19 +8,7 @@ not the exact cause, or where the explanation needs to be more detailed
 than what can be fit into a message printed by the program.  The
 following are discussions of such cases.
 
-- :ref:`Unknown identifier in data file <err0001>`
-- :ref:`Incorrect format in ... section of data file <err0002>`
-- :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
-- :ref:`Out of range atoms - cannot compute ... <err0004>`
-- :ref:`Lost atoms ... <err0008>`
-- :ref:`Too many neighbor bins <err0009>`
-- :ref:`Unrecognized pair style ... is part of ... package which is not enabled in this LAMMPS binary  <err0010>`
-- :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0015>`
-- :ref:`Domain too large for neighbor bins <err0017>`
-- :ref:`Incorrect args for pair coefficients (also bond/angle/dihedral/improper coefficients) <err0021>`
-- :ref:`Molecule topology/atom exceeds system topology/atom <err0024>`
-- :ref:`Molecule topology type exceeds system topology type <err0025>`
-- :ref:`Molecule attributes do not match system attributes <err0026>`
+.. contents::
 
 ------
 
@@ -420,29 +408,28 @@ different arguments.
 This error message might also require a close look at other LAMMPS input files
 that are read in by the input script, such as data files or restart files.
 
-.. _err0021:
+.. _err0022:
 
 Energy was not tallied on needed timestep (also virial, per-atom energy, per-atom virial)
 -----------------------------------------------------------------------------------------
 
-This error is generated when LAMMPS attempts to access an out-of-date
-or non-existent energy, pressure, or virial.
-For efficiency reasons,
-LAMMPS does *not* calculate these quantities when the forces are calculated
-on every timestep or iteration.  Global quantities are only calculated
-when they are needed for :doc:`thermo <thermo_style>` output (at the beginning, end,
-and at regular intervals specified by the :doc:`thermo <thermo>` command). Similarly,
-per-atom quantities are only calculated if they are needed to write per-atom
-energy or virial to a dump file.
-This system works fine for simple input scripts. 
-However, the many user-specified `variable`, `fix`, and `compute` commands
-that LAMMPS provides make it difficult to anticipate when a quantity will
-be requested. In some use cases, LAMMPS will figure out that a quantity is needed
-and arrange for it to be calculated on that timestep e.g. if it is requested by
-:doc:`fix ave/time <fix_ave_time>` or similar commands.
-If that fails, it can be detected by a mismatch
-between the current timestep and when a quantity was last calculated,
-in which case an error message of this type is generated.
+This error is generated when LAMMPS attempts to access an out-of-date or
+non-existent energy, pressure, or virial.  For efficiency reasons,
+LAMMPS does *not* calculate these quantities when the forces are
+calculated on every timestep or iteration.  Global quantities are only
+calculated when they are needed for :doc:`thermo <thermo_style>` output
+(at the beginning, end, and at regular intervals specified by the
+:doc:`thermo <thermo>` command). Similarly, per-atom quantities are only
+calculated if they are needed to write per-atom energy or virial to a
+dump file.  This system works fine for simple input scripts.  However,
+the many user-specified `variable`, `fix`, and `compute` commands that
+LAMMPS provides make it difficult to anticipate when a quantity will be
+requested. In some use cases, LAMMPS will figure out that a quantity is
+needed and arrange for it to be calculated on that timestep e.g. if it
+is requested by :doc:`fix ave/time <fix_ave_time>` or similar commands.
+If that fails, it can be detected by a mismatch between the current
+timestep and when a quantity was last calculated, in which case an error
+message of this type is generated.
 
 The most common cause of this type of error is requesting a quantity before
 the start of the simulation.
