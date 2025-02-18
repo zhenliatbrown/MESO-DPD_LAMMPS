@@ -1,5 +1,5 @@
 # Example problem demonstrating the use of synchronized_verlet 
-# Refer https://arxiv.org/abs/2410.14798 for further details
+# Refer https://doi.org/10.1016/j.cpc.2025.109524 for further details
 
 units	        si
 atom_style	sphere
@@ -20,7 +20,7 @@ fix             frz ps freeze
 fix             g fine gravity 9.81 vector 0 0 -1
 fix             1 fine nve/sphere
 
-dump            1 all custom 3000 op.dump id x y z vx vy vz type diameter 
+# dump            1 all custom 3000 op.dump id x y z vx vy vz type diameter 
 
 comm_modify     vel yes
 

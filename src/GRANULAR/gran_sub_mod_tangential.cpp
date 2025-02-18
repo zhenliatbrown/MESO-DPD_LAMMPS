@@ -342,15 +342,16 @@ void GranSubModTangentialMindlin::calculate_forces()
 
     if (mindlin_rescale) history[3] = gm->contact_radius;
 
-    // second projection to full step normal
-    rsht = dot3(history, gm->nx);
-    if (mindlin_force) {
-      frame_update = fabs(rsht) > (EPSILON * Fscrit);
-    } else {
-      frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
+    if (gm->synchronized_verlet == 1) {
+      // second projection to full step normal
+      rsht = dot3(history, gm->nx);
+      if (mindlin_force) {
+        frame_update = fabs(rsht) > (EPSILON * Fscrit);
+      } else {
+        frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
+      }
+      if (frame_update) rotate_rescale_vec(history, gm->nx, history);
     }
-
-    if (frame_update) rotate_rescale_vec(history, gm->nx, history);
   }
 
   // tangential forces = history + tangential velocity damping

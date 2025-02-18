@@ -413,13 +413,12 @@ void GranularModel::calculate_forces()
   // relative translational velocity
   sub3(vi, vj, vr);
 
-  //Calculating half step normal for synchronized verlet
-  double temp1[3], nhalf[3];
-  scale3(0.5*dt, vr, temp1);
-  sub3(dx, temp1, nhalf);
-  norm3(nhalf);
-
   if (synchronized_verlet == 1 && contact_type != WALL){
+    //Calculating half step normal for synchronized verlet
+    double temp1[3], nhalf[3];
+    scale3(0.5*dt, vr, temp1);
+    sub3(dx, temp1, nhalf);
+    norm3(nhalf);
     copy3(nhalf, nxuse);
   } else {
     copy3(nx, nxuse);

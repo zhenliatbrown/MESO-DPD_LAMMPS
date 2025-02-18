@@ -1,0 +1,183 @@
+LAMMPS (19 Nov 2024 - Development - )
+# Example problem demonstrating the use of synchronized_verlet
+# Refer https://doi.org/10.1016/j.cpc.2025.109524 for further details
+
+units	        si
+atom_style	sphere
+newton off
+
+boundary   	p p f
+read_data       3ps.dat
+Reading data file ...
+  orthogonal box = (-0.03 -0.02 -0.02) to (0.03 0.02 0.02)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  3 atoms
+  reading velocities ...
+  3 velocities
+  read_data CPU = 0.000 seconds
+
+group           ps type 1
+2 atoms in group ps
+group           fine type 2
+1 atoms in group fine
+
+pair_style granular
+pair_coeff * * hooke 1e4 0.5 tangential linear_history 8235 0 0.5 damping coeff_restitution #synchronized_verlet
+# pair_coeff * * hertz/material 5e8 0.5 0.3 tangential mindlin  NULL 0.0 0.5 damping coeff_restitution #synchronized_verlet
+
+timestep        1e-6
+fix             frz ps freeze
+fix             g fine gravity 9.81 vector 0 0 -1
+fix             1 fine nve/sphere
+
+# dump            1 all custom 3000 op.dump id x y z vx vy vz type diameter
+
+comm_modify     vel yes
+
+thermo          3000
+thermo_style    custom step ke
+run_style       verlet
+run             300000
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 0.011
+  ghost atom cutoff = 0.011
+  binsize = 0.0055, bins = 11 8 8
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair granular, perpetual
+      attributes: half, newton off, size, history
+      pair build: half/size/bin/atomonly/newtoff
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 9.962 | 9.962 | 9.962 Mbytes
+   Step         KinEng    
+         0   0            
+      3000   7.7090707e-16
+      6000   3.1112308e-15
+      9000   7.1190199e-15
+     12000   1.2962629e-14
+     15000   2.0887639e-14
+     18000   3.1226914e-14
+     21000   4.4414232e-14
+     24000   6.1002083e-14
+     27000   8.1684384e-14
+     30000   1.0732511e-13
+     33000   1.3899407e-13
+     36000   1.7801129e-13
+     39000   2.2600198e-13
+     42000   2.8496431e-13
+     45000   3.5735283e-13
+     48000   4.4618097e-13
+     51000   5.5514685e-13
+     54000   6.8878751e-13
+     57000   8.5266773e-13
+     60000   1.0536111e-12
+     63000   1.2999827e-12
+     66000   1.6020342e-12
+     69000   1.9723255e-12
+     72000   2.4262387e-12
+     75000   2.9826051e-12
+     78000   3.6644675e-12
+     81000   4.5000076e-12
+     84000   5.5236701e-12
+     87000   6.7775234e-12
+     90000   8.3129012e-12
+     93000   1.0192374e-11
+     96000   1.2492108e-11
+     99000   1.5304665e-11
+    102000   1.8742302e-11
+    105000   2.2940821e-11
+    108000   2.8063988e-11
+    111000   3.4308518e-11
+    114000   4.1909557e-11
+    117000   5.1146464e-11
+    120000   6.2348576e-11
+    123000   7.5900357e-11
+    126000   9.2245024e-11
+    129000   1.1188527e-10
+    132000   1.3537906e-10
+    135000   1.6332784e-10
+    138000   1.9635358e-10
+    141000   2.3506042e-10
+    144000   2.7997636e-10
+    147000   3.3147111e-10
+    150000   3.8964803e-10
+    153000   4.5421327e-10
+    156000   5.2433218e-10
+    159000   5.9849452e-10
+    162000   6.7442135e-10
+    165000   7.4905649e-10
+    168000   8.1868568e-10
+    171000   8.7921156e-10
+    174000   9.2657849e-10
+    177000   9.572932e-10 
+    180000   9.6894112e-10
+    183000   9.6057611e-10
+    186000   9.3288006e-10
+    189000   8.8804741e-10
+    192000   8.2942739e-10
+    195000   7.6102002e-10
+    198000   6.869483e-10 
+    201000   6.1101259e-10
+    204000   5.3638937e-10
+    207000   4.6548772e-10
+    210000   3.9993964e-10
+    213000   3.4068233e-10
+    216000   2.8808878e-10
+    219000   2.4211155e-10
+    222000   2.0241684e-10
+    225000   1.6849649e-10
+    228000   1.3975448e-10
+    231000   1.1556883e-10
+    234000   9.5332935e-11
+    237000   7.8480745e-11
+    240000   6.4500131e-11
+    243000   5.2938118e-11
+    246000   4.340082e-11 
+    249000   3.5550184e-11
+    252000   2.9099024e-11
+    255000   2.3805311e-11
+    258000   1.9466371e-11
+    261000   1.5913344e-11
+    264000   1.3006115e-11
+    267000   1.0628799e-11
+    270000   8.6858064e-12
+    273000   7.0984554e-12
+    276000   5.8020943e-12
+    279000   4.7436746e-12
+    282000   3.8797193e-12
+    285000   3.1746291e-12
+    288000   2.5992781e-12
+    291000   2.1298521e-12
+    294000   1.7468903e-12
+    297000   1.4344968e-12
+    300000   1.1796924e-12
+Loop time of 0.147642 on 1 procs for 300000 steps with 3 atoms
+
+100.0% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.063766   | 0.063766   | 0.063766   |   0.0 | 43.19
+Neigh   | 3.1991e-05 | 3.1991e-05 | 3.1991e-05 |   0.0 |  0.02
+Comm    | 0.021321   | 0.021321   | 0.021321   |   0.0 | 14.44
+Output  | 0.00039887 | 0.00039887 | 0.00039887 |   0.0 |  0.27
+Modify  | 0.032762   | 0.032762   | 0.032762   |   0.0 | 22.19
+Other   |            | 0.02936    |            |       | 19.89
+
+Nlocal:              3 ave           3 max           3 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              3 ave           3 max           3 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 3
+Ave neighs/atom = 1
+Neighbor list builds = 19
+Dangerous builds = 0
+Total wall time: 0:00:00
