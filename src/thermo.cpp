@@ -1220,7 +1220,7 @@ void Thermo::check_temp(const std::string &keyword)
 void Thermo::check_pe(const std::string &keyword)
 {
   if (update->eflag_global != update->ntimestep)
-    error->all(FLERR, "Energy was not tallied on needed timestep");
+    error->all(FLERR, Error::NOLASTLINE, "Energy was not tallied on needed timestep{}", utils::errorurl(22));
   if (!pe)
     error->all(FLERR, "Thermo keyword {} in variable requires thermo to use/init potential energy",
                keyword);
@@ -1419,7 +1419,8 @@ int Thermo::evaluate_keyword(const std::string &word, double *answer)
 
   } else if (word == "etail") {
     if (update->eflag_global != update->ntimestep)
-      error->all(FLERR, "Energy was not tallied on needed timestep for thermo keyword etail");
+      error->all(FLERR, Error::NOLASTLINE, "Energy was not tallied on needed timestep for thermo "
+                                           "keyword etail{}", utils::errorurl(22));
     compute_etail();
 
   } else if (word == "enthalpy") {
