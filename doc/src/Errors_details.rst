@@ -347,6 +347,20 @@ If this error is occurring with an executable that the user does not control
 (e.g., through a module on HPC clusters), the user will need to get in contact
 with the relevant person or people who can update the executable.
 
+.. _err0012:
+
+fmt::format_error
+-----------------
+
+LAMMPS uses the `{fmt} library <https://fmt.dev>`_ for advanced string
+formatting tasks.  This is similar to the ``printf()`` family of
+functions from the standard C library, but more flexible.  If there is a
+bug in the LAMMPS code and the format string does not match the list of
+arguments or has some other error, this error message will be shown.
+You should contact the LAMMPS developers and report the bug as a `GitHub
+Bug Report Issue <https://github.com/lammps/lammps/issues>`_ along with
+sufficient information to easily reproduce it.
+
 .. _err0015:
 
 Cannot use neighbor bins - box size \<\< cutoff
