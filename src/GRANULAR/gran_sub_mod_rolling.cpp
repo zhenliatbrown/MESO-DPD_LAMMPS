@@ -82,10 +82,10 @@ void GranSubModRollingSDS::calculate_forces()
   hist_temp[2] = gm->history[rhist2];
 
   if (gm->history_update) {
-    rolldotn = dot3(hist_temp, gm->nxuse);
+    rolldotn = dot3(hist_temp, gm->nx);
 
     frameupdate = (fabs(rolldotn) * k) > (EPSILON * Frcrit);
-    if (frameupdate) rotate_rescale_vec(hist_temp, gm->nxuse);
+    if (frameupdate) rotate_rescale_vec(hist_temp, gm->nx);
 
     // update history at half-step
     scale3(gm->dt, gm->vrl, temp_array);
@@ -93,9 +93,9 @@ void GranSubModRollingSDS::calculate_forces()
 
     // rotate into tangential plane at full-step for synchronized_verlet
     if (gm->synchronized_verlet == 1) {
-      rolldotn = dot3(hist_temp, gm->nx);
+      rolldotn = dot3(hist_temp, gm->nx_unrotated);
       frameupdate = (fabs(rolldotn) * k) > (EPSILON * Frcrit);
-      if (frameupdate) rotate_rescale_vec(hist_temp, gm->nx);
+      if (frameupdate) rotate_rescale_vec(hist_temp, gm->nx_unrotated);
     }
   }
 

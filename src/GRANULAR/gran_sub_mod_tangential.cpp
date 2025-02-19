@@ -125,10 +125,10 @@ void GranSubModTangentialLinearHistory::calculate_forces()
   // rotate and update displacements / force.
   // see e.g. eq. 17 of Luding, Gran. Matter 2008, v10,p235
   if (gm->history_update) {
-    rsht = dot3(history, gm->nxuse);
+    rsht = dot3(history, gm->nx);
     frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
 
-    if (frame_update) rotate_rescale_vec(history, gm->nxuse);
+    if (frame_update) rotate_rescale_vec(history, gm->nx);
 
     // update history, tangential force using velocities at half step
     // see e.g. eq. 18 of Thornton et al, Pow. Tech. 2013, v223,p30-46
@@ -136,10 +136,10 @@ void GranSubModTangentialLinearHistory::calculate_forces()
     add3(history, temp_array, history);
 
     if(gm->synchronized_verlet == 1) {
-      rsht = dot3(history, gm->nx);
+      rsht = dot3(history, gm->nx_unrotated);
       frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
       //Second projection to nx (t+\Delta t)
-      if (frame_update) rotate_rescale_vec(history, gm->nx);
+      if (frame_update) rotate_rescale_vec(history, gm->nx_unrotated);
     }
   }
 
@@ -148,7 +148,7 @@ void GranSubModTangentialLinearHistory::calculate_forces()
   //Rotating vtr for damping term in nx direction
   if (frame_update && gm->synchronized_verlet == 1) {
     copy3(gm->vtr, vtr2);
-    rotate_rescale_vec(vtr2, gm->nx);
+    rotate_rescale_vec(vtr2, gm->nx_unrotated);
   } else {
     copy3(gm->vtr, vtr2);
   }
@@ -322,14 +322,14 @@ void GranSubModTangentialMindlin::calculate_forces()
   // rotate and update displacements / force.
   // see e.g. eq. 17 of Luding, Gran. Matter 2008, v10,p235
   if (gm->history_update) {
-    rsht = dot3(history, gm->nxuse);
+    rsht = dot3(history, gm->nx);
     if (mindlin_force) {
       frame_update = fabs(rsht) > (EPSILON * Fscrit);
     } else {
       frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
     }
 
-    if (frame_update) rotate_rescale_vec(history, gm->nxuse);
+    if (frame_update) rotate_rescale_vec(history, gm->nx);
 
     // update history
     if (mindlin_force) {
@@ -345,22 +345,21 @@ void GranSubModTangentialMindlin::calculate_forces()
 
     if (gm->synchronized_verlet == 1) {
       // second projection to full step normal
-      rsht = dot3(history, gm->nx);
+      rsht = dot3(history, gm->nx_unrotated);
       if (mindlin_force) {
         frame_update = fabs(rsht) > (EPSILON * Fscrit);
       } else {
         frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
       }
-      if (frame_update) rotate_rescale_vec(history, gm->nx);
+      if (frame_update) rotate_rescale_vec(history, gm->nx_unrotated);
     }
   }
 
   // tangential forces = history + tangential velocity damping
-  //Rotating vtr for damping term in nx direction
-  if (frame_update && gm->synchronized_verlet)
-  {
+  // Rotating vtr for damping term in nx direction
+  if (frame_update && gm->synchronized_verlet) {
     copy3(gm->vtr, vtr2);
-    rotate_rescale_vec(vtr2, gm->nx);
+    rotate_rescale_vec(vtr2, gm->nx_unrotated);
   } else {
     copy3(gm->vtr, vtr2);
   }
