@@ -128,7 +128,7 @@ void GranSubModTangentialLinearHistory::calculate_forces()
     rsht = dot3(history, gm->nxuse);
     frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
 
-    if (frame_update) rotate_rescale_vec(history, gm->nxuse, history);
+    if (frame_update) rotate_rescale_vec(history, gm->nxuse);
 
     // update history, tangential force using velocities at half step
     // see e.g. eq. 18 of Thornton et al, Pow. Tech. 2013, v223,p30-46
@@ -139,7 +139,7 @@ void GranSubModTangentialLinearHistory::calculate_forces()
       rsht = dot3(history, gm->nx);
       frame_update = (fabs(rsht) * k) > (EPSILON * Fscrit);
       //Second projection to nx (t+\Delta t)
-      if (frame_update) rotate_rescale_vec(history, gm->nx, history);
+      if (frame_update) rotate_rescale_vec(history, gm->nx);
     }
   }
 
@@ -147,7 +147,8 @@ void GranSubModTangentialLinearHistory::calculate_forces()
   scale3(-k, history, gm->fs);
   //Rotating vtr for damping term in nx direction
   if (frame_update && gm->synchronized_verlet == 1) {
-    rotate_rescale_vec(gm->vtr, gm->nx, vtr2);
+    copy3(gm->vtr, vtr2);
+    rotate_rescale_vec(vtr2, gm->nx);
   } else {
     copy3(gm->vtr, vtr2);
   }
@@ -328,7 +329,7 @@ void GranSubModTangentialMindlin::calculate_forces()
       frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
     }
 
-    if (frame_update) rotate_rescale_vec(history, gm->nxuse, history);
+    if (frame_update) rotate_rescale_vec(history, gm->nxuse);
 
     // update history
     if (mindlin_force) {
@@ -350,7 +351,7 @@ void GranSubModTangentialMindlin::calculate_forces()
       } else {
         frame_update = (fabs(rsht) * k_scaled) > (EPSILON * Fscrit);
       }
-      if (frame_update) rotate_rescale_vec(history, gm->nx, history);
+      if (frame_update) rotate_rescale_vec(history, gm->nx);
     }
   }
 
@@ -358,7 +359,8 @@ void GranSubModTangentialMindlin::calculate_forces()
   //Rotating vtr for damping term in nx direction
   if (frame_update && gm->synchronized_verlet)
   {
-    rotate_rescale_vec(gm->vtr, gm->nx, vtr2);
+    copy3(gm->vtr, vtr2);
+    rotate_rescale_vec(vtr2, gm->nx);
   } else {
     copy3(gm->vtr, vtr2);
   }

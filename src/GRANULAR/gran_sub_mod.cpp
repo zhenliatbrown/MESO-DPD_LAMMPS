@@ -137,7 +137,7 @@ double GranSubMod::mix_mean(double val1, double val2)
   rotate-rescale vector v so it is perpendicular to unit vector n
   and has the same magnitude as before
   ---------------------------------------------------------------------- */
-void GranSubMod::rotate_rescale_vec(double *v, double *n, double *rotated_v)
+void GranSubMod::rotate_rescale_vec(double *v, double *n)
 {
   double rsht, shrmag, prjmag, temp_dbl, temp_array[3];
 
@@ -154,5 +154,4 @@ void GranSubMod::rotate_rescale_vec(double *v, double *n, double *rotated_v)
   else
     temp_dbl = 0;
   scale3(temp_dbl, v);
-  copy3(v, rotated_v);
 }

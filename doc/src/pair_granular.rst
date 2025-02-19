@@ -670,7 +670,7 @@ attractive force. This keyword cannot be used with the JKR or DMT models.
 
 ----------
 
-The standard velocity-Verlet integration scheme's half-step staggering of position and velocity can introduce inaccuracies in frictional tangential force calculations, resulting in unphysical kinematics in certain systems. These effects are particularly pronounced in polydisperse frictional flows characterized by large-to-small size ratios exceeding three. The *synchronized_verlet* flag implements an improved Velocity-Verlet integration scheme, as detailed in :ref:`Vyas et al <Vyas2025>`, that synchronizes position and velocity updates for force evaluation. By refining tangential force calculations, the *synchronized_verlet* method ensures physically consistent results without significantly impacting computational cost.
+The standard velocity-Verlet integration scheme's half-step staggering of position and velocity can introduce inaccuracies in frictional tangential force calculations, resulting in unphysical kinematics in certain systems. These effects are particularly pronounced in polydisperse frictional flows characterized by large-to-small size ratios exceeding three. The *synchronized_verlet* flag implements an alternate Velocity-Verlet integration scheme, as detailed in :ref:`Vyas et al <Vyas2025>`, that synchronizes position and velocity updates for force evaluation. By refining tangential force calculations, the *synchronized_verlet* method ensures physically consistent results without significantly impacting computational cost.
 
 ----------
 
