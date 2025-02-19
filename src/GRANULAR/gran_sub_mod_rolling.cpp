@@ -30,7 +30,10 @@ static constexpr double EPSILON = 1e-10;
    Default rolling friction model
 ------------------------------------------------------------------------- */
 
-GranSubModRolling::GranSubModRolling(GranularModel *gm, LAMMPS *lmp) : GranSubMod(gm, lmp) {}
+GranSubModRolling::GranSubModRolling(GranularModel *gm, LAMMPS *lmp) : GranSubMod(gm, lmp)
+{
+  allow_synchronization = 0;
+}
 
 /* ----------------------------------------------------------------------
    No model
@@ -39,6 +42,7 @@ GranSubModRolling::GranSubModRolling(GranularModel *gm, LAMMPS *lmp) : GranSubMo
 GranSubModRollingNone::GranSubModRollingNone(GranularModel *gm, LAMMPS *lmp) :
     GranSubModRolling(gm, lmp)
 {
+  allow_synchronization = 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -50,6 +54,7 @@ GranSubModRollingSDS::GranSubModRollingSDS(GranularModel *gm, LAMMPS *lmp) :
 {
   num_coeffs = 3;
   size_history = 3;
+  allow_synchronization = 1;
 }
 
 /* ---------------------------------------------------------------------- */

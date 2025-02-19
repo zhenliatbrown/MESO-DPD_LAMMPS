@@ -31,7 +31,10 @@ static constexpr double EPSILON = 1e-10;
    Default model
 ------------------------------------------------------------------------- */
 
-GranSubModTangential::GranSubModTangential(GranularModel *gm, LAMMPS *lmp) : GranSubMod(gm, lmp) {}
+GranSubModTangential::GranSubModTangential(GranularModel *gm, LAMMPS *lmp) : GranSubMod(gm, lmp)
+{
+  allow_synchronization = 0;
+}
 
 /* ----------------------------------------------------------------------
    No model
@@ -40,6 +43,7 @@ GranSubModTangential::GranSubModTangential(GranularModel *gm, LAMMPS *lmp) : Gra
 GranSubModTangentialNone::GranSubModTangentialNone(GranularModel *gm, LAMMPS *lmp) :
     GranSubModTangential(gm, lmp)
 {
+  allow_synchronization = 1;
 }
 
 /* ----------------------------------------------------------------------
