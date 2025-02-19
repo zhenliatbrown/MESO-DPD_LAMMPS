@@ -102,11 +102,12 @@ on particle *i* due to contact with particle *j* is given by:
    \mathbf{F}_{ne, Hooke} = k_n \delta_{ij} \mathbf{n}
 
 Where :math:`\delta_{ij} = R_i + R_j - \|\mathbf{r}_{ij}\|` is the particle
-overlap, :math:`R_i, R_j` are the particle radii, :math:`\mathbf{r}_{ij} = \mathbf{r}_i - \mathbf{r}_j` is the vector separating the two
-particle centers (note the i-j ordering so that :math:`\mathbf{F}_{ne}` is
-positive for repulsion), and :math:`\mathbf{n} = \frac{\mathbf{r}_{ij}}{\|\mathbf{r}_{ij}\|}`.  Therefore,
-for *hooke*, the units of the spring constant :math:`k_n` are
-*force*\ /\ *distance*, or equivalently *mass*\ /*time\^2*.
+overlap, :math:`R_i, R_j` are the particle radii, :math:`\mathbf{r}_{ij} =
+\mathbf{r}_i - \mathbf{r}_j` is the vector separating the two particle centers
+(note the i-j ordering so that :math:`\mathbf{F}_{ne}` is positive for repulsion),
+and :math:`\mathbf{n} = \frac{\mathbf{r}_{ij}}{\|\mathbf{r}_{ij}\|}`.  Therefore,
+for *hooke*, the units of the spring constant :math:`k_n` are *force*\ /\
+*distance*, or equivalently *mass*\ /*time\^2*.
 
 For the *hertz* model, the normal component of force is given by:
 
@@ -174,7 +175,8 @@ following general form:
 
    \mathbf{F}_{n,damp} = -\eta_n \mathbf{v}_{n,rel}
 
-Here, :math:`\mathbf{v}_{n,rel} = (\mathbf{v}_j - \mathbf{v}_i) \cdot \mathbf{n}\ \mathbf{n}` is the component of relative velocity along
+Here, :math:`\mathbf{v}_{n,rel} = (\mathbf{v}_j - \mathbf{v}_i) \cdot
+\mathbf{n}\ \mathbf{n}` is the component of relative velocity along
 :math:`\mathbf{n}`.
 
 The optional *damping* keyword to the *pair_coeff* command followed by
@@ -349,7 +351,8 @@ the normal force:
    F_{n0} = \|\mathbf{F}_n\|
 
 For cohesive models such as *jkr* and *dmt*, the critical force is
-adjusted so that the critical tangential force approaches :math:`\mu_t F_{pulloff}`, see :ref:`Marshall <Marshall2009>`, equation 43, and
+adjusted so that the critical tangential force approaches
+:math:`\mu_t F_{pulloff}`, see :ref:`Marshall <Marshall2009>`, equation 43, and
 :ref:`Thornton <Thornton1991>`.  For both models, :math:`F_{n0}` takes the
 form:
 
@@ -438,7 +441,6 @@ of :math:`a`, the radius of the contact region. The tangential force is given by
 .. math::
 
    \mathbf{F}_t =  -\min(\mu_t F_{n0}, \|-k_t a \mathbf{\xi} + \mathbf{F}_\mathrm{t,damp}\|) \mathbf{t}
-
 
 Here, :math:`a` is the radius of the contact region, given by :math:`a =\sqrt{R\delta}`
 for all normal contact models, except for *jkr*, where it is given
@@ -555,9 +557,11 @@ the tangential force:
 
    \mathbf{F}_{roll,0} =  k_{roll} \mathbf{\xi}_{roll}  - \gamma_{roll} \mathbf{v}_{roll}
 
-Here, :math:`\mathbf{v}_{roll} = -R(\boldsymbol{\Omega}_i - \boldsymbol{\Omega}_j) \times \mathbf{n}` is the relative rolling
-velocity, as given in :ref:`Wang et al <Wang2015>` and
-:ref:`Luding <Luding2008>`. This differs from the expressions given by :ref:`Kuhn and Bagi <Kuhn2004>` and used in :ref:`Marshall <Marshall2009>`; see :ref:`Wang et al <Wang2015>` for details. The rolling displacement is given by:
+Here, :math:`\mathbf{v}_{roll} = -R(\boldsymbol{\Omega}_i - \boldsymbol{\Omega}_j)
+\times \mathbf{n}` is the relative rolling velocity, as given in
+:ref:`Wang et al <Wang2015>` and :ref:`Luding <Luding2008>`. This differs from the
+expressions given by :ref:`Kuhn and Bagi <Kuhn2004>` and used in :ref:`Marshall <Marshall2009>`;
+see :ref:`Wang et al <Wang2015>` for details. The rolling displacement is given by:
 
 .. math::
 
@@ -614,9 +618,10 @@ the most straightforward treatment:
 
    \tau_{twist,0} = -k_{twist}\xi_{twist} - \gamma_{twist}\Omega_{twist}
 
-Here :math:`\xi_{twist} = \int_{t_0}^t \Omega_{twist} (\tau) \mathrm{d}\tau` is the twisting angular displacement, and
-:math:`\Omega_{twist} = (\mathbf{\Omega}_i - \mathbf{\Omega}_j) \cdot \mathbf{n}` is the relative twisting angular velocity. The torque
-is then truncated according to:
+Here :math:`\xi_{twist} = \int_{t_0}^t \Omega_{twist} (\tau) \mathrm{d}\tau` is
+the twisting angular displacement, and
+:math:`\Omega_{twist} = (\mathbf{\Omega}_i - \mathbf{\Omega}_j) \cdot \mathbf{n}`
+is the relative twisting angular velocity. The torque is then truncated according to:
 
 .. math::
 
@@ -670,7 +675,16 @@ attractive force. This keyword cannot be used with the JKR or DMT models.
 
 ----------
 
-The standard velocity-Verlet integration scheme's half-step staggering of position and velocity can introduce inaccuracies in frictional tangential force calculations, resulting in unphysical kinematics in certain systems. These effects are particularly pronounced in polydisperse frictional flows characterized by large-to-small size ratios exceeding three. The *synchronized_verlet* flag implements an alternate Velocity-Verlet integration scheme, as detailed in :ref:`Vyas et al <Vyas2025>`, that synchronizes position and velocity updates for force evaluation. By refining tangential force calculations, the *synchronized_verlet* method ensures physically consistent results without significantly impacting computational cost.
+The standard velocity-Verlet integration scheme's half-step staggering of
+position and velocity can introduce inaccuracies in frictional tangential
+force calculations, resulting in unphysical kinematics in certain systems.
+These effects are particularly pronounced in polydisperse frictional flows
+characterized by large-to-small size ratios exceeding three. The
+*synchronized_verlet* flag implements an alternate Velocity-Verlet integration
+scheme, as detailed in :ref:`Vyas et al <Vyas2025>`, that synchronizes position
+and velocity updates for force evaluation. By refining tangential force
+calculations, the *synchronized_verlet* method ensures physically consistent
+results without significantly impacting computational cost.
 
 ----------
 
@@ -785,8 +799,9 @@ or
 
    E_{eff,ij} = \frac{E_{ij}}{2(1-\nu_{ij}^2)}
 
-These pair styles write their information to :doc:`binary restart files <restart>`, so a pair_style command does not need to be
-specified in an input script that reads a restart file.
+These pair styles write their information to :doc:`binary restart files <restart>`,
+so a pair_style command does not need to be specified in an input script that reads
+a restart file.
 
 These pair styles can only be used via the *pair* keyword of the
 :doc:`run_style respa <run_style>` command.  They do not support the
@@ -808,8 +823,8 @@ the centers of the two particles (x_I - x_J). The last quantity (13)
 is the heat flow between the two particles, set to 0 if no heat model
 is active.
 
-These extra quantities can be accessed by the :doc:`compute pair/local <compute_pair_local>` command, as *p1*, *p2*, ...,
-*p12*\ .
+These extra quantities can be accessed by the :doc:`compute pair/local
+<compute_pair_local>` command, as *p1*, *p2*, ..., *p12*\ .
 
 ----------
 
