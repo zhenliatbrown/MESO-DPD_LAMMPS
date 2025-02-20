@@ -34,6 +34,8 @@ public:
     void compute_spring_energy() override;
     void compute_t_prim() override;
 
+    char** filtered_args;
+
 protected:
     void prepare_coordinates() override;
     void spring_force() override;
@@ -43,6 +45,7 @@ private:
     bool synch_energies;
     BosonicExchange bosonic_exchange;
     double** f_tag_order;
+    char** filter_args(int, char **);
 };
 
 }

@@ -37,18 +37,19 @@
 #include "memory.h"
 #include "error.h"
 #include <algorithm> 
-
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
-    FixPIMDLangevin(lmp, narg, arg, true), nbosons(atom->nlocal),
+    FixPIMDLangevin(lmp, narg, filter_args(narg, arg)), nbosons(atom->nlocal),
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
     synch_energies = true;
-    for (int i = 3; i < narg - 1; i++) { // CR: why i += 2 changed to i++?
+    // Loop over the arguments with i++ instead of i+=2 like the parent,
+    // because the parent's loop has i++ inside some if blocks.
+    for (int i = 3; i < narg - 1; i++) {
         if ((strcmp(arg[i], "method") == 0) && (strcmp(arg[i+1], "pimd") != 0)) {
             error->universe_all(FLERR, "Method not supported in fix pimdb/langevin; only method PIMD");
         }
@@ -89,20 +90,37 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
 
 FixPIMDBLangevin::~FixPIMDBLangevin() {
     memory->destroy(f_tag_order);
+    memory->destroy(filtered_args);
+}
+
+/* ---------------------------------------------------------------------- */
+
+char** FixPIMDBLangevin::filter_args(int narg, char **arg)
+{
+    filtered_args = new char*[narg];
+    for (int i = 0; i < narg; i++) {
+        if (strcmp(arg[i], "esynch") == 0) {
+            filtered_args[i] = "";
+        }
+        else {
+            filtered_args[i] = arg[i];
+        }
+    } 
+    return filtered_args;
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::prepare_coordinates()
 {
-  inter_replica_comm(atom->x);
-  double ff = fbond * atom->mass[atom->type[0]];
-  int nlocal = atom->nlocal;
-  double* me_bead_positions = *(atom->x);
-  double* last_bead_positions = &bufsortedall[x_last * nlocal][0];
-  double* next_bead_positions = &bufsortedall[x_next * nlocal][0];
+    inter_replica_comm(atom->x);
+    double ff = fbond * atom->mass[atom->type[0]];
+    int nlocal = atom->nlocal;
+    double* me_bead_positions = *(atom->x);
+    double* last_bead_positions = &bufsortedall[x_last * nlocal][0];
+    double* next_bead_positions = &bufsortedall[x_next * nlocal][0];
 
-  bosonic_exchange.prepare_with_coordinates(me_bead_positions,
+    bosonic_exchange.prepare_with_coordinates(me_bead_positions,
                                               last_bead_positions, next_bead_positions,
                                               beta_np, ff);
 }
@@ -152,7 +170,6 @@ void FixPIMDBLangevin::compute_t_prim()
     else {
         t_prim = bosonic_exchange.prim_estimator();
     }
-    t_prim = bosonic_exchange.prim_estimator();
 }
 
 /* ---------------------------------------------------------------------- */

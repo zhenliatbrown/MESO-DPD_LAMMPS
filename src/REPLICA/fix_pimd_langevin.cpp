@@ -58,7 +58,7 @@ static std::map<int, std::string> Ensembles{{NVE, "NVE"}, {NVT, "NVT"}, {NPH, "N
 
 /* ---------------------------------------------------------------------- */
 
-FixPIMDLangevin::FixPIMDLangevin(LAMMPS *lmp, int narg, char **arg, bool enable_esynch) :
+FixPIMDLangevin::FixPIMDLangevin(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), mass(nullptr), plansend(nullptr), planrecv(nullptr), tagsend(nullptr),
     tagrecv(nullptr), bufsend(nullptr), bufrecv(nullptr), bufbeads(nullptr), bufsorted(nullptr),
     bufsortedall(nullptr), outsorted(nullptr), buftransall(nullptr), tagsendall(nullptr),
@@ -239,10 +239,7 @@ FixPIMDLangevin::FixPIMDLangevin(LAMMPS *lmp, int narg, char **arg, bool enable_
         removecomflag = 1;
       else if (strcmp(arg[i + 1], "no") == 0)
         removecomflag = 0;
-    } else if (!((strcmp(arg[i], "esynch") == 0) && (enable_esynch))) {
-        // CR: Good catch, shows a weakness of the design. But the solution should not make
-        // CR: the parent class aware of the possible changes in subclasses
-        // CR: Instead, pass to the parent constructor only the arguments that are relevant to it
+    } else if (strcmp(arg[i], "") != 0) {
         error->universe_all(FLERR, fmt::format("Unknown keyword {} for fix {}", arg[i], style));
     }
   }
