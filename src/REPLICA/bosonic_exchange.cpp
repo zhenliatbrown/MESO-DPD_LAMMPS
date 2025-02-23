@@ -35,7 +35,7 @@ using namespace LAMMPS_NS;
 BosonicExchange::BosonicExchange(LAMMPS *lmp, int nbosons, int np, int bead_num, bool mic,
                                  bool beta_convention) :
     Pointers(lmp), nbosons(nbosons), np(np), bead_num(bead_num), apply_minimum_image(mic),
-    physical_beta_convention(beta_convention), x(nullptr), x_pref(nullptr), x_next(nullptr),
+    physical_beta_convention(beta_convention), x(nullptr), x_prev(nullptr), x_next(nullptr),
     E_kn(nullptr), V(nullptr), V_backwards(nullptr), connection_probabilities(nullptr),
     temp_nbosons_array(nullptr)
 {
