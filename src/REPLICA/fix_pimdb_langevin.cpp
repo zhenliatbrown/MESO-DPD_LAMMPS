@@ -79,7 +79,7 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
         error->universe_all(FLERR, "The only available ensembles for pimdb are nve and nvt, please choose one of these ensembles.");
     }
 
-    method = PIMD;     
+    method = PIMD;
 
     size_vector = 6;
 
