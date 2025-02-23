@@ -12,43 +12,44 @@
 ------------------------------------------------------------------------- */
 
 #ifdef FIX_CLASS
-
-FixStyle(pimdb/langevin,FixPIMDBLangevin);
-
+// clang-format off
+FixStyle(pimdb/langevin, FixPIMDBLangevin);
+// clang-format on
 #else
 
 #ifndef FIX_PIMDB_LANGEVIN_H
 #define FIX_PIMDB_LANGEVIN_H
 
 #include "fix_pimd_langevin.h"
-#include "bosonic_exchange.h"
 
 namespace LAMMPS_NS {
 
 class FixPIMDBLangevin : public FixPIMDLangevin {
-public:
-    FixPIMDBLangevin(class LAMMPS *, int, char **);
-    ~FixPIMDBLangevin();
+ public:
+  FixPIMDBLangevin(class LAMMPS *, int, char **);
+  ~FixPIMDBLangevin();
 
-    double compute_vector(int) override;
-    void compute_spring_energy() override;
-    void compute_t_prim() override;
+  double compute_vector(int) override;
+  void compute_spring_energy() override;
+  void compute_t_prim() override;
 
-    char** filtered_args;
+  char **filtered_args;
+  int filtered_narg;
 
-protected:
-    void prepare_coordinates() override;
-    void spring_force() override;
+ protected:
+  void prepare_coordinates() override;
+  void spring_force() override;
 
-private:
-    const int nbosons;
-    bool synch_energies;
-    BosonicExchange bosonic_exchange;
-    double** f_tag_order;
-    char** filter_args(int, char **); // for hold memory of filtered arguments when calling the parent constructor
+ private:
+  const int nbosons;
+  bool synch_energies;
+  class BosonicExchange *bosonic_exchange;
+  double **f_tag_order;
+  char **filter_args(
+      int, char **);    // for hold memory of filtered arguments when calling the parent constructor
 };
 
-}
+}    // namespace LAMMPS_NS
 
 #endif
 #endif

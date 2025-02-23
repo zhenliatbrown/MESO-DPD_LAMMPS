@@ -22,6 +22,9 @@
 ------------------------------------------------------------------------- */
 
 #include "fix_pimdb_nvt.h"
+
+#include "bosonic_exchange.h"
+
 #include "atom.h"
 #include "error.h"
 #include "force.h"
@@ -31,22 +34,25 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) :
-    FixPIMDNVT(lmp, narg, arg),
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, true)
+FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) : FixPIMDNVT(lmp, narg, arg)
+
 {
-  virial = 0.;
-  prim = 0.;
-  spring_energy = 0.;
+  bosonic_exchange = new BosonicExchange(lmp, atom->nlocal, np, universe->me, true, true);
+  virial = 0.0;
+  prim = 0.0;
+  spring_energy = 0.0;
   size_vector = 4;
   if (method != PIMD && method != NMPIMD) {
-    error->universe_all(FLERR, "Method not supported in fix pimdb/nvt; only methods PIMD and NMPIMD");
+    error->universe_all(FLERR,
+                        "Method not supported in fix pimdb/nvt; only methods PIMD and NMPIMD");
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixPIMDBNVT::~FixPIMDBNVT() {
+FixPIMDBNVT::~FixPIMDBNVT()
+{
+  delete bosonic_exchange;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -54,8 +60,8 @@ FixPIMDBNVT::~FixPIMDBNVT() {
 void FixPIMDBNVT::pre_spring_force_estimators()
 {
   FixPIMDNVT::pre_spring_force_estimators();
-  spring_energy = bosonic_exchange.get_bead_spring_energy();
-  prim = bosonic_exchange.prim_estimator();
+  spring_energy = bosonic_exchange->get_bead_spring_energy();
+  prim = bosonic_exchange->prim_estimator();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -67,30 +73,27 @@ void FixPIMDBNVT::prepare_coordinates()
   double *xlast = buf_beads[x_last];
   double *xnext = buf_beads[x_next];
   double ff = fbond * atom->mass[atom->type[0]];
-  bosonic_exchange.prepare_with_coordinates(*x, xlast, xnext, beta, -ff);
+  bosonic_exchange->prepare_with_coordinates(*x, xlast, xnext, beta, -ff);
 }
 
 void FixPIMDBNVT::spring_force()
 {
   double **f = atom->f;
 
-  bosonic_exchange.spring_force(f);
+  bosonic_exchange->spring_force(f);
 }
 
 /* ---------------------------------------------------------------------- */
 
 double FixPIMDBNVT::compute_vector(int n)
 {
-    if (0 <= n && n < 3) {
-        return FixPIMDNVT::compute_vector(n);
-    }
+  if (0 <= n && n < 3) { return FixPIMDNVT::compute_vector(n); }
 
-    if (n == 3) {
-        return prim;
-    }
-    else {
-        error->universe_all(FLERR, "Fix only has 4 outputs!");
-    }
+  if (n == 3) {
+    return prim;
+  } else {
+    error->universe_all(FLERR, "Fix only has 4 outputs!");
+  }
 
-    return 0.0;
+  return 0.0;
 }
