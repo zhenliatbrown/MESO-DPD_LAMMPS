@@ -43,8 +43,8 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
-    FixPIMDLangevin(lmp, narg, filtered_args = filter_args(narg, arg)), nbosons(atom->nlocal),
-    bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
+    FixPIMDLangevin(lmp, narg, filtered_args = filter_args(narg, arg)), filtered_narg(narg),
+    nbosons(atom->nlocal), bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
     synch_energies = true;
     // Loop over the arguments with i++ instead of i+=2 like the parent,
@@ -88,25 +88,27 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-FixPIMDBLangevin::~FixPIMDBLangevin() {
-    memory->destroy(f_tag_order);
-    memory->destroy(filtered_args);
+FixPIMDBLangevin::~FixPIMDBLangevin()
+{
+  memory->destroy(f_tag_order);
+  for (int i = 0; i < filtered_narg; ++i) delete[] filtered_args[i];
+  memory->destroy(filtered_args);
 }
 
 /* ---------------------------------------------------------------------- */
 
-char** FixPIMDBLangevin::filter_args(int narg, char **arg)
+char **FixPIMDBLangevin::filter_args(int narg, char **arg)
 {
-    char** filtered_args = new char*[narg];
-    for (int i = 0; i < narg; i++) {
-        if (strcmp(arg[i], "esynch") == 0) {
-            filtered_args[i] = "";
-        }
-        else {
-            filtered_args[i] = arg[i];
-        }
+  filtered_narg = narg;
+  char **filtered_args = new char *[narg];
+  for (int i = 0; i < narg; i++) {
+    if (strcmp(arg[i], "esynch") == 0) {
+      filtered_args[i] = utils::strdup("");
+    } else {
+      filtered_args[i] = utils::strdup(arg[i]);
     }
-    return filtered_args;
+  }
+  return filtered_args;
 }
 
 /* ---------------------------------------------------------------------- */

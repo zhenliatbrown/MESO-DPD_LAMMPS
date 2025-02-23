@@ -35,6 +35,7 @@ public:
     void compute_t_prim() override;
 
     char** filtered_args;
+    int filtered_narg;
 
 protected:
     void prepare_coordinates() override;
