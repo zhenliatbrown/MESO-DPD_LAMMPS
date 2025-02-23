@@ -64,7 +64,7 @@ These fix commands are based on the fixes :doc:`pimd/nvt and pimd/langevin <fix_
 performing quantum molecular dynamics simulations based
 on the Feynman path-integral formalism. The key difference is that fix *pimd/nvt* and fix *pimd/langevin* simulate *distinguishable* particles,
 while fix *pimdb/nvt* and fix *pimdb/langevin* perform simulations of bosons, including exchange effects.
-The *pimdb* commands share syntax with the equivalent *pimd* commands. The user is referred to the documentation of the *pimd* fix for a 
+The *pimdb* commands share syntax with the equivalent *pimd* commands. The user is referred to the documentation of the *pimd* fix for a
 detailed syntax description and additional, general capabilities of the commands.
 The major differences from fix *pimd* in terms of capabilities are:
 
@@ -122,7 +122,7 @@ the global vector are:
       energy of the quantum system :ref:`(Hirshberg1) <Hirshberg>`.
 
 The vector values calculated by fix *pimdb/nvt* are "extensive", except for the
-temperature, which is "intensive". 
+temperature, which is "intensive".
 
 Fix *pimdb/langevin* computes a global 6-vector, which
 can be accessed by various :doc:`output commands <Howto_output>`. The quantities in the global vector are:
