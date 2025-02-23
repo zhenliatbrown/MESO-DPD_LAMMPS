@@ -60,7 +60,7 @@ Examples
 Description
 """""""""""
 
-These fix commands are based on the fixes :doc:`pimd/nvt and pimd/langevin <fix_pimd>` for 
+These fix commands are based on the fixes :doc:`pimd/nvt and pimd/langevin <fix_pimd>` for
 performing quantum molecular dynamics simulations based
 on the Feynman path-integral formalism. The key difference is that fix *pimd/nvt* and fix *pimd/langevin* simulate *distinguishable* particles,
 while fix *pimdb/nvt* and fix *pimdb/langevin* perform simulations of bosons, including exchange effects.
@@ -87,10 +87,10 @@ distinguishable particles. The sum is over all permutations :math:`\sigma`. Reca
 
    E^\sigma = \frac{mP}{2\beta^2 \hbar^2} \sum_{\ell=1}^N \sum_{j=1}^P \left(\mathbf{q}_\ell^j - \mathbf{q}_\ell^{j+1}\right)^2,
 
-where :math:`P` is the number of beads and :math:`\mathbf{q}_\ell^{P+1}=\mathbf{q}_{\sigma(\ell)}^1.` 
+where :math:`P` is the number of beads and :math:`\mathbf{q}_\ell^{P+1}=\mathbf{q}_{\sigma(\ell)}^1.`
 
-Hirshberg et. al. showed that the ring polymer potential 
-:math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma e ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`, 
+Hirshberg et. al. showed that the ring polymer potential
+:math:`-\frac{1}{\beta}\textrm{ln}\left[ \frac{1}{N!} \sum_\sigma e ^ { -\beta  E^\sigma } \right]`, which scales exponentially with :math:`N`,
 can be replaced by a potential :math:`V^{[1,N]}` defined through a recurrence relation :ref:`(Hirshberg1) <Hirshberg>`:
 
 .. math::
@@ -98,11 +98,11 @@ can be replaced by a potential :math:`V^{[1,N]}` defined through a recurrence re
    e ^ { -\beta  V^{[1,N]} } = \frac{1}{N} \sum_{k=1}^N e ^ { -\beta \left(  V^{[1,N-k]} + E^{[N-K+1,N]} \right)}.
 
 Here, :math:`E^{[N-K+1,N]}` is the spring energy of the ring polymer obtained by connecting the beads of particles :math:`N − k + 1, N − k + 2, ..., N` in a cycle.
-This potential does not include all :math:`N!` permutations, but samples the same bosonic partition function. The implemented algorithm in LAMMPS for calculating 
-the potential is the one developed by Feldman and Hirshberg, which scales like :math:`N^2+PN` :ref:`(Feldman) <Feldman>`. 
+This potential does not include all :math:`N!` permutations, but samples the same bosonic partition function. The implemented algorithm in LAMMPS for calculating
+the potential is the one developed by Feldman and Hirshberg, which scales like :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
 The forces are calculated as weighted averages over the representative permutations,
 through an algorithm that scales the same as the one for the potential calculation, :math:`N^2+PN` :ref:`(Feldman) <Feldman>`.
-The minimum-image convention is employed on the springs to account for periodic boundary conditions; 
+The minimum-image convention is employed on the springs to account for periodic boundary conditions;
 an elaborate discussion of the validity of the approximation is available in :ref:`(Higer) <HigerFeldman>`.
 
 Restart, fix_modify, output, run start/stop, minimize info

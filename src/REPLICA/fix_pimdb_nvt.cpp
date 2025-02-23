@@ -13,7 +13,6 @@
 
 /* ----------------------------------------------------------------------
    Package      FixPIMDBNVT
-   
    Purpose      Path Integral Molecular Dynamics of Bosons with Nose-Hoover Thermostat
    Copyright    Hirshberg lab @ Tel Aviv University
    Authors      Ofir Blumer, Jacob Higer, Yotam Feldman

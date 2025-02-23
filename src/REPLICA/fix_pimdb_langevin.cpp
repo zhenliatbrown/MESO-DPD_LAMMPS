@@ -36,7 +36,7 @@
 #include "update.h"
 #include "memory.h"
 #include "error.h"
-#include <algorithm> 
+#include <algorithm>
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
@@ -105,7 +105,7 @@ char** FixPIMDBLangevin::filter_args(int narg, char **arg)
         else {
             filtered_args[i] = arg[i];
         }
-    } 
+    }
     return filtered_args;
 }
 
@@ -124,7 +124,7 @@ void FixPIMDBLangevin::prepare_coordinates()
                                               last_bead_positions, next_bead_positions,
                                               beta_np, ff);
 }
- 
+
 /* ---------------------------------------------------------------------- */
 
 void FixPIMDBLangevin::spring_force() {

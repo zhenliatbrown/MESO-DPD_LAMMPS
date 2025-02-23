@@ -710,7 +710,7 @@ void FixPIMDLangevin::post_force(int /*flag*/)
     if (mapflag) {
       for (int i = 0; i < nlocal; i++) { domain->unmap(x[i], image[i]); }
     }
-    prepare_coordinates();   
+    prepare_coordinates();
     spring_force();
     compute_spring_energy();
     compute_t_prim();

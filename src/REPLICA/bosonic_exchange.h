@@ -37,7 +37,7 @@ namespace LAMMPS_NS {
         void evaluate_cycle_energies();
         void diff_two_beads(const double* x1, int l1, const double* x2, int l2, double diff[3]) const;
         double get_interior_bead_spring_energy() const;
-        double distance_squared_two_beads(const double* x1, int l1, const double* x2, int l2) const; 
+        double distance_squared_two_beads(const double* x1, int l1, const double* x2, int l2) const;
         double get_Enk(int m, int k) const;
         void set_Enk(int m, int k, double val);
         void evaluate_connection_probabilities();
@@ -51,8 +51,8 @@ namespace LAMMPS_NS {
         const int np;
         const int bead_num;
         const bool apply_minimum_image;
-     // In the "reduced-beta convention" [e.g. in J. Chem. Phys. 133, 124104 (2010); also J. Chem. Phys. 74, 4078-4095 (1981)], 
-     // the Boltzmann exponents have the form exp[-(beta/P)H], where H is the classical Hamiltonian of the 
+     // In the "reduced-beta convention" [e.g. in J. Chem. Phys. 133, 124104 (2010); also J. Chem. Phys. 74, 4078-4095 (1981)],
+     // the Boltzmann exponents have the form exp[-(beta/P)H], where H is the classical Hamiltonian of the
      // ring polymers. This results in a canonical distribution at P times the physical temperature.
      // In contrast, the "physical-beta convention" [e.g. in J. Chem. Phys. 99, 2796-2808 (1993)] uses weights of the form exp(-beta*H),
      // such that the temperature of the canonical ensemble coincides with the physical temperature.

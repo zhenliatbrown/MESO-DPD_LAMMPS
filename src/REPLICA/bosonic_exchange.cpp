@@ -98,10 +98,10 @@ double BosonicExchange::distance_squared_two_beads(const double* x1, int l1, con
 /* ---------------------------------------------------------------------- */
 
 void BosonicExchange::evaluate_cycle_energies()
-{ 
+{
     const double* x_first_bead;
     const double* x_last_bead;
-    
+
     if (bead_num == 0) {
         x_first_bead = x;
         x_last_bead = x_prev;
@@ -364,13 +364,13 @@ void BosonicExchange::spring_force_interior_bead(double **f) const {
 double BosonicExchange::prim_estimator()
 {
   double convention_correction = (physical_beta_convention ? 1 : 1.0 / np);
-  
+
   // Adds the contribution of an interior spring, which is the same as for distinguishable particles.
   if (bead_num != 0) {
       return convention_correction * (0.5 * domain->dimension * nbosons / beta - get_interior_bead_spring_energy());
   }
-  
-  // For the first bead, add the contribution of the exterior bead (See Equations 4-5 in the 
+
+  // For the first bead, add the contribution of the exterior bead (See Equations 4-5 in the
   // Supporting Information of Hirshberg et. al., doi.org/10.1073/pnas.1913365116)
   temp_nbosons_array[0] = 0.0;
 
@@ -384,7 +384,7 @@ double BosonicExchange::prim_estimator()
       for (int k = m; k > 0; k--) {
         Elongest = std::min(Elongest, get_Enk(m, k) + V[m - k]);
       }
-    
+
       for (int k = m; k > 0; --k) {
         double E_kn_val = get_Enk(m, k);
 
