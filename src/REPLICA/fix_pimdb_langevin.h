@@ -45,7 +45,7 @@ private:
     bool synch_energies;
     BosonicExchange bosonic_exchange;
     double** f_tag_order;
-    char** filter_args(int, char **);
+    char** filter_args(int, char **); // for hold memory of filtered arguments when calling the parent constructor
 };
 
 }
