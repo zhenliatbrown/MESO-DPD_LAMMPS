@@ -52,18 +52,6 @@ class BosonicExchange : protected Pointers {
   const int np;
   const int bead_num;
   const bool apply_minimum_image;
-  // In the "reduced-beta convention" [e.g. in J. Chem. Phys. 133, 124104 (2010); also J. Chem. Phys. 74, 4078-4095 (1981)],
-  // the Boltzmann exponents have the form exp[-(beta/P)H], where H is the classical Hamiltonian of the
-  // ring polymers. This results in a canonical distribution at P times the physical temperature.
-  // In contrast, the "physical-beta convention" [e.g. in J. Chem. Phys. 99, 2796-2808 (1993)] uses weights of the form exp(-beta*H),
-  // such that the temperature of the canonical ensemble coincides with the physical temperature.
-  // Notably, the classical Hamiltonians of the two conventions differ, with the spring constant
-  // in the reduced-beta convention being P times larger than that in the physical-beta convention. Additionally, the reduced-beta convention
-  // lacks a 1/P prefactor in front of the external potential. The Hamiltonians of the two conventions are related through
-  // H_physical = H_reduced / P. Note however that the expressions for the various estimators are unaffected by this choice,
-  // so as the algorithm for bosonic exchange. The code below was designed to be compatible with both conventions,
-  // and the choice of convention only affects a single calculation within it.
-  // Setting the following boolian variable to false amounts to adopting the reduced-beta convention.
   const bool physical_beta_convention;
 
   double spring_constant;
