@@ -43,7 +43,7 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
-    FixPIMDLangevin(lmp, narg, filter_args(narg, arg)), nbosons(atom->nlocal),
+    FixPIMDLangevin(lmp, narg, filtered_args = filter_args(narg, arg)), nbosons(atom->nlocal),
     bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
 {
     synch_energies = true;
@@ -97,7 +97,7 @@ FixPIMDBLangevin::~FixPIMDBLangevin() {
 
 char** FixPIMDBLangevin::filter_args(int narg, char **arg)
 {
-    filtered_args = new char*[narg];
+    char** filtered_args = new char*[narg];
     for (int i = 0; i < narg; i++) {
         if (strcmp(arg[i], "esynch") == 0) {
             filtered_args[i] = "";
