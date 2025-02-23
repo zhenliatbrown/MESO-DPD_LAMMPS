@@ -38,18 +38,20 @@ FixPIMDBNVT::FixPIMDBNVT(LAMMPS *lmp, int narg, char **arg) : FixPIMDNVT(lmp, na
 
 {
   bosonic_exchange = new BosonicExchange(lmp, atom->nlocal, np, universe->me, true, true);
-  virial = 0.;
-  prim = 0.;
-  spring_energy = 0.;
+  virial = 0.0;
+  prim = 0.0;
+  spring_energy = 0.0;
   size_vector = 4;
   if (method != PIMD && method != NMPIMD) {
-    error->universe_all(FLERR, "Method not supported in fix pimdb/nvt; only methods PIMD and NMPIMD");
+    error->universe_all(FLERR,
+                        "Method not supported in fix pimdb/nvt; only methods PIMD and NMPIMD");
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixPIMDBNVT::~FixPIMDBNVT() {
+FixPIMDBNVT::~FixPIMDBNVT()
+{
   delete bosonic_exchange;
 }
 
@@ -85,16 +87,13 @@ void FixPIMDBNVT::spring_force()
 
 double FixPIMDBNVT::compute_vector(int n)
 {
-    if (0 <= n && n < 3) {
-        return FixPIMDNVT::compute_vector(n);
-    }
+  if (0 <= n && n < 3) { return FixPIMDNVT::compute_vector(n); }
 
-    if (n == 3) {
-        return prim;
-    }
-    else {
-        error->universe_all(FLERR, "Fix only has 4 outputs!");
-    }
+  if (n == 3) {
+    return prim;
+  } else {
+    error->universe_all(FLERR, "Fix only has 4 outputs!");
+  }
 
-    return 0.0;
+  return 0.0;
 }

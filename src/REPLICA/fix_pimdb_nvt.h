@@ -26,18 +26,18 @@ namespace LAMMPS_NS {
 
 class FixPIMDBNVT : public FixPIMDNVT {
  public:
-    FixPIMDBNVT(class LAMMPS *, int, char **);
-    ~FixPIMDBNVT();
-    double compute_vector(int) override;
+  FixPIMDBNVT(class LAMMPS *, int, char **);
+  ~FixPIMDBNVT();
+  double compute_vector(int) override;
 
  protected:
-    void prepare_coordinates() override;
-    void spring_force() override;
-    void pre_spring_force_estimators() override;
+  void prepare_coordinates() override;
+  void spring_force() override;
+  void pre_spring_force_estimators() override;
 
  private:
-    class BosonicExchange *bosonic_exchange;
-    double prim;
+  class BosonicExchange *bosonic_exchange;
+  double prim;
 };
 
 }    // namespace LAMMPS_NS
