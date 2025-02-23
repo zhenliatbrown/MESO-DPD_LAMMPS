@@ -21,7 +21,6 @@ FixStyle(pimdb/langevin,FixPIMDBLangevin);
 #define FIX_PIMDB_LANGEVIN_H
 
 #include "fix_pimd_langevin.h"
-#include "bosonic_exchange.h"
 
 namespace LAMMPS_NS {
 
@@ -44,9 +43,9 @@ protected:
 private:
     const int nbosons;
     bool synch_energies;
-    BosonicExchange bosonic_exchange;
     double** f_tag_order;
     char** filter_args(int, char **); // for hold memory of filtered arguments when calling the parent constructor
+  class BosonicExchange *bosonic_exchange;
 };
 
 }

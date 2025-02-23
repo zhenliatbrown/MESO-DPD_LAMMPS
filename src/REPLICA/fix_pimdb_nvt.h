@@ -21,7 +21,6 @@ FixStyle(pimdb/nvt,FixPIMDBNVT);
 #define FIX_PIMDB_NVT_H
 
 #include "fix_pimd_nvt.h"
-#include "bosonic_exchange.h"
 
 namespace LAMMPS_NS {
 
@@ -37,7 +36,7 @@ class FixPIMDBNVT : public FixPIMDNVT {
     void pre_spring_force_estimators() override;
 
  private:
-    BosonicExchange bosonic_exchange;
+    class BosonicExchange *bosonic_exchange;
     double prim;
 };
 

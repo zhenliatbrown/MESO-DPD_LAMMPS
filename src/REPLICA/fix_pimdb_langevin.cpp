@@ -24,6 +24,8 @@
 
 #include "fix_pimdb_langevin.h"
 
+#include "bosonic_exchange.h"
+
 #include "atom.h"
 #include "comm.h"
 #include "domain.h"
@@ -44,9 +46,11 @@ using namespace FixConst;
 
 FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
     FixPIMDLangevin(lmp, narg, filtered_args = filter_args(narg, arg)), filtered_narg(narg),
-    nbosons(atom->nlocal), bosonic_exchange(lmp, atom->nlocal, np, universe->me, true, false)
+    nbosons(atom->nlocal)
 {
+  bosonic_exchange = new BosonicExchange(lmp, atom->nlocal, np, universe->me, true, false);
   synch_energies = true;
+
   // Loop over the arguments with i++ instead of i+=2 like the parent,
   // because the parent's loop has i++ inside some if blocks.
   for (int i = 3; i < narg - 1; i++) {
@@ -95,6 +99,7 @@ FixPIMDBLangevin::~FixPIMDBLangevin()
   memory->destroy(f_tag_order);
   for (int i = 0; i < filtered_narg; ++i) delete[] filtered_args[i];
   memory->destroy(filtered_args);
+  delete bosonic_exchange;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -124,8 +129,8 @@ void FixPIMDBLangevin::prepare_coordinates()
   double *last_bead_positions = &bufsortedall[x_last * nlocal][0];
   double *next_bead_positions = &bufsortedall[x_next * nlocal][0];
 
-  bosonic_exchange.prepare_with_coordinates(me_bead_positions, last_bead_positions,
-                                            next_bead_positions, beta_np, ff);
+  bosonic_exchange->prepare_with_coordinates(me_bead_positions, last_bead_positions,
+                                             next_bead_positions, beta_np, ff);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -138,7 +143,7 @@ void FixPIMDBLangevin::spring_force()
     f_tag_order[i][1] = 0.0;
     f_tag_order[i][2] = 0.0;
   }
-  bosonic_exchange.spring_force(f_tag_order);
+  bosonic_exchange->spring_force(f_tag_order);
 
   double **f = atom->f;
   tagint *tag = atom->tag;
@@ -153,7 +158,7 @@ void FixPIMDBLangevin::spring_force()
 
 void FixPIMDBLangevin::compute_spring_energy()
 {
-  se_bead = bosonic_exchange.get_bead_spring_energy();
+  se_bead = bosonic_exchange->get_bead_spring_energy();
 
   if (synch_energies) {
     MPI_Allreduce(&se_bead, &total_spring_energy, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
@@ -168,10 +173,10 @@ void FixPIMDBLangevin::compute_spring_energy()
 void FixPIMDBLangevin::compute_t_prim()
 {
   if (synch_energies) {
-    double prim = bosonic_exchange.prim_estimator();
+    double prim = bosonic_exchange->prim_estimator();
     MPI_Allreduce(&prim, &t_prim, 1, MPI_DOUBLE, MPI_SUM, universe->uworld);
   } else {
-    t_prim = bosonic_exchange.prim_estimator();
+    t_prim = bosonic_exchange->prim_estimator();
   }
 }
 
