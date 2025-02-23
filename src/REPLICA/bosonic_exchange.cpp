@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+   https://www.lammps.org/, Sandia National Laboratories
+   LAMMPS development team: developers@lammps.org
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
@@ -17,7 +17,7 @@
    Purpose      Handle Bosonic Exchange in Path Integral Molecular Dynamics
                 according to J. Chem. Phys. 159, 154107 (2023) (doi:10.1063/5.0173749)
    Copyright    Hirshberg lab @ Tel Aviv University
-   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman
+   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman (yotam.feldman at gmail.com), Barak Hirshberg (hirshb at tau.ac.il)
 
    Updated      Jan-06-2025
    Version      1.0
