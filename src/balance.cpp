@@ -139,7 +139,7 @@ void Balance::command(int narg, char **arg)
         xflag = UNIFORM;
         iarg += 2;
       } else {
-        if (1 + procgrid[0]-1 > narg) utils::missing_cmd_args(FLERR,"balance x", error);
+        if (iarg + procgrid[0]-1 > narg) utils::missing_cmd_args(FLERR,"balance x", error);
         xflag = USER;
         delete[] user_xsplit;
         user_xsplit = new double[procgrid[0]+1];
@@ -158,7 +158,7 @@ void Balance::command(int narg, char **arg)
         yflag = UNIFORM;
         iarg += 2;
       } else {
-        if (1 + procgrid[1]-1 > narg) utils::missing_cmd_args(FLERR,"balance y", error);
+        if (iarg + procgrid[1]-1 > narg) utils::missing_cmd_args(FLERR,"balance y", error);
         yflag = USER;
         delete[] user_ysplit;
         user_ysplit = new double[procgrid[1]+1];
@@ -177,7 +177,7 @@ void Balance::command(int narg, char **arg)
         zflag = UNIFORM;
         iarg += 2;
       } else {
-        if (1 + procgrid[2]-1 > narg) utils::missing_cmd_args(FLERR,"balance z", error);
+        if (iarg + procgrid[2]-1 > narg) utils::missing_cmd_args(FLERR,"balance z", error);
         zflag = USER;
         delete[] user_zsplit;
         user_zsplit = new double[procgrid[2]+1];
