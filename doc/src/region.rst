@@ -46,6 +46,7 @@ Syntax
          xy = distance to tilt y in x direction (distance units)
          xz = distance to tilt z in x direction (distance units)
          yz = distance to tilt z in y direction (distance units)
+           xlo,xhi,ylo,yhi,zlo,zhi,xy,xz,yz can be a variable (see below)
        *sphere* args = x y z radius
          x,y,z = center of sphere (distance units)
          radius = radius of sphere (distance units)
@@ -211,9 +212,10 @@ and *ellipsoid* the x-, y-, and z- coordinates of the center of the
 sphere/ellipsoid can be specified as an equal-style variable.  And for
 style *cylinder* the two center positions c1 and c2 for the location of
 the cylinder axes can be specified as a equal-style variable.  For styles
-*cone* and *plane* all properties can be defined via equal-style variables.
-For style *plane*, the components of the direction vector normal to plane
-should be either all constants or all defined by equal-style variables.
+*cone*, *prism*, and *plane* all properties can be defined via
+equal-style variables.  For style *plane*, the components of the direction
+vector normal to plane should be either all constants or all defined by
+equal-style variables.
 
 If the value is a variable, it should be specified as v_name, where
 name is the variable name.  In this case, the variable will be

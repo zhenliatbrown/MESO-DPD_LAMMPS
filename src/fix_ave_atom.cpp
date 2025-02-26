@@ -60,6 +60,8 @@ FixAveAtom::FixAveAtom(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg),
     value_t val;
     val.id = "";
     val.val.c = nullptr;
+    if (expand) val.iarg = amap[i] + ioffset;
+    else val.iarg = i + ioffset;
 
     if (strcmp(arg[i], "x") == 0) {
       val.which = ArgInfo::X;
@@ -96,8 +98,6 @@ FixAveAtom::FixAveAtom(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg),
 
       val.which = argi.get_type();
       val.argindex = argi.get_index1();
-      if (expand) val.iarg = amap[i] + ioffset;
-      else val.iarg = i + ioffset;
       val.id = argi.get_name();
 
       if ((val.which == ArgInfo::UNKNOWN) || (val.which == ArgInfo::NONE) || (argi.get_dim() > 1))

@@ -12,9 +12,12 @@ following are discussions of such cases.
 - :ref:`Incorrect format in ... section of data file <err0002>`
 - :ref:`Illegal variable command: expected X arguments but found Y <err0003>`
 - :ref:`Out of range atoms - cannot compute ... <err0004>`
-- :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0005>`
-- :ref:`Too many neighbor bins <err0006>`
-- :ref:`Domain too large for neighbor bins <err0007>`
+- :ref:`Too many neighbor bins <err0009>`
+- :ref:`Cannot use neighbor bins - box size \<\< cutoff <err0015>`
+- :ref:`Domain too large for neighbor bins <err0017>`
+- :ref:`Molecule topology/atom exceeds system topology/atom <err0024>`
+- :ref:`Molecule topology type exceeds system topology type <err0025>`
+- :ref:`Molecule attributes do not match system attributes <err0026>`
 
 ------
 
@@ -276,7 +279,19 @@ help to temporarily use a cutoff-Coulomb pair style and no kspace style
 until the system has somewhat equilibrated and then switch to the
 long-range solver.
 
-.. _err0005:
+.. _err0009:
+
+Too many neighbor bins
+----------------------
+
+The simulation box has become too large relative to the size of a
+neighbor bin and LAMMPS is unable to store the needed number of
+bins. This typically implies the simulation box has expanded too far.
+This can happen when some atoms move rapidly apart with shrink-wrap
+boundaries or when a fix (like fix deform or a barostat) excessively
+grows the simulation box.
+
+.. _err0015:
 
 Cannot use neighbor bins - box size \<\< cutoff
 -----------------------------------------------
@@ -290,19 +305,7 @@ fill space. This error can be avoided using the generally slower
 :doc:`nsq neighbor style <neighbor>` or by increasing the size of the
 smallest box lengths.
 
-.. _err0006:
-
-Too many neighbor bins
-----------------------
-
-The simulation box has become too large relative to the size of a
-neighbor bin and LAMMPS is unable to store the needed number of
-bins. This typically implies the simulation box has expanded too far.
-This can happen when some atoms move rapidly apart with shrinkwrap
-boundaries or when a fix (like fix deform or a barostat) excessively
-grows the simulation box.
-
-.. _err0007:
+.. _err0017:
 
 Domain too large for neighbor bins
 ----------------------------------
@@ -312,3 +315,55 @@ be used. Too many neighbor bins would need to be created to fill space
 Most likely, one or more atoms have been blown out of the simulation
 box to a great distance or a fix (like fix deform or a barostat) has
 excessively grown the simulation box.
+
+.. _err0024:
+
+Molecule topology/atom exceeds system topology/atom
+---------------------------------------------------
+
+LAMMPS uses :doc:`domain decomposition <Developer_par_part>` to
+distribute data (i.e. atoms) across the MPI processes in parallel runs.
+This includes topology data, that is data about bonds, angles,
+dihedrals, impropers and :doc:`"special" neighbors <special_bonds>`.
+This information is stored with either one or all atoms involved in such
+a topology entry (which of the two option applies depends on the
+:doc:`newton <newton>` setting for bonds. When reading a data file,
+LAMMPS analyzes the requirements for this file and then the values
+are "locked in" and cannot be extended.
+
+So loading a molecule file that requires more of the topology per atom
+storage or adding a data file with such needs will lead to an error.  To
+avoid the error, one or more of the `extra/XXX/per/atom` keywords are
+required to extend the corresponding storage.  It is no problem to
+choose those numbers generously and have more storage reserved than
+actually needed, but having these numbers set too small will lead to an
+error.
+
+.. _err0025:
+
+Molecule topology type exceeds system topology type
+---------------------------------------------------
+
+The total number of atom, bond, angle, dihedral, and improper types is
+"locked in" when LAMMPS creates the simulation box. This can happen
+through either the :doc:`create_box <create_box>`, the :doc:`read_data
+<read_data>`, or the :doc:`read_restart <read_restart>` command.  After
+this it is not possible to refer to an additional type. So loading a
+molecule file that uses additional types or adding a data file that
+would require additional types will lead to an error.  To avoid the
+error, one or more of the `extra/XXX/types` keywords are required to
+extend the maximum number of the individual types.
+
+.. _err0026:
+
+Molecule attributes do not match system attributes
+--------------------------------------------------
+
+Choosing an :doc:`atom_style <atom_style>` in LAMMPS determines which
+per-atom properties are available.  In a :doc:`molecule file
+<molecule>`, however, it is possible to add sections (for example Masses
+or Charges) that are not supported by the atom style.  Masses for
+example, are usually not a per-atom property, but defined through the
+atom type.  Thus it would not be required to have a Masses section and
+the included data would be ignored.  LAMMPS prints this warning to
+inform about this case.
