@@ -17,7 +17,7 @@
    Purpose      Handle Bosonic Exchange in Path Integral Molecular Dynamics
                 according to J. Chem. Phys. 159, 154107 (2023) (doi:10.1063/5.0173749)
    Copyright    Hirshberg lab @ Tel Aviv University
-   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman (yotam.feldman at gmail.com), Barak Hirshberg (hirshb at tauex.ac.il)
+   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman (yotam.feldman at gmail.com), Barak Hirshberg (hirshb at tauex.tau.ac.il)
 
    Updated      Jan-06-2025
    Version      1.0

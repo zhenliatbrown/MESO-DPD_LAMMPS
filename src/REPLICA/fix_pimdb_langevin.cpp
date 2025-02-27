@@ -16,7 +16,7 @@
 
    Purpose      Path Integral Molecular Dynamics of Bosons with Langevin Thermostat
    Copyright    Hirshberg lab @ Tel Aviv University
-   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman (yotam.feldman at gmail.com), Barak Hirshberg (hirshb at tauex.ac.il)
+   Authors      Ofir Blumer, Jacob Higer, Yotam Feldman (yotam.feldman at gmail.com), Barak Hirshberg (hirshb at tauex.tau.ac.il)
 
    Updated      Jan-06-2025
    Version      1.0
