@@ -392,7 +392,7 @@ double BosonicExchange::prim_estimator()
   // H_physical = H_reduced / P. Note however that the expressions for the various estimators are unaffected by this choice,
   // so as the algorithm for bosonic exchange. The code below was designed to be compatible with both conventions,
   // and the choice of convention only affects a single calculation within it.
-  // Setting the following boolian variable to false amounts to adopting the reduced-beta convention.
+  // Setting the following boolean variable to false amounts to adopting the reduced-beta convention.
   double convention_correction = (physical_beta_convention ? 1 : 1.0 / np);
 
   // Adds the contribution of an interior spring, which is the same as for distinguishable particles.
