@@ -164,7 +164,7 @@ int PairDispersionD3::find_atomic_number(std::string &key)
 {
   std::transform(key.begin(), key.end(), key.begin(), ::tolower);
   if (key.length() == 1) key += " ";
-  key.resize(2);
+  if (key.length() > 2) return -1;
 
   std::vector<std::string> element_table = {
       "h ", "he", "li", "be", "b ", "c ", "n ", "o ", "f ", "ne", "na", "mg", "al", "si",
@@ -293,6 +293,8 @@ void PairDispersionD3::coeff(int narg, char **arg)
   for (int i = 0; i < ntypes; i++) {
     element = arg[i + 2];
     atomic_numbers[i] = find_atomic_number(element);
+    if (atomic_numbers[i] < 0)
+      error->all(FLERR, Error::NOLASTLINE, "Element {} not supported", element);
   }
 
   int count = 0;
@@ -967,7 +969,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           s8 = 1.206;
           break;
         default:
-          error->all(FLERR, "Functional name unknown");
+          error->all(FLERR, Error::NOLASTLINE,
+                     "Functional {} not supported with original damping function", functional_name);
           break;
       }
       //fprintf(stderr,"s6    : %f\n", s6);
@@ -1029,7 +1032,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           rs8 = 0.003160;
           break;
         default:
-          error->all(FLERR, "Functional name unknown");
+          error->all(FLERR, Error::NOLASTLINE,
+                     "Functional {} not supported with zerom damping function", functional_name);
           break;
       }
       //fprintf(stderr,"s6    : %f\n", s6);
@@ -1339,7 +1343,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           a2 = 4.5000;
           break;
         default:
-          error->all(FLERR, "Functional name unknown");
+          error->all(FLERR, Error::NOLASTLINE,
+                     "Functional {} not supported with bj damping function", functional_name);
           break;
       }
 
@@ -1405,7 +1410,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           a2 = 3.593680;
           break;
         default:
-          error->all(FLERR, "Functional name unknown");
+          error->all(FLERR, Error::NOLASTLINE,
+                     "Functional {} not supported with bjm damping function", functional_name);
           break;
       }
 
@@ -1419,7 +1425,8 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
 
     } break;
     default:
-      error->all(FLERR, "Damping type unknown");
+      // this should not happen with the error check in the init_style function
+      error->all(FLERR, Error::NOLASTLINE, "Damping code {} unknown", dampingCode);
       break;
   }
 }
