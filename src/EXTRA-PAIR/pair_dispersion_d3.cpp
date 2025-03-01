@@ -75,6 +75,7 @@ PairDispersionD3::PairDispersionD3(LAMMPS *lmp) :
   one_coeff = 1;
   single_enable = 0;
 
+  dampingCode = 0;
   s6 = s8 = s18 = rs6 = rs8 = rs18 = a1 = a2 = alpha = alpha6 = alpha8 = 0.0;
 }
 
@@ -132,10 +133,16 @@ void PairDispersionD3::settings(int narg, char **arg)
 {
   if (narg != 4) error->all(FLERR, "Pair_style dispersion/d3 needs 4 arguments");
 
-  damping_type = arg[0];
+  std::string damping_type = arg[0];
   std::string functional_name = arg[1];
 
   std::transform(damping_type.begin(), damping_type.end(), damping_type.begin(), ::tolower);
+  std::unordered_map<std::string, int> dampingMap = {
+      {"original", 1}, {"zero", 1}, {"zerom", 2}, {"bj", 3}, {"bjm", 4}};
+  if (!dampingMap.count(damping_type))
+    error->all(FLERR, Error::NOPOINTER, "Unknown damping type {} for pair style dispersion/d3",
+               damping_type);
+  dampingCode = dampingMap[damping_type];
 
   rthr = utils::numeric(FLERR, arg[2], false, lmp);
   cn_thr = utils::numeric(FLERR, arg[3], false, lmp);
@@ -450,11 +457,6 @@ double *PairDispersionD3::get_dC6(int iat, int jat, double cni, double cnj)
 
 void PairDispersionD3::compute(int eflag, int vflag)
 {
-
-  std::unordered_map<std::string, int> dampingMap = {
-      {"zero", 1}, {"zerom", 2}, {"bj", 3}, {"bjm", 4}};
-  int dampingCode = dampingMap[damping_type];
-
   double evdwl = 0.0;
   ev_init(eflag, vflag);
 
@@ -518,7 +520,8 @@ void PairDispersionD3::compute(int eflag, int vflag)
         t6 = t8 = e6 = e8 = evdwl = fpair = fpair1 = fpair2 = 0.0;
 
         switch (dampingCode) {
-          case 1: {    // zero
+
+          case 1: {    // original
 
             double r0 = r / r0ab[type[i]][type[j]];
 
@@ -603,7 +606,12 @@ void PairDispersionD3::compute(int eflag, int vflag)
 
             fpair = -(tmp6 + tmp8);
             fpair *= factor_lj;
-          }
+          } break;
+
+          default: {
+            // this should not happen with the error check in the init_style function
+            error->all(FLERR, Error::NOLASTLINE, "Damping code {} unknown", dampingCode);
+          } break;
         }
 
         if (eflag) { evdwl = -(s6 * e6 + s8 * e8) * factor_lj; }
@@ -693,12 +701,6 @@ void PairDispersionD3::compute(int eflag, int vflag)
 
 void PairDispersionD3::set_funcpar(std::string &functional_name)
 {
-
-  std::unordered_map<std::string, int> dampingMap = {
-      {"zero", 1}, {"zerom", 2}, {"bj", 3}, {"bjm", 4}};
-
-  int dampingCode = dampingMap[damping_type];
-
   switch (dampingCode) {
 
     case 1: {    // zero
