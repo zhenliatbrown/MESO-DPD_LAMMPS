@@ -29,6 +29,7 @@
 #include "memory.h"
 #include "neigh_list.h"
 #include "neighbor.h"
+#include "update.h"
 
 #include <algorithm>
 #include <cmath>
@@ -131,7 +132,9 @@ void PairDispersionD3::allocate()
 
 void PairDispersionD3::settings(int narg, char **arg)
 {
-  if (narg != 4) error->all(FLERR, "Pair_style dispersion/d3 needs 4 arguments");
+  if (narg != 4) error->all(FLERR, "Pair style dispersion/d3 needs 4 arguments");
+  if (strcmp("metal", update->unit_style) != 0)
+    error->all(FLERR, Error::NOLASTLINE, "Pair style dispersion/d3 requires metal units");
 
   std::string damping_type = arg[0];
   std::string functional_name = arg[1];

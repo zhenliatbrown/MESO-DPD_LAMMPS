@@ -128,6 +128,8 @@ Style *dispersion/d3* is part of the EXTRA-PAIR package. It is only
 enabled if LAMMPS was built with that package.  See the :doc:`Build
 package <Build_package>` page for more info.
 
+The compiled in parameters require the use of :doc:`metal units <units>`.
+
 It is currently *not* possible to calculate three-body dispersion
 contributions according to, for example, the Axilrod-Teller-Muto model.
 
