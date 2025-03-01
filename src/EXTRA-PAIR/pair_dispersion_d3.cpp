@@ -59,6 +59,7 @@ static constexpr double autoang = 0.52917725;    // atomic units (Bohr) to Angst
 static constexpr double autoev = 27.21140795;    // atomic units (Hartree) to eV
 
 #include "d3_parameters.h"
+
 /* ----------------------------------------------------------------------
    Constructor (Required)
 ------------------------------------------------------------------------- */
@@ -547,6 +548,7 @@ void PairDispersionD3::compute(int eflag, int vflag)
             fpair = fpair1 + fpair2;
             fpair *= factor_lj;
           } break;
+
           case 2: {    // zerom
 
             double r0 = r0ab[type[i]][type[j]];
@@ -572,6 +574,7 @@ void PairDispersionD3::compute(int eflag, int vflag)
             fpair = fpair1 + fpair2;
             fpair *= factor_lj;
           } break;
+
           case 3: {    // bj
 
             double r0 = sqrt(C8 / C6);
@@ -592,6 +595,7 @@ void PairDispersionD3::compute(int eflag, int vflag)
             fpair = -(tmp6 + tmp8);
             fpair *= factor_lj;
           } break;
+
           case 4: {    // bjm
 
             double r0 = sqrt(C8 / C6);
@@ -619,7 +623,7 @@ void PairDispersionD3::compute(int eflag, int vflag)
           } break;
         }
 
-        if (eflag) { evdwl = -(s6 * e6 + s8 * e8) * factor_lj; }
+        if (eflag) evdwl = -(s6 * e6 + s8 * e8) * factor_lj;
 
         double rest = (s6 * e6 + s8 * e8) / C6;
 
@@ -973,11 +977,6 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
                      "Functional {} not supported with original damping function", functional_name);
           break;
       }
-      //fprintf(stderr,"s6    : %f\n", s6);
-      //fprintf(stderr,"s8    : %f\n", s8);
-      //fprintf(stderr,"rs6   : %f\n", rs6);
-      //fprintf(stderr,"rs8   : %f\n", rs8);
-      //fprintf(stderr,"alpha : %f\n", alpha);
     } break;
 
     case 2: {    // zerom
@@ -1036,11 +1035,6 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
                      "Functional {} not supported with zerom damping function", functional_name);
           break;
       }
-      //fprintf(stderr,"s6    : %f\n", s6);
-      //fprintf(stderr,"s8    : %f\n", s8);
-      //fprintf(stderr,"rs6   : %f\n", rs6);
-      //fprintf(stderr,"rs8   : %f\n", rs8);
-      //fprintf(stderr,"alpha : %f\n", alpha);
 
       rs8 = rs8 / autoang;
     } break;
@@ -1348,12 +1342,6 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           break;
       }
 
-      //fprintf(stderr,"s6    : %f\n", s6);
-      //fprintf(stderr,"s8    : %f\n", s8);
-      //fprintf(stderr,"a1    : %f\n", a1);
-      //fprintf(stderr,"a2    : %f\n", a2);
-      //fprintf(stderr,"alpha : %f\n", alpha);
-
       a2 = a2 * autoang;
     } break;
 
@@ -1415,12 +1403,6 @@ void PairDispersionD3::set_funcpar(std::string &functional_name)
           break;
       }
 
-      //fprintf(stderr,"s6    : %f\n", s6);
-      //fprintf(stderr,"s8    : %f\n", s8);
-      //fprintf(stderr,"a1    : %f\n", a1);
-      //fprintf(stderr,"a2    : %f\n", a2);
-      //fprintf(stderr,"alpha : %f\n", alpha);
-
       a2 = a2 * autoang;
 
     } break;
@@ -1448,8 +1430,6 @@ double PairDispersionD3::init_one(int i, int j)
 void PairDispersionD3::init_style()
 {
   if (atom->tag_enable == 0) error->all(FLERR, "Pair style D3 requires atom IDs");
-  //if (force->newton_pair == 0)
-  //  error->all(FLERR,"Pair style D3 requires newton pair on");
 
   // need an half neighbor list
   neighbor->add_request(this);
