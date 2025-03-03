@@ -521,3 +521,39 @@ example, are usually not a per-atom property, but defined through the
 atom type.  Thus it would not be required to have a Masses section and
 the included data would be ignored.  LAMMPS prints this warning to
 inform about this case.
+
+.. _err0029:
+
+System is not charge neutral, net charge = ...
+--------------------------------------------------
+
+the sum of charges in the system is not zero. When a system is not
+charge-neutral, methods that evolve/manipulate per-atom charges, evaluate
+Coulomb interactions, evaluate Coulomb forces, or evaluate/manipulate other
+properties relying on per-atom charges may raise this warning. A non-zero
+net charge most commonly arises after setting per-atom charges :doc:`set <set>`
+such that the sum is non-zero or by reading in a system through :doc:`read_data
+<read_data>` where the per-atom charges do not sum to zero. However, a loss of
+charge neutrality may occur in other less common ways, like when charge
+equilibration methods (e.g., :doc:`fix qeq <fix_qeq>`) fail.
+
+A similar warning/error may be raised when using certain charge equilibration
+methods: :doc:`fix qeq <fix_qeq>`, :doc:`fix qeq/comb <fix_qeq_comb>`, :doc:`fix
+qeq/reaxff <fix_qeq_reaxff>`, and :doc:`fix qtpie/reaxff <fix_qtpie_reaxff>`. In
+such cases, this warning/error will be raised for the fix :doc:`group <group>`
+when the group has a non-zero net charge.
+
+When the system is expected to be charge-neutral, this warning often arises due
+to an error in the lammps input (e.g., an incorrect :doc:`set <set>` command,
+error in the data file read by :doc:`read_data <read_data>`, incorrectly
+grouping atoms with charge, etc.). If the system is NOT expected to be
+charge-neutral, the user should make sure that the method(s) used are
+appropriate for systems with a non-zero net charge. Some commonly used fixes for
+charge equilibration :doc:`fix qeq <fix_qeq>`, pair styles that include charge
+interactions :doc:`pair_style coul/XXX <pair_coul>`, and kspace methods
+:doc:`kspace_style <kspace_style>` can, in theory, support systems with non-zero
+net charge. However, non-zero net charge can lead to spurious artifacts. The
+severity of these artifacts depends on the magnitude of total charge, system
+size, and methods used. Before running simulations or calculations for systems
+with non-zero net charge, users should test for artifacts and convergence of
+properties.
