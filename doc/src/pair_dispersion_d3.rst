@@ -63,7 +63,8 @@ factor, and :math:`f_n^{damp}` are damping functions.
 
 Available damping functions are the original "zero-damping" (*original*)
 :ref:`(Grimme1) <Grimme1>`, Becke-Johnson damping (*bj*) :ref:`(Grimme2)
-<Grimme2>`, and their revised forms (*bjm*) :ref:`(Sherrill) <Sherrill>`.
+<Grimme2>`, and their revised forms (*zerom* and *bjm*, respectively)
+:ref:`(Sherrill) <Sherrill>`.
 
 Available XC functional scaling factors are listed in the table below,
 and depend on the selected damping function.
