@@ -49,7 +49,7 @@ static constexpr double INERTIA = 0.2;    // moment of inertia prefactor for ell
 FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), xvarstr(nullptr), yvarstr(nullptr), zvarstr(nullptr), vxvarstr(nullptr),
     vyvarstr(nullptr), vzvarstr(nullptr), xoriginal(nullptr), toriginal(nullptr),
-    qoriginal(nullptr), displace(nullptr), velocity(nullptr)
+    qoriginal(nullptr), muoriginal(nullptr), displace(nullptr), velocity(nullptr)
 {
   if (narg < 4) error->all(FLERR, "Illegal fix move command");
 
@@ -277,13 +277,14 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   tri_flag = atom->tri_flag;
   body_flag = atom->body_flag;
   quat_atom_flag = atom->quat_flag;
+  mu_flag = atom->mu_flag;
 
   theta_flag = quat_flag = 0;
   if (line_flag) theta_flag = 1;
   if (ellipsoid_flag || tri_flag || body_flag || quat_atom_flag) quat_flag = 1;
 
   extra_flag = 0;
-  if (omega_flag || angmom_flag || theta_flag || quat_flag) extra_flag = 1;
+  if (omega_flag || angmom_flag || theta_flag || quat_flag || mu_flag) extra_flag = 1;
 
   // perform initial allocation of atom-based array
   // register with Atom class
@@ -304,6 +305,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   // xoriginal = initial unwrapped positions of atoms
   // toriginal = initial theta of lines
   // qoriginal = initial quat of extended particles
+  // muoriginal = initial dipole moment of extended particles
 
   double **x = atom->x;
   imageint *image = atom->image;
@@ -362,6 +364,18 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     }
   }
 
+  if (mu_flag) {
+    double **mu = atom->mu;
+    for (int i = 0; i < nlocal; i++) {
+      if (mask[i] & groupbit) {
+        muoriginal[i][0] = mu[i][0];
+        muoriginal[i][1] = mu[i][1];
+        muoriginal[i][2] = mu[i][2];
+        muoriginal[i][3] = mu[i][3];
+      }
+    }
+  }
+
   // nrestart = size of per-atom restart data
   // nrestart = 1 + xorig + torig + qorig
 
@@ -388,6 +402,7 @@ FixMove::~FixMove()
   memory->destroy(xoriginal);
   memory->destroy(toriginal);
   memory->destroy(qoriginal);
+  memory->destroy(muoriginal);
   memory->destroy(displace);
   memory->destroy(velocity);
 
@@ -533,6 +548,7 @@ void FixMove::initial_integrate(int /*vflag*/)
   double *rmass = atom->rmass;
   double *mass = atom->mass;
   double **quat_atom = atom->quat;
+  double **mu = atom->mu;
   int *type = atom->type;
   int *ellipsoid = atom->ellipsoid;
   int *line = atom->line;
@@ -676,6 +692,8 @@ void FixMove::initial_integrate(int /*vflag*/)
     qrotate[2] = runit[1] * qsine;
     qrotate[3] = runit[2] * qsine;
 
+    double rotmat[3][3], g[3]; // for dipole rotations
+
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
         xold[0] = x[i][0];
@@ -774,6 +792,15 @@ void FixMove::initial_integrate(int /*vflag*/)
             if (quat) MathExtra::quatquat(qrotate, qoriginal[i], quat);
           } else if (quat_atom_flag) {
             MathExtra::quatquat(qrotate, qoriginal[i], quat_atom[i]);
+          }
+
+          if (mu_flag && mu[i][3] > 0.0) {
+            MathExtra::quat_to_mat(qrotate, rotmat);
+            MathExtra::matvec(rotmat, muoriginal[i], g);
+            mu[i][0] = g[0];
+            mu[i][1] = g[1];
+            mu[i][2] = g[2];
+            // mu[i][3] = sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
           }
         }
 
@@ -809,6 +836,8 @@ void FixMove::initial_integrate(int /*vflag*/)
     qrotate[2] = runit[1] * qsine;
     qrotate[3] = runit[2] * qsine;
 
+    double rotmat[3][3], g[3]; // for dipole rotations
+
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
         xold[0] = x[i][0];
@@ -907,6 +936,15 @@ void FixMove::initial_integrate(int /*vflag*/)
             if (quat) MathExtra::quatquat(qrotate, qoriginal[i], quat);
           } else if (quat_atom_flag) {
             MathExtra::quatquat(qrotate, qoriginal[i], quat_atom[i]);
+          }
+
+          if (mu_flag && mu[i][3] > 0.0) {
+            MathExtra::quat_to_mat(qrotate, rotmat);
+            MathExtra::matvec(rotmat, muoriginal[i], g);
+            mu[i][0] = g[0];
+            mu[i][1] = g[1];
+            mu[i][2] = g[2];
+            // mu[i][3] = sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
           }
         }
 
@@ -1248,6 +1286,7 @@ void FixMove::grow_arrays(int nmax)
   memory->grow(xoriginal, nmax, 3, "move:xoriginal");
   if (theta_flag) memory->grow(toriginal, nmax, "move:toriginal");
   if (quat_flag) memory->grow(qoriginal, nmax, 4, "move:qoriginal");
+  if (mu_flag) memory->grow(muoriginal, nmax, 4, "move:muoriginal");
   array_atom = xoriginal;
 }
 
@@ -1266,6 +1305,12 @@ void FixMove::copy_arrays(int i, int j, int /*delflag*/)
     qoriginal[j][1] = qoriginal[i][1];
     qoriginal[j][2] = qoriginal[i][2];
     qoriginal[j][3] = qoriginal[i][3];
+  }
+  if (mu_flag) {
+    muoriginal[j][0] = muoriginal[i][0];
+    muoriginal[j][1] = muoriginal[i][1];
+    muoriginal[j][2] = muoriginal[i][2];
+    muoriginal[j][3] = muoriginal[i][3];
   }
 }
 
@@ -1461,6 +1506,12 @@ int FixMove::pack_exchange(int i, double *buf)
     buf[n++] = qoriginal[i][2];
     buf[n++] = qoriginal[i][3];
   }
+  if (mu_flag) {
+    buf[n++] = muoriginal[i][0];
+    buf[n++] = muoriginal[i][1];
+    buf[n++] = muoriginal[i][2];
+    buf[n++] = muoriginal[i][3];
+  }
   return n;
 }
 
@@ -1481,6 +1532,12 @@ int FixMove::unpack_exchange(int nlocal, double *buf)
     qoriginal[nlocal][2] = buf[n++];
     qoriginal[nlocal][3] = buf[n++];
   }
+  if (mu_flag) {
+    muoriginal[nlocal][0] = buf[n++];
+    muoriginal[nlocal][1] = buf[n++];
+    muoriginal[nlocal][2] = buf[n++];
+    muoriginal[nlocal][3] = buf[n++];
+  }
   return n;
 }
 
@@ -1500,6 +1557,12 @@ int FixMove::pack_restart(int i, double *buf)
     buf[n++] = qoriginal[i][1];
     buf[n++] = qoriginal[i][2];
     buf[n++] = qoriginal[i][3];
+  }
+  if (mu_flag) {
+    buf[n++] = muoriginal[i][0];
+    buf[n++] = muoriginal[i][1];
+    buf[n++] = muoriginal[i][2];
+    buf[n++] = muoriginal[i][3];
   }
   // pack buf[0] this way because other fixes unpack it
   buf[0] = n;
@@ -1530,6 +1593,12 @@ void FixMove::unpack_restart(int nlocal, int nth)
     qoriginal[nlocal][1] = extra[nlocal][m++];
     qoriginal[nlocal][2] = extra[nlocal][m++];
     qoriginal[nlocal][3] = extra[nlocal][m++];
+  }
+  if (mu_flag) {
+    muoriginal[nlocal][0] = extra[nlocal][m++];
+    muoriginal[nlocal][1] = extra[nlocal][m++];
+    muoriginal[nlocal][2] = extra[nlocal][m++];
+    muoriginal[nlocal][3] = extra[nlocal][m++];
   }
 }
 
