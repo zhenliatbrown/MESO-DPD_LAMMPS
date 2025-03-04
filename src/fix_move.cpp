@@ -193,6 +193,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   // optional args
 
   int scaleflag = 1;
+  int dipoleflag = 0;
 
   while (iarg < narg) {
     if (strcmp(arg[iarg], "units") == 0) {
@@ -201,6 +202,17 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
         scaleflag = 0;
       else if (strcmp(arg[iarg + 1], "lattice") == 0)
         scaleflag = 1;
+      else
+        error->all(FLERR, "Illegal fix move command");
+      iarg += 2;
+    } else if (strcmp(arg[iarg], "update") == 0) {
+      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix move command");
+      if (strcmp(arg[iarg + 1], "dipole") == 0) {
+        if ((mstyle == ROTATE) || (mstyle == TRANSROT))
+          dipoleflag = 1;
+        else
+          error->all(FLERR, "Keyword update dipole requires style rotate or transrot");
+      }
       else
         error->all(FLERR, "Illegal fix move command");
       iarg += 2;
@@ -277,7 +289,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   tri_flag = atom->tri_flag;
   body_flag = atom->body_flag;
   quat_atom_flag = atom->quat_flag;
-  mu_flag = atom->mu_flag;
+  mu_flag = (dipoleflag && atom->mu_flag);
 
   theta_flag = quat_flag = 0;
   if (line_flag) theta_flag = 1;
