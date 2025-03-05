@@ -70,7 +70,7 @@ Fix STORE/ATOM can be used as persistent storage of per-atom data.
 * N1 = 1, N2 = 0 : data is per-atom vector = single value per atom
 * N1 > 1, N2 = 0 : data is per-atom array = N1 values per atom
 * N1 > 0, N2 > 0 : data is per-atom tensor = N1xN2 values per atom
-* gflag = 1 communicate per-atom values with ghost atoms, 0 update ghost atoms
+* gflag = 1 communicate per-atom values with ghost atoms, 0 do not update ghost atom data
 * rflag = 1 store per-atom value in restart file, 0 do not store data in restart
 
 Similar functionality is also available through using custom per-atom
