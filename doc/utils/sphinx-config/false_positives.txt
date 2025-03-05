@@ -1321,6 +1321,7 @@ geturl
 gewald
 Gezelter
 gfile
+gflag
 Gflop
 gfortran
 ghostneigh
@@ -3250,6 +3251,7 @@ rewrap
 rezwanur
 rfac
 rfile
+rflag
 rg
 Rg
 Rhaphson
