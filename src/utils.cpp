@@ -156,7 +156,7 @@ std::string utils::strcompress(const std::string &text)
   }
 
   // remove trailing blank
-  if (output.back() == ' ') output.erase(output.size() - 1, 1);
+  if (!output.empty() && output.back() == ' ') output.erase(output.size() - 1, 1);
   return output;
 }
 
