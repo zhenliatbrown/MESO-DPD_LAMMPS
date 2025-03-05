@@ -118,7 +118,7 @@ void GranSubModTangentialLinearHistory::coeffs_to_local()
 void GranSubModTangentialLinearHistory::calculate_forces()
 {
   // Note: this is the same as the base Mindlin calculation except k isn't scaled by contact radius
-  double magfs, magfs_inv, rsht, shrmag, prjmag, temp_dbl, temp_array[3], vtr2[3];
+  double magfs, magfs_inv, rsht, shrmag, temp_array[3], vtr2[3];
   int frame_update = 0;
 
   damp = xt * gm->damping_model->get_damp_prefactor();
@@ -308,7 +308,7 @@ void GranSubModTangentialMindlin::mix_coeffs(double *icoeffs, double *jcoeffs)
 
 void GranSubModTangentialMindlin::calculate_forces()
 {
-  double k_scaled, magfs, magfs_inv, rsht, shrmag, prjmag, temp_dbl;
+  double k_scaled, magfs, magfs_inv, rsht, shrmag;
   double temp_array[3], vtr2[3];
   int frame_update = 0;
 

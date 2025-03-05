@@ -73,7 +73,7 @@ void GranSubModRollingSDS::coeffs_to_local()
 void GranSubModRollingSDS::calculate_forces()
 {
   int rhist0, rhist1, rhist2, frameupdate;
-  double Frcrit, rolldotn, rollmag, prjmag, magfr, hist_temp[3], scalefac, temp_array[3];
+  double Frcrit, rolldotn, rollmag, magfr, hist_temp[3], temp_array[3];
   double k_inv, magfr_inv;
 
   rhist0 = history_index;
