@@ -193,7 +193,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   // optional args
 
   int scaleflag = 1;
-  int dipoleflag = 0;
+  update_mu_flag = 0;
 
   while (iarg < narg) {
     if (strcmp(arg[iarg], "units") == 0) {
@@ -208,10 +208,10 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "update") == 0) {
       if (iarg + 2 > narg) error->all(FLERR, "Illegal fix move command");
       if (strcmp(arg[iarg + 1], "dipole") == 0) {
-        if ((mstyle == ROTATE) || (mstyle == TRANSROT))
-          dipoleflag = 1;
-        else
+        if ((mstyle != ROTATE) && (mstyle != TRANSROT))
           error->all(FLERR, "Keyword update dipole requires style rotate or transrot");
+        if (!atom->mu_flag) error->all(FLERR, "Keyword update dipole requires atom style dipole");
+        update_mu_flag = 1;
       }
       else
         error->all(FLERR, "Illegal fix move command");
@@ -289,14 +289,13 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   tri_flag = atom->tri_flag;
   body_flag = atom->body_flag;
   quat_atom_flag = atom->quat_flag;
-  mu_flag = (dipoleflag && atom->mu_flag);
 
   theta_flag = quat_flag = 0;
   if (line_flag) theta_flag = 1;
   if (ellipsoid_flag || tri_flag || body_flag || quat_atom_flag) quat_flag = 1;
 
   extra_flag = 0;
-  if (omega_flag || angmom_flag || theta_flag || quat_flag || mu_flag) extra_flag = 1;
+  if (omega_flag || angmom_flag || theta_flag || quat_flag || update_mu_flag) extra_flag = 1;
 
   // perform initial allocation of atom-based array
   // register with Atom class
@@ -376,7 +375,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     }
   }
 
-  if (mu_flag) {
+  if (update_mu_flag) {
     double **mu = atom->mu;
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -704,7 +703,7 @@ void FixMove::initial_integrate(int /*vflag*/)
     qrotate[2] = runit[1] * qsine;
     qrotate[3] = runit[2] * qsine;
 
-    double rotmat[3][3], g[3]; // for dipole rotations
+    double rotmat[3][3], g[3]; // for dipole rotation
 
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -806,7 +805,7 @@ void FixMove::initial_integrate(int /*vflag*/)
             MathExtra::quatquat(qrotate, qoriginal[i], quat_atom[i]);
           }
 
-          if (mu_flag && mu[i][3] > 0.0) {
+          if (update_mu_flag && mu[i][3] > 0.0) {
             MathExtra::quat_to_mat(qrotate, rotmat);
             MathExtra::matvec(rotmat, muoriginal[i], g);
             mu[i][0] = g[0];
@@ -848,7 +847,7 @@ void FixMove::initial_integrate(int /*vflag*/)
     qrotate[2] = runit[1] * qsine;
     qrotate[3] = runit[2] * qsine;
 
-    double rotmat[3][3], g[3]; // for dipole rotations
+    double rotmat[3][3], g[3]; // for dipole rotation
 
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -950,7 +949,7 @@ void FixMove::initial_integrate(int /*vflag*/)
             MathExtra::quatquat(qrotate, qoriginal[i], quat_atom[i]);
           }
 
-          if (mu_flag && mu[i][3] > 0.0) {
+          if (update_mu_flag && mu[i][3] > 0.0) {
             MathExtra::quat_to_mat(qrotate, rotmat);
             MathExtra::matvec(rotmat, muoriginal[i], g);
             mu[i][0] = g[0];
@@ -1298,7 +1297,7 @@ void FixMove::grow_arrays(int nmax)
   memory->grow(xoriginal, nmax, 3, "move:xoriginal");
   if (theta_flag) memory->grow(toriginal, nmax, "move:toriginal");
   if (quat_flag) memory->grow(qoriginal, nmax, 4, "move:qoriginal");
-  if (mu_flag) memory->grow(muoriginal, nmax, 4, "move:muoriginal");
+  if (update_mu_flag) memory->grow(muoriginal, nmax, 4, "move:muoriginal");
   array_atom = xoriginal;
 }
 
@@ -1318,7 +1317,7 @@ void FixMove::copy_arrays(int i, int j, int /*delflag*/)
     qoriginal[j][2] = qoriginal[i][2];
     qoriginal[j][3] = qoriginal[i][3];
   }
-  if (mu_flag) {
+  if (update_mu_flag) {
     muoriginal[j][0] = muoriginal[i][0];
     muoriginal[j][1] = muoriginal[i][1];
     muoriginal[j][2] = muoriginal[i][2];
@@ -1518,7 +1517,7 @@ int FixMove::pack_exchange(int i, double *buf)
     buf[n++] = qoriginal[i][2];
     buf[n++] = qoriginal[i][3];
   }
-  if (mu_flag) {
+  if (update_mu_flag) {
     buf[n++] = muoriginal[i][0];
     buf[n++] = muoriginal[i][1];
     buf[n++] = muoriginal[i][2];
@@ -1544,7 +1543,7 @@ int FixMove::unpack_exchange(int nlocal, double *buf)
     qoriginal[nlocal][2] = buf[n++];
     qoriginal[nlocal][3] = buf[n++];
   }
-  if (mu_flag) {
+  if (update_mu_flag) {
     muoriginal[nlocal][0] = buf[n++];
     muoriginal[nlocal][1] = buf[n++];
     muoriginal[nlocal][2] = buf[n++];
@@ -1570,7 +1569,7 @@ int FixMove::pack_restart(int i, double *buf)
     buf[n++] = qoriginal[i][2];
     buf[n++] = qoriginal[i][3];
   }
-  if (mu_flag) {
+  if (update_mu_flag) {
     buf[n++] = muoriginal[i][0];
     buf[n++] = muoriginal[i][1];
     buf[n++] = muoriginal[i][2];
@@ -1606,7 +1605,7 @@ void FixMove::unpack_restart(int nlocal, int nth)
     qoriginal[nlocal][2] = extra[nlocal][m++];
     qoriginal[nlocal][3] = extra[nlocal][m++];
   }
-  if (mu_flag) {
+  if (update_mu_flag) {
     muoriginal[nlocal][0] = extra[nlocal][m++];
     muoriginal[nlocal][1] = extra[nlocal][m++];
     muoriginal[nlocal][2] = extra[nlocal][m++];
