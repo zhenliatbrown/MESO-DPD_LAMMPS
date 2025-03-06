@@ -51,7 +51,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     vyvarstr(nullptr), vzvarstr(nullptr), xoriginal(nullptr), toriginal(nullptr),
     qoriginal(nullptr), muoriginal(nullptr), displace(nullptr), velocity(nullptr)
 {
-  if (narg < 4) error->all(FLERR, "Illegal fix move command");
+  if (narg < 4) utils::missing_cmd_args(FLERR, "fix move", error);
 
   restart_global = 1;
   restart_peratom = 1;
@@ -69,7 +69,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 0;
 
   if (strcmp(arg[3], "linear") == 0) {
-    if (narg < 7) error->all(FLERR, "Illegal fix move command");
+    if (narg < 7) utils::missing_cmd_args(FLERR, "fix move linear", error);
     iarg = 7;
     mstyle = LINEAR;
     if (strcmp(arg[4], "NULL") == 0)
@@ -92,7 +92,7 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     }
 
   } else if (strcmp(arg[3], "wiggle") == 0) {
-    if (narg < 8) error->all(FLERR, "Illegal fix move command");
+    if (narg < 8) utils::missing_cmd_args(FLERR, "fix move wiggle", error);
     iarg = 8;
     mstyle = WIGGLE;
     if (strcmp(arg[4], "NULL") == 0)
@@ -114,10 +114,10 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
       az = utils::numeric(FLERR, arg[6], false, lmp);
     }
     period = utils::numeric(FLERR, arg[7], false, lmp);
-    if (period <= 0.0) error->all(FLERR, "Illegal fix move command");
+    if (period <= 0.0) error->all(FLERR, 7, "Illegal fix move wiggle period {}", period);
 
   } else if (strcmp(arg[3], "rotate") == 0) {
-    if (narg < 11) error->all(FLERR, "Illegal fix move command");
+    if (narg < 11) utils::missing_cmd_args(FLERR, "fix move rotate", error);
     iarg = 11;
     mstyle = ROTATE;
     point[0] = utils::numeric(FLERR, arg[4], false, lmp);
@@ -127,10 +127,10 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     axis[1] = utils::numeric(FLERR, arg[8], false, lmp);
     axis[2] = utils::numeric(FLERR, arg[9], false, lmp);
     period = utils::numeric(FLERR, arg[10], false, lmp);
-    if (period <= 0.0) error->all(FLERR, "Illegal fix move command");
+    if (period <= 0.0) error->all(FLERR, 10, "Illegal fix move rotate period {}", period);
 
   } else if (strcmp(arg[3], "transrot") == 0) {
-    if (narg < 11) error->all(FLERR, "Illegal fix move command");
+    if (narg < 11) utils::missing_cmd_args(FLERR, "fix move transrot", error);
     iarg = 14;
     mstyle = TRANSROT;
     vxflag = vyflag = vzflag = 1;
@@ -144,10 +144,10 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     axis[1] = utils::numeric(FLERR, arg[11], false, lmp);
     axis[2] = utils::numeric(FLERR, arg[12], false, lmp);
     period = utils::numeric(FLERR, arg[13], false, lmp);
-    if (period <= 0.0) error->all(FLERR, "Illegal fix move command");
+    if (period <= 0.0) error->all(FLERR, 13, "Illegal fix move rotate period {}", period);
 
   } else if (strcmp(arg[3], "variable") == 0) {
-    if (narg < 10) error->all(FLERR, "Illegal fix move command");
+    if (narg < 10) utils::missing_cmd_args(FLERR, "fix move variable", error);
     iarg = 10;
     mstyle = VARIABLE;
     if (strcmp(arg[4], "NULL") == 0)
@@ -155,40 +155,41 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
     else if (utils::strmatch(arg[4], "^v_")) {
       xvarstr = utils::strdup(arg[4] + 2);
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, 4, "Argument must be either NULL or variable reference");
     if (strcmp(arg[5], "NULL") == 0)
       yvarstr = nullptr;
     else if (utils::strmatch(arg[5], "^v_")) {
       yvarstr = utils::strdup(arg[5] + 2);
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, 5, "Argument must be either NULL or variable reference");
     if (strcmp(arg[6], "NULL") == 0)
       zvarstr = nullptr;
     else if (utils::strmatch(arg[6], "^v_")) {
       zvarstr = utils::strdup(arg[6] + 2);
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, 6, "Argument must be either NULL or variable reference");
     if (strcmp(arg[7], "NULL") == 0)
       vxvarstr = nullptr;
     else if (utils::strmatch(arg[7], "^v_")) {
       vxvarstr = utils::strdup(arg[7] + 2);
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, 7, "Argument must be either NULL or variable reference");
     if (strcmp(arg[8], "NULL") == 0)
       vyvarstr = nullptr;
     else if (utils::strmatch(arg[8], "^v_")) {
       vyvarstr = utils::strdup(arg[8] + 2);
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, 8, "Argument must be either NULL or variable reference");
     if (strcmp(arg[9], "NULL") == 0)
       vzvarstr = nullptr;
     else if (utils::strmatch(arg[9], "^v_")) {
       vzvarstr = utils::strdup(arg[9] + 2);
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, 9, "Argument must be either NULL or variable reference");
 
-  } else
-    error->all(FLERR, "Illegal fix move command");
+  } else {
+    error->all(FLERR, 3, "Unknown fix move mode {}", arg[3]);
+  }
 
   // optional args
 
@@ -197,40 +198,40 @@ FixMove::FixMove(LAMMPS *lmp, int narg, char **arg) :
 
   while (iarg < narg) {
     if (strcmp(arg[iarg], "units") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix move command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix move units", error);
       if (strcmp(arg[iarg + 1], "box") == 0)
         scaleflag = 0;
       else if (strcmp(arg[iarg + 1], "lattice") == 0)
         scaleflag = 1;
       else
-        error->all(FLERR, "Illegal fix move command");
+        error->all(FLERR, iarg + 1, "Unknown fix move units setting {}", arg[iarg + 1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "update") == 0) {
-      if (iarg + 2 > narg) error->all(FLERR, "Illegal fix move command");
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix move update", error);
       if (strcmp(arg[iarg + 1], "dipole") == 0) {
         if ((mstyle != ROTATE) && (mstyle != TRANSROT))
-          error->all(FLERR, "Keyword update dipole requires style rotate or transrot");
-        if (!atom->mu_flag) error->all(FLERR, "Keyword update dipole requires atom style dipole");
+          error->all(FLERR, 3, "Fix move keyword update dipole requires style rotate or transrot");
+        if (!atom->mu_flag)
+          error->all(FLERR, iarg + 1, "Fix move keyword update dipole requires atom attribute mu");
         update_mu_flag = 1;
-      }
-      else
-        error->all(FLERR, "Illegal fix move command");
+      } else
+        error->all(FLERR, iarg + 1, "Unkown fix move update argument {}", arg[iarg + 1]);
       iarg += 2;
     } else
-      error->all(FLERR, "Illegal fix move command");
+      error->all(FLERR, iarg, "Unknown fix move keyword {}", arg[iarg]);
   }
 
   // error checks and warnings
 
   if (domain->dimension == 2) {
     if (((mstyle == LINEAR) || (mstyle == TRANSROT)) && vzflag && (vz != 0.0))
-      error->all(FLERR, "Fix move cannot set linear z motion for 2d problem");
+      error->all(FLERR, 3, "Fix move cannot set linear z motion for 2d problem");
     if (mstyle == WIGGLE && azflag && az != 0.0)
-      error->all(FLERR, "Fix move cannot set wiggle z motion for 2d problem");
+      error->all(FLERR, 3, "Fix move cannot set wiggle z motion for 2d problem");
     if (((mstyle == ROTATE) || (mstyle == TRANSROT)) && (axis[0] != 0.0 || axis[1] != 0.0))
-      error->all(FLERR, "Fix move cannot rotate around non z-axis for 2d problem");
+      error->all(FLERR, 3, "Fix move cannot rotate around non z-axis for 2d problem");
     if (mstyle == VARIABLE && (zvarstr || vzvarstr))
-      error->all(FLERR, "Fix move cannot define z or vz variable for 2d problem");
+      error->all(FLERR, 3, "Fix move cannot define z or vz variable for 2d problem");
   }
 
   // setup scaling and apply scaling factors to velocity & amplitude
@@ -452,63 +453,83 @@ void FixMove::init()
   if (mstyle == VARIABLE) {
     if (xvarstr) {
       xvar = input->variable->find(xvarstr);
-      if (xvar < 0) error->all(FLERR, "Variable name for fix move does not exist");
+      if (xvar < 0)
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move does not exist",
+                   xvarstr);
       if (input->variable->equalstyle(xvar))
         xvarstyle = EQUAL;
       else if (input->variable->atomstyle(xvar))
         xvarstyle = ATOM;
       else
-        error->all(FLERR, "Variable for fix move is invalid style");
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move is invalid style",
+                   xvarstr);
     }
     if (yvarstr) {
       yvar = input->variable->find(yvarstr);
-      if (yvar < 0) error->all(FLERR, "Variable name for fix move does not exist");
+      if (yvar < 0)
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move does not exist",
+                   yvarstr);
+
       if (input->variable->equalstyle(yvar))
         yvarstyle = EQUAL;
       else if (input->variable->atomstyle(yvar))
         yvarstyle = ATOM;
       else
-        error->all(FLERR, "Variable for fix move is invalid style");
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move is invalid style",
+                   yvarstr);
     }
     if (zvarstr) {
       zvar = input->variable->find(zvarstr);
-      if (zvar < 0) error->all(FLERR, "Variable name for fix move does not exist");
+      if (zvar < 0)
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move does not exist",
+                   zvarstr);
+
       if (input->variable->equalstyle(zvar))
         zvarstyle = EQUAL;
       else if (input->variable->atomstyle(zvar))
         zvarstyle = ATOM;
       else
-        error->all(FLERR, "Variable for fix move is invalid style");
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move is invalid style",
+                   zvarstr);
     }
     if (vxvarstr) {
       vxvar = input->variable->find(vxvarstr);
-      if (vxvar < 0) error->all(FLERR, "Variable name for fix move does not exist");
+      if (vxvar < 0)
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move does not exist",
+                   vxvarstr);
       if (input->variable->equalstyle(vxvar))
         vxvarstyle = EQUAL;
       else if (input->variable->atomstyle(vxvar))
         vxvarstyle = ATOM;
       else
-        error->all(FLERR, "Variable for fix move is invalid style");
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move is invalid style",
+                   vxvarstr);
     }
     if (vyvarstr) {
       vyvar = input->variable->find(vyvarstr);
-      if (vyvar < 0) error->all(FLERR, "Variable name for fix move does not exist");
+      if (vyvar < 0)
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move does not exist",
+                   vyvarstr);
       if (input->variable->equalstyle(vyvar))
         vyvarstyle = EQUAL;
       else if (input->variable->atomstyle(vyvar))
         vyvarstyle = ATOM;
       else
-        error->all(FLERR, "Variable for fix move is invalid style");
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move is invalid style",
+                   vyvarstr);
     }
     if (vzvarstr) {
       vzvar = input->variable->find(vzvarstr);
-      if (vzvar < 0) error->all(FLERR, "Variable name for fix move does not exist");
+      if (vzvar < 0)
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move does not exist",
+                   vzvarstr);
       if (input->variable->equalstyle(vzvar))
         vzvarstyle = EQUAL;
       else if (input->variable->atomstyle(vzvar))
         vzvarstyle = ATOM;
       else
-        error->all(FLERR, "Variable for fix move is invalid style");
+        error->all(FLERR, Error::NOLASTLINE, "Variable name {} for fix move is invalid style",
+                   vzvarstr);
     }
 
     if (xvarstr && xvarstyle == ATOM) displaceflag = 1;
@@ -703,7 +724,7 @@ void FixMove::initial_integrate(int /*vflag*/)
     qrotate[2] = runit[1] * qsine;
     qrotate[3] = runit[2] * qsine;
 
-    double rotmat[3][3], g[3]; // for dipole rotation
+    double rotmat[3][3], g[3];    // for dipole rotation
 
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -847,7 +868,7 @@ void FixMove::initial_integrate(int /*vflag*/)
     qrotate[2] = runit[1] * qsine;
     qrotate[3] = runit[2] * qsine;
 
-    double rotmat[3][3], g[3]; // for dipole rotation
+    double rotmat[3][3], g[3];    // for dipole rotation
 
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -1358,7 +1379,8 @@ void FixMove::set_arrays(int i)
 
   // backup particle to time_origin
 
-  if (mstyle == VARIABLE) error->all(FLERR, "Cannot add atoms to fix move variable");
+  if (mstyle == VARIABLE)
+    error->all(FLERR, Error::NOLASTLINE, "Cannot add atoms with fix move style variable");
 
   domain->unmap(x[i], image[i], xoriginal[i]);
   double delta = (update->ntimestep - time_origin) * update->dt;
@@ -1635,5 +1657,5 @@ int FixMove::size_restart(int /*nlocal*/)
 
 void FixMove::reset_dt()
 {
-  error->all(FLERR, "Resetting timestep size is not allowed with fix move");
+  error->all(FLERR, Error::NOLASTLINE, "Resetting timestep size is not allowed with fix move");
 }
