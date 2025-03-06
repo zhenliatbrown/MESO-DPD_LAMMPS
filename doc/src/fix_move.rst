@@ -218,6 +218,8 @@ been previously used to define the lattice spacing.  Each of these 3
 quantities may be dependent on the x,y,z dimension, since the lattice
 spacings can be different in x,y,z.
 
+.. versionadded:: TBD
+
 If the *update dipole* keyword/value pair is used together with the
 *rotate* or *transrot* style, then the orientation of the dipole moment
 of each particle is also updated appropriately to correspond with the rotation.
