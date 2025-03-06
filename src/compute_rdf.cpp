@@ -52,7 +52,7 @@ ComputeRDF::ComputeRDF(LAMMPS *lmp, int narg, char **arg) :
   extarray = 0;
 
   nbin = utils::inumeric(FLERR,arg[3],false,lmp);
-  if (nbin < 1) error->all(FLERR,"Illegal compute rdf command");
+  if (nbin < 1) error->all(FLERR, 3, "Number of bins for compute rdf must be > 0");
 
   // optional args
   // nargpair = # of pairwise args, starting at iarg = 4
@@ -69,19 +69,20 @@ ComputeRDF::ComputeRDF(LAMMPS *lmp, int narg, char **arg) :
     if (strcmp(arg[iarg],"cutoff") == 0) {
       if (iarg+2 > narg) utils::missing_cmd_args(FLERR,"compute rdf cutoff", error);
       if ((neighbor->style == Neighbor::MULTI) || (neighbor->style == Neighbor::MULTI_OLD))
-        error->all(FLERR, "Compute rdf with custom cutoff requires neighbor style 'bin' or 'nsq'");
+        error->all(FLERR, iarg, "Compute rdf with custom cutoff requires neighbor style 'bin' or 'nsq'");
       cutoff_user = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (cutoff_user <= 0.0) cutflag = 0;
       else cutflag = 1;
       iarg += 2;
-    } else error->all(FLERR,"Unknown compute rdf keyword {}", arg[iarg]);
+    } else error->all(FLERR, iarg, "Unknown compute rdf keyword {}", arg[iarg]);
   }
 
   // pairwise args
 
-  if (nargpair == 0) npairs = 1;
-  else {
-    if (nargpair % 2) error->all(FLERR,"Illegal compute rdf command");
+  if (nargpair == 0) {
+    npairs = 1;
+  } else {
+    if (nargpair % 2) error->all(FLERR, 4, "Must provide atom types in pairs for compute rdf command");
     npairs = nargpair/2;
   }
 
@@ -174,7 +175,7 @@ void ComputeRDF::init()
   const double skin = neighbor->skin;
 
   if (!force->pair && !cutflag)
-    error->all(FLERR,"Compute rdf requires a pair style or an explicit cutoff");
+    error->all(FLERR, Error::NOLASTLINE, "Compute rdf requires a pair style or an explicit cutoff");
 
   if (cutflag) {
     mycutneigh = cutoff_user + skin;
@@ -184,8 +185,8 @@ void ComputeRDF::init()
     else cutghost = comm->cutghostuser;
 
     if (mycutneigh > cutghost)
-      error->all(FLERR,"Compute rdf cutoff plus skin {} exceeds ghost atom range {} - "
-                 "use comm_modify cutoff command to increase it", mycutneigh, cutghost);
+      error->all(FLERR, Error::NOLASTLINE, "Compute rdf cutoff plus skin {} exceeds ghost atom "
+                 "range {} - use comm_modify cutoff command to increase it", mycutneigh, cutghost);
 
     delr = cutoff_user / nbin;
   } delr = force->pair->cutforce / nbin;
@@ -215,7 +216,8 @@ void ComputeRDF::init()
   auto req = neighbor->add_request(this, NeighConst::REQ_OCCASIONAL);
   if (cutflag) {
     if ((neighbor->style == Neighbor::MULTI) || (neighbor->style == Neighbor::MULTI_OLD))
-      error->all(FLERR, "Compute rdf with custom cutoff requires neighbor style 'bin' or 'nsq'");
+      error->all(FLERR, Error::NOLASTLINE,
+                 "Compute rdf with custom cutoff requires neighbor style 'bin' or 'nsq'");
     req->set_cutoff(mycutneigh);
   }
 }
