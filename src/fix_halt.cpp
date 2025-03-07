@@ -21,8 +21,8 @@
 #include "modify.h"
 #include "neighbor.h"
 #include "timer.h"
-#include "update.h"
 #include "universe.h"
+#include "update.h"
 #include "variable.h"
 
 #include <cmath>
@@ -84,7 +84,7 @@ FixHalt::FixHalt(LAMMPS *lmp, int narg, char **arg) :
   else if (strcmp(arg[iarg],"==") == 0) operation = EQ;
   else if (strcmp(arg[iarg],"!=") == 0) operation = NEQ;
   else if (strcmp(arg[iarg],"|^") == 0) operation = XOR;
-  else error->all(FLERR,"Invalid fix halt operator");
+  else error->all(FLERR, iarg, "Invalid fix halt operator {}", arg[iarg]);
 
   ++iarg;
   value = utils::numeric(FLERR, arg[iarg], false, lmp);
@@ -101,7 +101,7 @@ FixHalt::FixHalt(LAMMPS *lmp, int narg, char **arg) :
       if (strcmp(arg[iarg + 1], "hard") == 0) eflag = HARD;
       else if (strcmp(arg[iarg + 1], "soft") == 0) eflag = SOFT;
       else if (strcmp(arg[iarg + 1], "continue") == 0) eflag = CONTINUE;
-      else error->all(FLERR, "Unknown fix halt error condition {}", arg[iarg]);
+      else error->all(FLERR, iarg + 1, "Unknown fix halt error condition {}", arg[iarg]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "message") == 0) {
       if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix halt message", error);
@@ -112,7 +112,7 @@ FixHalt::FixHalt(LAMMPS *lmp, int narg, char **arg) :
       uflag = utils::logical(FLERR, arg[iarg + 1], false, lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "path") == 0) {
-      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix halt error", error);
+      if (iarg + 2 > narg) utils::missing_cmd_args(FLERR, "fix halt path", error);
       ++iarg;
       delete[] dlimit_path;
       // strip off outer quotes, if present
@@ -165,9 +165,10 @@ void FixHalt::init()
 
   if (attribute == VARIABLE) {
     ivar = input->variable->find(idvar);
-    if (ivar < 0) error->all(FLERR, "Could not find fix halt variable {}", idvar);
+    if (ivar < 0)
+      error->all(FLERR, Error::NOLASTLINE, "Could not find fix halt variable {}", idvar);
     if (input->variable->equalstyle(ivar) == 0)
-      error->all(FLERR, "Fix halt variable {} is not equal-style variable", idvar);
+      error->all(FLERR, Error::NOLASTLINE, "Fix halt variable {} is not equal-style", idvar);
   }
 
   // settings used by TLIMIT
@@ -180,7 +181,7 @@ void FixHalt::init()
 
   if (attribute == DISKFREE) {
     if (!dlimit_path || platform::disk_free(dlimit_path) < 0.0)
-      error->all(FLERR, "Disk limit not supported by OS or illegal path");
+      error->all(FLERR, Error::NOLASTLINE, "Disk limit not supported by OS or illegal path");
   }
 }
 
