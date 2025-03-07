@@ -25,13 +25,14 @@ Syntax
 * operator = "<" or "<=" or ">" or ">=" or "==" or "!=" or "\|\^"
 * avalue = numeric value to compare attribute to
 * zero or more keyword/value pairs may be appended
-* keyword = *error* or *message* or *path*
+* keyword = *error* or *message* or *path* or *universe*
 
   .. parsed-literal::
 
        *error* value = *hard* or *soft* or *continue*
        *message* value = *yes* or *no*
        *path* value = path to check for free space (may be in quotes)
+       *universe* value = *yes* or *no*
 
 
 Examples
@@ -40,8 +41,10 @@ Examples
 .. code-block:: LAMMPS
 
    fix 10 all halt 1 bondmax > 1.5
-   fix 10 all halt 10 v_myCheck != 0 error soft
+   fix 10 all halt 10 v_myCheck != 0 error soft message no
    fix 10 all halt 100 diskfree < 100000.0 path "dump storage/."
+   fix  2 all halt 100 v_curtime > ${maxtime} universe yes
+
 
 Description
 """""""""""
@@ -162,12 +165,21 @@ is printed; the run simply exits.  The latter may be desirable for
 post-processing tools that extract thermodynamic information from log
 files.
 
+The optional *universe* keyword determines whether the halt request
+should be synchronized across the partitions of a :doc:`multi-partition
+run <Run_options>`.  If *universe* is set to yes, fix halt will check if
+there is a specific message received from any of the other partitions
+requesting to stop the run on this partition as well.  Consequently, if
+fix halt determines to halt the simulation, the fix will send messages
+to all other partitions so they stop their runs, too.
+
 Restart, fix_modify, output, run start/stop, minimize info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-No information about this fix is written to :doc:`binary restart files <restart>`.  None of the :doc:`fix_modify <fix_modify>` options
-are relevant to this fix.  No global or per-atom quantities are stored
-by this fix for access by various :doc:`output commands <Howto_output>`.
+No information about this fix is written to :doc:`binary restart files
+<restart>`.  None of the :doc:`fix_modify <fix_modify>` options are
+relevant to this fix.  No global or per-atom quantities are stored by
+this fix for access by various :doc:`output commands <Howto_output>`.
 No parameter of this fix can be used with the *start/stop* keywords of
 the :doc:`run <run>` command.
 
@@ -183,4 +195,4 @@ Related commands
 Default
 """""""
 
-The option defaults are error = soft, message = yes, and path = ".".
+The option defaults are error = soft, message = yes, path = ".", and universe = no.
