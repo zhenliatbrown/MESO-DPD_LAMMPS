@@ -35,11 +35,12 @@ Syntax
        *variable* args = variable-name
 
 * zero or more keyword/value pairs may be appended
-* keyword = *compress* or *bond* or *mol*
+* keyword = *compress* or *condense* or *bond* or *mol*
 
   .. parsed-literal::
 
        *compress* value = *no* or *yes*
+       *condense* value = *no* or *yes*
        *bond* value = *no* or *yes*
        *mol* value = *no* or *yes*
 
@@ -50,6 +51,7 @@ Examples
 
    delete_atoms group edge
    delete_atoms region sphere compress no
+   delete_atoms region sphere condense yes
    delete_atoms overlap 0.3 all all
    delete_atoms overlap 0.5 solvent colloid
    delete_atoms random fraction 0.1 yes all cube 482793 bond yes
@@ -129,20 +131,30 @@ other options listed above.
 
 Here is the meaning of the optional keywords.
 
-If the *compress* keyword is set to *yes*, then after atoms are
-deleted, then atom IDs are re-assigned so that they run from 1 to the
-number of atoms in the system.  Note that this is not done for
-molecular systems (see the :doc:`atom_style <atom_style>` command),
-regardless of the *compress* setting, since it would foul up the bond
-connectivity that has already been assigned.  However, the
+If the *compress* keyword is set to *yes* (which is the default), then
+after atoms are deleted, the atom IDs are re-assigned so that they run
+from 1 to the number of atoms in the system.  Note that this is not done
+for molecular systems (see the :doc:`atom_style <atom_style>` command),
+regardless of the *compress* setting, since it would corrupt the bond
+connectivity information that has already been assigned.  However, the
 :doc:`reset_atoms id <reset_atoms>` command can be used after this
 command to accomplish the same thing.
 
-Note that the re-assignment of IDs is not really a compression, where
+Note that this re-assignment of IDs is not really a compression, where
 gaps in atom IDs are removed by decrementing atom IDs that are larger.
 Instead the IDs for all atoms are erased, and new IDs are assigned so
 that the atoms owned by individual processors have consecutive IDs, as
 the :doc:`create_atoms <create_atoms>` command explains.
+
+.. versionadded:: TBD
+
+If the *condense* keyword set to *yes*, then after atoms are deleted,
+the atom IDs are re-assigned in a way such that the order of atom-IDs is
+preserved.  This process is not efficient and cannot be used for very
+large systems and requires local storage that scales with the number of
+total atoms in the system.  Also, the *compress* and the *condense*
+keywords cannot be used at the same time.  Whichever of the two is used
+last will be applied.
 
 A molecular system with fixed bonds, angles, dihedrals, or improper
 interactions, is one where the topology of the interactions is

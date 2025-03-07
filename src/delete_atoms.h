@@ -32,7 +32,7 @@ class DeleteAtoms : public Command {
 
  protected:
   int *dlist;
-  int allflag, compress_flag, bond_flag, mol_flag;
+  int allflag, compress_flag, condense_flag, bond_flag, mol_flag;
   std::map<tagint, int> *hash;
 
   void delete_group(int, char **);
