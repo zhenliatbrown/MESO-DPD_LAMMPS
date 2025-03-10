@@ -1,4 +1,4 @@
-LAMMPS (4 Feb 2025 - Development - patch_4Feb2025-210-g8af31ca28c-modified)
+LAMMPS (4 Feb 2025 - Development - patch_4Feb2025-212-g01698ddc2e-modified)
 OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:99)
   using 1 OpenMP thread(s) per MPI task
 units           metal
@@ -105,20 +105,20 @@ Per MPI rank memory allocation (min/avg/max) = 5.812 | 5.812 | 5.812 Mbytes
         60                 0.006     0.99566940895435     69647.7523345112    -845.585157291247     36.1001312564486     177502.681560664     116614.166098104
         80                 0.008    0.995669417344697     107415.560454912    -846.200874451992     37.9776090859263     35031.4099596403     116684.714477941
        100                  0.01    0.995669427709463     63849.6798245944    -836.341678212079     39.6809090980074     199492.565591024     116634.518317902
-Loop time of 0.981181 on 4 procs for 100 steps with 2048 atoms
+Loop time of 0.991506 on 4 procs for 100 steps with 2048 atoms
 
-Performance: 0.881 ns/day, 27.255 hours/ns, 101.918 timesteps/s, 208.728 katom-step/s
+Performance: 0.871 ns/day, 27.542 hours/ns, 100.857 timesteps/s, 206.554 katom-step/s
 99.0% CPU use with 4 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.3068     | 0.31135    | 0.31472    |   0.5 | 31.73
-Neigh   | 0.21997    | 0.22967    | 0.23853    |   1.6 | 23.41
-Comm    | 0.013651   | 0.026146   | 0.03694    |   6.4 |  2.66
-Output  | 0.00010966 | 0.0001265  | 0.00017442 |   0.0 |  0.01
-Modify  | 0.41246    | 0.41281    | 0.41313    |   0.0 | 42.07
-Other   |            | 0.001083   |            |       |  0.11
+Pair    | 0.31016    | 0.31287    | 0.31496    |   0.3 | 31.56
+Neigh   | 0.21999    | 0.22957    | 0.23793    |   1.7 | 23.15
+Comm    | 0.015231   | 0.025975   | 0.036137   |   6.0 |  2.62
+Output  | 0.00012037 | 0.00014855 | 0.0001849  |   0.0 |  0.01
+Modify  | 0.4213     | 0.42166    | 0.42201    |   0.0 | 42.53
+Other   |            | 0.001272   |            |       |  0.13
 
 Nlocal:            512 ave         521 max         503 min
 Histogram: 2 0 0 0 0 0 0 0 0 2
