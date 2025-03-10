@@ -185,6 +185,7 @@ void FixNVESpin::init()
   // init length of vector of ptrs to Pair/Spin styles
 
   if (npairspin > 0) {
+    delete[] spin_pairs;
     spin_pairs = new PairSpin*[npairspin];
   }
 
@@ -231,6 +232,7 @@ void FixNVESpin::init()
   // init length of vector of ptrs to precession/spin styles
 
   if (nprecspin > 0) {
+    delete[] lockprecessionspin;
     lockprecessionspin = new FixPrecessionSpin*[nprecspin];
   }
 
