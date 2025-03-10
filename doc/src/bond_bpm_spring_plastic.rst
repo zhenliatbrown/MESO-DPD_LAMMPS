@@ -133,16 +133,17 @@ Restart and other info
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 This bond style writes the reference state and plastic history of each
-bond to :doc:`binary restart files <restart>`. Loading a restart
-file will properly restore bonds. However, the reference state is NOT
-written to data files. Therefore reading a data file will not
-restore bonds and will cause their reference states to be redefined.
+bond to :doc:`binary restart files <restart>`. Loading a restart file
+will properly restore bonds. However, the reference state is NOT written
+to data files.  Therefore reading a data file will not restore bonds and
+will cause their reference states to be redefined.
 
-The potential energy and the single() function of this bond style returns zero.
-The single() function also calculates two extra bond quantities, the initial
-distance :math:`r_0` and the current equilbrium length :math:`r_eq`. These extra
-quantities can be accessed by the :doc:`compute bond/local <compute_bond_local>`
-command as *b1* and *b2*, respectively.
+The potential energy and the single() function of this bond style
+returns zero.  The single() function also calculates two extra bond
+quantities, the initial distance :math:`r_0` and the current equilibrium
+length :math:`r_eq`. These extra quantities can be accessed by the
+:doc:`compute bond/local <compute_bond_local>` command as *b1* and *b2*,
+respectively.
 
 Restrictions
 """"""""""""

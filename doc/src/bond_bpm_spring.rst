@@ -142,7 +142,7 @@ is accordingly replaced with a square root. This approximation assumes bonds
 are evenly distributed on a spherical surface and neglects constant prefactors
 which are irrelevant since only the ratio of volumes matters. This term may be
 used to adjust the Poisson's ratio. See the simulation in the
-examples/bpm/poissons_ratio directory for a demonstration of this effect.
+``examples/bpm/poissons_ratio`` directory for a demonstration of this effect.
 
 If a bond is broken (or created), :math:`V_{0,i}` is updated by subtracting
 (or adding) that bond's contribution.
