@@ -1,11 +1,11 @@
-.. index:: fix pimdb/langevin
-.. index:: fix pimdb/nvt
+.. index:: fix pimd/langevin/bosonic
+.. index:: fix pimd/nvt/bosonic
 
-fix pimdb/langevin command
-==========================
+fix pimd/langevin/bosonic command
+=================================
 
-fix pimdb/nvt command
-=====================
+fix pimd/nvt/bosonic command
+============================
 
 Syntax
 """"""
@@ -15,9 +15,9 @@ Syntax
    fix ID group-ID style keyword value ...
 
 * ID, group-ID are documented in :doc:`fix <fix>` command
-* style = *pimdb/langevin* or *pimdb/nvt* = style name of this fix command
+* style = *pimd/langevin/bosonic* or *pimd/nvt/bosonic* = style name of this fix command
 * zero or more keyword/value pairs may be appended
-* keywords for style *pimdb/nvt*
+* keywords for style *pimd/nvt/bosonic*
 
   .. parsed-literal::
 
@@ -28,7 +28,7 @@ Syntax
      *temp* value = temperature (temperature units)
      *nhc* value = Nc = number of chains in Nose-Hoover thermostat
 
-* keywords for style *pimdb/langevin*
+* keywords for style *pimd/langevin/bosonic*
 
   .. parsed-literal::
 
@@ -56,8 +56,10 @@ Examples
 
 .. code-block:: LAMMPS
 
-   fix 1 all pimdb/nvt method pimd fmass 1.0 sp 1.0 temp 2.0 nhc 4
-   fix 1 all pimdb/langevin integrator obabo temp 113.15 thermostat PILE_L 1234 tau 1.0
+   fix 1 all pimd/nvt/bosonic method pimd fmass 1.0 sp 1.0 temp 2.0 nhc 4
+   fix 1 all pimd/langevin/bosonic integrator obabo temp 113.15 thermostat PILE_L 1234 tau 1.0
+
+Example input files are provided in the examples/PACKAGES/pimd_bosonic directory.
 
 Description
 """""""""""
@@ -66,24 +68,24 @@ These fix commands are based on the fixes :doc:`pimd/nvt and
 pimd/langevin <fix_pimd>` for performing quantum molecular dynamics
 simulations based on the Feynman path-integral formalism. The key
 difference is that fix *pimd/nvt* and fix *pimd/langevin* simulate
-*distinguishable* particles, while fix *pimdb/nvt* and fix
-*pimdb/langevin* perform simulations of bosons, including exchange
-effects.  The *pimdb* commands share syntax with the equivalent *pimd*
-commands. The user is referred to the documentation of the *pimd* fix
+*distinguishable* particles, while fix *pimd/nvt/bosonic* and fix
+*pimd/langevin/bosonic* perform simulations of bosons, including exchange
+effects. The *bosonic* commands share syntax with the equivalent commands for distinguishable particles. 
+The user is referred to the documentation of :doc:`these commands <fix_pimd>`
 for a detailed syntax description and additional, general capabilities
-of the commands.  The major differences from fix *pimd* in terms of
+of the commands. The major differences from fix *pimd/nvt* and fix *pimd/langevin* in terms of
 capabilities are:
 
-* Fix *pimdb/nvt* only supports the "pimd" and "nmpimd" methods. Fix
-  *pimdb/langevin* only supports the "pimd" method, which is the default
+* Fix *pimd/nvt/bosonic* only supports the "pimd" and "nmpimd" methods. Fix
+  *pimd/langevin/bosonic* only supports the "pimd" method, which is the default
   in this fix. These restrictions are related to the use of normal
   modes, which change in bosons. For similar reasons, *fmmode* of
   *pimd/langevin* should not be used, and would raise an error if set to
   a value other than *physical*.
-* Fix *pimdb/langevin* currently does not support *ensemble* other than
+* Fix *pimd/langevin/bosonic* currently does not support *ensemble* other than
   *nve*, *nvt*. The barostat related keywords *iso*, *aniso*,
   *barostat*, *taup* are not supported.
-* Fix *pimdb/langevin* also has a keyword not available in fix
+* Fix *pimd/langevin/bosonic* also has a keyword not available in fix
   *pimd/langevin*: *esynch*, with default *yes*. If set to *no*, some
   time consuming synchronization of spring energies and the primitive
   kinetic energy estimator between processors is avoided.
@@ -141,7 +143,7 @@ Restart, fix_modify, output, run start/stop, minimize info
 The use of :doc:`binary restart files <restart>` and :doc:`fix_modify
 <fix_modify>` is the same as in :doc:`fix pimd <fix_pimd>`.
 
-Fix *pimdb/nvt* computes a global 4-vector, which can be accessed by
+Fix *pimd/nvt/bosonic* computes a global 4-vector, which can be accessed by
 various :doc:`output commands <Howto_output>`.  The quantities in
 the global vector are:
 
@@ -152,10 +154,10 @@ the global vector are:
    #. the current value of the scalar primitive estimator for the kinetic
       energy of the quantum system :ref:`(Hirshberg1) <Hirshberg>`.
 
-The vector values calculated by fix *pimdb/nvt* are "extensive", except
+The vector values calculated by fix *pimd/nvt/bosonic* are "extensive", except
 for the temperature, which is "intensive".
 
-Fix *pimdb/langevin* computes a global 6-vector, which can be accessed
+Fix *pimd/langevin/bosonic* computes a global 6-vector, which can be accessed
 by various :doc:`output commands <Howto_output>`. The quantities in the
 global vector are:
 
@@ -174,9 +176,9 @@ Also note that when *esynch* is set to *no*, the fourth output gives the
 total energy of all beads excluding the spring elastic energy; the total
 classical energy can then be obtained by adding the sum of second output
 over all log files.  All vector values calculated by fix
-*pimdb/langevin* are "extensive".
+*pimd/langevin/bosonic* are "extensive".
 
-For both *pimdb/nvt* and *pimdb/langevin*, the contribution of the
+For both *pimd/nvt/bosonic* and *pimd/langevin/bosonic*, the contribution of the
 exterior spring to the primitive estimator is printed to the first log
 file.  The contribution of the :math:`P-1` interior springs is printed
 to the other :math:`P-1` log files.  The contribution of the constant
@@ -195,10 +197,10 @@ The restrictions of :doc:`fix pimd <fix_pimd>` apply.
 Default
 """""""
 
-The keyword defaults for fix *pimdb/nvt* are method = pimd, fmass = 1.0,
+The keyword defaults for fix *pimd/nvt/bosonic* are method = pimd, fmass = 1.0,
 sp = 1.0, temp = 300.0, and nhc = 2.
 
-The keyword defaults for fix *pimdb/langevin* are integrator = obabo,
+The keyword defaults for fix *pimd/langevin/bosonic* are integrator = obabo,
 method = pimd, ensemble = nvt, fmass = 1.0, temp = 298.15, thermostat =
 PILE_L, tau = 1.0, fixcom = yes, esynch = yes, and lj = 1 for all its
 arguments.

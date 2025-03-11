@@ -1,11 +1,19 @@
 .. index:: fix pimd/langevin
 .. index:: fix pimd/nvt
+.. index:: fix pimd/langevin/bosonic
+.. index:: fix pimd/nvt/bosonic
 
 fix pimd/langevin command
 =========================
 
 fix pimd/nvt command
 ====================
+
+:doc:`fix pimd/langevin/bosonic <fix_pimd_bosonic>` command
+===========================================================
+
+:doc:`fix pimd/nvt/bosonic <fix_pimd_bosonic>` command
+======================================================
 
 Syntax
 """"""
@@ -65,6 +73,8 @@ Examples
    fix 1 all pimd/nvt method nmpimd fmass 1.0 sp 2.0 temp 300.0 nhc 4
    fix 1 all pimd/langevin ensemble npt integrator obabo temp 113.15 thermostat PILE_L 1234 tau 1.0 iso 1.0 barostat BZP taup 1.0
 
+Example input files are provided in the examples/PACKAGES/pimd directory.
+
 Description
 """""""""""
 
@@ -79,7 +89,14 @@ partition function for the original system to a classical partition
 function for a ring-polymer system is exploited, to efficiently sample
 configurations from the canonical ensemble :ref:`(Feynman) <Feynman>`.
 
-The classical partition function and its components are given
+.. versionadded:: 11Mar2025
+
+   Fix *pimd/langevin/bosonic* and *pimd/nvt/bosonic* were added.
+
+Fix *pimd/nvt* and fix *pimd/langevin* simulate *distinguishable* quantum particles.
+Simulations of bosons, including exchange effects, are supported with the :doc:`fix pimd/langevin/bosonic <fix_pimd_bosonic>` and :doc:`fix pimd/nvt/bosonic <fix_pimd_bosonic>` commands.
+
+For distinguishable particles, the isomorphic classical partition function and its components are given
 by the following equations:
 
 .. math::
