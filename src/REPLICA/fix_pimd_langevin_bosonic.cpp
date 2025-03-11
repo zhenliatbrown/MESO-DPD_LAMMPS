@@ -22,7 +22,7 @@
    Version      1.0
 ------------------------------------------------------------------------- */
 
-#include "fix_pimdb_langevin.h"
+#include "fix_pimd_langevin_bosonic.h"
 
 #include "bosonic_exchange.h"
 

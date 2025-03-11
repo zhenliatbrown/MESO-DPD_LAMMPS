@@ -54,7 +54,7 @@ create_atoms 1 single -14 9 ${z1}
 create_atoms 1 single -14 9 2
 Created 1 atoms
   using lattice units in orthogonal box = (-1500 -1500 -1500) to (1500 1500 1500)
-  create_atoms CPU = 0.001 seconds
+  create_atoms CPU = 0.000 seconds
 next         a
 jump         SELF loop
 variable     x1 equal -15.0+0.5*v_a
@@ -87,9 +87,9 @@ fix          harm all spring/self 1.215461412e-08
 fix_modify   harm energy yes
 
 # PIMD command
-fix          pimdb all pimdb/nvt method pimd temp ${Temp} nhc ${nhc}
-fix          pimdb all pimdb/nvt method pimd temp 17.4 nhc ${nhc}
-fix          pimdb all pimdb/nvt method pimd temp 17.4 nhc 4
+fix          pimdb all pimd/nvt/bosonic method pimd temp ${Temp} nhc ${nhc}
+fix          pimdb all pimd/nvt/bosonic method pimd temp 17.4 nhc ${nhc}
+fix          pimdb all pimd/nvt/bosonic method pimd temp 17.4 nhc 4
 
 # Outputs
 variable virial        equal f_pimdb[3]
@@ -205,20 +205,20 @@ Per MPI rank memory allocation (min/avg/max) = 9.176 | 9.176 | 9.176 Mbytes
         98   7.1356907e-06  1.7335027e-06  0.0002297417 
         99   7.2605738e-06  1.7643404e-06  0.00022943234
        100   7.3859169e-06  1.7952968e-06  0.00022912226
-Loop time of 0.00507947 on 1 procs for 100 steps with 3 atoms
+Loop time of 0.00941372 on 1 procs for 100 steps with 3 atoms
 
-Performance: 850481762.482 fs/day, 0.000 hours/fs, 19687.078 timesteps/s, 59.061 katom-step/s
-98.9% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 458904516.311 fs/day, 0.000 hours/fs, 10622.790 timesteps/s, 31.868 katom-step/s
+24.7% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
 Pair    | 0          | 0          | 0          |   0.0 |  0.00
-Neigh   | 3.1029e-05 | 3.1029e-05 | 3.1029e-05 |   0.0 |  0.61
-Comm    | 0.00027821 | 0.00027821 | 0.00027821 |   0.0 |  5.48
-Output  | 0.001016   | 0.001016   | 0.001016   |   0.0 | 20.00
-Modify  | 0.0032013  | 0.0032013  | 0.0032013  |   0.0 | 63.02
-Other   |            | 0.0005529  |            |       | 10.89
+Neigh   | 8.785e-06  | 8.785e-06  | 8.785e-06  |   0.0 |  0.09
+Comm    | 7.9921e-05 | 7.9921e-05 | 7.9921e-05 |   0.0 |  0.85
+Output  | 0.0071119  | 0.0071119  | 0.0071119  |   0.0 | 75.55
+Modify  | 0.0020558  | 0.0020558  | 0.0020558  |   0.0 | 21.84
+Other   |            | 0.0001572  |            |       |  1.67
 
 Nlocal:              3 ave           3 max           3 min
 Histogram: 1 0 0 0 0 0 0 0 0 0

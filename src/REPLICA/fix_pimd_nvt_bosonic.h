@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 // clang-format off
-FixStyle(pimdb/nvt,FixPIMDBNVT);
+FixStyle(pimd/nvt/bosonic,FixPIMDBNVT);
 // clang-format on
 #else
 

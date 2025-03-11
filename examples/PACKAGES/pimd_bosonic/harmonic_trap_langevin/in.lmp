@@ -12,9 +12,6 @@ timestep     0.5
 # Temperature (in Kelvin)
 variable     Temp equal 17.4
 
-# Number of Nose-Hoover chains
-variable     nhc equal 4
-
 # Force constant (in Hartree energies per Bohr radius squared)
 variable     k equal 1.2154614120000001e-08
 
@@ -48,11 +45,11 @@ fix          harm all spring/self ${k}
 fix_modify   harm energy yes
 
 # PIMD command
-fix          pimdb all pimdb/nvt method pimd temp ${Temp} nhc ${nhc}
+fix          pimdb all pimd/langevin/bosonic ensemble nvt temp ${Temp} thermostat PILE_L 12345 tau 50 fixcom no
 
 # Outputs
-variable virial        equal f_pimdb[3]
-variable prim_kinetic  equal f_pimdb[4]
+variable prim_kinetic  equal f_pimdb[5]
+variable virial        equal f_pimdb[6]
 
 thermo_style custom step pe v_virial v_prim_kinetic
 thermo          1

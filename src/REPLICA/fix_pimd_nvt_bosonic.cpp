@@ -21,7 +21,7 @@
    Version      1.0
 ------------------------------------------------------------------------- */
 
-#include "fix_pimdb_nvt.h"
+#include "fix_pimd_nvt_bosonic.h"
 
 #include "bosonic_exchange.h"
 

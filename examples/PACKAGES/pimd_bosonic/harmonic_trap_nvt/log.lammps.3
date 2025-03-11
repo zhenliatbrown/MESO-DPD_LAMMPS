@@ -87,9 +87,9 @@ fix          harm all spring/self 1.215461412e-08
 fix_modify   harm energy yes
 
 # PIMD command
-fix          pimdb all pimdb/nvt method pimd temp ${Temp} nhc ${nhc}
-fix          pimdb all pimdb/nvt method pimd temp 17.4 nhc ${nhc}
-fix          pimdb all pimdb/nvt method pimd temp 17.4 nhc 4
+fix          pimdb all pimd/nvt/bosonic method pimd temp ${Temp} nhc ${nhc}
+fix          pimdb all pimd/nvt/bosonic method pimd temp 17.4 nhc ${nhc}
+fix          pimdb all pimd/nvt/bosonic method pimd temp 17.4 nhc 4
 
 # Outputs
 variable virial        equal f_pimdb[3]
@@ -205,20 +205,20 @@ Per MPI rank memory allocation (min/avg/max) = 9.176 | 9.176 | 9.176 Mbytes
         98   7.2937187e-06  1.8407787e-06  0.00023702765
         99   7.4250201e-06  1.8736806e-06  0.00023685186
        100   7.5569619e-06  1.9067398e-06  0.00023667607
-Loop time of 0.00510222 on 1 procs for 100 steps with 3 atoms
+Loop time of 0.00939597 on 1 procs for 100 steps with 3 atoms
 
-Performance: 846690098.292 fs/day, 0.000 hours/fs, 19599.308 timesteps/s, 58.798 katom-step/s
-79.1% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 459771778.655 fs/day, 0.000 hours/fs, 10642.865 timesteps/s, 31.929 katom-step/s
+25.2% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
 Pair    | 0          | 0          | 0          |   0.0 |  0.00
-Neigh   | 1.5273e-05 | 1.5273e-05 | 1.5273e-05 |   0.0 |  0.30
-Comm    | 0.00013505 | 0.00013505 | 0.00013505 |   0.0 |  2.65
-Output  | 0.00046743 | 0.00046743 | 0.00046743 |   0.0 |  9.16
-Modify  | 0.0042111  | 0.0042111  | 0.0042111  |   0.0 | 82.53
-Other   |            | 0.0002734  |            |       |  5.36
+Neigh   | 8.404e-06  | 8.404e-06  | 8.404e-06  |   0.0 |  0.09
+Comm    | 8.6872e-05 | 8.6872e-05 | 8.6872e-05 |   0.0 |  0.92
+Output  | 0.0071309  | 0.0071309  | 0.0071309  |   0.0 | 75.89
+Modify  | 0.0020085  | 0.0020085  | 0.0020085  |   0.0 | 21.38
+Other   |            | 0.0001612  |            |       |  1.72
 
 Nlocal:              3 ave           3 max           3 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
