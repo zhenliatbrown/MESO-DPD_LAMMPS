@@ -260,7 +260,7 @@ time.
   :math:`\{i,j\} = \{1,N\}`, so :math:`N_\text{pair} = N^2`).
 * If *type* is set to *first* then each input value is correlated with
   the first input value (i.e., :math:`C_{ij} = V_1 V_j` for
-  :math:`\{i,j\} = \{1,N\}`, so :math:`N_\text{pair} = N`).
+  :math:`\{j\} = \{1,N\}`, so :math:`N_\text{pair} = N`).
 
 The *ave* keyword determines what happens to the accumulation of correlation
 samples every :math:`N_\text{freq}` timesteps.  If the *ave* setting is *one*,
