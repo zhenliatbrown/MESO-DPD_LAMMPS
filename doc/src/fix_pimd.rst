@@ -1,5 +1,5 @@
 .. index:: fix pimd/langevin
-   .. index:: fix pimd/nvt
+.. index:: fix pimd/nvt
 
 fix pimd/langevin command
 =========================
@@ -20,35 +20,37 @@ Syntax
 * keywords for style *pimd/nvt*
 
   .. parsed-literal::
-            *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
-       *method* value = *pimd* or *nmpimd* or *cmd*
-       *fmass* value = scaling factor on mass
-       *sp* value = scaling factor on Planck constant
-       *temp* value = temperature (temperature units)
-       *nhc* value = Nc = number of chains in Nose-Hoover thermostat
+
+     *keywords* = *method* or *fmass* or *sp* or *temp* or *nhc*
+     *method* value = *pimd* or *nmpimd* or *cmd*
+     *fmass* value = scaling factor on mass
+     *sp* value = scaling factor on Planck constant
+     *temp* value = temperature (temperature units)
+     *nhc* value = Nc = number of chains in Nose-Hoover thermostat
 
 * keywords for style *pimd/langevin*
 
   .. parsed-literal::
-            *keywords* = *method* or *integrator* or *ensemble* or *fmmode* or *fmass* or *scale* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
-       *method* value = *nmpimd* (default) or *pimd*
-       *integrator* value = *obabo* or *baoab*
-       *ensemble* value = *nvt* or *nve* or *nph* or *npt*
-       *fmmode* value = *physical* or *normal*
-       *fmass* value = scaling factor on mass
-       *temp* value = temperature (temperature unit)
+
+     *keywords* = *method* or *integrator* or *ensemble* or *fmmode* or *fmass* or *scale* or *temp* or *thermostat* or *tau* or *iso* or *aniso* or *barostat* or *taup* or *fixcom* or *lj*
+     *method* value = *nmpimd* (default) or *pimd*
+     *integrator* value = *obabo* or *baoab*
+     *ensemble* value = *nvt* or *nve* or *nph* or *npt*
+     *fmmode* value = *physical* or *normal*
+     *fmass* value = scaling factor on mass
+     *temp* value = temperature (temperature unit)
           temperature = target temperature of the thermostat
-       *thermostat* values = style seed
+     *thermostat* values = style seed
           style value = *PILE_L*
           seed = random number generator seed
-       *tau* value = thermostat damping parameter (time unit)
-       *scale* value = scaling factor of the damping times of non-centroid modes of PILE_L thermostat
-       *iso* or *aniso* values = pressure (pressure unit)
+     *tau* value = thermostat damping parameter (time unit)
+     *scale* value = scaling factor of the damping times of non-centroid modes of PILE_L thermostat
+     *iso* or *aniso* values = pressure (pressure unit)
          pressure = scalar external pressure of the barostat
-       *barostat* value = *BZP* or *MTTK*
-       *taup* value = barostat damping parameter (time unit)
-       *fixcom* value = *yes* or *no*
-       *lj* values = epsilon sigma mass planck mvv2e
+     *barostat* value = *BZP* or *MTTK*
+     *taup* value = barostat damping parameter (time unit)
+     *fixcom* value = *yes* or *no*
+     *lj* values = epsilon sigma mass planck mvv2e
           epsilon = energy scale for reduced units (energy units)
           sigma = length scale for reduced units (length units)
           mass = mass scale for reduced units (mass units)
@@ -250,7 +252,7 @@ system, each running on one of the 4 partitions of processors.  Each
 replica (shown in green) owns one quasi-bead in each ring.
 
 .. image:: JPG/pimd.jpg
-      :align: center
+   :align: center
 
 To run a PIMD simulation with M quasi-beads in each ring polymer using
 N MPI tasks for each partition's domain-decomposition, you would use P
@@ -419,7 +421,7 @@ Default
 The keyword defaults for fix *pimd/nvt* are method = pimd, fmass = 1.0, sp
 = 1.0, temp = 300.0, and nhc = 2.
 
-The keyord defaults for fix *pimd/langevin* are integrator = obabo, method = nmpimd, ensemble = nvt, fmmode = physical, fmass = 1.0,
+The keyword defaults for fix *pimd/langevin* are integrator = obabo, method = nmpimd, ensemble = nvt, fmmode = physical, fmass = 1.0,
 scale = 1, temp = 298.15, thermostat = PILE_L, tau = 1.0, iso = 1.0, taup = 1.0, barostat = BZP, fixcom = yes, and lj = 1 for all its arguments.
 
 ----------

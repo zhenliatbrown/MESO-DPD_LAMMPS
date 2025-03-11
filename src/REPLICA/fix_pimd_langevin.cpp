@@ -53,8 +53,12 @@ using MathConst::MY_SQRT2;
 using MathConst::THIRD;
 using MathSpecial::powint;
 
-static std::map<int, std::string> Barostats{{MTTK, "MTTK"}, {BZP, "BZP"}};
-static std::map<int, std::string> Ensembles{{NVE, "NVE"}, {NVT, "NVT"}, {NPH, "NPH"}, {NPT, "NPT"}};
+static std::map<int, std::string> Barostats{{FixPIMDLangevin::MTTK, "MTTK"},
+                                            {FixPIMDLangevin::BZP, "BZP"}};
+static std::map<int, std::string> Ensembles{{FixPIMDLangevin::NVE, "NVE"},
+                                            {FixPIMDLangevin::NVT, "NVT"},
+                                            {FixPIMDLangevin::NPH, "NPH"},
+                                            {FixPIMDLangevin::NPT, "NPT"}};
 
 /* ---------------------------------------------------------------------- */
 
@@ -239,7 +243,7 @@ FixPIMDLangevin::FixPIMDLangevin(LAMMPS *lmp, int narg, char **arg) :
         removecomflag = 1;
       else if (strcmp(arg[i + 1], "no") == 0)
         removecomflag = 0;
-    } else if (strcmp(arg[i], "esynch") != 0) { 
+    } else if (strcmp(arg[i], "") != 0) {
       error->universe_all(FLERR, fmt::format("Unknown keyword {} for fix {}", arg[i], style));
     }
   }
@@ -710,7 +714,7 @@ void FixPIMDLangevin::post_force(int /*flag*/)
     if (mapflag) {
       for (int i = 0; i < nlocal; i++) { domain->unmap(x[i], image[i]); }
     }
-    prepare_coordinates();   
+    prepare_coordinates();
     spring_force();
     compute_spring_energy();
     compute_t_prim();

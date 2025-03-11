@@ -25,12 +25,12 @@ FixStyle(pimd/nvt,FixPIMDNVT);
 
 namespace LAMMPS_NS {
 
-enum { PIMD, NMPIMD, CMD };
-
 class FixPIMDNVT : public Fix {
  public:
   FixPIMDNVT(class LAMMPS *, int, char **);
   ~FixPIMDNVT() override;
+
+  enum { PIMD, NMPIMD, CMD };
 
   int setmask() override;
 
@@ -55,7 +55,6 @@ class FixPIMDNVT : public Fix {
   void unpack_forward_comm(int, int, double *) override;
 
  protected:
-
   int method;
   int np;
   double inverse_np;
