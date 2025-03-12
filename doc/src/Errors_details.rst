@@ -18,6 +18,8 @@ General troubleshooting advice
 Below are suggestions that can help to understand the causes of problems
 with simulations leading to errors or unexpected results.
 
+.. _hint01:
+
 Create a small test system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -26,6 +28,8 @@ small modifications, thus it can be a huge time saver to first assemble
 a small test system input that has the same issue, but will take much
 time until it triggers the error condition.  Also, it will be easier to
 see what happens.
+
+.. _hint02:
 
 Visualize your trajectory
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -37,6 +41,8 @@ avoid gigantic files, you can use :doc:`dump_modify delay <dump_modify>`
 to delay output until the critical section is reached, and you can use a
 smaller test system (see above).
 
+.. _hint03:
+
 Parallel versus serial
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -45,6 +51,8 @@ only when running in parallel.  That doesn't mean there is no problem,
 only the symptoms are not triggering an error quickly.  Correspondingly,
 errors may be triggered faster with more processors and thus smaller
 sub-domains.
+
+.. _hint04:
 
 Segmentation Fault
 ^^^^^^^^^^^^^^^^^^
@@ -75,6 +83,8 @@ the information about the :doc:`exact LAMMPS version <Manual_version>`
 and platform you are running on, you can contact the LAMMPS developers
 or post in the LAMMPS forum to get assistance.
 
+.. _hint05:
+
 Fast moving atoms
 ^^^^^^^^^^^^^^^^^
 
@@ -102,6 +112,8 @@ those cases using (temporarily) :doc:`fix nve/limit <fix_nve_limit>` or
 :doc:`fix dt/reset <fix_dt_reset>` can help to avoid too large updates
 or adapt the timestep according to the displacements.
 
+.. _hint06:
+
 Ignoring lost atoms
 ^^^^^^^^^^^^^^^^^^^
 
@@ -109,6 +121,8 @@ It is tempting to use the :doc:`thermo_modify lost ignore <thermo_modify>`
 to avoid that LAMMPS stops with an error on lost atoms.  This setting should, however,
 *only* be used when atoms *should* leave the system.  In general, ignoring
 a problem does not solve it.
+
+.. _hint07:
 
 Pressure, forces, positions becoming NaN or Inf
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -125,6 +139,8 @@ single precision numbers can overflow much faster, so for the GPU or INTEL
 package it may be beneficial to run with double precision initially before
 switching to mixed or single precision for faster execution when the system
 has relaxed.
+
+.. _hint08:
 
 Communication cutoff
 ^^^^^^^^^^^^^^^^^^^^
@@ -144,6 +160,8 @@ stretched very far.  The communication cutoff can be adjusted with
 :doc:`comm_modify cutoff \<value\> <comm_modify>`, but setting this too
 large will waste CPU time and memory.
 
+.. _hint09:
+
 Neighbor list settings
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -154,6 +172,8 @@ examine the neighbor list statistics if the neighbor list rebuild can be
 safely delayed.  Rebuilding the neighbor list less frequently
 (i.e. through increasing the *delay* or *every*) setting has diminishing
 returns and increasing risks.
+
+.. _hint10:
 
 Units
 ^^^^^
@@ -173,6 +193,8 @@ Also, individual parameters for :doc:`pair_coeff <pair_coeff>` commands
 taken from publications or other MD software, may need to be converted
 and sometimes in unexpected ways.  Thus some careful checking is
 recommended.
+
+.. _hint11:
 
 No error message printed
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -324,16 +346,16 @@ keyword in the :doc:`thermo_modify <thermo_modify>` command.
 Non-numeric atom coords - simulation unstable
 ---------------------------------------------
 This error usually occurs due to issues with system geometry or the potential in
-use. See :ref:`Pressure, forces, positions becoming NaN or Inf` above in the
-general troubleshooting section. 
+use. See :ref:`Pressure, forces, positions becoming NaN or Inf <hint07>` above in the
+general troubleshooting section.
 
 .. _err0007:
 
 Non-numeric pressure - simulation unstable
 ------------------------------------------
 This error usually occurs due to issues with system geometry or the potential in
-use. See :ref:`Pressure, forces, positions becoming NaN or Inf` above in the
-general troubleshooting section. 
+use. See :ref:`Pressure, forces, positions becoming NaN or Inf <hint07>` above in the
+general troubleshooting section.
 
 
 .. _err0008:
@@ -341,17 +363,18 @@ general troubleshooting section.
 Lost atoms ...
 --------------
 
-A simulation erroring out due to lost atoms can have multiple causes. In the
-majority of cases, lost atoms are unexpected and a result of extremely high
-velocities causing instabilities in the system, and those velocities can result
-from a variety of issues. For ideas on how to track down issues with unexpected
-lost atoms, see :ref:`Fast moving atoms` and :ref:`Neighbor list settings` in
-the general troubleshooting section above. In specific situations however,
-losing atoms is expected material behavior (e.g. with sputtering and surface
-evaporation simulations) and an unwanted crash can be resolved by changing the
-:doc:`thermo_modify lost <thermo_modify>` keyword from the default 'error' to
-'warn' or 'ignore' (though heed the advice in :ref:`Ignoring lost atoms`
-above!).  
+A simulation erroring out due to lost atoms can have multiple causes. In
+the majority of cases, lost atoms are unexpected and a result of
+extremely high velocities causing instabilities in the system, and those
+velocities can result from a variety of issues. For ideas on how to
+track down issues with unexpected lost atoms, see :ref:`Fast moving
+atoms <hint05>` and :ref:`Neighbor list settings <hint09>` in the
+general troubleshooting section above. In specific situations however,
+losing atoms is expected material behavior (e.g. with sputtering and
+surface evaporation simulations) and an unwanted crash can be resolved
+by changing the :doc:`thermo_modify lost <thermo_modify>` keyword from
+the default 'error' to 'warn' or 'ignore' (though heed the advice in
+:ref:`Ignoring lost atoms <hint06>` above!).
 
 .. _err0009:
 
