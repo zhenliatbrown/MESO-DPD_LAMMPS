@@ -51,7 +51,7 @@ SPHINXEXTRA = -j $(shell $(PYTHON) -c 'import multiprocessing;print(multiprocess
 # we only want to use explicitly listed files.
 DOXYFILES      = $(shell sed -n -e 's/\#.*$$//' -e '/^ *INPUT \+=/,/^[A-Z_]\+ \+=/p' doxygen/Doxyfile.in | sed -e 's/@LAMMPS_SOURCE_DIR@/..\/src/g' -e 's/\\//g' -e 's/ \+/ /' -e 's/[A-Z_]\+ \+= *\(YES\|NO\|\)//') 
 
-.PHONY: help clean-all clean clean-spelling epub mobi html pdf spelling anchor_check style_check char_check role_check xmlgen fasthtml
+.PHONY: help clean-all clean clean-spelling epub mobi html pdf spelling anchor_check style_check char_check role_check xmlgen fasthtml fasthtml-init 
 
 FASTHTMLFILES = $(patsubst $(RSTDIR)/%.rst,fasthtml/%.html,$(wildcard $(RSTDIR)/*rst))
 # ------------------------------------------
@@ -123,14 +123,20 @@ html: xmlgen globbed-tocs $(VENV) $(SPHINXCONFIG)/conf.py $(ANCHORCHECK) $(MATHJ
 	@rm -rf html/PDF/.[sg]*
 	@echo "Build finished. The HTML pages are in doc/html."
 
-fasthtml: $(FASTHTMLFILES)
+fasthtml: fasthtml-init $(FASTHTMLFILES)
 	@echo "Fast HTML build finished. The HTML pages are in doc/fasthtml."
+
+fasthtml-init:
+	@mkdir -p fasthtml
+	@cp $(RSTDIR)/accel_styles.rst $(RSTDIR)/lepton_expression.rst fasthtml/
 
 fasthtml/%.html: $(RSTDIR)/%.rst
 	@if [ "$(HAS_PANDOC)" == "NO" ] ; then echo "Make 'fasthtml' requires the 'pandoc' software" 1>&2; exit 1; fi
 	@mkdir -p fasthtml
 	@echo converting $< to $@
-	@pandoc -s --mathml --metadata title="$@" -o $@ $<
+	@sed -e 's/\\AA/\\mathring{\\mathrm{A}}/g' $< > fasthtml/$*.temp.rst
+	@pandoc -s --mathml --metadata title="$@" -o $@ fasthtml/$*.temp.rst
+	@rm -f fasthtml/$*.temp.rst
 #	@pandoc -s --mathml --metadata title="$@" --css=https://docs.lammps.org/_static/pygments.css --css=https://docs.lammps.org/_static/css/theme.css --css=https://docs.lammps.org/_static/sphinx-design.min.css --css=https://docs.lammps.org/_static/css/lammps.css -o $@ $<
 
 spelling: xmlgen globbed-tocs $(SPHINXCONFIG)/conf.py $(VENV) $(SPHINXCONFIG)/false_positives.txt
