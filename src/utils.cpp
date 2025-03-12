@@ -442,7 +442,7 @@ std::string utils::check_packages_for_style(const std::string &style, const std:
     if (LAMMPS::is_installed_pkg(pkg))
       errmsg += ", but seems to be missing because of a dependency";
     else
-      errmsg += " which is not enabled in this LAMMPS binary.";
+      errmsg += " which is not enabled in this LAMMPS binary." + utils::errorurl(10);
   }
   return errmsg;
 }
