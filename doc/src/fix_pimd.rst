@@ -435,7 +435,7 @@ variable, e.g.
 Related commands
 """"""""""""""""
 
-:doc:`pimd/nvt/bosonic <fix_pimd_bosonic>`, :doc:`pimd/langevin/bosonic <fix_pimd_bosonic>` 
+:doc:`pimd/nvt/bosonic <fix_pimd_bosonic>`, :doc:`pimd/langevin/bosonic <fix_pimd_bosonic>`
 
 Default
 """""""
