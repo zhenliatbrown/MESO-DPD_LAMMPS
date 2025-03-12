@@ -194,6 +194,11 @@ LAMMPS was built with that package.  See the :doc:`Build package
 
 The restrictions of :doc:`fix pimd <fix_pimd>` apply.
 
+Related commands
+""""""""""""""""
+
+:doc:`pimd/nvt <fix_pimd>`, :doc:`pimd/langevin <fix_pimd>` 
+
 Default
 """""""
 
