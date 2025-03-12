@@ -102,8 +102,15 @@ those cases using (temporarily) :doc:`fix nve/limit <fix_nve_limit>` or
 :doc:`fix dt/reset <fix_dt_reset>` can help to avoid too large updates
 or adapt the timestep according to the displacements.
 
+Ignoring lost atoms
+^^^^^^^^^^^^^^^^^^^
 
-Pressure, forces, positions becoming NaN of Inf
+It is tempting to use the :doc:`thermo_modify lost ignore <thermo_modify>`
+to avoid that LAMMPS stops with an error on lost atoms.  This setting should, however,
+*only* be used when atoms *should* leave the system.  In general, ignoring
+a problem does not solve it.
+
+Pressure, forces, positions becoming NaN or Inf
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some potentials can overflow or have a division by zero with close contacts
@@ -129,7 +136,7 @@ angle, dihedral or improper with just one atom in the actual sub-domain.
 Typically, this cutoff is set to the largest cutoff from the :doc:`pair
 style(s) <pair_style>` plus the :doc:`neighbor list skin distance
 <neighbor>` and will be more than sufficient for all bonded
-interactions.  But if the pair style cutoff is small this may bot be
+interactions.  But if the pair style cutoff is small this may not be
 enough.  LAMMPS will print a warning in this case using some heuristic
 based on the equilibrium bond length, but that may not be sufficient for
 cases where the force constants are small and thus bonds may be
@@ -145,16 +152,8 @@ for "lost" or "missing" atoms.  Thus it can help to use very
 conservative :doc:`neighbor list settings <neigh_modify>` and then
 examine the neighbor list statistics if the neighbor list rebuild can be
 safely delayed.  Rebuilding the neighbor list less frequently
-(i.e. through increasing the *delay* or *every* setting has diminishing
-returns and increasing risks).
-
-Ignoring lost atoms
-^^^^^^^^^^^^^^^^^^^
-
-It is tempting to use the :doc:`thermo_modify lost ignore <thermo_modify>`
-to avoid that LAMMPS stops with an error.  This setting should, however,
-*only* be used when atoms *should* leave the system.  In general, ignoring
-a problem does not solve it.
+(i.e. through increasing the *delay* or *every*) setting has diminishing
+returns and increasing risks.
 
 Units
 ^^^^^
@@ -320,10 +319,39 @@ potentially at different times than other atoms they are bonded to, this
 error can be converted to a warning or turned off using the *lost/bond*
 keyword in the :doc:`thermo_modify <thermo_modify>` command.
 
+.. _err0006:
+
+Non-numeric atom coords - simulation unstable
+---------------------------------------------
+This error usually occurs due to issues with system geometry or the potential in
+use. See :ref:`Pressure, forces, positions becoming NaN or Inf` above in the
+general troubleshooting section. 
+
+.. _err0007:
+
+Non-numeric pressure - simulation unstable
+------------------------------------------
+This error usually occurs due to issues with system geometry or the potential in
+use. See :ref:`Pressure, forces, positions becoming NaN or Inf` above in the
+general troubleshooting section. 
+
+
 .. _err0008:
 
 Lost atoms ...
 --------------
+
+A simulation erroring out due to lost atoms can have multiple causes. In the
+majority of cases, lost atoms are unexpected and a result of extremely high
+velocities causing instabilities in the system, and those velocities can result
+from a variety of issues. For ideas on how to track down issues with unexpected
+lost atoms, see :ref:`Fast moving atoms` and :ref:`Neighbor list settings` in
+the general troubleshooting section above. In specific situations however,
+losing atoms is expected material behavior (e.g. with sputtering and surface
+evaporation simulations) and an unwanted crash can be resolved by changing the
+:doc:`thermo_modify lost <thermo_modify>` keyword from the default 'error' to
+'warn' or 'ignore' (though heed the advice in :ref:`Ignoring lost atoms`
+above!).  
 
 .. _err0009:
 
@@ -369,6 +397,24 @@ arguments or has some other error, this error message will be shown.
 You should contact the LAMMPS developers and report the bug as a `GitHub
 Bug Report Issue <https://github.com/lammps/lammps/issues>`_ along with
 sufficient information to easily reproduce it.
+
+
+.. _err0013:
+
+Substitution for illegal variable
+---------------------------------
+
+A variable in an input script was not able to be parsed by LAMMPS on read-in.
+LAMMPS has a few different accepted formats for variables, as detailed in the
+:doc:`variable <variable>` doc page. One cause for this error beyond simple
+typos is missing brackets, for example when changing a variable definition from
+a single letter (which does not require brackets) to one with multiple letters,
+for example ``variable a equal 1.0`` (which can be evaluated later as ``$a`` or
+``${a}``) to ``variable a0 equal 1.0`` (which can only be evaluated as
+``${a0}``). Another potential source off this error may be invalid command line
+variables used when launching LAMMPS from an interactive shell or shell scripts.
+Users with harder-to-track variable errors might also find reading :doc:`Section
+5.2. Parsing rules for input scripts<Commands_parse>` helpful.
 
 .. _err0015:
 
@@ -521,6 +567,25 @@ example, are usually not a per-atom property, but defined through the
 atom type.  Thus it would not be required to have a Masses section and
 the included data would be ignored.  LAMMPS prints this warning to
 inform about this case.
+
+
+.. _err0028:
+
+No fixes with time integration, atoms won't move
+------------------------------------------------
+
+This warning will be issued if LAMMPS encounters a :doc:`run <run>` command that
+does not have a preceding :doc:`fix <fix>` command that updates atom/object
+positions and velocities per step. In other words, there are no fixes detected
+that perform velocity-Verlet time integration, such as :doc:`fix nve <fix_nve>`.
+Note that this alert does not mean that there are no active fixes. LAMMPS has a
+very wide variety of fixes, many of which do not move objects but also operate
+through steps, such as printing outputs (e.g. :doc:`fix print <fix_print>`),
+performing calculations (e.g. :doc:`fix ave/time <fix_ave_time>`), or changing
+other system parameters (e.g. :doc:`fix dt/reset <fix_dt_reset>`). It is up to
+the user to determine whether the lack of a time-integrating fix is intentional
+or not.
+
 
 .. _err0029:
 
