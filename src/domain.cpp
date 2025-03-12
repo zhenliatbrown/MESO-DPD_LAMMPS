@@ -787,7 +787,7 @@ void Domain::pbc()
   int flag = 0;
   for (i = 0; i < n3; i++)
     if (!std::isfinite(*coord++)) flag = 1;
-  if (flag) error->one(FLERR,"Non-numeric atom coords - simulation unstable");
+  if (flag) error->one(FLERR,"Non-numeric atom coords - simulation unstable" + utils::errorurl(06));
 
   // setup for PBC checks
 
