@@ -288,7 +288,7 @@ rst_prolog = r"""
 
 .. only:: html
 
-   :math:`\renewcommand{\AA}{\text{Å}}`
+   :math:`\renewcommand{\AA}{\textup{\r{A}}`
 
 .. role:: lammps(code)
     :language: LAMMPS
