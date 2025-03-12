@@ -363,11 +363,11 @@ general troubleshooting section.
 Lost atoms ...
 --------------
 
-A simulation erroring out due to lost atoms can have multiple causes. In
-the majority of cases, lost atoms are unexpected and a result of
-extremely high velocities causing instabilities in the system, and those
-velocities can result from a variety of issues. For ideas on how to
-track down issues with unexpected lost atoms, see :ref:`Fast moving
+A simulation stopping with an error due to lost atoms can have multiple
+causes. In the majority of cases, lost atoms are unexpected and a result
+of extremely high velocities causing instabilities in the system, and
+those velocities can result from a variety of issues. For ideas on how
+to track down issues with unexpected lost atoms, see :ref:`Fast moving
 atoms <hint05>` and :ref:`Neighbor list settings <hint09>` in the
 general troubleshooting section above. In specific situations however,
 losing atoms is expected material behavior (e.g. with sputtering and
