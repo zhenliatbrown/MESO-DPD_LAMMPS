@@ -432,6 +432,11 @@ variable, e.g.
 
    velocity all create 300.0 1234${ibead} rot yes dist gaussian
 
+Related commands
+""""""""""""""""
+
+:doc:`pimd/nvt/bosonic <fix_pimd_bosonic>`, :doc:`pimd/langevin/bosonic <fix_pimd_bosonic>` 
+
 Default
 """""""
 
