@@ -509,12 +509,12 @@ bigint Thermo::lost_check()
   // error message
 
   if (lostflag == Thermo::ERROR)
-    error->all(FLERR, "Lost atoms: original {} current {}", atom->natoms, ntotal[0]);
+    error->all(FLERR, "Lost atoms: original {} current {}" + utils::errorurl(08), atom->natoms, ntotal[0]);
 
   // warning message
 
   if (comm->me == 0)
-    error->warning(FLERR, "Lost atoms: original {} current {}", atom->natoms, ntotal[0]);
+    error->warning(FLERR, "Lost atoms: original {} current {}" + utils::errorurl(08), atom->natoms, ntotal[0]);
 
   // reset total atom count
 
