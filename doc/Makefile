@@ -17,9 +17,11 @@ MATHJAXTAG     = 3.2.2
 
 PYTHON         = $(word 3,$(shell type python3))
 DOXYGEN        = $(word 3,$(shell type doxygen))
+PANDOC         = $(word 3,$(shell type pandoc))
 HAS_PYTHON3    = NO
 HAS_DOXYGEN    = NO
 HAS_PDFLATEX   = NO
+HAS_PANDOC     = NO
 
 ifeq ($(shell type python3 >/dev/null 2>&1; echo $$?), 0)
 HAS_PYTHON3    = YES
@@ -31,8 +33,12 @@ endif
 
 ifeq ($(shell type pdflatex >/dev/null 2>&1; echo $$?), 0)
 ifeq ($(shell type latexmk >/dev/null 2>&1; echo $$?), 0)
-HAS_PDFLATEX = YES
+HAS_PDFLATEX   = YES
 endif
+endif
+
+ifeq ($(shell type pandoc >/dev/null 2>&1; echo $$?), 0)
+HAS_PANDOC     = YES
 endif
 
 # override settings for PIP commands
@@ -47,6 +53,7 @@ DOXYFILES      = $(shell sed -n -e 's/\#.*$$//' -e '/^ *INPUT \+=/,/^[A-Z_]\+ \+
 
 .PHONY: help clean-all clean clean-spelling epub mobi html pdf spelling anchor_check style_check char_check role_check xmlgen fasthtml
 
+FASTHTMLFILES = $(patsubst $(RSTDIR)/%.rst,fasthtml/%.html,$(wildcard $(RSTDIR)/*rst))
 # ------------------------------------------
 
 help:
@@ -116,24 +123,15 @@ html: xmlgen globbed-tocs $(VENV) $(SPHINXCONFIG)/conf.py $(ANCHORCHECK) $(MATHJ
 	@rm -rf html/PDF/.[sg]*
 	@echo "Build finished. The HTML pages are in doc/html."
 
-fasthtml: xmlgen globbed-tocs $(VENV) $(SPHINXCONFIG)/conf.py $(ANCHORCHECK) $(MATHJAX)
-	@if [ "$(HAS_BASH)" == "NO" ] ; then echo "bash was not found at $(OSHELL)! Please use: $(MAKE) SHELL=/path/to/bash" 1>&2; exit 1; fi
-	@$(MAKE) $(MFLAGS) -C graphviz all
-	@mkdir -p fasthtml
-	@(\
-		. $(VENV)/bin/activate ; env PYTHONWARNINGS= PYTHONDONTWRITEBYTECODE=1 \
-		sphinx-build $(SPHINXEXTRA) -b html -c $(SPHINXCONFIG) -d $(BUILDDIR)/fasthtml/doctrees $(RSTDIR) fasthtml ;\
-		touch $(RSTDIR)/Fortran.rst ; env PYTHONWARNINGS= PYTHONDONTWRITEBYTECODE=1 \
-		sphinx-build $(SPHINXEXTRA) -b html -c $(SPHINXCONFIG) -d $(BUILDDIR)/fasthtml/doctrees $(RSTDIR) fasthtml ;\
-		deactivate ;\
-	)
-	@rm -rf fasthtml/_sources
-	@rm -rf fasthtml/PDF
-	@rm -rf fasthtml/USER
-	@rm -rf fasthtml/JPG
-	@cp -r src/PDF fasthtml/PDF
-	@rm -rf fasthtml/PDF/.[sg]*
+fasthtml: $(FASTHTMLFILES)
 	@echo "Fast HTML build finished. The HTML pages are in doc/fasthtml."
+
+fasthtml/%.html: $(RSTDIR)/%.rst
+	@if [ "$(HAS_PANDOC)" == "NO" ] ; then echo "Make 'fasthtml' requires the 'pandoc' software" 1>&2; exit 1; fi
+	@mkdir -p fasthtml
+	@echo converting $< to $@
+	@pandoc -s --mathml --metadata title="$@" -o $@ $<
+#	@pandoc -s --mathml --metadata title="$@" --css=https://docs.lammps.org/_static/pygments.css --css=https://docs.lammps.org/_static/css/theme.css --css=https://docs.lammps.org/_static/sphinx-design.min.css --css=https://docs.lammps.org/_static/css/lammps.css -o $@ $<
 
 spelling: xmlgen globbed-tocs $(SPHINXCONFIG)/conf.py $(VENV) $(SPHINXCONFIG)/false_positives.txt
 	@if [ "$(HAS_BASH)" == "NO" ] ; then echo "bash was not found at $(OSHELL)! Please use: $(MAKE) SHELL=/path/to/bash" 1>&2; exit 1; fi
