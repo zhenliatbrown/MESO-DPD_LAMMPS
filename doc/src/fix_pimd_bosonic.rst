@@ -70,7 +70,7 @@ simulations based on the Feynman path-integral formalism. The key
 difference is that fix *pimd/nvt* and fix *pimd/langevin* simulate
 *distinguishable* particles, while fix *pimd/nvt/bosonic* and fix
 *pimd/langevin/bosonic* perform simulations of bosons, including exchange
-effects. The *bosonic* commands share syntax with the equivalent commands for distinguishable particles. 
+effects. The *bosonic* commands share syntax with the equivalent commands for distinguishable particles.
 The user is referred to the documentation of :doc:`these commands <fix_pimd>`
 for a detailed syntax description and additional, general capabilities
 of the commands. The major differences from fix *pimd/nvt* and fix *pimd/langevin* in terms of
@@ -197,7 +197,7 @@ The restrictions of :doc:`fix pimd <fix_pimd>` apply.
 Related commands
 """"""""""""""""
 
-:doc:`pimd/nvt <fix_pimd>`, :doc:`pimd/langevin <fix_pimd>` 
+:doc:`pimd/nvt <fix_pimd>`, :doc:`pimd/langevin <fix_pimd>`
 
 Default
 """""""
