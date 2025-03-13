@@ -521,6 +521,47 @@ Most likely, one or more atoms have been blown out of the simulation
 box to a great distance or a fix (like fix deform or a barostat) has
 excessively grown the simulation box.
 
+.. _err0018:
+
+Step X: (h)bondchk failed
+-------------------------
+
+This error is a consequence of the heuristic memory allocations for
+buffers of the regular ReaxFF version.  In ReaxFF simulation the lists
+of bonds and hydrogen bonds can change due to chemical reactions.  The
+default approach, however, assumes that these changes are not very
+large, so it allocates buffers for the current system setup plus a
+safety margin.  This can be adjusted with the :doc:`safezone, mincap,
+and minhbonds settings of pair style <pair_reaxff>`, but only to some
+extent.  When equilibrating a new system, or simulating a sparse system
+in parallel, this can be difficult to control and become wasteful.  A
+simple workaround is often to break a simulation down in multiple
+chunks.  A better approach, however, is to compile and use the KOKKOS
+package version of ReaxFF (you don't need a GPU for that, but can also
+compile it in serial or OpenMP mode), which uses are much more robust
+memory allocation approach.
+
+.. _err0019:
+
+Numeric index X is out of bounds
+--------------------------------
+
+This error most commonly happens, when setting force field coefficients
+with either the :doc:`pair_coeff <pair_coeff>`, the :doc:`bond_coeff
+<bond_coeff>`, the :doc:`angle_coeff <angle_coeff>`, the
+:doc:`dihedral_coeff <dihedral_coeff>`, or the :doc:`improper_coeff
+<improper_coeff>` command.  These commands accept type labels,
+explicit numbers and wildcards for ranges of numbers.  If the numeric
+value of any of these is outside the valid range (defined by the number
+of corresponding types), LAMMPS will stop with this error.  Also
+a few other commands and styles allow ranges of numbers and check
+using the same method and thus print the same kind of error.
+
+The cause is almost always a typo in the input or a logic error
+when defining the values or ranges.  So one needs to carefully
+review the input.  Along with the error, LAMMPS will print the
+valid range as a hint.
+
 .. _err0020:
 
 Variable formula X is accessed out-of-range
@@ -613,20 +654,40 @@ Another cause is requesting a quantity on a timestep that is not
 a thermo or dump output timestep. This can often be
 remedied by increasing the frequency of thermo or dump output.
 
+.. _err0023:
+
+Molecule auto special bond generation overflow
+----------------------------------------------
+
+In order to correctly apply the :doc:`special_bonds <special_bonds>`
+settings (also known as "exclusions"), LAMMPS needs to maintain for each
+atom a list of atoms that are connected to this atom either with a bond
+or are connected to a bonded atom.  The purpose is to either remove or
+tag those pairs of atoms in the neighbor list.  This information is stored with individual
+atoms and thus the maximum number of such "special" neighbors is set
+when the simulation box is created.  When reading (relative) geometry
+and topology of a 'molecule' from a :doc:`molecule file <molecule>`,
+LAMMPS will build the list of such "special" for the molecule atom
+(if not given in the molecule file explicitly).  The error is triggered
+when the resulting list is too long for the space reserved when
+creating the simulation box.  The solution is to increase the
+corresponding setting.  Overestimating this value will only consume
+more memory, and is thus a safe choice.
+
 .. _err0024:
 
 Molecule topology/atom exceeds system topology/atom
 ---------------------------------------------------
 
-LAMMPS uses :doc:`domain decomposition <Developer_par_part>` to distribute data
-(i.e. atoms) across the MPI processes in parallel runs. This includes topology
-data, that is data about bonds, angles, dihedrals, impropers and :doc:`"special"
-neighbors <special_bonds>`.
+LAMMPS uses :doc:`domain decomposition <Developer_par_part>` to
+distribute data (i.e. atoms) across the MPI processes in parallel
+runs. This includes topology data, that is data about bonds, angles,
+dihedrals, impropers and :doc:`"special" neighbors <special_bonds>`.
 This information is stored with either one or all atoms involved in such
 a topology entry (which of the two option applies depends on the
 :doc:`newton <newton>` setting for bonds. When reading a data file,
-LAMMPS analyzes the requirements for this file and then the values
-are "locked in" and cannot be extended.
+LAMMPS analyzes the requirements for this file and then the values are
+"locked in" and cannot be extended.
 
 So loading a molecule file that requires more of the topology per atom
 storage or adding a data file with such needs will lead to an error.  To

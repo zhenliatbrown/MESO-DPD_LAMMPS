@@ -31,6 +31,9 @@
 #include <cstring>
 
 #include "error.h"
+#include "utils.h"
+
+using LAMMPS_NS::utils::errorurl;
 
 namespace ReaxFF {
 
@@ -95,7 +98,8 @@ namespace ReaxFF {
 
         if (End_Index(i, bonds) > comp)
           system->error_ptr->one(FLERR, fmt::format("step {}: bondchk failed: "
-                                                    "i={} end(i)={} str(i+1)={}\n",
+                                                    "i={} end(i)={} str(i+1)={}\n"
+                                                    + errorurl(18),
                                                     step,i,End_Index(i,bonds),comp));
       }
     }
@@ -117,7 +121,8 @@ namespace ReaxFF {
 
           if (End_Index(Hindex, hbonds) > comp)
             system->error_ptr->one(FLERR, fmt::format("step {}: hbondchk failed: "
-                                                      "H={} end(H)={} str(H+1)={}\n",
+                                                      "H={} end(H)={} str(H+1)={}\n"
+                                                      + errorurl(18),
                                                       step, Hindex,End_Index(Hindex,hbonds),comp));
         }
       }
