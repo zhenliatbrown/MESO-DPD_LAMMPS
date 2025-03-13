@@ -1563,7 +1563,8 @@ void ReadData::atoms()
 
   if (me == 0) utils::logmesg(lmp, "  {} atoms\n", nassign);
 
-  if (sum != atom->natoms) error->all(FLERR, "Did not assign all atoms correctly" + errorurl(16));
+  if (sum != atom->natoms)
+    error->all(FLERR, "Did not assign all atoms correctly" + utils::errorurl(16));
 
   // check that atom IDs are valid
 
