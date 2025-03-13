@@ -210,6 +210,29 @@ disabled by using the :ref:`-nb or -nonbuf <nonbuf>` command-line flag.
 This is most often needed when debugging crashing multi-replica
 calculations.
 
+.. _hint12:
+
+Errors before or after the simulation box is created
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As critical step in a LAMMPS input is when the simulation box is
+defined, either with a :doc:`create_box command <create_box>`, a
+:doc:`read_data command <read_data>`, or a :doc:`read_restart command
+<read_restart>`.  After this step, certain settings are locked in (e.g.
+units, or number of atom, bond, angle, dihedral, improper types) and
+cannot be changed after that.  Consequently, commands that change such
+settings (e.g. :doc:`units <units>`) are only allowed before the box is
+defined.  Very few commands can be used before and after, like
+:doc:`pair_style <pair_style>` (but not :doc:`pair_coeff <pair_coeff>`).
+Most LAMMPS commands must be used after the simulation box is created.
+
+Consequently, LAMMPS will stop with an error, if a command is used in
+the wrong place.  This is not always obvious. So you can expand an index
+or string style :doc:`variable <variable>` anywhere in the input, but
+equal style (or similar) variables only, if they do not reference
+anything that is only allowed after the box is defined (e.g. a compute
+reference or fix reference, or a thermo keyword).
+
 ------
 
 .. _err0001:
@@ -613,7 +636,7 @@ or not.
 .. _err0029:
 
 System is not charge neutral, net charge = ...
---------------------------------------------------
+----------------------------------------------
 
 the sum of charges in the system is not zero. When a system is not
 charge-neutral, methods that evolve/manipulate per-atom charges, evaluate
@@ -645,3 +668,36 @@ severity of these artifacts depends on the magnitude of total charge, system
 size, and methods used. Before running simulations or calculations for systems
 with non-zero net charge, users should test for artifacts and convergence of
 properties.
+
+.. _err0030:
+
+Variable evaluation before simulation box is defined
+----------------------------------------------------
+
+This error happens, when trying to expand or use an equal- or atom-style
+variable (or an equivalent style), where the expression contains a
+reference to something (e.g. a compute reference, a property of an atom,
+or a thermo keyword) that is not allowed to be used before the
+simulation box is defined.  See the paragraph on :ref:`errors before or
+after the simulation box is created <hint12>` for additional
+information.
+
+.. _err0031:
+
+Invalid thermo keyword 'X' in variable formula
+----------------------------------------------
+
+This error message is often misleading.  It is caused when evaluating a
+:doc:`variable command <variable>` expression and LAMMPS comes across a
+string that it does not recognize.  LAMMPS first checks if a string is a
+reference to a compute, fix, custom property, or another variable by
+looking at the first 2-3 characters (and if it is, it checks whether the
+referenced item exists).  Next LAMMPS checks if the string matches one
+of the available functions or constants.  If that fails, LAMMPS will
+assume that this string is a :doc:`thermo keyword <thermo_style>` and
+let the code for printing thermodynamic output return the corresponding
+value.  However, if this fails too, since the string is not a thermo
+keyword, LAMMPS stops with the 'Invalid thermo keyword' error.  But it
+is also possible, that there is just a typo in the name of a valid
+variable function.  Thus it is recommended to check the failing variable
+expression very carefully.

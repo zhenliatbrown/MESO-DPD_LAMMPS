@@ -1547,7 +1547,8 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
 
       if (utils::strmatch(word,"^[Cc]_")) {
         if (domain->box_exist == 0)
-          print_var_error(FLERR,"Variable evaluation before simulation box is defined",ivar);
+          print_var_error(FLERR,"Variable evaluation before simulation box is defined"
+                          + utils::errorurl(30),ivar);
 
         // uppercase used to access of peratom data by equal-style var
 
@@ -1824,7 +1825,8 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
 
       } else if (utils::strmatch(word,"^[fF]_")) {
         if (domain->box_exist == 0)
-          print_var_error(FLERR,"Variable evaluation before simulation box is defined",ivar);
+          print_var_error(FLERR,"Variable evaluation before simulation box is defined"
+                          + utils::errorurl(30),ivar);
 
         // uppercase used to force access of
         // global vector vs global scalar, and global array vs global vector
@@ -2227,7 +2229,8 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
 
       } else if (utils::strmatch(word,"^[id]2?_")) {
         if (domain->box_exist == 0)
-          print_var_error(FLERR,"Variable evaluation before simulation box is defined",ivar);
+          print_var_error(FLERR,"Variable evaluation before simulation box is defined"
+                          + utils::errorurl(30),ivar);
 
         int index_custom,type_custom,cols_custom;
         if (word[1] == '2') index_custom = atom->find_custom(word+3,type_custom,cols_custom);
@@ -2361,7 +2364,8 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
 
         } else if (str[i] == '[') {
           if (domain->box_exist == 0)
-            print_var_error(FLERR,"Variable evaluation before simulation box is defined",ivar);
+            print_var_error(FLERR,"Variable evaluation before simulation box is defined"
+                            + utils::errorurl(30),ivar);
 
           ptr = &str[i];
           tagint id = int_between_brackets(ptr,1);
@@ -2375,7 +2379,8 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
 
         } else if (is_atom_vector(word)) {
           if (domain->box_exist == 0)
-            print_var_error(FLERR,"Variable evaluation before simulation box is defined",ivar);
+            print_var_error(FLERR,"Variable evaluation before simulation box is defined"
+                            + utils::errorurl(30),ivar);
 
           atom_vector(word,tree,treestack,ntreestack);
 
@@ -2398,7 +2403,8 @@ double Variable::evaluate(char *str, Tree **tree, int ivar)
 
         } else {
           if (domain->box_exist == 0)
-            print_var_error(FLERR,"Variable evaluation before simulation box is defined",ivar);
+            print_var_error(FLERR,"Variable evaluation before simulation box is defined"
+                            + utils::errorurl(30),ivar);
 
           int flag = output->thermo->evaluate_keyword(word,&value1);
           if (flag)
