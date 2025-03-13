@@ -86,10 +86,12 @@ FixPIMDBLangevin::FixPIMDBLangevin(LAMMPS *lmp, int narg, char **arg) :
   }
 
   method = PIMD;
-
   size_vector = 6;
-
   memory->create(f_tag_order, nbosons, 3, "FixPIMDBLangevin:f_tag_order");
+
+  if (cmode != SINGLE_PROC)
+    error->universe_all(FLERR,
+                        fmt::format("Fix {} only supports a single processor per bead", style));
 }
 
 /* ---------------------------------------------------------------------- */
