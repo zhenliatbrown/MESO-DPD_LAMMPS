@@ -581,20 +581,26 @@ valid range as a hint.
 
 .. _err0020:
 
-Variable formula X is accessed out-of-range
--------------------------------------------
+Compute, fix, or variable is accessed out-of-range
+--------------------------------------------------
 
-When accessing an individual element of a global vector or array provided
-by a compute or fix or data from a specific atom, an index in square
-brackets ("[ ]") must be provided and must be in a valid range.  While
-LAMMPS is written in C++ these indices start at 1 (i.e. similar to Fortran),
-so any value smaller than 1 will trigger this error.  But also too large
-values can cause this error, specifically for computes or fixes where
-the number of rows or columns can change or in simulations where the
-number of atoms changes.  Since this kind of error frequently happens
-with rather complex expressions, it is recommended to test these with
-small test systems, where the values can be tracked with output files
-for all relevant properties at every step.
+When accessing an individual element of a global vector or array or a
+per-atom vector or array provided by a compute or fix or atom-style or
+vector-style variable or data from a specific atom, an index in square
+brackets ("[ ]") (or two indices) must be provided to determine which
+element to access and it must be in a valid range or else LAMMPS would
+access invalid data or crash with a segmentation fault. In the two most
+common cases, where this data is accessed, :doc:`variable expressions
+<variable>` and :doc:`thermodynamic output <thermo_style>`, LAMMPS will
+check for valid indices and stop with an error otherwise.
+
+While LAMMPS is written in C++ (which uses 0 based indexing) these
+indices start at 1 (i.e. similar to Fortran).  Any index smaller than 1
+or larger than the maximum allowed value should trigger this error.
+Since this kind of error frequently happens with rather complex
+expressions, it is recommended to test these with small test systems,
+where the values can be tracked with output files for all relevant
+properties at every step.
 
 .. _err0021:
 
