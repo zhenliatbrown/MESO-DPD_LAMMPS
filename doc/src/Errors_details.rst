@@ -490,6 +490,26 @@ fill space. This error can be avoided using the generally slower
 :doc:`nsq neighbor style <neighbor>` or by increasing the size of the
 smallest box lengths.
 
+.. _err0016:
+
+Did not assign all atoms correctly
+----------------------------------
+
+This error happens most commonly, when :doc:`reading a data file <read_data>`
+under :doc:`non-periodic boundary conditions<boundary>`.  Only atoms with
+positions **inside** the simulation box will be read and thus any atoms
+outside the box will be skipped and the total atom count will not match,
+which triggers the error.  This does not happen with periodic boundary
+conditions where atoms outside the principal box will be "wrapped" into
+the principal box and their image flags set accordingly.
+
+Similar errors can happen with the :doc:`replicate command<replicate>` or
+the :doc:`read_restart command<read_restart>`.  In these cases the cause
+may be a problematic geometry, an insufficient communication cutoff or
+a bug in the LAMMPS source code.  In these cases it is advisable to set
+up :ref:`small test case <hint01>` for testing and debugging.  This will
+be required in case you need to get help from a LAMMPS developer.
+
 .. _err0017:
 
 Domain too large for neighbor bins

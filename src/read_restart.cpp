@@ -441,7 +441,8 @@ void ReadRestart::command(int narg, char **arg)
     utils::logmesg(lmp,"  {} atoms\n",natoms);
 
   if (natoms != atom->natoms)
-    error->all(FLERR,"Did not assign all restart atoms correctly");
+    error->all(FLERR, Error::NOLASTLINE, "Did not assign all restart atoms correctly"
+               +utils::errorurl(16));
 
   if ((atom->molecular == Atom::TEMPLATE) && (me == 0)) {
     std::string mesg;
