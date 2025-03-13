@@ -450,17 +450,31 @@ sufficient information to easily reproduce it.
 Substitution for illegal variable
 ---------------------------------
 
-A variable in an input script was not able to be parsed by LAMMPS on read-in.
-LAMMPS has a few different accepted formats for variables, as detailed in the
-:doc:`variable <variable>` doc page. One cause for this error beyond simple
-typos is missing brackets, for example when changing a variable definition from
-a single letter (which does not require brackets) to one with multiple letters,
-for example ``variable a equal 1.0`` (which can be evaluated later as ``$a`` or
-``${a}``) to ``variable a0 equal 1.0`` (which can only be evaluated as
-``${a0}``). Another potential source off this error may be invalid command line
-variables used when launching LAMMPS from an interactive shell or shell scripts.
-Users with harder-to-track variable errors might also find reading :doc:`Section
-5.2. Parsing rules for input scripts<Commands_parse>` helpful.
+A variable in an input script or a variable expression was not found in
+the list of valid variables.  The most common reason for this is a typo
+somewhere in the input file and the expression uses an invalid variable
+name.  The second most common reason is to omit the curly braces for a
+direct variable with a name that is not a single letter.  Example:
+
+.. code-block:: LAMMPS
+
+   variable cutoff index 10.0
+   pair_style lj/cut ${cutoff}  # this is correct
+   pair_style lj/cut $cutoff    # this is incorrect, LAMMPS looks for 'c' instead of 'cutoff'
+   variable c      index 5.0    # if $c is defined, LAMMPS subsitutes only '$c' and reads: 5utoff
+
+Another potential source of this error may be invalid command line
+variables (-var or -v argument) used when launching LAMMPS from an
+interactive shell or shell scripts.  An uncommon source for this error
+is the :doc:`next command <next>`: with an index style variable
+definition a list of values can be provided and LAMMPS will advance to
+the next in the list with the :doc:`next command<next>`.  If there is no
+remaining element in the list, LAMMPS will delete the variable and any
+following expansion or reference attempt with trigger the error.
+
+Users with harder-to-track variable errors might also find reading
+:doc:`Section 5.2. Parsing rules for input scripts<Commands_parse>`
+helpful.
 
 .. _err0015:
 
@@ -486,6 +500,23 @@ be used. Too many neighbor bins would need to be created to fill space
 Most likely, one or more atoms have been blown out of the simulation
 box to a great distance or a fix (like fix deform or a barostat) has
 excessively grown the simulation box.
+
+.. _err0020:
+
+Variable formula X is accessed out-of-range
+-------------------------------------------
+
+When accessing an individual element of a global vector or array provided
+by a compute or fix, or data from a specific atom, and index in square
+brackets ("[ ]") must be provided and must be in a valid range.  While
+LAMMPS is written in C++ these indices start at 1 (i.e. similar to Fortran),
+so any value smaller than 1 will trigger this error.  But also too large
+values can cause this error, specifically for computes or fixes where
+the number of rows or columns can change or in simulations where the
+number of atoms changes.  Since this kind of error frequently happens
+with rather complex expressions, it is recommended to test these with
+small test systems, where the values can be tracked with output files
+for all relevant properties for every step.
 
 .. _err0021:
 
