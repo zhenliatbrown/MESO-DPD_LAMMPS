@@ -476,6 +476,21 @@ Users with harder-to-track variable errors might also find reading
 :doc:`Section 5.2. Parsing rules for input scripts<Commands_parse>`
 helpful.
 
+.. _err0014:
+
+Bond atom missing in image check or box size check
+--------------------------------------------------
+
+This can be either an error or a warning depending on your
+:doc:`thermo_modify settings <thermo_modify>`.  It is flagged in a part
+of the LAMMPS code where it updates the domain decomposition and before
+it builds the neighbor lists.  It checks that both atoms of a bond are
+within the communication cutoff of a subdomain.  It is usually caused by
+atoms moving too fast (see the :ref:`paragraph on fast moving atoms
+<hint05>`), or by the :doc:`communication cutoff being too
+small <comm_modify>`, or by waiting too long for doing :doc:`sub-domain
+and neighbor list updates <neigh_modify>`.
+
 .. _err0015:
 
 Cannot use neighbor bins - box size \<\< cutoff
@@ -725,6 +740,28 @@ example, are usually not a per-atom property, but defined through the
 atom type.  Thus it would not be required to have a Masses section and
 the included data would be ignored.  LAMMPS prints this warning to
 inform about this case.
+
+.. _err0027:
+
+Inconsistent image flags
+------------------------
+
+This warning happens when the distance between the *unwrapped* x-, y-,
+or z-components of the coordinates of a bond is larger than half the box
+with periodic boundaries or larger than the box with non-periodic
+boundaries.  It means that the positions and image flags have become
+inconsistent.  LAMMPS will still compute bonded interactions based on
+the closest periodic images of the atoms and thus in most cases the
+results will be correct.  Nevertheless, it is good practice to update
+the system so that the message does not appear.  It will help with
+future manipulations of the system.
+
+There is one case where this warning *must* appear: when you have a
+chain of connected bonds that pass through the entire box and connect
+back to the first atom in the chain through periodic boundaries,
+i.e. some kind of "infinite polymer".  In that case, the bond image
+flags *must* be inconsistent for the one bond that reaches back to the
+beginning of the chain.
 
 
 .. _err0028:
