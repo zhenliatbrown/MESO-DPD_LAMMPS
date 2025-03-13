@@ -98,7 +98,7 @@ FixPIMDBLangevin::~FixPIMDBLangevin()
 {
   memory->destroy(f_tag_order);
   for (int i = 0; i < filtered_narg; ++i) delete[] filtered_args[i];
-  memory->destroy(filtered_args);
+  delete[] filtered_args;
   delete bosonic_exchange;
 }
 
