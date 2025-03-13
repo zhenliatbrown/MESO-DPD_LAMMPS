@@ -97,10 +97,9 @@ namespace ReaxFF {
         else comp = bonds->num_intrs;
 
         if (End_Index(i, bonds) > comp)
-          system->error_ptr->one(FLERR, fmt::format("step {}: bondchk failed: "
-                                                    "i={} end(i)={} str(i+1)={}\n"
-                                                    + errorurl(18),
-                                                    step,i,End_Index(i,bonds),comp));
+          system->error_ptr->one(FLERR, fmt::format("step {}: bondchk failed: i={} end(i)={} "
+                                                    "str(i+1)={}{}", step, i ,End_Index(i,bonds),
+                                                    comp, errorurl(18)));
       }
     }
 
@@ -120,10 +119,9 @@ namespace ReaxFF {
           else comp = hbonds->num_intrs;
 
           if (End_Index(Hindex, hbonds) > comp)
-            system->error_ptr->one(FLERR, fmt::format("step {}: hbondchk failed: "
-                                                      "H={} end(H)={} str(H+1)={}\n"
-                                                      + errorurl(18),
-                                                      step, Hindex,End_Index(Hindex,hbonds),comp));
+            system->error_ptr->one(FLERR, fmt::format("step {}: hbondchk failed: H={} end(H)={} "
+                                                      "str(H+1)={}{}", step, Hindex,
+                                                      End_Index(Hindex,hbonds),comp,errorurl(18)));
         }
       }
     }
