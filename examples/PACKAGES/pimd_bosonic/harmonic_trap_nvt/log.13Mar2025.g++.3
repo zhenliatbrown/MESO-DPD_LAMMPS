@@ -1,5 +1,6 @@
-LAMMPS (4 Feb 2025)
+LAMMPS (4 Feb 2025 - Development - patch_4Feb2025-344-g0a4a2f6deb-modified)
 Processor partition = 3
+  using 1 OpenMP thread(s) per MPI task
 # Units and dimensions
 units        electron
 dimension    3
@@ -99,9 +100,9 @@ thermo_style custom step pe v_virial v_prim_kinetic
 thermo          1
 
 run             100
-WARNING: No fixes with time integration, atoms won't move (../verlet.cpp:60)
-WARNING: No pairwise cutoff or binsize set. Atom sorting therefore disabled. (../atom.cpp:2444)
-WARNING: Communication cutoff is 0.0. No ghost atoms will be generated. Atoms may get lost. (../comm_brick.cpp:212)
+WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
+WARNING: No pairwise cutoff or binsize set. Atom sorting therefore disabled. (src/atom.cpp:2444)
+WARNING: Communication cutoff is 0.0. No ghost atoms will be generated. Atoms may get lost. (src/comm_brick.cpp:212)
 Per MPI rank memory allocation (min/avg/max) = 9.176 | 9.176 | 9.176 Mbytes
    Step         PotEng        v_virial    v_prim_kinetic
          0   0              0              0.00024796164
@@ -205,20 +206,20 @@ Per MPI rank memory allocation (min/avg/max) = 9.176 | 9.176 | 9.176 Mbytes
         98   7.2937187e-06  1.8407787e-06  0.00023702765
         99   7.4250201e-06  1.8736806e-06  0.00023685186
        100   7.5569619e-06  1.9067398e-06  0.00023667607
-Loop time of 0.00939597 on 1 procs for 100 steps with 3 atoms
+Loop time of 0.00197094 on 1 procs for 100 steps with 3 atoms
 
-Performance: 459771778.655 fs/day, 0.000 hours/fs, 10642.865 timesteps/s, 31.929 katom-step/s
-25.2% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 2191851993.165 fs/day, 0.000 hours/fs, 50737.315 timesteps/s, 152.212 katom-step/s
+37.5% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
 Pair    | 0          | 0          | 0          |   0.0 |  0.00
-Neigh   | 8.404e-06  | 8.404e-06  | 8.404e-06  |   0.0 |  0.09
-Comm    | 8.6872e-05 | 8.6872e-05 | 8.6872e-05 |   0.0 |  0.92
-Output  | 0.0071309  | 0.0071309  | 0.0071309  |   0.0 | 75.89
-Modify  | 0.0020085  | 0.0020085  | 0.0020085  |   0.0 | 21.38
-Other   |            | 0.0001612  |            |       |  1.72
+Neigh   | 1.652e-06  | 1.652e-06  | 1.652e-06  |   0.0 |  0.08
+Comm    | 1.7965e-05 | 1.7965e-05 | 1.7965e-05 |   0.0 |  0.91
+Output  | 0.00036011 | 0.00036011 | 0.00036011 |   0.0 | 18.27
+Modify  | 0.0015231  | 0.0015231  | 0.0015231  |   0.0 | 77.28
+Other   |            | 6.806e-05  |            |       |  3.45
 
 Nlocal:              3 ave           3 max           3 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
