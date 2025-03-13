@@ -1,0 +1,30 @@
+body {
+        padding-left: 1em;
+        padding-right: 1em;
+        padding-top: 1em;
+        padding-bottom: 1em;
+        hyphens: auto;
+        overflow-wrap: break-word;
+        text-rendering: optimizeLegibility;
+        font-kerning: normal;
+}
+
+.parsed-literal {
+        font-family: monospace;
+        margin: 1px;
+}
+
+.note {
+        background: #e7f2fa;
+}
+
+.warning {
+        background: #f0b37e;
+}
+
+.hint {
+        background: #dbfaf4;
+}
+p {
+        margin: 6px;
+}

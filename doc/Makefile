@@ -129,13 +129,14 @@ fasthtml: fasthtml-init $(FASTHTMLFILES)
 fasthtml-init:
 	@mkdir -p fasthtml
 	@cp $(RSTDIR)/accel_styles.rst $(RSTDIR)/lepton_expression.rst fasthtml/
+	@cp $(BUILDDIR)/utils/pandoc.css fasthtml/
 
 fasthtml/%.html: $(RSTDIR)/%.rst
 	@if [ "$(HAS_PANDOC)" == "NO" ] ; then echo "Make 'fasthtml' requires the 'pandoc' software" 1>&2; exit 1; fi
 	@mkdir -p fasthtml
 	@echo converting $< to $@
 	@sed -e 's/\\AA/\\mathring{\\mathrm{A}}/g' $< > fasthtml/$*.temp.rst
-	@pandoc -s --mathml --metadata title="$@" -o $@ fasthtml/$*.temp.rst
+	@pandoc -s --mathml --css="pandoc.css" --template=$(BUILDDIR)/utils/pandoc.html --metadata title="$@" -o $@ fasthtml/$*.temp.rst
 	@rm -f fasthtml/$*.temp.rst
 #	@pandoc -s --mathml --metadata title="$@" --css=https://docs.lammps.org/_static/pygments.css --css=https://docs.lammps.org/_static/css/theme.css --css=https://docs.lammps.org/_static/sphinx-design.min.css --css=https://docs.lammps.org/_static/css/lammps.css -o $@ $<
 
