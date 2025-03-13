@@ -138,7 +138,6 @@ fasthtml/%.html: $(RSTDIR)/%.rst
 	@sed -e 's/\\AA/\\mathring{\\mathrm{A}}/g' $< > fasthtml/$*.temp.rst
 	@pandoc -s --mathml --css="pandoc.css" --template=$(BUILDDIR)/utils/pandoc.html --metadata title="$@" -o $@ fasthtml/$*.temp.rst
 	@rm -f fasthtml/$*.temp.rst
-#	@pandoc -s --mathml --metadata title="$@" --css=https://docs.lammps.org/_static/pygments.css --css=https://docs.lammps.org/_static/css/theme.css --css=https://docs.lammps.org/_static/sphinx-design.min.css --css=https://docs.lammps.org/_static/css/lammps.css -o $@ $<
 
 spelling: xmlgen globbed-tocs $(SPHINXCONFIG)/conf.py $(VENV) $(SPHINXCONFIG)/false_positives.txt
 	@if [ "$(HAS_BASH)" == "NO" ] ; then echo "bash was not found at $(OSHELL)! Please use: $(MAKE) SHELL=/path/to/bash" 1>&2; exit 1; fi
