@@ -65,7 +65,7 @@ memory address is computed from an incorrect index, a memory buffer is
 used after it has been freed, some general memory corruption.  When
 investigating a segmentation fault (aka segfault), it is important to
 determine which process is causing it; it may not always be LAMMPS.  For
-example, some MPI library implementation report a segmentation fault
+example, some MPI library implementations report a segmentation fault
 from their "mpirun" or "mpiexec" command when the application has been
 terminated unexpectedly.
 
@@ -75,13 +75,13 @@ simulation settings.  For time critical code paths, LAMMPS will assume
 the user has chosen the settings carefully and will not make any checks
 to avoid to avoid performance penalties.
 
-A crucial step in resolving segmentation faults is to identify the exact
-location in the code where this happens.  Please see `Errors_debug` for
+A crucial step in resolving a segmentation fault is to identify the exact
+location in the code where it happens.  Please see `Errors_debug` for
 a couple of examples showing how to do this on a Linux machine.  With
-this information, a simple way to reproduce the segmentation fault, and
-the information about the :doc:`exact LAMMPS version <Manual_version>`
-and platform you are running on, you can contact the LAMMPS developers
-or post in the LAMMPS forum to get assistance.
+this information -- a simple way to reproduce the segmentation fault and
+the exact :doc:`LAMMPS version <Manual_version>` and platform you are
+running on -- you can contact the LAMMPS developers or post in the LAMMPS
+forum to get assistance.
 
 .. _hint05:
 
@@ -91,10 +91,10 @@ Fast moving atoms
 Fast moving atoms may be "lost" or "missing" when their velocity becomes
 so large that they can cross a sub-domain within one timestep.  This
 often happens when atoms are too close, but atoms may also "move" too
-fast from sub-domain to sub-domain if the box changes rapidly, e.g. when
+fast from sub-domain to sub-domain if the box changes rapidly. E.g. when
 setting a large an initial box with :doc:`shrink-wrap boundary
 conditions <boundary>` that collapses on the first step (in this case
-the solution is often using 'm' instead of 's' as boundary condition).
+the solution is often using 'm' instead of 's' as a boundary condition).
 
 To reduce the impact of "close contacts", one can remove those atoms or
 molecules with something like :doc:`delete_atoms overlap 0.1 all all
@@ -104,13 +104,14 @@ to first run a minimization (aka quench) before starting the MD.  Reducing
 the time step can also help.  Many times, one just needs to "ease" the
 system into a balanced state and can then switch to more aggressive settings.
 
-The speed of atoms during an MD depends on the steepness of the
+The speed of atoms during an MD run depends on the steepness of the
 potential function and their mass.  Since the positions and velocities
-of atoms are computed with finite timesteps, they choice of timestep can
-be too large for a stable numeric integration of the trajectory.  In
-those cases using (temporarily) :doc:`fix nve/limit <fix_nve_limit>` or
-:doc:`fix dt/reset <fix_dt_reset>` can help to avoid too large updates
-or adapt the timestep according to the displacements.
+of atoms are computed with finite timesteps, the timestep needs to be
+small enough for stable numeric integration of the trajectory.  If the timestep
+is too large during initialization (or other instances of extreme dynamics),
+using :doc:`fix nve/limit <fix_nve_limit>` or :doc:`fix dt/reset <fix_dt_reset>`
+temporarily can help to avoid too large updates or adapt the timestep according
+to the displacements.
 
 .. _hint06:
 
@@ -118,9 +119,9 @@ Ignoring lost atoms
 ^^^^^^^^^^^^^^^^^^^
 
 It is tempting to use the :doc:`thermo_modify lost ignore <thermo_modify>`
-to avoid that LAMMPS stops with an error on lost atoms.  This setting should, however,
-*only* be used when atoms *should* leave the system.  In general, ignoring
-a problem does not solve it.
+to avoid LAMMPS aborting with an error on lost atoms.  This setting should,
+however, *only* be used when atoms *should* leave the system.  In general,
+ignoring a problem does not solve it.
 
 .. _hint07:
 
@@ -148,14 +149,14 @@ Communication cutoff
 The communication cutoff determines the "overlap" between sub-domains
 and atoms in these regions are referred to in LAMMPS as "ghost atoms".
 This region has to be large enough to contain all atoms of a bond,
-angle, dihedral or improper with just one atom in the actual sub-domain.
+angle, dihedral, or improper with just one atom in the actual sub-domain.
 Typically, this cutoff is set to the largest cutoff from the :doc:`pair
 style(s) <pair_style>` plus the :doc:`neighbor list skin distance
-<neighbor>` and will be more than sufficient for all bonded
-interactions.  But if the pair style cutoff is small this may not be
+<neighbor>` and will typically be sufficient for all bonded
+interactions.  But if the pair style cutoff is small, this may not be
 enough.  LAMMPS will print a warning in this case using some heuristic
-based on the equilibrium bond length, but that may not be sufficient for
-cases where the force constants are small and thus bonds may be
+based on the equilibrium bond length, but that still may not be sufficient
+for cases where the force constants are small and thus bonds may be
 stretched very far.  The communication cutoff can be adjusted with
 :doc:`comm_modify cutoff \<value\> <comm_modify>`, but setting this too
 large will waste CPU time and memory.
@@ -190,7 +191,7 @@ are parameterized for other settings, most notably :doc:`ReaxFF
 potentials <pair_reaxff>` that use "real" units.
 
 Also, individual parameters for :doc:`pair_coeff <pair_coeff>` commands
-taken from publications or other MD software, may need to be converted
+taken from publications or other MD software may need to be converted
 and sometimes in unexpected ways.  Thus some careful checking is
 recommended.
 
@@ -199,16 +200,16 @@ recommended.
 No error message printed
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In some cases - especially when running in parallel with MPI - LAMMPS
-may stop without displaying an error.  But that does not mean, that
-there was no error message, instead it is highly likely that the message
-was written to a buffer and LAMMPS was aborted before the buffer was
-output.  Usually, output buffers are output for every line of output,
-but sometimes, this is delayed until 4096 or 8192 bytes of output have
-been accumulated.  This buffering for screen and logfile output can be
-disabled by using the :ref:`-nb or -nonbuf <nonbuf>` command-line flag.
-This is most often needed when debugging crashing multi-replica
-calculations.
+In some cases -- especially when running in parallel with MPI -- LAMMPS
+may stop without displaying an error.  But the fact that nothing was
+displayed does not mean there was not an error message. Instead it is
+highly likely that the message was written to a buffer and LAMMPS was
+aborted before the buffer was output.  Usually, output buffers are output
+for every line of output, but sometimes this is delayed until 4096 or
+8192 bytes of output have been accumulated.  This buffering for screen
+and logfile output can be disabled by using the :ref:`-nb or -nonbuf
+<nonbuf>` command-line flag. This is most often needed when debugging
+crashing multi-replica calculations.
 
 .. _hint12:
 
@@ -227,11 +228,11 @@ defined.  Very few commands can be used before and after, like
 Most LAMMPS commands must be used after the simulation box is created.
 
 Consequently, LAMMPS will stop with an error, if a command is used in
-the wrong place.  This is not always obvious. So you can expand an index
-or string style :doc:`variable <variable>` anywhere in the input, but
-equal style (or similar) variables only, if they do not reference
-anything that is only allowed after the box is defined (e.g. a compute
-reference or fix reference, or a thermo keyword).
+the wrong place.  This is not always obvious. So index or string style
+:doc:`variables <variable>` can be expanded anywhere in the input, but
+equal style (or similar) variables can only be expanded before the box
+is defined if they do not reference anything that cannot be defined
+before the box (e.g. a compute or fix reference or a thermo keyword).
 
 ------
 
@@ -261,8 +262,8 @@ treated as a comment.
 Another possibility to trigger this error is to have a keyword in the
 data file that corresponds to a fix (e.g. :doc:`fix cmap <fix_cmap>`)
 but the :doc:`read_data <read_data>` command is missing the (optional)
-arguments that identify the fix and the header keyword and section
-keyword or those arguments are inconsistent with the keywords in the
+arguments that identify the fix and its header and section keywords.
+Alternatively, those arguments are inconsistent with the keywords in the
 data file.
 
 .. _err0002:
@@ -272,63 +273,61 @@ Incorrect format in ... section of data file
 
 This error happens when LAMMPS reads the contents of a section of a
 :doc:`data file <read_data>` and the number of parameters in the line
-differs from what is expected.  This most commonly happens, when the
+differs from what is expected.  This most commonly happens when the
 atom style is different from what is expected for a specific data file
 since changing the atom style usually changes the format of the line.
 
-This error can also happen when the number of entries indicated in the
+This error can also occur when the number of entries indicated in the
 header of a data file (e.g. the number of atoms) is larger than the
 number of lines provided (e.g. in the corresponding Atoms section)
-and then LAMMPS will continue reading into the next section and that
-would have a completely different format.
+causing LAMMPS to continue reading into the next section which has
+a completely different format.
 
 .. _err0003:
 
 Illegal variable command: expected X arguments but found Y
 ----------------------------------------------------------
 
-This error indicates that there are the wrong number of arguments for a
-specific variable command, but a common reason for that is a variable
-expression that has whitespace but is not enclosed in single or double
-quotes.
+This error indicates that a variable command has the wrong number of
+arguments. A common reason for this is that the variable expression
+has whitespace, but is not enclosed in single or double quotes.
 
 To explain, the LAMMPS input parser reads and processes lines.  The
 resulting line is broken down into "words".  Those are usually
-individual commands, labels, names, values separated by whitespace (a
+individual commands, labels, names, and values separated by whitespace (a
 space or tab character).  For "words" that may contain whitespace, they
 have to be enclosed in single (') or double (") quotes.  The parser will
-then remove the outermost pair of quotes and then pass that string as
+then remove the outermost pair of quotes and pass that string as
 "word" to the variable command.
 
-Thus missing quotes or accidental extra whitespace will lead to the
-error shown in the header because the unquoted whitespace will result
-in the text being broken into more "words", i.e. the variable expression
-being split.
+Thus missing quotes or accidental extra whitespace will trigger this
+error because the unquoted whitespace will result in the text being broken
+into more "words", i.e. the variable expression being split.
 
 .. _err0004:
 
 Out of range atoms - cannot compute ...
 ---------------------------------------
 
-The PPPM (and also PPPMDisp and MSM) methods require to assemble a grid
+The PPPM (and also PPPMDisp and MSM) methods need to assemble a grid
 of electron density data derived from the (partial) charges assigned to
-the atoms.  This charges are smeared out across multiple grid points
+the atoms.  These charges are smeared out across multiple grid points
 (see :doc:`kspace_modify order <kspace_modify>`).  When running in
 parallel with MPI, LAMMPS uses a :doc:`domain decomposition scheme
 <Developer_par_part>` where each processor manages a subset of atoms and
-thus also a grid representing the density, which covers the actual
-volume of the sub-domain and some extra space corresponding to the
+thus also a grid representing the density. The processor's grid covers the
+actual volume of the sub-domain and some extra space corresponding to the
 :doc:`neighbor list skin <neighbor>`.  These are then :doc:`combined and
 redistributed <Developer_par_long>` for parallel processing of the
 long-range component of the Coulomb interaction.
 
-The ``Out of range atoms`` error can happen, when atoms move too fast or
-the neighbor list skin is too small or the neighbor lists are not
-updated frequently enough.  Then the smeared charges cannot be fully
+The ``Out of range atoms`` error can happen when atoms move too fast,
+the neighbor list skin is too small, or the neighbor lists are not
+updated frequently enough.  The smeared charges cannot then be fully
 assigned to the density grid for all atoms.  LAMMPS checks for this
 condition and stops with an error.  Most of the time, this is an
-indication of a system with very high forces, most often at the
-beginning of a simulation or when boundary conditions are changed.  The
+indication of a system with very high forces, often at the beginning
+of a simulation or when boundary conditions are changed.  The
 error becomes more likely with more MPI processes.
 
 There are multiple options to explore for avoiding the error.  The best
@@ -336,9 +335,9 @@ choice depends strongly on the individual system, and often a
 combination of changes is required.  For example, more conservative MD
 parameter settings can be used (larger neighbor skin, shorter time step,
 more frequent neighbor list updates).  Sometimes, it helps to revisit
-the system generation and avoid close contacts when building it, or use
-the :doc:`delete_atoms overlap<delete_atoms>` command to delete those
-close contact atoms, or run a minimization before the MD.  It can also
+the system generation and avoid close contacts when building it. Otherwise
+one can use the :doc:`delete_atoms overlap<delete_atoms>` command to delete
+those close contact atoms or run a minimization before the MD.  It can also
 help to temporarily use a cutoff-Coulomb pair style and no kspace style
 until the system has somewhat equilibrated and then switch to the
 long-range solver.
@@ -352,17 +351,21 @@ The second atom needed to compute a particular bond (or the third or fourth
 atom for angle, dihedral, or improper) is missing on the indicated timestep
 and processor. Typically, this is because the two bonded atoms have become
 too far apart relative to the communication cutoff distance for ghost atoms.
-Typically, the communication cutoff is set by the pair cutoff, but it can
-be manually adjusted using :doc:`comm_modify <comm_modify>` to accommodate
-larger distances between topologically connected atoms at the cost of increased
-communication and more ghost atoms. However, missing bond atoms may also
-indicate unstable dynamics caused the atoms blow apart such that increasing
-the communication distance will not solve the underlying issue.
+By default, the communication cutoff is set by the pair cutoff. However, to
+accommodate larger distances between topologically connected atoms, it can
+be manually adjusted using :doc:`comm_modify <comm_modify>` at the cost of
+increased communication and more ghost atoms. However, missing bond atoms
+may also indicate that there are unstable dynamics which caused the atoms
+to blow apart. In this scenario, increasing the communication distance will
+not solve the underlying issue. Rather, see :ref:`Fast moving atoms <hint05>`
+and :ref:`Neighbor list settings <hint09>` in the general troubleshooting
+section above for ideas to fix unstable dynamics.
 
-If the simulation has open boundary conditions where atoms can leave,
-potentially at different times than other atoms they are bonded to, this
-error can be converted to a warning or turned off using the *lost/bond*
-keyword in the :doc:`thermo_modify <thermo_modify>` command.
+If atoms are intended to be lost during a simulation (e.g. due to open boundary
+conditions or :doc:`fix evaporate <fix_evaporate>`) such that two bonded atoms
+may be lost at different times from each other, this error can be converted to a
+warning or turned off using the *lost/bond* keyword in the :doc:`thermo_modify
+<thermo_modify>` command.
 
 .. _err0006:
 
@@ -419,7 +422,7 @@ Unrecognized pair style ... is part of ... package which is not enabled in this 
 The LAMMPS executable (binary) being used was not compiled with a package
 containing the specified pair style. This indicates that the executable needs to
 be re-built after enabling the correct package in the relevant Makefile or CMake
-build directory, see :doc:`Section 3. Build LAMMPS <Build>` for more details.
+build directory. See :doc:`Section 3. Build LAMMPS <Build>` for more details.
 One can check if the expected package and pair style is present in the
 executable by running it with the ``-help`` (or ``-h``) flag on the command
 line. One common oversight, especially for beginner LAMMPS users, is to enable
@@ -452,9 +455,9 @@ Substitution for illegal variable
 
 A variable in an input script or a variable expression was not found in
 the list of valid variables.  The most common reason for this is a typo
-somewhere in the input file and the expression uses an invalid variable
-name.  The second most common reason is to omit the curly braces for a
-direct variable with a name that is not a single letter.  Example:
+somewhere in the input file such that the expression uses an invalid variable
+name.  The second most common reason is omitting the curly braces for a
+direct variable with a name that is not a single letter.  For example:
 
 .. code-block:: LAMMPS
 
@@ -466,11 +469,10 @@ direct variable with a name that is not a single letter.  Example:
 Another potential source of this error may be invalid command line
 variables (-var or -v argument) used when launching LAMMPS from an
 interactive shell or shell scripts.  An uncommon source for this error
-is the :doc:`next command <next>`: with an index style variable
-definition a list of values can be provided and LAMMPS will advance to
-the next in the list with the :doc:`next command<next>`.  If there is no
-remaining element in the list, LAMMPS will delete the variable and any
-following expansion or reference attempt with trigger the error.
+is using the :doc:`next command <next>` to advance through a list of values
+provided by an index style variable.  If there is no remaining element in
+the list, LAMMPS will delete the variable and any following expansion or
+reference attempt will trigger the error.
 
 Users with harder-to-track variable errors might also find reading
 :doc:`Section 5.2. Parsing rules for input scripts<Commands_parse>`
@@ -488,7 +490,7 @@ it builds the neighbor lists.  It checks that both atoms of a bond are
 within the communication cutoff of a subdomain.  It is usually caused by
 atoms moving too fast (see the :ref:`paragraph on fast moving atoms
 <hint05>`), or by the :doc:`communication cutoff being too
-small <comm_modify>`, or by waiting too long for doing :doc:`sub-domain
+small <comm_modify>`, or by waiting too long between :doc:`sub-domain
 and neighbor list updates <neigh_modify>`.
 
 .. _err0015:
@@ -510,7 +512,7 @@ smallest box lengths.
 Did not assign all atoms correctly
 ----------------------------------
 
-This error happens most commonly, when :doc:`reading a data file <read_data>`
+This error happens most commonly when :doc:`reading a data file <read_data>`
 under :doc:`non-periodic boundary conditions<boundary>`.  Only atoms with
 positions **inside** the simulation box will be read and thus any atoms
 outside the box will be skipped and the total atom count will not match,
@@ -520,7 +522,7 @@ the principal box and their image flags set accordingly.
 
 Similar errors can happen with the :doc:`replicate command<replicate>` or
 the :doc:`read_restart command<read_restart>`.  In these cases the cause
-may be a problematic geometry, an insufficient communication cutoff or
+may be a problematic geometry, an insufficient communication cutoff, or
 a bug in the LAMMPS source code.  In these cases it is advisable to set
 up :ref:`small test case <hint01>` for testing and debugging.  This will
 be required in case you need to get help from a LAMMPS developer.
@@ -531,9 +533,9 @@ Domain too large for neighbor bins
 ----------------------------------
 
 The domain has become extremely large so that neighbor bins cannot
-be used. Too many neighbor bins would need to be created to fill space
-Most likely, one or more atoms have been blown out of the simulation
-box to a great distance or a fix (like fix deform or a barostat) has
+be used. Too many neighbor bins would need to be created to fill space.
+Most likely, one or more atoms have been blown a great distance out of
+the simulation box or a fix (like fix deform or a barostat) has
 excessively grown the simulation box.
 
 .. _err0018:
@@ -542,18 +544,18 @@ Step X: (h)bondchk failed
 -------------------------
 
 This error is a consequence of the heuristic memory allocations for
-buffers of the regular ReaxFF version.  In ReaxFF simulation the lists
+buffers of the regular ReaxFF version.  In ReaxFF simulations, the lists
 of bonds and hydrogen bonds can change due to chemical reactions.  The
 default approach, however, assumes that these changes are not very
 large, so it allocates buffers for the current system setup plus a
 safety margin.  This can be adjusted with the :doc:`safezone, mincap,
-and minhbonds settings of pair style <pair_reaxff>`, but only to some
+and minhbonds settings of the pair style <pair_reaxff>`, but only to some
 extent.  When equilibrating a new system, or simulating a sparse system
 in parallel, this can be difficult to control and become wasteful.  A
 simple workaround is often to break a simulation down in multiple
 chunks.  A better approach, however, is to compile and use the KOKKOS
-package version of ReaxFF (you don't need a GPU for that, but can also
-compile it in serial or OpenMP mode), which uses are much more robust
+package version of ReaxFF (you do not need a GPU for that, but can also
+compile it in serial or OpenMP mode), which uses a more robust
 memory allocation approach.
 
 .. _err0019:
@@ -561,15 +563,15 @@ memory allocation approach.
 Numeric index X is out of bounds
 --------------------------------
 
-This error most commonly happens, when setting force field coefficients
+This error most commonly happens when setting force field coefficients
 with either the :doc:`pair_coeff <pair_coeff>`, the :doc:`bond_coeff
 <bond_coeff>`, the :doc:`angle_coeff <angle_coeff>`, the
 :doc:`dihedral_coeff <dihedral_coeff>`, or the :doc:`improper_coeff
 <improper_coeff>` command.  These commands accept type labels,
-explicit numbers and wildcards for ranges of numbers.  If the numeric
+explicit numbers, and wildcards for ranges of numbers.  If the numeric
 value of any of these is outside the valid range (defined by the number
-of corresponding types), LAMMPS will stop with this error.  Also
-a few other commands and styles allow ranges of numbers and check
+of corresponding types), LAMMPS will stop with this error.  A few other
+commands and styles also allow ranges of numbers and check
 using the same method and thus print the same kind of error.
 
 The cause is almost always a typo in the input or a logic error
@@ -583,7 +585,7 @@ Variable formula X is accessed out-of-range
 -------------------------------------------
 
 When accessing an individual element of a global vector or array provided
-by a compute or fix, or data from a specific atom, and index in square
+by a compute or fix or data from a specific atom, an index in square
 brackets ("[ ]") must be provided and must be in a valid range.  While
 LAMMPS is written in C++ these indices start at 1 (i.e. similar to Fortran),
 so any value smaller than 1 will trigger this error.  But also too large
@@ -592,7 +594,7 @@ the number of rows or columns can change or in simulations where the
 number of atoms changes.  Since this kind of error frequently happens
 with rather complex expressions, it is recommended to test these with
 small test systems, where the values can be tracked with output files
-for all relevant properties for every step.
+for all relevant properties at every step.
 
 .. _err0021:
 
@@ -604,8 +606,8 @@ The parameters in the :doc:`pair_coeff <pair_coeff>` command for a specified
 applies when seeing this error for :doc:`bond_coeff <bond_coeff>`,
 :doc:`angle_coeff <angle_coeff>`,  :doc:`dihedral_coeff <dihedral_coeff>`, or
 :doc:`improper_coeff <improper_coeff>` and their respective style commands when
-using the MOLECULE or EXTRA-MOLECULE packages. The cases below will describe
-some ways to approach pair coefficient errors, but the same strategies will
+using the MOLECULE or EXTRA-MOLECULE packages. The cases below describe
+some ways to approach pair coefficient errors, but the same strategies
 apply to bonded systems as well.
 
 Outside of normal typos, this error can have several sources. In all cases, the
@@ -676,13 +678,14 @@ Molecule auto special bond generation overflow
 
 In order to correctly apply the :doc:`special_bonds <special_bonds>`
 settings (also known as "exclusions"), LAMMPS needs to maintain for each
-atom a list of atoms that are connected to this atom either with a bond
-or are connected to a bonded atom.  The purpose is to either remove or
-tag those pairs of atoms in the neighbor list.  This information is stored with individual
+atom a list of atoms that are connected to this atom, either directly with
+a bond or indirectly through bonding with an intermediate atom(s). The purpose
+is to either remove or tag those pairs of atoms in the neighbor list.  This
+information is stored with individual
 atoms and thus the maximum number of such "special" neighbors is set
 when the simulation box is created.  When reading (relative) geometry
 and topology of a 'molecule' from a :doc:`molecule file <molecule>`,
-LAMMPS will build the list of such "special" for the molecule atom
+LAMMPS will build the list of such "special" neighbors for the molecule atom
 (if not given in the molecule file explicitly).  The error is triggered
 when the resulting list is too long for the space reserved when
 creating the simulation box.  The solution is to increase the
@@ -696,11 +699,11 @@ Molecule topology/atom exceeds system topology/atom
 
 LAMMPS uses :doc:`domain decomposition <Developer_par_part>` to
 distribute data (i.e. atoms) across the MPI processes in parallel
-runs. This includes topology data, that is data about bonds, angles,
+runs. This includes topology data about bonds, angles,
 dihedrals, impropers and :doc:`"special" neighbors <special_bonds>`.
 This information is stored with either one or all atoms involved in such
 a topology entry (which of the two option applies depends on the
-:doc:`newton <newton>` setting for bonds. When reading a data file,
+:doc:`newton <newton>` setting for bonds). When reading a data file,
 LAMMPS analyzes the requirements for this file and then the values are
 "locked in" and cannot be extended.
 
