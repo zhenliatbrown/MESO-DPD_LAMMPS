@@ -1568,7 +1568,7 @@ void FixPIMDLangevin::compute_spring_energy()
     error->universe_all(
         FLERR,
         fmt::format("Unknown method parameter for fix {}. Only nmpimd and pimd are supported!",
-                     style));
+                    style));
   }
 }
 
@@ -1630,7 +1630,10 @@ void FixPIMDLangevin::compute_p_cv()
   } else if (method == PIMD) {
     p_cv = THIRD * inv_volume * ((2.0 * totke / np - centroid_vir) * force->nktv2p + vir) / np;
   } else {
-    error->universe_all(FLERR, fmt::format("Unknown method parameter for fix {}. Only nmpimd and pimd are supported!", style));
+    error->universe_all(
+        FLERR,
+        fmt::format("Unknown method parameter for fix {}. Only nmpimd and pimd are supported!",
+                    style));
   }
 }
 
