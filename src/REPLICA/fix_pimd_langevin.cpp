@@ -409,7 +409,7 @@ FixPIMDLangevin::~FixPIMDLangevin()
   memory->destroy(tagsend);
   memory->destroy(tagrecv);
   memory->destroy(bufbeads);
-  MPI_Comm_free(&rootworld);
+  if (rootworld != MPI_COMM_NULL) MPI_Comm_free(&rootworld);
 }
 
 /* ---------------------------------------------------------------------- */
