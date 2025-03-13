@@ -333,7 +333,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != STRING)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       delete[] data[ivar][0];
       copy(1, &scopy, data[ivar]);
       replaceflag = 1;
@@ -359,7 +359,7 @@ void Variable::set(int narg, char **arg)
                  utils::errorurl(3));
     if (find(arg[0]) >= 0) {
       if (style[find(arg[0])] != GETENV)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       remove(find(arg[0]));
     }
     if (nvar == maxvar) grow();
@@ -431,7 +431,7 @@ void Variable::set(int narg, char **arg)
       error->all(FLERR, "Variable {}: format variable {} has incompatible style", arg[0], arg[2]);
     if (ivar >= 0) {
       if (style[ivar] != FORMAT)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       if (!utils::strmatch(arg[3], validfmt))
         error->all(FLERR, "Incorrect conversion in format string");
       delete[] data[ivar][0];
@@ -471,7 +471,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != EQUAL)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       delete[] data[ivar][0];
       data[ivar][0] = utils::strdup(combined);
       replaceflag = 1;
@@ -505,7 +505,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != ATOM)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       delete[] data[ivar][0];
       data[ivar][0] = utils::strdup(combined);
       replaceflag = 1;
@@ -539,7 +539,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != VECTOR)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       delete[] data[ivar][0];
       delete[] data[ivar][1];
       data[ivar][0] = utils::strdup(combined);
@@ -584,7 +584,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != PYTHON)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       delete[] data[ivar][0];
       data[ivar][0] = utils::strdup(arg[2]);
       replaceflag = 1;
@@ -612,7 +612,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != TIMER)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       dvalue[ivar] = platform::walltime();
       replaceflag = 1;
     } else {
@@ -638,7 +638,7 @@ void Variable::set(int narg, char **arg)
     int ivar = find(arg[0]);
     if (ivar >= 0) {
       if (style[ivar] != INTERNAL)
-        error->all(FLERR, 1, "Cannot redefine variable {} as a different style", arg[0]);
+        error->all(FLERR, 1, "Cannot redefine variable {} with a different style", arg[0]);
       dvalue[nvar] = utils::numeric(FLERR, arg[2], false, lmp);
       replaceflag = 1;
     } else {
