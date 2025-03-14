@@ -161,19 +161,19 @@ with *error soft* and followed by :doc:`timer timeout unlimited
 :doc:`run command <run>` uses the *every* keyword, so using *error soft*
 and resetting the timer manually may be the preferred option.
 
-.. note::
-
-   You may wish use the :doc:`unfix <unfix>` command on the fix halt ID
-   before starting a subsequent run, so that the same condition is not
-   immediately triggered again.
+You may wish use the :doc:`unfix <unfix>` command on the *fix halt* ID
+before starting a subsequent run, so that the same condition is not
+immediately triggered again.
 
 The optional *message* keyword determines whether a message is printed
 to the screen and logfile when the halt condition is triggered.  If
 *message* is set to yes, a one line message with the values that
-triggered the halt is printed.  If *message* is set to no, no message
-is printed; the run simply exits.  The latter may be desirable for
+triggered the halt is printed.  If *message* is set to no, no message is
+printed; the run simply exits.  The latter may be desirable for
 post-processing tools that extract thermodynamic information from log
 files.
+
+.. versionadded:: TBD
 
 The optional *universe* keyword determines whether the halt request
 should be synchronized across the partitions of a :doc:`multi-partition
