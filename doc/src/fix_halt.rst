@@ -144,18 +144,28 @@ The optional *error* keyword determines how the current run is halted.
 If its value is *hard*, then LAMMPS will stop with an error message.
 
 If its value is *soft*, LAMMPS will exit the current run, but continue
-to execute subsequent commands in the input script.  However,
-additional :doc:`run <run>` or :doc:`minimize <minimize>` commands will be
-skipped.  For example, this allows a script to output the current
-state of the system, e.g. via a :doc:`write_dump <write_dump>` or
-:doc:`write_restart <write_restart>` command.
+to execute subsequent commands in the input script.  However, additional
+:doc:`run <run>` or :doc:`minimize <minimize>` commands will be skipped.
+For example, this allows a script to output the current state of the
+system, e.g. via a :doc:`write_dump <write_dump>` or :doc:`write_restart
+<write_restart>` command.  To re-enable regular runs after *fix halt*
+stopped a run, you need to issue a :doc:`timer timeout unlimited
+<timer>` command.
 
 If its value is *continue*, the behavior is the same as for *soft*,
 except subsequent :doc:`run <run>` or :doc:`minimize <minimize>` commands
 are executed.  This allows your script to remedy the condition that
-triggered the halt, if necessary.  Note that you may wish use the
-:doc:`unfix <unfix>` command on the fix halt ID, so that the same
-condition is not immediately triggered in a subsequent run.
+triggered the halt, if necessary.  This is the equivalent of stopping
+with *error soft* and followed by :doc:`timer timeout unlimited
+<timer>` command.  This can have undesired consequences, when a
+:doc:`run command <run>` uses the *every* keyword, so using *error soft*
+and resetting the timer manually may be the preferred option.
+
+.. note::
+
+   You may wish use the :doc:`unfix <unfix>` command on the fix halt ID
+   before starting a subsequent run, so that the same condition is not
+   immediately triggered again.
 
 The optional *message* keyword determines whether a message is printed
 to the screen and logfile when the halt condition is triggered.  If
