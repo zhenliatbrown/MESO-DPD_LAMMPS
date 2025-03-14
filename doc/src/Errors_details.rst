@@ -581,8 +581,8 @@ valid range as a hint.
 
 .. _err0020:
 
-Compute, fix, or variable is accessed out-of-range
---------------------------------------------------
+Compute, fix, or variable vector or array is accessed out-of-range
+------------------------------------------------------------------
 
 When accessing an individual element of a global vector or array or a
 per-atom vector or array provided by a compute or fix or atom-style or
