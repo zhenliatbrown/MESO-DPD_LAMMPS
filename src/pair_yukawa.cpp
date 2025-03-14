@@ -332,3 +332,12 @@ double PairYukawa::single(int /*i*/, int /*j*/, int itype, int jtype, double rsq
   phi = a[itype][jtype] * screening * rinv - offset[itype][jtype];
   return factor_lj * phi;
 }
+
+/* ---------------------------------------------------------------------- */
+
+void *PairYukawa::extract(const char *str, int &dim)
+{
+  dim = 2;
+  if (strcmp(str, "alpha") == 0) return (void *) a;
+  return nullptr;
+}
