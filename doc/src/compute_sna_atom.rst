@@ -204,7 +204,7 @@ components summed separately for each LAMMPS atom type:
 
 .. math::
 
-   -\sum_{i' \in I} \frac{\partial {B^{i'}_{j_1,j_2,j}  }}{\partial {\bf r}_i}
+   -\sum_{i' \in I} \frac{\partial {B^{i'}_{j_1,j_2,j}  }}{\partial \mathbf{r}_i}
 
 The sum is over all atoms *i'* of atom type *I*\ .  For each atom *i*,
 this compute evaluates the above expression for each direction, each
@@ -216,7 +216,7 @@ derivatives:
 
 .. math::
 
-  -{\bf r}_i \otimes \sum_{i' \in I} \frac{\partial {B^{i'}_{j_1,j_2,j}}}{\partial {\bf r}_i}
+  -\mathbf{r}_i \otimes \sum_{i' \in I} \frac{\partial {B^{i'}_{j_1,j_2,j}}}{\partial \mathbf{r}_i}
 
 Again, the sum is over all atoms *i'* of atom type *I*\ .  For each atom
 *i*, this compute evaluates the above expression for each of the six

@@ -45,8 +45,8 @@ as described in :ref:`(Ouyang7) <Ouyang7>` and :ref:`(Jiang) <Jiang>`.
                 \left [ \epsilon + f(\rho_{ij}) + f(\rho_{ji})\right ] -
                  \frac{1}{1+e^{-d\left [ \left ( r_{ij}/\left (s_R \cdot r^{eff} \right ) \right )-1 \right ]}}
                  \cdot \frac{C_6}{r^6_{ij}} \right \}\\
-   \rho_{ij}^2 = & r_{ij}^2 - ({\bf r}_{ij} \cdot {\bf n}_i)^2 \\
-   \rho_{ji}^2  = & r_{ij}^2 - ({\bf r}_{ij} \cdot {\bf n}_j)^2 \\
+   \rho_{ij}^2 = & r_{ij}^2 - (\mathbf{r}_{ij} \cdot \mathbf{n}_i)^2 \\
+   \rho_{ji}^2  = & r_{ij}^2 - (\mathbf{r}_{ij} \cdot \mathbf{n}_j)^2 \\
    f(\rho)  = &  C e^{ -( \rho / \delta )^2 } \\
    \mathrm{Tap}(r_{ij})  = & 20\left ( \frac{r_{ij}}{R_{cut}} \right )^7 -
                            70\left ( \frac{r_{ij}}{R_{cut}} \right )^6 +
@@ -67,7 +67,7 @@ calculating the normals.
    normal vectors used for graphene and h-BN is no longer valid for TMDs.
    In :ref:`(Ouyang7) <Ouyang7>`, a new definition is proposed, where for
    each atom `i`, its six nearest neighboring atoms belonging to the same
-   sub-layer are chosen to define the normal vector `{\bf n}_i`.
+   sub-layer are chosen to define the normal vector `\mathbf{n}_i`.
 
 The parameter file (e.g. TMD.ILP), is intended for use with *metal*
 :doc:`units <units>`, with energies in meV. Two additional parameters,

@@ -97,7 +97,7 @@ inverse temperature :math:`\beta` is given by :ref:`(Tuckerman)
 
 .. math::
 
-   Z \propto \int d{\bf q} \cdot \frac{1}{N!} \sum_\sigma \textrm{exp} [ -\beta \left( E^\sigma + V \right) ].
+   Z \propto \int d\mathbf{q} \cdot \frac{1}{N!} \sum_\sigma \textrm{exp} [ -\beta \left( E^\sigma + V \right) ].
 
 Here, :math:`V` is the potential between different particles at the same
 imaginary time slice, which is the same for bosons and distinguishable
