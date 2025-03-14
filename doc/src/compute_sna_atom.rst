@@ -139,11 +139,11 @@ mapped on to a third polar angle :math:`\theta_0` defined by,
 
 .. math::
 
-  \theta_0 = {\sf rfac0} \frac{r-r_{min0}}{R_{ii'}-r_{min0}} \pi
+  \theta_0 = \mathsf{rfac0} \frac{r-r_{min0}}{R_{ii'}-r_{min0}} \pi
 
 In this way, all possible neighbor positions are mapped on to a subset
-of the 3-sphere.  Points south of the latitude :math:`\theta_0` =
-*rfac0* :math:`\pi` are excluded.
+of the 3-sphere.  Points south of the latitude
+:math:`\theta_0 = \mathsf{rfac0} \pi` are excluded.
 
 The natural basis for functions on the 3-sphere is formed by the
 representatives of *SU(2)*, the matrices :math:`U^j_{m,m'}(\theta, \phi,
