@@ -127,7 +127,8 @@ fasthtml: fasthtml-init $(FASTHTMLFILES)
 	@echo "Fast HTML build finished. The HTML pages are in doc/fasthtml."
 
 fasthtml-init:
-	@mkdir -p fasthtml
+	@mkdir -p fasthtml/JPG
+	@cp src/JPG/*.* fasthtml/JPG
 	@cp $(RSTDIR)/accel_styles.rst $(RSTDIR)/lepton_expression.rst fasthtml/
 	@cp $(BUILDDIR)/utils/pandoc.css fasthtml/
 
