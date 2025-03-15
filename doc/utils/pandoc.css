@@ -7,6 +7,7 @@ body {
         overflow-wrap: break-word;
         text-rendering: optimizeLegibility;
         font-kerning: normal;
+        font-family: sans-serif;
 }
 
 .parsed-literal {
@@ -22,9 +23,24 @@ body {
         background: #f0b37e;
 }
 
+.title {
+        font-weight: bold;
+}
+
 .hint {
         background: #dbfaf4;
 }
 p {
+        line-height: 20px;
+        font-size: 16px;
         margin: 6px;
+}
+
+pre {
+        line-height: 18px;
+        padding: 1ex;
+        background: #f8f8f8;
+        border: solid;
+        border-width: 1px;
+        border-color: #d0d0d0;
 }
