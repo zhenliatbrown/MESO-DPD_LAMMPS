@@ -1,5 +1,6 @@
-LAMMPS (4 Feb 2025)
+LAMMPS (4 Feb 2025 - Development - patch_4Feb2025-344-g0a4a2f6deb-modified)
 Processor partition = 1
+  using 1 OpenMP thread(s) per MPI task
 # Units and dimensions
 units        electron
 dimension    3
@@ -95,8 +96,8 @@ thermo_style custom step pe v_virial v_prim_kinetic
 thermo          1
 
 run             100
-WARNING: No pairwise cutoff or binsize set. Atom sorting therefore disabled. (../atom.cpp:2444)
-WARNING: Communication cutoff is 0.0. No ghost atoms will be generated. Atoms may get lost. (../comm_brick.cpp:212)
+WARNING: No pairwise cutoff or binsize set. Atom sorting therefore disabled. (src/atom.cpp:2444)
+WARNING: Communication cutoff is 0.0. No ghost atoms will be generated. Atoms may get lost. (src/comm_brick.cpp:212)
 Per MPI rank memory allocation (min/avg/max) = 2.801 | 2.801 | 2.801 Mbytes
    Step         PotEng        v_virial    v_prim_kinetic
          0   0              1.3661449e-08  0.0009918329 
@@ -200,20 +201,20 @@ Per MPI rank memory allocation (min/avg/max) = 2.801 | 2.801 | 2.801 Mbytes
         98   2.5769956e-05  1.780703e-05   0.00083221292
         99   2.624134e-05   1.8141862e-05  0.00082913227
        100   2.6731735e-05  1.8457846e-05  0.00082619877
-Loop time of 0.122878 on 1 procs for 100 steps with 3 atoms
+Loop time of 0.0011782 on 1 procs for 100 steps with 3 atoms
 
-Performance: 35156789.883 fs/day, 0.000 hours/fs, 813.815 timesteps/s, 2.441 katom-step/s
-46.7% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 3666606971.137 fs/day, 0.000 hours/fs, 84875.161 timesteps/s, 254.625 katom-step/s
+88.4% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
 Pair    | 0          | 0          | 0          |   0.0 |  0.00
-Neigh   | 1.9787e-05 | 1.9787e-05 | 1.9787e-05 |   0.0 |  0.02
-Comm    | 9.2033e-05 | 9.2033e-05 | 9.2033e-05 |   0.0 |  0.07
-Output  | 0.0022584  | 0.0022584  | 0.0022584  |   0.0 |  1.84
-Modify  | 0.12033    | 0.12033    | 0.12033    |   0.0 | 97.93
-Other   |            | 0.0001755  |            |       |  0.14
+Neigh   | 1.773e-06  | 1.773e-06  | 1.773e-06  |   0.0 |  0.15
+Comm    | 1.4979e-05 | 1.4979e-05 | 1.4979e-05 |   0.0 |  1.27
+Output  | 0.00021888 | 0.00021888 | 0.00021888 |   0.0 | 18.58
+Modify  | 0.00086503 | 0.00086503 | 0.00086503 |   0.0 | 73.42
+Other   |            | 7.754e-05  |            |       |  6.58
 
 Nlocal:              3 ave           3 max           3 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -226,3 +227,4 @@ Total # of neighbors = 0
 Ave neighs/atom = 0
 Neighbor list builds = 44
 Dangerous builds = 0
+Total wall time: 0:00:00
