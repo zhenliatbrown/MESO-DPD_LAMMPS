@@ -227,7 +227,7 @@ as HTML while writing the documentation.
 
 To translate **all** manual pages, you can type ``make fasthtml`` at the
 command line.  The translated HTML files are then in the ``fasthtml``
-folder All following ``make fasthtml`` commands will only translate
+folder. All subsequent ``make fasthtml`` commands will only translate
 ``.rst`` files that have been changed.  The ``make fasthtml`` command
 can be parallelized with make using the `-j` flag.  You can also
 directly translate only individual pages: e.g. to translate only the
