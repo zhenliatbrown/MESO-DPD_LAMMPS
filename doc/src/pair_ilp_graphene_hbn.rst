@@ -48,8 +48,8 @@ in :ref:`(Kolmogorov) <Kolmogorov2>`.
                 \left [ \epsilon + f(\rho_{ij}) + f(\rho_{ji})\right ] -
                  \frac{1}{1+e^{-d\left [ \left ( r_{ij}/\left (s_R \cdot r^{eff} \right ) \right )-1 \right ]}}
                  \cdot \frac{C_6}{r^6_{ij}} \right \}\\
-   \rho_{ij}^2 = & r_{ij}^2 - ({\bf r}_{ij} \cdot {\bf n}_i)^2 \\
-   \rho_{ji}^2  = & r_{ij}^2 - ({\bf r}_{ij} \cdot {\bf n}_j)^2 \\
+   \rho_{ij}^2 = & r_{ij}^2 - (\mathbf{r}_{ij} \cdot \mathbf{n}_i)^2 \\
+   \rho_{ji}^2  = & r_{ij}^2 - (\mathbf{r}_{ij} \cdot \mathbf{n}_j)^2 \\
    f(\rho)  = &  C e^{ -( \rho / \delta )^2 } \\
    \mathrm{Tap}(r_{ij})  = & 20\left ( \frac{r_{ij}}{R_{cut}} \right )^7 -
                            70\left ( \frac{r_{ij}}{R_{cut}} \right )^6 +

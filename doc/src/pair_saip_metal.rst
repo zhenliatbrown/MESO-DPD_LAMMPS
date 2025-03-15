@@ -45,8 +45,8 @@ potential (ILP) potential for hetero-junctions formed with hexagonal
                 \left [ \epsilon + f(\rho_{ij}) + f(\rho_{ji})\right ] -
                  \frac{1}{1+e^{-d\left [ \left ( r_{ij}/\left (s_R \cdot r^{eff} \right ) \right )-1 \right ]}}
                  \cdot \frac{C_6}{r^6_{ij}} \right \}\\
-   \rho_{ij}^2 = & r_{ij}^2 - ({\bf r}_{ij} \cdot {\bf n}_i)^2 \\
-   \rho_{ji}^2  = & r_{ij}^2 - ({\bf r}_{ij} \cdot {\bf n}_j)^2 \\
+   \rho_{ij}^2 = & r_{ij}^2 - (\mathbf{r}_{ij} \cdot \mathbf{n}_i)^2 \\
+   \rho_{ji}^2  = & r_{ij}^2 - (\mathbf{r}_{ij} \cdot \mathbf{n}_j)^2 \\
    f(\rho)  = &  C e^{ -( \rho / \delta )^2 } \\
    \mathrm{Tap}(r_{ij})  = & 20\left ( \frac{r_{ij}}{R_{cut}} \right )^7 -
                            70\left ( \frac{r_{ij}}{R_{cut}} \right )^6 +
@@ -63,8 +63,8 @@ calculating the normals.
 .. note::
 
    To account for the isotropic nature of the isolated gold atom
-   electron cloud, their corresponding normal vectors (`{\bf n}_i`) are
-   assumed to lie along the interatomic vector `{\bf r}_ij`. Notably, this
+   electron cloud, their corresponding normal vectors (`\mathbf{n}_i`) are
+   assumed to lie along the interatomic vector `\mathbf{r}_ij`. Notably, this
    assumption is suitable for many bulk material surfaces, for
    example, for systems possessing s-type valence orbitals or
    metallic surfaces, whose valence electrons are mostly
