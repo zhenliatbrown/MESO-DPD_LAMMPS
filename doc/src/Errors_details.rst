@@ -1,12 +1,15 @@
-Error and warning details
-=========================
+Errors and warnings details
+===========================
 
-Many errors or warnings are self-explanatory and thus straightforward to
-resolve.  However, there are also cases, where there is no single cause
-and explanation, where LAMMPS can only detect symptoms of an error but
-not the exact cause, or where the explanation needs to be more detailed
-than what can be fit into a message printed by the program.  The
-following are discussions of such cases.
+Many errors and warnings that LAMMPS outputs are self-explanatory and
+thus straightforward to resolve.  However, there are also cases, where
+there is no single cause and explanation.  LAMMPS can only detect
+symptoms of an error but not name the exact cause, or the explanation
+needs to be more detailed than what can be fit into a short message
+printed by the program.  The following are discussions of such cases;
+first on a more general level and then for specific cases.  In the
+latter cases, LAMMPS will output a short message and then provide
+a URL that links to a specific section on this page.
 
 .. contents::
 

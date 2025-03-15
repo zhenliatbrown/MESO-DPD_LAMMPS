@@ -1,11 +1,15 @@
 Warning messages
 ================
 
-This is an alphabetic list of the WARNING messages LAMMPS prints out
-and the reason why.  If the explanation here is not sufficient, the
-documentation for the offending command may help.  Warning messages
-also list the source file and line number where the warning was
-generated.  For example, a message like this:
+This is an alphabetic list of some of the WARNING messages LAMMPS prints
+out and the reason why.  If the explanation here is not sufficient, the
+documentation for the offending command may help.  This is a historic
+list and no longer updated.  Instead the LAMMPS developers are trying
+to provide more details right with the error message or link to a
+paragraph with :doc:`detailed explanations <Errors_details>`.
+
+Warning messages also list the source file and line number where the
+warning was generated.  For example, a message like this:
 
 .. parsed-literal::
 
@@ -14,7 +18,7 @@ generated.  For example, a message like this:
 means that line #187 in the file src/domain.cpp generated the error.
 Looking in the source code may help you figure out what went wrong.
 
-Doc page with :doc:`ERROR messages <Errors_messages>`
+Please also see the page with :doc:`Error messages <Errors_messages>`
 
 ----------
 
