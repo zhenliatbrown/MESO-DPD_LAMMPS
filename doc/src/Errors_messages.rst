@@ -22,16 +22,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 
 ----------
 
-*1-3 bond count is inconsistent*
-   An inconsistency was detected when computing the number of 1-3
-   neighbors for each atom.  This likely means something is wrong with
-   the bond topologies you have defined.
-
-*1-4 bond count is inconsistent*
-   An inconsistency was detected when computing the number of 1-4
-   neighbors for each atom.  This likely means something is wrong with
-   the bond topologies you have defined.
-
 *Accelerator sharing is not currently supported on system*
    Multiple MPI processes cannot share the accelerator on your
    system. For NVIDIA GPUs, see the nvidia-smi command to change this
