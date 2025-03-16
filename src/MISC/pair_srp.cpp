@@ -35,6 +35,7 @@ Please contact Timothy Sirk for questions (tim.sirk@us.army.mil).
 #include "error.h"
 #include "fix_srp.h"
 #include "force.h"
+#include "info.h"
 #include "memory.h"
 #include "modify.h"
 #include "neigh_list.h"
@@ -493,7 +494,9 @@ void PairSRP::init_style()
 
 double PairSRP::init_one(int i, int j)
 {
- if (setflag[i][j] == 0) error->all(FLERR,"PairSRP: All pair coeffs are not set");
+ if (setflag[i][j] == 0)
+   error->all(FLERR, Error::NOLASTLINE,
+              "All pair coeffs are not set. Status\n" + Info::get_pair_coeff_status(lmp));
 
   cut[j][i] = cut[i][j];
   a0[j][i] = a0[i][j];

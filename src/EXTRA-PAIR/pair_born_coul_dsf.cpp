@@ -19,10 +19,10 @@
 
 #include "pair_born_coul_dsf.h"
 
-#include <cmath>
 #include "atom.h"
 #include "comm.h"
 #include "force.h"
+#include "info.h"
 #include "neighbor.h"
 #include "neigh_list.h"
 #include "math_const.h"
@@ -30,6 +30,7 @@
 #include "error.h"
 #include "math_special.h"
 
+#include <cmath>
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
