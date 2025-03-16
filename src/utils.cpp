@@ -281,7 +281,13 @@ void utils::fmtargs_print(FILE *fp, fmt::string_view format, fmt::format_args ar
 
 std::string utils::errorurl(int errorcode)
 {
-  return fmt::format("\nFor more information see https://docs.lammps.org/err{:04d}", errorcode);
+  std::string url;
+  try {
+    url = fmt::format("\nFor more information see https://docs.lammps.org/err{:04d}", errorcode);
+  } catch (std::exception &) {
+    url = std::string("\nFor more information see https://docs.lammps.org/Errors_details.html");
+  }
+  return url;
 }
 
 void utils::flush_buffers(LAMMPS *lmp)
