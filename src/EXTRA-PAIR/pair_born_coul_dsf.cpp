@@ -279,7 +279,7 @@ void PairBornCoulDSF::coeff(int narg, char **arg)
 void PairBornCoulDSF::init_style()
 {
   if (!atom->q_flag)
-    error->all(FLERR,"Pair style born/coul/dsf requires atom attribute q");
+    error->all(FLERR, Error::NOLASTLINE, "Pair style born/coul/dsf requires atom attribute q");
 
   neighbor->add_request(this);
 
@@ -296,7 +296,9 @@ void PairBornCoulDSF::init_style()
 
 double PairBornCoulDSF::init_one(int i, int j)
 {
-  if (setflag[i][j] == 0) error->all(FLERR,"All pair coeffs are not set");
+  if (setflag[i][j] == 0)
+    error->all(FLERR, Error::NOLASTLINE,
+               "All pair coeffs are not set. Status:\n" + Info::get_pair_coeff_status(lmp));
 
   double cut = MAX(cut_lj[i][j],cut_coul);
   cut_ljsq[i][j] = cut_lj[i][j] * cut_lj[i][j];
