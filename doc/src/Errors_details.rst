@@ -395,44 +395,52 @@ Lost atoms ...
 --------------
 
 A simulation stopping with an error due to lost atoms can have multiple
-causes. In the majority of cases, lost atoms are unexpected and a result
-of extremely high velocities causing instabilities in the system, and
-those velocities can result from a variety of issues. For ideas on how
-to track down issues with unexpected lost atoms, see :ref:`Fast moving
-atoms <hint05>` and :ref:`Neighbor list settings <hint09>` in the
-general troubleshooting section above. In specific situations however,
-losing atoms is expected material behavior (e.g. with sputtering and
-surface evaporation simulations) and an unwanted crash can be resolved
-by changing the :doc:`thermo_modify lost <thermo_modify>` keyword from
-the default 'error' to 'warn' or 'ignore' (though heed the advice in
-:ref:`Ignoring lost atoms <hint06>` above!).
+causes.  By default, LAMMPS checks for whether the total number of atoms
+is consistent with the sum of atoms "owned" by MPI processors every time
+that thermodynamic output is written.  In the majority of cases, lost
+atoms are unexpected and a result of extremely high velocities causing
+instabilities in the system, and those velocities can result from a
+variety of issues.  For ideas on how to track down issues with
+unexpected lost atoms, see :ref:`Fast moving atoms <hint05>` and
+:ref:`Neighbor list settings <hint09>` in the general troubleshooting
+section above.  In specific situations however, losing atoms is expected
+material behavior (e.g. with sputtering and surface evaporation
+simulations) and an unwanted crash can be resolved by changing the
+:doc:`thermo_modify lost <thermo_modify>` keyword from the default
+'error' to 'warn' or 'ignore' (though heed the advice in :ref:`Ignoring
+lost atoms <hint06>` above!).
 
 .. _err0009:
 
 Too many neighbor bins
 ----------------------
 
-The simulation box has become too large relative to the size of a
-neighbor bin and LAMMPS is unable to store the needed number of
-bins. This typically implies the simulation box has expanded too far.
-This can happen when some atoms move rapidly apart with shrink-wrap boundaries
-or when a fix (like fix deform or a barostat) excessively grows the simulation
-box.
+The simulation box is or has become too large relative to the size of a
+neighbor bin (which in turn depends on the largest pair-wise cutoff by
+default) and LAMMPS is unable to store the needed number of bins.  This
+typically implies the simulation box has expanded too far.  That can
+happen when some atoms move rapidly apart with shrink-wrap boundaries or
+when a fix (like fix deform or a barostat) excessively grows the
+simulation box.  This can also happen, if the largest pair-wise cutoff
+is small.  In this case, the error can be avoided by using the
+:doc:`neigh_modify command <neigh_modify>` to set the bin width to a
+suitably large value.
 
 .. _err0010:
 
-Unrecognized pair style ... is part of ... package which is not enabled in this LAMMPS binary
----------------------------------------------------------------------------------------------
+Unrecognized ... style ... is part of ... package which is not enabled in this LAMMPS binary
+--------------------------------------------------------------------------------------------
 
-The LAMMPS executable (binary) being used was not compiled with a package
-containing the specified pair style. This indicates that the executable needs to
-be re-built after enabling the correct package in the relevant Makefile or CMake
-build directory. See :doc:`Section 3. Build LAMMPS <Build>` for more details.
-One can check if the expected package and pair style is present in the
-executable by running it with the ``-help`` (or ``-h``) flag on the command
-line. One common oversight, especially for beginner LAMMPS users, is to enable
-the package, but to forget to run commands to rebuild (e.g., to run the final
-``make`` or ``cmake`` command).
+The LAMMPS executable (binary) being used was not compiled with a
+package containing the specified style.  This indicates that the
+executable needs to be re-built after enabling the correct package in
+the relevant Makefile or CMake build directory. See
+:doc:`Section 3. Build LAMMPS <Build>` for more details.  One can check
+if the expected package and pair style is present in the executable by
+running it with the ``-help`` (or ``-h``) flag on the command line. One
+common oversight, especially for beginner LAMMPS users, is to enable the
+package, but to forget to run commands to rebuild (e.g., to run the
+final ``make`` or ``cmake`` command).
 
 If this error is occurring with an executable that the user does not control
 (e.g., through a module on HPC clusters), the user will need to get in contact
@@ -770,9 +778,10 @@ with periodic boundaries or larger than the box with non-periodic
 boundaries.  It means that the positions and image flags have become
 inconsistent.  LAMMPS will still compute bonded interactions based on
 the closest periodic images of the atoms and thus in most cases the
-results will be correct.  Nevertheless, it is good practice to update
-the system so that the message does not appear.  It will help with
-future manipulations of the system.
+results will be correct.  However they can cause problems when such
+atoms are used with the fix rigid or replicate commands.  Thus, it is
+good practice to update the system so that the message does not appear.
+It will help with future manipulations of the system.
 
 There is one case where this warning *must* appear: when you have a
 chain of connected bonds that pass through the entire box and connect
