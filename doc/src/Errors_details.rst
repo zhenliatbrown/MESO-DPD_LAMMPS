@@ -868,3 +868,15 @@ keyword, LAMMPS stops with the 'Invalid thermo keyword' error.  But it
 is also possible, that there is just a typo in the name of a valid
 variable function.  Thus it is recommended to check the failing variable
 expression very carefully.
+
+.. _err0032:
+
+One or more atoms are time integrated more than once
+----------------------------------------------------
+
+This is probably an error since you typically do not want to advance the
+positions or velocities of an atom more than once per timestep.  This
+typically happens when there are multiple fix commands that advance atom
+positions with overlapping groups.  Also, for some fix styles it is not
+immediately obvious that they include time integration.  Please check
+the documentation carefully.
