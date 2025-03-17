@@ -330,7 +330,7 @@ void MSMCGOMP::particle_map()
   int i;
 
   if (!std::isfinite(boxlo[0]) || !std::isfinite(boxlo[1]) || !std::isfinite(boxlo[2]))
-    error->one(FLERR, Error::NOLASTLINE, "Non-numeric box dimensions - simulation unstable");
+    error->one(FLERR, Error::NOLASTLINE, "Non-numeric box dimensions - simulation unstable" + utils::errorurl(6));
 
   // XXX: O(N). is it worth to add OpenMP here?
   for (int j = 0; j < num_charged; j++) {

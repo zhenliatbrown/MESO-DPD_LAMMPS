@@ -350,7 +350,7 @@ void PPPMTIP4POMP::particle_map()
   const int nlocal = atom->nlocal;
 
   if (!std::isfinite(boxlox) || !std::isfinite(boxloy) || !std::isfinite(boxloz))
-    error->one(FLERR,"Non-numeric box dimensions - simulation unstable");
+    error->one(FLERR,"Non-numeric box dimensions - simulation unstable" + utils::errorurl(6));
 
   int flag = 0;
 #if defined(_OPENMP)

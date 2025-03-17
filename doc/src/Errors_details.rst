@@ -372,20 +372,22 @@ warning or turned off using the *lost/bond* keyword in the :doc:`thermo_modify
 
 .. _err0006:
 
-Non-numeric atom coords - simulation unstable
----------------------------------------------
-This error usually occurs due to issues with system geometry or the potential in
-use. See :ref:`Pressure, forces, positions becoming NaN or Inf <hint07>` above in the
-general troubleshooting section.
+Non-numeric atom coords or pressure or box dimensions - simulation unstable
+---------------------------------------------------------------------------
 
-.. _err0007:
+This kind of error usually occurs due to issues with system geometry or
+the potential in use, or too aggressive simulation settings.  See
+:ref:`Pressure, forces, positions becoming NaN or Inf <hint07>` above in
+the general troubleshooting section.  It is more likely to happen during
+equilibration, so it can help to do a minimization before or even add a
+second or third minimization after running a few equilibration MD steps.
+It also is more likely when using a Nose-Hoover barostat directly, and
+thus it may be advisable to run with only a thermostat for a bit until
+the potential energy has stabilized.
 
-Non-numeric pressure - simulation unstable
-------------------------------------------
-This error usually occurs due to issues with system geometry or the potential in
-use. See :ref:`Pressure, forces, positions becoming NaN or Inf <hint07>` above in the
-general troubleshooting section.
+.. _err007:
 
+.. currently unused
 
 .. _err0008:
 
@@ -435,6 +437,10 @@ the package, but to forget to run commands to rebuild (e.g., to run the final
 If this error is occurring with an executable that the user does not control
 (e.g., through a module on HPC clusters), the user will need to get in contact
 with the relevant person or people who can update the executable.
+
+.. _err011:
+
+.. currently unused
 
 .. _err0012:
 
