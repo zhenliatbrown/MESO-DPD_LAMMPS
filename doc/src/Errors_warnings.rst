@@ -270,23 +270,6 @@ Please also see the page with :doc:`Error messages <Errors_messages>`
    The topology contains impropers, but there are no improper forces computed
    since there was no improper_style command.
 
-*Inconsistent image flags*
-   The image flags for a pair on bonded atoms appear to be inconsistent.
-   Inconsistent means that when the coordinates of the two atoms are
-   unwrapped using the image flags, the two atoms are far apart.
-   Specifically they are further apart than half a periodic box length.
-   Or they are more than a box length apart in a non-periodic dimension.
-   This is usually due to the initial data file not having correct image
-   flags for the two atoms in a bond that straddles a periodic boundary.
-   They should be different by 1 in that case.  This is a warning because
-   inconsistent image flags will not cause problems for dynamics or most
-   LAMMPS simulations.  However they can cause problems when such atoms
-   are used with the fix rigid or replicate commands.  Note that if you
-   have an infinite periodic crystal with bonds then it is impossible to
-   have fully consistent image flags, since some bonds will cross
-   periodic boundaries and connect two atoms with the same image
-   flag.
-
 *Increasing communication cutoff for GPU style*
    The pair style has increased the communication cutoff to be consistent with
    the communication cutoff requirements for this pair style when run on the GPU.
@@ -345,10 +328,6 @@ Please also see the page with :doc:`Error messages <Errors_messages>`
 *Mismatch between velocity and compute groups*
    The temperature computation used by the velocity command will not be
    on the same group of atoms that velocities are being set for.
-
-*Molecule attributes do not match system attributes*
-   An attribute is specified (e.g. diameter, charge) that is
-   not defined for the specified atom style.
 
 *Molecule has bond topology but no special bond settings*
    This means the bonded atoms will not be excluded in pairwise

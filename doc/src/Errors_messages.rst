@@ -74,18 +74,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    a particular processor.  The pairwise cutoff is too short or the atoms
    are too far apart to make a valid angle.
 
-*Angle atoms %d %d %d missing on proc %d at step %ld*
-   One or more of three atoms needed to compute a particular angle are
-   missing on this processor.  Typically this is because the pairwise
-   cutoff is set too short or the angle has blown apart and an atom is
-   too far away.
-
-*Angle atoms missing on proc %d at step %ld*
-   One or more of three atoms needed to compute a particular angle are
-   missing on this processor.  Typically this is because the pairwise
-   cutoff is set too short or the angle has blown apart and an atom is
-   too far away.
-
 *Angle coeff for hybrid has invalid style*
    Angle style hybrid uses another angle style as one of its
    coefficients.  The angle style used in the angle_coeff command or read
@@ -305,25 +293,10 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    bond on a particular processor.  The pairwise cutoff is too short or
    the atoms are too far apart to make a valid bond.
 
-*Bond atom missing in image check*
-   The second atom in a particular bond is missing on this processor.
-   Typically this is because the pairwise cutoff is set too short or the
-   bond has blown apart and an atom is too far away.
-
 *Bond atom missing in set command*
    The set command cannot find one or more atoms in a particular bond on
    a particular processor.  The pairwise cutoff is too short or the atoms
    are too far apart to make a valid bond.
-
-*Bond atoms %d %d missing on proc %d at step %ld*
-   The second atom needed to compute a particular bond is missing on this
-   processor.  Typically this is because the pairwise cutoff is set too
-   short or the bond has blown apart and an atom is too far away.
-
-*Bond atoms missing on proc %d at step %ld*
-   The second atom needed to compute a particular bond is missing on this
-   processor.  Typically this is because the pairwise cutoff is set too
-   short or the bond has blown apart and an atom is too far away.
 
 *Bond coeff for hybrid has invalid style*
    Bond style hybrid uses another bond style as one of its coefficients.
@@ -1070,11 +1043,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    This is a current limitation of the GPU implementation
    in LAMMPS.
 
-*Cannot use neighbor bins - box size << cutoff*
-   Too many neighbor bins will be created.  This typically happens when
-   the simulation box is very small in some dimension, compared to the
-   neighbor cutoff.  Use the "nsq" style instead of "bin" style.
-
 *Cannot use non-zero forces in an energy minimization*
    Fix setforce cannot be used in this manner.  Use fix addforce
    instead.
@@ -1217,12 +1185,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Compute chunk/atom bin/sphere radius is too large for periodic box*
    Radius cannot be bigger than 1/2 of any periodic dimension.
 
-*Compute chunk/atom compute array is accessed out-of-range*
-   The index for the array is out of bounds.
-
-*Compute chunk/atom fix array is accessed out-of-range*
-   The index for the array is out of bounds.
-
 *Compute chunk/atom ids once but nchunk is not once*
    You cannot assign chunks IDs to atom permanently if the number of
    chunks may change.
@@ -1333,29 +1295,11 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    Only inputs that generate the same number of datums can be used
    together.  E.g. bond and angle quantities cannot be mixed.
 
-*Compute reduce compute array is accessed out-of-range*
-   An index for the array is out of bounds.
-
 *Compute reduce compute calculates global values*
    A compute that calculates peratom or local values is required.
 
-*Compute reduce fix array is accessed out-of-range*
-   An index for the array is out of bounds.
-
 *Compute reduce fix calculates global values*
    A fix that calculates peratom or local values is required.
-
-*Compute slice compute array is accessed out-of-range*
-   An index for the array is out of bounds.
-
-*Compute slice compute vector is accessed out-of-range*
-   The index for the vector is out of bounds.
-
-*Compute slice fix array is accessed out-of-range*
-   An index for the array is out of bounds.
-
-*Compute slice fix vector is accessed out-of-range*
-   The index for the vector is out of bounds.
 
 *Compute stress/atom temperature ID does not compute temperature*
    The specified compute must compute temperature.
@@ -1654,11 +1598,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Delete_bonds command with no atoms existing*
    No atoms are yet defined so the delete_bonds command cannot be used.
 
-*Did not assign all atoms correctly*
-   Atoms read in from a data file were not assigned correctly to
-   processors.  This is likely due to some atom coordinates being
-   outside a non-periodic simulation box.
-
 *Did not assign all restart atoms correctly*
    Atoms read in from the restart file were not assigned correctly to
    processors.  This is likely due to some atom coordinates being outside
@@ -1696,18 +1635,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    The set command cannot find one or more atoms in a particular dihedral
    on a particular processor.  The pairwise cutoff is too short or the
    atoms are too far apart to make a valid dihedral.
-
-*Dihedral atoms %d %d %d %d missing on proc %d at step %ld*
-   One or more of 4 atoms needed to compute a particular dihedral are
-   missing on this processor.  Typically this is because the pairwise
-   cutoff is set too short or the dihedral has blown apart and an atom is
-   too far away.
-
-*Dihedral atoms missing on proc %d at step %ld*
-   One or more of 4 atoms needed to compute a particular dihedral are
-   missing on this processor.  Typically this is because the pairwise
-   cutoff is set too short or the dihedral has blown apart and an atom is
-   too far away.
 
 *Dihedral charmm is incompatible with Pair style*
    Dihedral style charmm must be used with a pair style charmm
@@ -1768,11 +1695,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Divide by 0 in influence function of pair peri/lps*
    This should not normally occur.  It is likely a problem with your
    model.
-
-*Domain too large for neighbor bins*
-   The domain has become extremely large so that neighbor bins cannot be
-   used.  Most likely, one or more atoms have been blown out of the
-   simulation box to a great distance.
 
 *Dump atom/gz only writes compressed files*
    The dump atom/gz output file name must have a .gz suffix.
@@ -1854,11 +1776,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Empty brackets in variable*
    There is no variable syntax that uses empty brackets.  Check
    the variable doc page.
-
-*Energy was not tallied on needed timestep*
-   You are using a thermo keyword that requires potentials to
-   have tallied energy, but they did not on this timestep.  See the
-   variable page for ideas on how to make this work.
 
 *Epsilon or sigma reference not set by pair style in ewald/n*
    The pair style is not providing the needed epsilon or sigma values.
@@ -1955,12 +1872,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Fix ave/chunk does not use chunk/atom compute*
    The specified compute is not for a compute chunk/atom command.
 
-*Fix ave/correlate compute vector is accessed out-of-range*
-   The index for the vector is out of bounds.
-
-*Fix ave/correlate fix vector is accessed out-of-range*
-   The index for the vector is out of bounds.
-
 *Fix ave/histo inputs are not all global, peratom, or local*
    All inputs in a single fix ave/histo command must be of the
    same style.
@@ -1972,18 +1883,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 
 *Fix ave/time cannot use variable with vector mode*
    Variables produce scalar values.
-
-*Fix ave/time compute array is accessed out-of-range*
-   An index for the array is out of bounds.
-
-*Fix ave/time compute vector is accessed out-of-range*
-   The index for the vector is out of bounds.
-
-*Fix ave/time fix array is accessed out-of-range*
-   An index for the array is out of bounds.
-
-*Fix ave/time fix vector is accessed out-of-range*
-   The index for the vector is out of bounds.
 
 *Fix balance rcb cannot be used with comm_style brick*
    Comm_style tiled must be used instead.
@@ -2560,18 +2459,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    on a particular processor.  The pairwise cutoff is too short or the
    atoms are too far apart to make a valid improper.
 
-*Improper atoms %d %d %d %d missing on proc %d at step %ld*
-   One or more of 4 atoms needed to compute a particular improper are
-   missing on this processor.  Typically this is because the pairwise
-   cutoff is set too short or the improper has blown apart and an atom is
-   too far away.
-
-*Improper atoms missing on proc %d at step %ld*
-   One or more of 4 atoms needed to compute a particular improper are
-   missing on this processor.  Typically this is because the pairwise
-   cutoff is set too short or the improper has blown apart and an atom is
-   too far away.
-
 *Improper coeff for hybrid has invalid style*
    Improper style hybrid uses another improper style as one of its
    coefficients.  The improper style used in the improper_coeff command
@@ -2680,10 +2567,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 
 *Incorrect element names in EAM potential file*
    The element names in the EAM file do not match those requested.
-
-*Incorrect format of ... section in data file*
-   Number or type of values per line in the given section of the data file
-   is not consistent with the requirements for this section.
 
 *Incorrect format in COMB potential file*
    Incorrect number of words per line in the potential file.
@@ -3213,9 +3096,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    The template indices must be between 1 to N, where N is the number of
    molecules in the template.
 
-*Invalid thermo keyword in variable formula*
-   The keyword is not recognized.
-
 *Invalid threads_per_atom specified.*
    For 3-body potentials on the GPU, the threads_per_atom setting cannot be
    greater than 4 for NVIDIA GPUs.
@@ -3378,13 +3258,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Lost atoms via balance: original %ld current %ld*
    This should not occur.  Report the problem to the developers.
 
-*Lost atoms: original %ld current %ld*
-   Lost atoms are checked for each time thermo output is done.  See the
-   thermo_modify lost command for options.  Lost atoms usually indicate
-   bad dynamics, e.g. atoms have been blown far out of the simulation
-   box, or moved further than one processor's subdomain away before
-   reneighboring.
-
 *MEAM library error %d*
    A call to the MEAM Fortran library returned an error.
 
@@ -3445,9 +3318,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    The IDs must not be larger than can be stored in a 32-bit integer
    since chunk IDs are 32-bit integers.
 
-*Molecule auto special bond generation overflow*
-   Counts exceed maxspecial setting for other atoms in system.
-
 *Molecule file shake flags not before shake atoms*
    The order of the two sections is important.
 
@@ -3459,16 +3329,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 
 *Molecule file special list does not match special count*
    The number of values in an atom's special list does not match count.
-
-*Molecule topology/atom exceeds system topology/atom*
-   The number of bonds, angles, etc per-atom in the molecule exceeds the
-   system setting.  See the create_box command for how to specify these
-   values.
-
-*Molecule topology type exceeds system topology type*
-   The number of bond, angle, etc types in the molecule exceeds the
-   system setting.  See the create_box command for how to specify these
-   values.
 
 *More than one fix deform*
    Only one fix deform can be defined at a time.
@@ -3749,16 +3609,8 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    Swap frequency in temper command must evenly divide the total # of
    timesteps.
 
-*Non-numeric box dimensions - simulation unstable*
-   The box size has apparently blown up.
-
 *Number of core atoms != number of shell atoms*
    There must be a one-to-one pairing of core and shell atoms.
-
-*Numeric index is out of bounds*
-   A command with an argument that specifies an integer or range of
-   integers is using a value that is less than 1 or greater than the
-   maximum allowed limit.
 
 *One or more Atom IDs is negative*
    Atom IDs must be positive integers.
@@ -3777,51 +3629,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *One or zero atoms in rigid body*
    Any rigid body defined by the fix rigid command must contain 2 or more
    atoms.
-
-*Out of range atoms - cannot compute MSM*
-   One or more atoms are attempting to map their charge to a MSM grid point
-   that is not owned by a processor.  This is likely for one of two
-   reasons, both of them bad.  First, it may mean that an atom near the
-   boundary of a processor's subdomain has moved more than 1/2 the
-   :doc:`neighbor skin distance <neighbor>` without neighbor lists being
-   rebuilt and atoms being migrated to new processors.  This also means
-   you may be missing pairwise interactions that need to be computed.
-   The solution is to change the re-neighboring criteria via the
-   :doc:`neigh_modify <neigh_modify>` command.  The safest settings are
-   "delay 0 every 1 check yes".  Second, it may mean that an atom has
-   moved far outside a processor's subdomain or even the entire
-   simulation box. This indicates bad physics, e.g. due to highly
-   overlapping atoms, too large a timestep, etc.
-
-*Out of range atoms - cannot compute PPPM*
-   One or more atoms are attempting to map their charge to a PPPM grid
-   point that is not owned by a processor.  This is likely for one of two
-   reasons, both of them bad.  First, it may mean that an atom near the
-   boundary of a processor's subdomain has moved more than 1/2 the
-   :doc:`neighbor skin distance <neighbor>` without neighbor lists being
-   rebuilt and atoms being migrated to new processors.  This also means
-   you may be missing pairwise interactions that need to be computed.
-   The solution is to change the re-neighboring criteria via the
-   :doc:`neigh_modify <neigh_modify>` command.  The safest settings are
-   "delay 0 every 1 check yes".  Second, it may mean that an atom has
-   moved far outside a processor's subdomain or even the entire
-   simulation box. This indicates bad physics, e.g. due to highly
-   overlapping atoms, too large a timestep, etc.
-
-*Out of range atoms - cannot compute PPPMDisp*
-   One or more atoms are attempting to map their charge to a PPPM grid
-   point that is not owned by a processor.  This is likely for one of two
-   reasons, both of them bad.  First, it may mean that an atom near the
-   boundary of a processor's subdomain has moved more than 1/2 the
-   :doc:`neighbor skin distance <neighbor>` without neighbor lists being
-   rebuilt and atoms being migrated to new processors.  This also means
-   you may be missing pairwise interactions that need to be computed.
-   The solution is to change the re-neighboring criteria via the
-   :doc:`neigh_modify <neigh_modify>` command.  The safest settings are
-   "delay 0 every 1 check yes".  Second, it may mean that an atom has
-   moved far outside a processor's subdomain or even the entire
-   simulation box. This indicates bad physics, e.g. due to highly
-   overlapping atoms, too large a timestep, etc.
 
 *Overflow of allocated fix vector storage*
    This should not normally happen if the fix correctly calculated
@@ -4342,18 +4149,8 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Per-atom compute in equal-style variable formula*
    Equal-style variables cannot use per-atom quantities.
 
-*Per-atom energy was not tallied on needed timestep*
-   You are using a thermo keyword that requires potentials to
-   have tallied energy, but they did not on this timestep.  See the
-   variable page for ideas on how to make this work.
-
 *Per-atom fix in equal-style variable formula*
    Equal-style variables cannot use per-atom quantities.
-
-*Per-atom virial was not tallied on needed timestep*
-   You are using a thermo keyword that requires potentials to have
-   tallied the virial, but they did not on this timestep.  See the
-   variable page for ideas on how to make this work.
 
 *Per-processor system is too big*
    The number of owned atoms plus ghost atoms on a single
@@ -4717,10 +4514,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    See the extra/improper/per/atom keyword for the create_box
    or the read_data command to set this limit larger
 
-*Substitution for illegal variable*
-   Input script line contained a variable that could not be substituted
-   for.
-
 *Support for writing images in JPEG format not included*
    LAMMPS was not built with the -DLAMMPS_JPEG switch in the Makefile.
 
@@ -4924,10 +4717,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Too many molecules for fix rigid*
    The limit is 2\^31 = ~2 billion molecules.
 
-*Too many neighbor bins*
-   This is likely due to an immense simulation box that has blown up
-   to a large size.
-
 *Too many timesteps*
    The cumulative timesteps must fit in a 64-bit integer.
 
@@ -5019,56 +4808,11 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
    A universe or uloop style variable must specify a number of values >= to the
    number of processor partitions.
 
-*Unrecognized angle style*
-   The choice of angle style is unknown.
-
-*Unrecognized atom style*
-   The choice of atom style is unknown.
-
-*Unrecognized body style*
-   The choice of body style is unknown.
-
-*Unrecognized bond style*
-   The choice of bond style is unknown.
-
-*Unrecognized command: %s*
-   The command is not known to LAMMPS.  Check the input script.
-
-*Unrecognized compute style*
-   The choice of compute style is unknown.
-
-*Unrecognized dihedral style*
-   The choice of dihedral style is unknown.
-
-*Unrecognized dump reader style*
-   The choice of dump reader style via the format keyword is unknown.
-
-*Unrecognized dump style*
-   The choice of dump style is unknown.
-
-*Unrecognized fix style*
-   The choice of fix style is unknown.
-
-*Unknown identifier in data file: %s*
-   A section of the data file cannot be read by LAMMPS.
-
-*Unrecognized improper style*
-   The choice of improper style is unknown.
-
 *Unknown keyword in thermo_style custom command*
    One or more specified keywords are not recognized.
 
-*Unrecognized kspace style*
-   The choice of kspace style is unknown.
-
-*Unrecognized pair style*
-   The choice of pair style is unknown.
-
 *Unknown pair_modify hybrid sub-style*
    The choice of sub-style is unknown.
-
-*Unrecognized region style*
-   The choice of region style is unknown.
 
 *Unknown table style in pair_style command*
    Style of table is invalid for use with pair_style table command.
@@ -5259,11 +5003,6 @@ Please also see the page with :doc:`Warning messages <Errors_warnings>`.
 *Verlet/split requires Rspace partition size be multiple of Kspace partition size*
    This is so there is an equal number of Rspace processors for every
    Kspace processor.
-
-*Virial was not tallied on needed timestep*
-   You are using a thermo keyword that requires potentials to
-   have tallied the virial, but they did not on this timestep.  See the
-   variable page for ideas on how to make this work.
 
 *Voro++ error: narea and neigh have a different size*
    This error is returned by the Voro++ library.
