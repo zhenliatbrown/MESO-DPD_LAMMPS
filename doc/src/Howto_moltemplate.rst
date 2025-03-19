@@ -182,7 +182,7 @@ Compile the master file with:
 (Note: The optioinal "cleanup_moltemplate.sh" command deletes
 unused atom types, which sometimes makes LAMMPS run faster.
 But it does not work with many-body pair styles or dreiding-style h-bonds.
-Fortunately most force fields, including OPLSAA, don't use those features.) 
+Fortunately most force fields, including OPLSAA, don't use those features.)
 
 Then execute the simulation with the following:
 
@@ -251,7 +251,7 @@ The ``butane.lt`` file below defines Butane as a polymer containing
    }
 
    Butane inherits OPLSAA {
-     
+
      create_var {$mol}  # optional:force all monomers to share the same molecule-ID
 
      # - Create 4 monomers
@@ -287,7 +287,7 @@ subunit to define even larger molecules.  See the moltemplate manual for details
 How to build a complex polymer
 """"""""""""""""""""""""""""""""""""""""""
 A similar procedure can be used to create more complicated polymers,
-such as the NIPAM polymer example shown below.  For details, see: 
+such as the NIPAM polymer example shown below.  For details, see:
 
 https://github.com/jewettaij/moltemplate/tree/master/examples/all_atom/force_field_OPLSAA/NIPAM_polymer+water+ions
 
