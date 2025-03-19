@@ -565,7 +565,7 @@ LAMMPS bundles a selection of potential files in the ``potentials``
 folder as examples of how those kinds of potential files look like and
 for use with the provided input examples in the ``examples`` tree.  To
 keep the size of the distributed LAMMPS source package small, very large
-potential files (> 5 MByte) are not bundled, but only downloaded on
+potential files (> 5 MBytes) are not bundled, but only downloaded on
 demand when the :doc:`corresponding package <Packages_list>` is
 installed.  This automatic download can be prevented when :doc:`building
 LAMMPS with CMake <Build_cmake>` by adding the setting `-D
