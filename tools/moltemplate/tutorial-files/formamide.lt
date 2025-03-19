@@ -15,21 +15,21 @@ import /usr/local/moltemplate/moltemplate/force_fields/oplsaa2024.lt
 
 _FAM inherits OPLSAA {
 
-  # atomID    molID  atomType  charge  coordX  coordY  coordZ
+  # atomID    molID  atomType  charge   coordX       coordY        coordZ
   write('Data Atoms') {
-    $atom:C00 $mol   @atom:235  0.00    0.100   0.490   0.0
-    $atom:O01 $mol   @atom:236  0.00    1.091  -0.250   0.0
-    $atom:N02 $mol   @atom:237  0.00   -1.121  -0.181   0.0
-    $atom:H03 $mol   @atom:240  0.00   -2.013   0.272   0.0
-    $atom:H04 $mol   @atom:240  0.00   -1.056  -1.190   0.0
-    $atom:H05 $mol   @atom:279  0.00    0.144   1.570   0.0
+    $atom:C00  $mol  @atom:235  0.00    0.100014490    0.490422099    0.0
+    $atom:O01  $mol  @atom:236  0.00    1.091153187   -0.250749643    0.0
+    $atom:N02  $mol  @atom:237  0.00   -1.121616690   -0.181085754    0.0
+    $atom:H03  $mol  @atom:240  0.00   -2.013715893    0.272535813    0.0
+    $atom:H04  $mol  @atom:240  0.00   -1.056768463   -1.190185868    0.0
+    $atom:H05  $mol  @atom:279  0.00    0.144676387    1.570292021    0.0
   }
 
   # Note: You don't have to specify the charge in this example because we are
   #       using the OPLSAA force-field which assigns charge according to
   #       atom-type.  Just leave these numbers as 0.00 for now.
   # Note: LAMMPS expects an integer in the 2nd column (the Molecule-ID number).
-  #     If we put "$mol:." there, moltemplate will generate this integer for you
+  #     If we put "$mol" there, moltemplate will generate this integer for you
 
   # A list of the bonds in the molecule:
   # BondID     AtomID1  AtomID2

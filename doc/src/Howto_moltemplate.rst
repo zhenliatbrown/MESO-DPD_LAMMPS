@@ -50,12 +50,12 @@ The resulting file (``formamide.lt``) follows:
 
      # atomID    molID  atomType  charge  coordX  coordY  coordZ
      write('Data Atoms') {
-       $atom:C00 $mol   @atom:235  0.00    0.100   0.490   0.0
-       $atom:O01 $mol   @atom:236  0.00    1.091  -0.250   0.0
-       $atom:N02 $mol   @atom:237  0.00   -1.121  -0.181   0.0
-       $atom:H03 $mol   @atom:240  0.00   -2.013   0.272   0.0
-       $atom:H04 $mol   @atom:240  0.00   -1.056  -1.190   0.0
-       $atom:H05 $mol   @atom:279  0.00    0.144   1.570   0.0
+       $atom:C00  $mol  @atom:235  0.00    0.100   0.490   0.0
+       $atom:O01  $mol  @atom:236  0.00    1.091  -0.250   0.0
+       $atom:N02  $mol  @atom:237  0.00   -1.121  -0.181   0.0
+       $atom:H03  $mol  @atom:240  0.00   -2.013   0.272   0.0
+       $atom:H04  $mol  @atom:240  0.00   -1.056  -1.190   0.0
+       $atom:H05  $mol  @atom:279  0.00    0.144   1.570   0.0
      }
 
      # A list of the bonds in the molecule:
@@ -91,8 +91,8 @@ master file (``solv_01.lt``) follows:
 
    # Distribute the molecules on a 5x5x5 cubic grid with spacing 4.6
    solv = new _FAM [5].move( 4.6, 0, 0)
-                        [5].move( 0, 4.6, 0)
-                        [5].move( 0, 0, 4.6)
+                   [5].move( 0, 4.6, 0)
+                   [5].move( 0, 0, 4.6)
    solv[*][*][*].move(-11.5, -11.5, -11.5)
 
    # Set the simulation box.
