@@ -188,8 +188,8 @@ void Variable::set(int narg, char **arg)
 
   if (strcmp(arg[1], "delete") == 0) {
     if (narg > 2)
-      error->all(FLERR, 2, "Illegal variable delete command: expected 2 arguments but found {}",
-                 narg);
+      error->all(FLERR, 2, "Illegal variable delete command: expected 2 arguments but found {}{}",
+                 narg, utils::errorurl(3));
     if (find(arg[0]) >= 0) remove(find(arg[0]));
     return;
 
@@ -278,7 +278,7 @@ void Variable::set(int narg, char **arg)
       copy(num[nvar], &arg[2], data[nvar]);
     } else if (strcmp(arg[1], "uloop") == 0) {
       if (narg < 3 || narg > 4)
-        error->all(FLERR, 1, "Illegal variable command: expected 3 or 4 arguments but found {}: {}",
+        error->all(FLERR, 1, "Illegal variable command: expected 3 or 4 arguments but found {}{}",
                    narg, utils::errorurl(3));
       if (narg == 4 && strcmp(arg[3], "pad") != 0)
         error->all(FLERR, 3, "Invalid variable uloop argument: {}", arg[3]);

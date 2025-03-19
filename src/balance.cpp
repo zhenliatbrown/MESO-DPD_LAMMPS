@@ -377,8 +377,8 @@ void Balance::command(int narg, char **arg)
   bigint nblocal = atom->nlocal;
   MPI_Allreduce(&nblocal,&natoms,1,MPI_LMP_BIGINT,MPI_SUM,world);
   if (natoms != atom->natoms)
-    error->all(FLERR,"Lost atoms via balance: original {}  current {}"+utils::errorurl(8),
-               atom->natoms,natoms);
+    error->all(FLERR,Error::NOLASTLINE,"Lost atoms via balance: original {}  current {}"
+               +utils::errorurl(8),atom->natoms,natoms);
 
   // imbfinal = final imbalance
   // set disable = 1, so weights no longer migrate with atoms

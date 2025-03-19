@@ -335,7 +335,7 @@ void MSMCG::particle_map()
       flag = 1;
   }
 
-  if (flag) error->one(FLERR,"Out of range atoms - cannot compute MSM" + utils::errorurl(4));
+  if (flag) error->one(FLERR, Error::NOLASTLINE, "Out of range atoms - cannot compute MSM" + utils::errorurl(4));
 }
 
 /* ----------------------------------------------------------------------

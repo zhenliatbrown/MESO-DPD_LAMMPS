@@ -777,7 +777,7 @@ void PPPMDispIntel::particle_map_intel(double delx, double dely, double delz,
   }
   }
 
-  if (flag) error->one(FLERR,"Out of range atoms - cannot compute PPPMDisp" + utils::errorurl(4));
+  if (flag) error->one(FLERR, Error::NOLASTLINE, "Out of range atoms - cannot compute PPPMDisp" + utils::errorurl(4));
 }
 
 /* ----------------------------------------------------------------------

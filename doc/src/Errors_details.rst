@@ -347,8 +347,8 @@ long-range solver.
 
 .. _err0005:
 
-Bond (or angle, dihedral, or improper) atoms missing
-----------------------------------------------------
+Bond (or angle, dihedral, improper, cmap, or shake) atoms missing
+-----------------------------------------------------------------
 
 The second atom needed to compute a particular bond (or the third or fourth
 atom for angle, dihedral, or improper) is missing on the indicated timestep
