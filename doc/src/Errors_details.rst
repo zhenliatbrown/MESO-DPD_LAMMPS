@@ -387,7 +387,17 @@ the potential energy has stabilized.
 
 .. _err007:
 
-.. currently unused
+Fix used in ... not computed at compatible time
+-----------------------------------------------
+
+Many fix styles are invoked only every *nevery* timesteps, which means
+their data is only valid on those steps.  When data from a fix is used
+as input for a compute, a dump, another fix, or thermo output, it must
+read that data at timesteps when the fix in question was invoked, i.e.
+on timesteps that are multiples of its *nevery* setting.  If this is
+not the case, LAMMPS will stop with an error.  To remedy this, it may
+be required to change the output frequency or the *nevery* setting of
+the fix.
 
 .. _err0008:
 

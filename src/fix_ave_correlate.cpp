@@ -55,9 +55,10 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
 
   // expand args if any have wildcard character "*"
 
-  const int ioffset = 6;
+  int ioffset = 6;
   int expand = 0;
   char **earg;
+  char **oarg = arg;
   int *amap = nullptr;
   int nargnew = utils::expand_args(FLERR, narg - ioffset, &arg[ioffset], 0, earg, lmp, &amap);
 
@@ -99,7 +100,12 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
   char *title2 = nullptr;
   char *title3 = nullptr;
 
+  for (int i = 0; i < narg; ++i) {
+    if (strcmp(oarg[i],arg[iarg]) == 0)
+      ioffset = i - iarg;
+  }
   while (iarg < nargnew) {
+    int errptr = iarg + ioffset;
     if (strcmp(arg[iarg],"type") == 0) {
       if (iarg+2 > nargnew) utils::missing_cmd_args(FLERR, "fix ave/correlate type", error);
       if (strcmp(arg[iarg+1],"auto") == 0) type = AUTO;
@@ -109,13 +115,13 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
       else if (strcmp(arg[iarg+1],"auto/lower") == 0) type = AUTOLOWER;
       else if (strcmp(arg[iarg+1],"full") == 0) type = FULL;
       else if (strcmp(arg[iarg+1], "first") == 0) type = FIRST;
-      else error->all(FLERR, iarg+1, "Unknown fix ave/correlate type: {}");
+      else error->all(FLERR, errptr + 1, "Unknown fix ave/correlate type: {}", arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg],"ave") == 0) {
       if (iarg+2 > nargnew) utils::missing_cmd_args(FLERR, "fix ave/correlate ave", error);
       if (strcmp(arg[iarg+1],"one") == 0) ave = ONE;
       else if (strcmp(arg[iarg+1],"running") == 0) ave = RUNNING;
-      else error->all(FLERR, iarg+1, "Unknown fix ave/correlate ave mode: {}", arg[iarg+1]);
+      else error->all(FLERR, errptr+1, "Unknown fix ave/correlate ave mode: {}", arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg],"start") == 0) {
       if (iarg+2 > nargnew) utils::missing_cmd_args(FLERR, "fix ave/correlate start", error);
@@ -130,7 +136,7 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
       if (comm->me == 0) {
         fp = fopen(arg[iarg+1],"w");
         if (fp == nullptr)
-          error->one(FLERR, iarg+1, "Cannot open fix ave/correlate file {}:"" {}", arg[iarg+1],
+          error->one(FLERR, errptr+1, "Cannot open fix ave/correlate file {}:"" {}", arg[iarg+1],
                      utils::getsyserror());
       }
       iarg += 2;
@@ -152,7 +158,7 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
       delete[] title3;
       title3 = utils::strdup(arg[iarg+1]);
       iarg += 2;
-    } else error->all(FLERR, iarg, "Unkown fix ave/correlate keyword: {}", arg[iarg]);
+    } else error->all(FLERR, errptr, "Unkown fix ave/correlate keyword: {}", arg[iarg]);
   }
 
   // setup and error check
