@@ -198,6 +198,10 @@ folder that the dynamic loader searches or inside of the installed
 
          The ``PYTHONPATH`` needs to point to the parent folder that contains the ``lammps`` package!
 
+In case you run into an "externally-managed-environment" error when
+trying to install the LAMMPS Python module, please refer to
+:ref:`corresponding paragraph <externally_managed>` in the Python HOWTO
+page to learn about options for handling this error.
 
 To verify if LAMMPS can be successfully started from Python, start the
 Python interpreter, load the ``lammps`` Python module and create a
