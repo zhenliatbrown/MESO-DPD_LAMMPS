@@ -110,13 +110,16 @@ folder that the dynamic loader searches or inside of the installed
 
       .. code-block:: bash
 
-         python install.py -p <python package> -l <shared library> -v <version.h file> [-n]
+         python install.py -p <python package> -l <shared library> -v <version.h file> [-n] [-f]
 
       * The ``-p`` flag points to the ``lammps`` Python package folder to be installed,
       * the ``-l`` flag points to the LAMMPS shared library file to be installed,
       * the ``-v`` flag points to the LAMMPS version header file to extract the version date,
-      * and the optional ``-n`` instructs the script to only build a wheel file
-        but not attempt to install it.
+      * the optional ``-n`` instructs the script to only build a wheel file but not attempt
+        to install it,
+      * and the optional ``-f`` argument instructs the script to force installation even if
+        pip would otherwise refuse installation with an
+        :ref:`error about externally managed environments <externally_managed>`.
 
    .. tab:: Virtual environment
 
