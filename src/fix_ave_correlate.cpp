@@ -187,7 +187,8 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
       if (val.argindex && val.val.c->vector_flag == 0)
         error->all(FLERR, val.iarg, "Fix ave/correlate compute {} does not calculate a vector", val.id);
       if (val.argindex && val.argindex > val.val.c->size_vector)
-        error->all(FLERR, val.iarg, "Fix ave/correlate compute {} vector is accessed out-of-range", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/correlate compute {} vector is accessed "
+                   "out-of-range{}", val.id, utils::errorurl(20));
 
     } else if (val.which == ArgInfo::FIX) {
       val.val.f = modify->get_fix_by_id(val.id);
@@ -197,9 +198,11 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
       if (val.argindex && val.val.f->vector_flag == 0)
         error->all(FLERR, val.iarg, "Fix ave/correlate fix {} does not calculate a vector", val.id);
       if (val.argindex && val.argindex > val.val.f->size_vector)
-        error->all(FLERR, val.iarg, "Fix ave/correlate fix {} vector is accessed out-of-range", val.id);
+        error->all(FLERR, val.iarg, "Fix ave/correlate fix {} vector is accessed out-of-range{}",
+                   val.id, utils::errorurl(20));
       if (nevery % val.val.f->global_freq)
-        error->all(FLERR, val.iarg, "Fix {} for fix ave/correlate not computed at compatible time", val.id);
+        error->all(FLERR, val.iarg, "Fix {} for fix ave/correlate not computed at compatible "
+                   "time{}", val.id, utils::errorurl(7));
 
     } else if (val.which == ArgInfo::VARIABLE) {
       val.val.v = input->variable->find(val.id.c_str());

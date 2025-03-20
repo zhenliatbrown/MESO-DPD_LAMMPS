@@ -170,8 +170,8 @@ ComputeGlobalAtom::ComputeGlobalAtom(LAMMPS *lmp, int narg, char **arg) :
           error->all(FLERR, val.iarg, "Fix ID {} for compute global/atom compute does not "
                      "calculate a global array", val.id);
         if (val.argindex > val.val.f->size_array_cols)
-          error->all(FLERR, val.iarg, "Compute global/atom fix {} array is accessed out-of-range{}",
-                     val.id, utils::errorurl(20));
+          error->all(FLERR, val.iarg, "Compute global/atom fix {} array is accessed "
+                     "out-of-range{}", val.id, utils::errorurl(20));
       }
 
     } else if (val.which == ArgInfo::VARIABLE) {

@@ -1010,8 +1010,8 @@ void ComputeChunkAtom::assign_chunk_ids()
   } else if (which == ArgInfo::FIX) {
     if (update->ntimestep % fchunk->peratom_freq)
       error->all(FLERR, Error::NOLASTLINE,
-                 "Fix used in compute chunk/atom not computed at compatible time" +
-                     utils::errorurl(7));
+                 "Fix {} used in compute chunk/atom not computed at compatible time{}",
+                 fchunk->id, utils::errorurl(7));
 
     if (argindex == 0) {
       double *vec = fchunk->vector_atom;
