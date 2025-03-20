@@ -100,10 +100,14 @@ FixAveCorrelate::FixAveCorrelate(LAMMPS *lmp, int narg, char **arg) :
   char *title2 = nullptr;
   char *title3 = nullptr;
 
-  for (int i = 0; i < narg; ++i) {
-    if (strcmp(oarg[i],arg[iarg]) == 0)
-      ioffset = i - iarg;
+  // get argument offset if optional arguments are present
+  if (iarg < nargnew) {
+    for (int i = 0; i < narg; ++i) {
+      if (strcmp(oarg[i],arg[iarg]) == 0)
+        ioffset = i - iarg;
+    }
   }
+
   while (iarg < nargnew) {
     int errptr = iarg + ioffset;
     if (strcmp(arg[iarg],"type") == 0) {

@@ -143,8 +143,10 @@ ComputeReduce::ComputeReduce(LAMMPS *lmp, int narg, char **arg) :
 
     val.id = "";
     val.val.c = nullptr;
-    if (expand) val.iarg = amap[iarg] + ioffset;
-    else val.iarg = iarg + ioffset;
+    if (expand)
+      val.iarg = amap[iarg] + ioffset;
+    else
+      val.iarg = iarg + ioffset;
 
     if (strcmp(arg[iarg], "x") == 0) {
       val.which = ArgInfo::X;
@@ -201,9 +203,11 @@ ComputeReduce::ComputeReduce(LAMMPS *lmp, int narg, char **arg) :
   std::string mycmd = "compute ";
   mycmd += style;
 
-  for (int i = 0; i < narg; ++i) {
-    if (strcmp(oarg[i],arg[nvalues]) == 0)
-      ioffset = i - nvalues;
+  // get argument offset if optional arguments are present
+  if (nvalues < nargnew) {
+    for (int i = 0; i < narg; ++i) {
+      if (strcmp(oarg[i], arg[nvalues]) == 0) ioffset = i - nvalues;
+    }
   }
   for (int iarg = nvalues; iarg < nargnew; iarg++) {
     int errptr = iarg + ioffset;
@@ -214,15 +218,14 @@ ComputeReduce::ComputeReduce(LAMMPS *lmp, int narg, char **arg) :
       int col1 = utils::inumeric(FLERR, arg[iarg + 1], false, lmp) - 1;
       int col2 = utils::inumeric(FLERR, arg[iarg + 2], false, lmp) - 1;
       if ((col1 < 0) || (col1 >= nvalues))
-        error->all(FLERR, errptr + 1, "Invalid compute {} replace first column index {}",
-                   style, col1);
+        error->all(FLERR, errptr + 1, "Invalid compute {} replace first column index {}", style,
+                   col1);
       if ((col2 < 0) || (col2 >= nvalues))
-        error->all(FLERR, errptr + 2, "Invalid compute {} replace second column index {}",
-                   style, col2);
+        error->all(FLERR, errptr + 2, "Invalid compute {} replace second column index {}", style,
+                   col2);
       if (col1 == col2) error->all(FLERR, errptr, "Compute {} replace columns must be different");
       if ((replace[col1] >= 0) || (replace[col2] >= 0))
-        error->all(FLERR, errptr,
-                   "Compute {} replace column already used for another replacement");
+        error->all(FLERR, errptr, "Compute {} replace column already used for another replacement");
       replace[col1] = col2;
       iarg += 2;
     } else if (strcmp(arg[iarg], "inputs") == 0) {
@@ -304,8 +307,8 @@ ComputeReduce::ComputeReduce(LAMMPS *lmp, int narg, char **arg) :
 
       if (input_mode == PERATOM) {
         if (!val.val.f->peratom_flag)
-          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate per-atom values",
-                     style, val.id);
+          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate per-atom values", style,
+                     val.id);
         if (val.argindex == 0 && (val.val.f->size_peratom_cols != 0))
           error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate a per-atom vector",
                      style, val.id);
@@ -313,22 +316,22 @@ ComputeReduce::ComputeReduce(LAMMPS *lmp, int narg, char **arg) :
           error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate a per-atom array",
                      style, val.id);
         if (val.argindex && (val.argindex > val.val.f->size_peratom_cols))
-          error->all(FLERR, val.iarg, "Compute {} fix {} array is accessed out-of-range{}",
-                     style, val.id, utils::errorurl(20));
+          error->all(FLERR, val.iarg, "Compute {} fix {} array is accessed out-of-range{}", style,
+                     val.id, utils::errorurl(20));
 
       } else if (input_mode == LOCAL) {
         if (!val.val.f->local_flag)
-          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate local values",
-                     style, val.id);
+          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate local values", style,
+                     val.id);
         if (val.argindex == 0 && (val.val.f->size_local_cols != 0))
-          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate a local vector",
-                     style, val.id);
+          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate a local vector", style,
+                     val.id);
         if (val.argindex && (val.val.f->size_local_cols == 0))
-          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate a local array",
-                     style, val.id);
+          error->all(FLERR, val.iarg, "Compute {} fix {} does not calculate a local array", style,
+                     val.id);
         if (val.argindex && (val.argindex > val.val.f->size_local_cols))
-          error->all(FLERR, val.iarg, "Compute {} fix {} array is accessed out-of-range{}",
-                     style, val.id, utils::errorurl(20));
+          error->all(FLERR, val.iarg, "Compute {} fix {} array is accessed out-of-range{}", style,
+                     val.id, utils::errorurl(20));
       }
 
     } else if (val.which == ArgInfo::VARIABLE) {
@@ -396,14 +399,14 @@ void ComputeReduce::init()
     if (val.which == ArgInfo::COMPUTE) {
       val.val.c = modify->get_compute_by_id(val.id);
       if (!val.val.c)
-        error->all(FLERR, Error::NOLASTLINE, "Compute ID {} for compute {} does not exist",
-                   val.id, style);
+        error->all(FLERR, Error::NOLASTLINE, "Compute ID {} for compute {} does not exist", val.id,
+                   style);
 
     } else if (val.which == ArgInfo::FIX) {
       val.val.f = modify->get_fix_by_id(val.id);
       if (!val.val.f)
-        error->all(FLERR, Error::NOLASTLINE, "Fix ID {} for compute {} does not exist",
-                   val.id, style);
+        error->all(FLERR, Error::NOLASTLINE, "Fix ID {} for compute {} does not exist", val.id,
+                   style);
 
     } else if (val.which == ArgInfo::VARIABLE) {
       val.val.v = input->variable->find(val.id.c_str());
@@ -623,8 +626,9 @@ double ComputeReduce::compute_one(int m, int flag)
 
   } else if (val.which == ArgInfo::FIX) {
     if (update->ntimestep % val.val.f->peratom_freq)
-      error->all(FLERR, Error::NOLASTLINE, "Fix {} used in compute {} not computed at "
-                 "compatible time{}", val.id, style, utils::errorurl(7));
+      error->all(FLERR, Error::NOLASTLINE,
+                 "Fix {} used in compute {} not computed at compatible time{}", val.id, style,
+                 utils::errorurl(7));
 
     if (input_mode == PERATOM) {
       if (aidx == 0) {
