@@ -1,16 +1,16 @@
 Moltemplate Tutorial
 ====================
 
-In this tutorial, we are going to use the tool :ref:`Moltemplate<moltemplate>`
-to set up a classical molecular dynamic simulation using
-the :ref:`OPLS-AA force field <oplsaa2024>`. The first
-task is to describe an organic compound and create a complete input deck
-for LAMMPS.  The second task is to use moltemplate to build a polymer.
-The third task is to map the OPLS-AA force field to a
-molecular sample created with an external tool, e.g. PACKMOL, and
-exported as a PDB file.  The files used in this tutorial can be found
-in the ``tools/moltemplate/tutorial-files`` folder of the LAMMPS
-source code distribution.
+In this tutorial, we are going to use the tool :ref:`Moltemplate
+<Moltemplate1>` from https://moltemplate.org/ to set up a classical
+molecular dynamic simulation using the :ref:`OPLS-AA force field
+<oplsaa2024>`. The first task is to describe an organic compound and
+create a complete input deck for LAMMPS.  The second task is to use
+moltemplate to build a polymer.  The third task is to map the OPLS-AA
+force field to a molecular sample created with an external tool,
+e.g. PACKMOL, and exported as a PDB file.  The files used in this
+tutorial can be found in the ``tools/moltemplate/tutorial-files`` folder
+of the LAMMPS source code distribution.
 
 Many more examples can be found here: https://moltemplate.org/examples.html
 
@@ -179,7 +179,7 @@ Compile the master file with:
    moltemplate.sh solv_01.lt
    cleanup_moltemplate.sh   # <-- optional: see below
 
-(Note: The optioinal "cleanup_moltemplate.sh" command deletes
+(Note: The optional "cleanup_moltemplate.sh" command deletes
 unused atom types, which sometimes makes LAMMPS run faster.
 But it does not work with many-body pair styles or dreiding-style h-bonds.
 Fortunately most force fields, including OPLSAA, don't use those features.)
@@ -201,7 +201,7 @@ Then execute the simulation with the following:
 Building a simple polymer
 """""""""""""""""""""""""
 Moltemplate is particularly useful for building polymers (and other molecules
-with subunits).  As an simple example, consider butane:
+with sub-units).  As an simple example, consider butane:
 
 .. figure:: JPG/butane.jpg
 
@@ -224,7 +224,7 @@ The ``butane.lt`` file below defines Butane as a polymer containing
      # (Using "$mol:..." indicates this object ("CH3") is part of a larger
      #  molecule. Moltemplate will share the molecule-ID with that molecule.)
 
-     # A list of the bonds within the "CH3" molecular subunit:
+     # A list of the bonds within the "CH3" molecular sub-unit:
      # BondID   AtomID1   AtomID2
      write('Data Bond List') {
        $bond:ch1 $atom:c $atom:h1
@@ -242,7 +242,7 @@ The ``butane.lt`` file below defines Butane as a polymer containing
        $atom:h2 $mol:... @atom:60   0.0   0.000000  1.0741603 -0.892431
      }
 
-     # A list of the bonds within the "CH2" molecular subunit:
+     # A list of the bonds within the "CH2" molecular sub-unit:
      # BondID   AtomID1   AtomID2
      write('Data Bond List') {
        $bond:ch1 $atom:c $atom:h1
@@ -489,6 +489,6 @@ And execute the simulation with the following:
 
 **(OPLS-AA)**  Jorgensen, W.L., Ghahremanpour, M.M., Saar, A., Tirado-Rives, J., J. Phys. Chem. B, 128(1), 250-262 (2024).
 
-.. _Moltemplate:
+.. _Moltemplate1:
 
 **(Moltemplate)**  Jewett et al., J. Mol. Biol., 433(11), 166841 (2021)
