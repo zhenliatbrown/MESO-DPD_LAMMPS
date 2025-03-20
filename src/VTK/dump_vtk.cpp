@@ -224,7 +224,8 @@ void DumpVTK::init_style()
       error->all(FLERR,"Could not find dump vtk fix ID {}", id_fix[i]);
     } else {
       if (nevery % fix[i]->peratom_freq)
-        error->all(FLERR,"Dump vtk and fix ID {} not called at compatible times", id_fix[i]);
+        error->all(FLERR,"Dump vtk and fix ID {} not called at compatible times{}", id_fix[i],
+                   utils::errorurl(7));
     }
   }
 

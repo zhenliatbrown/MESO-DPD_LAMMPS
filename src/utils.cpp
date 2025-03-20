@@ -1244,8 +1244,8 @@ int utils::check_grid_reference(char *errstr, char *ref, int nevery, char *&id, 
         lmp->error->all(FLERR, "{} compute {} data {} is not per-grid array", errstr, idcompute,
                         dname);
       if (argi.get_dim() && argi.get_index1() > ncol)
-        lmp->error->all(FLERR, "{} compute {} array {} is accessed out-of-range", errstr, idcompute,
-                        dname);
+        lmp->error->all(FLERR, "{} compute {} array {} is accessed out-of-range{}", errstr,
+                        idcompute, dname, errorurl(20));
 
       id = utils::strdup(idcompute);
       return ArgInfo::COMPUTE;
@@ -1267,7 +1267,8 @@ int utils::check_grid_reference(char *errstr, char *ref, int nevery, char *&id, 
       if (ifix->pergrid_flag == 0)
         lmp->error->all(FLERR, "{} fix {} does not compute per-grid info", errstr, idfix);
       if (nevery % ifix->pergrid_freq)
-        lmp->error->all(FLERR, "{} fix {} not computed at compatible time", errstr, idfix);
+        lmp->error->all(FLERR, "{} fix {} not computed at compatible time{}", errstr, idfix,
+                        errorurl(7));
 
       int dim;
       igrid = ifix->get_grid_by_name(gname, dim);
@@ -1284,7 +1285,8 @@ int utils::check_grid_reference(char *errstr, char *ref, int nevery, char *&id, 
       if (argi.get_dim() > 0 && ncol == 0)
         lmp->error->all(FLERR, "{} fix {} data {} is not per-grid array", errstr, idfix, dname);
       if (argi.get_dim() > 0 && argi.get_index1() > ncol)
-        lmp->error->all(FLERR, "{} fix {} array {} is accessed out-of-range", errstr, idfix, dname);
+        lmp->error->all(FLERR, "{} fix {} array {} is accessed out-of-range{}", errstr, idfix,
+                        dname, errorurl(20));
 
       id = utils::strdup(idfix);
       return ArgInfo::FIX;

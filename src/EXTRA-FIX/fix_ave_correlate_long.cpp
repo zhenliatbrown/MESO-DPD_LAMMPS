@@ -244,8 +244,8 @@ FixAveCorrelateLong::FixAveCorrelateLong(LAMMPS *lmp, int narg, char **arg) :
                    "Fix ave/correlate/long fix {} vector is accessed out-of-range", val.id);
       if (nevery % val.val.f->global_freq)
         error->all(FLERR, val.iarg,
-                   "Fix {} for fix ave/correlate/long not computed at compatible time",
-                   val.id);
+                   "Fix {} for fix ave/correlate/long not computed at compatible time{}",
+                   val.id, utils::errorurl(7));
 
     } else if (val.which == ArgInfo::VARIABLE) {
       val.val.v = input->variable->find(val.id.c_str());
