@@ -458,7 +458,20 @@ with the relevant person or people who can update the executable.
 
 .. _err011:
 
-.. currently unused
+Energy or stress was not tallied by pair style
+----------------------------------------------
+
+This warning will be printed by computes from the :ref:`TALLY package
+<PKG-TALLY>`.  Those use a callback mechanism that will only work for
+regular pair-wise additive pair styles like :doc:`Lennard-Jones
+<pair_lj>`, :doc:`Morse <pair_morse>`, :doc:`Born-Meyer-Huggins
+<pair_born>`, and similar.  Making these computes work for many-body
+potentials will require to implement similar callbacks suitable for such
+potentials, which has not been done (and may be difficult to do in a
+generic fashion).  Whether this warning indicates that contributions to
+the computed properties are missing depends on the groups used.  At any
+rate, careful testing of the results is advised when this warning
+appears.
 
 .. _err0012:
 
