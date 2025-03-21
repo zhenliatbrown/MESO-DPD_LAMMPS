@@ -64,7 +64,7 @@ PairMDPDRhoSum::~PairMDPDRhoSum() {
 void PairMDPDRhoSum::init_style()
 {
   if (!atom->rho_flag)
-    error->all(FLERR,"Pair style mdpd/rhosum requires atom attribute rho");
+    error->all(FLERR, Error::NOLASTLINE, "Pair style mdpd/rhosum requires atom attribute rho");
 
   // need a full neighbor list
   neighbor->add_request(this, NeighConst::REQ_FULL);

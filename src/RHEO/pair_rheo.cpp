@@ -452,7 +452,7 @@ void PairRHEO::settings(int narg, char **arg)
 
 void PairRHEO::coeff(int narg, char **arg)
 {
-  if (narg != 2) error->all(FLERR, "Incorrect number of args for pair_style rheo coefficients");
+  if (narg != 2) error->all(FLERR, "Incorrect args for pair coefficients" + utils::errorurl(21));
   if (!allocated) allocate();
 
   int ilo, ihi, jlo, jhi;
@@ -467,7 +467,7 @@ void PairRHEO::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR, "Incorrect args for pair rheo coefficients");
+  if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients" + utils::errorurl(21));
 }
 
 /* ----------------------------------------------------------------------

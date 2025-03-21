@@ -395,19 +395,19 @@ void PairSRP::settings(int narg, char **arg)
 void PairSRP::coeff(int narg, char **arg)
 {
   if (narg < 3 || narg > 4)
-    error->all(FLERR,"PairSRP: Incorrect args for pair coeff");
+    error->all(FLERR,"Incorrect args for pair coefficients" + utils::errorurl(21));
   if (!allocated) allocate();
 
   if (btype_str.size() > 0) {
     btype = utils::expand_type_int(FLERR, btype_str, Atom::BOND, lmp);
     if ((btype > atom->nbondtypes) || (btype <= 0))
-      error->all(FLERR,"Invalid bond type {} for pair style srp", btype);
+      error->all(FLERR, Error::NOLASTLINE, "Invalid bond type {} for pair style srp", btype);
   }
 
   if (bptype_str.size() > 0)
     bptype = utils::expand_type_int(FLERR, bptype_str, Atom::ATOM, lmp);
   if ((bptype < 1) || (bptype > atom->ntypes))
-    error->all(FLERR,"Invalid bond particle type {} for pair style srp", bptype);
+    error->all(FLERR, Error::NOLASTLINE, "Invalid bond particle type {} for pair style srp", bptype);
 
   // reset cutoffs if explicitly set
   if (allocated) {
