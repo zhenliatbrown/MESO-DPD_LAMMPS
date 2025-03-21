@@ -281,7 +281,11 @@ void utils::fmtargs_print(FILE *fp, fmt::string_view format, fmt::format_args ar
 
 std::string utils::errorurl(int errorcode)
 {
-  return fmt::format("\nFor more information see https://docs.lammps.org/err{:04d}", errorcode);
+  if (errorcode == 0)
+    return "\nFor more information see https://docs.lammps.org/Errors_details.html";
+  else if (errorcode > 0)
+    return fmt::format("\nFor more information see https://docs.lammps.org/err{:04d}", errorcode);
+  else return ""; // negative numbers are reserved for future use pointing to a different URL
 }
 
 void utils::flush_buffers(LAMMPS *lmp)
