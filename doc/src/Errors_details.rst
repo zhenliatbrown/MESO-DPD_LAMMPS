@@ -2,14 +2,12 @@ Errors and warnings details
 ===========================
 
 Many errors and warnings that LAMMPS outputs are self-explanatory and
-thus straightforward to resolve.  However, there are also cases, where
-there is no single cause and explanation.  LAMMPS can only detect
-symptoms of an error but not name the exact cause, or the explanation
-needs to be more detailed than what can be fit into a short message
-printed by the program.  The following are discussions of such cases;
-first on a more general level and then for specific cases.  In the
-latter cases, LAMMPS will output a short message and then provide
-a URL that links to a specific section on this page.
+thus straightforward to resolve.  However, there are also cases where
+there is no single cause or simple explanation that can be provided in a
+short message printed by LAMMPS.  Therefore, more detailed discussions of
+such scenarios are provided here; first on a more general level and then for
+specific errors.  In the latter cases, LAMMPS will output a short message
+and then provide a URL that links to a specific section on this page.
 
 .. contents::
 
@@ -375,14 +373,14 @@ warning or turned off using the *lost/bond* keyword in the :doc:`thermo_modify
 Non-numeric atom coords or pressure or box dimensions - simulation unstable
 ---------------------------------------------------------------------------
 
-This kind of error usually occurs due to issues with system geometry or
-the potential in use, or too aggressive simulation settings.  See
-:ref:`Pressure, forces, positions becoming NaN or Inf <hint07>` above in
-the general troubleshooting section.  It is more likely to happen during
+This error usually occurs due to overly aggressive simulation settings or
+issues with the system geometry or the potential.  See :ref:`Pressure,
+forces, positions becoming NaN or Inf <hint07>` above in the general
+troubleshooting section.  This error is more likely to happen during
 equilibration, so it can help to do a minimization before or even add a
 second or third minimization after running a few equilibration MD steps.
-It also is more likely when using a Nose-Hoover barostat directly, and
-thus it may be advisable to run with only a thermostat for a bit until
+It also is more likely when directly using a Nose-Hoover (or other) barostat,
+and thus it may be advisable to run with only a thermostat for a bit until
 the potential energy has stabilized.
 
 .. _err007:
@@ -409,7 +407,7 @@ causes.  By default, LAMMPS checks for whether the total number of atoms
 is consistent with the sum of atoms "owned" by MPI processors every time
 that thermodynamic output is written.  In the majority of cases, lost
 atoms are unexpected and a result of extremely high velocities causing
-instabilities in the system, and those velocities can result from a
+instabilities in the system. Such velocities can result from a
 variety of issues.  For ideas on how to track down issues with
 unexpected lost atoms, see :ref:`Fast moving atoms <hint05>` and
 :ref:`Neighbor list settings <hint09>` in the general troubleshooting
@@ -427,11 +425,11 @@ Too many neighbor bins
 
 The simulation box is or has become too large relative to the size of a
 neighbor bin (which in turn depends on the largest pair-wise cutoff by
-default) and LAMMPS is unable to store the needed number of bins.  This
+default) such that LAMMPS is unable to store the needed number of bins.  This
 typically implies the simulation box has expanded too far.  That can
-happen when some atoms move rapidly apart with shrink-wrap boundaries or
+occur when some atoms move rapidly apart with shrink-wrap boundaries or
 when a fix (like fix deform or a barostat) excessively grows the
-simulation box.  This can also happen, if the largest pair-wise cutoff
+simulation box.  This can also happen if the largest pair-wise cutoff
 is small.  In this case, the error can be avoided by using the
 :doc:`neigh_modify command <neigh_modify>` to set the bin width to a
 suitably large value.
@@ -448,11 +446,11 @@ the relevant Makefile or CMake build directory. See
 :doc:`Section 3. Build LAMMPS <Build>` for more details.  One can check
 if the expected package and pair style is present in the executable by
 running it with the ``-help`` (or ``-h``) flag on the command line. One
-common oversight, especially for beginner LAMMPS users, is to enable the
-package, but to forget to run commands to rebuild (e.g., to run the
+common oversight, especially for beginner LAMMPS users, is enabling the
+package but forgetting to run commands to rebuild (e.g., to run the
 final ``make`` or ``cmake`` command).
 
-If this error is occurring with an executable that the user does not control
+If this error occurs with an executable that the user does not control
 (e.g., through a module on HPC clusters), the user will need to get in contact
 with the relevant person or people who can update the executable.
 
@@ -461,14 +459,14 @@ with the relevant person or people who can update the executable.
 Energy or stress was not tallied by pair style
 ----------------------------------------------
 
-This warning will be printed by computes from the :ref:`TALLY package
-<PKG-TALLY>`.  Those use a callback mechanism that will only work for
+This warning can be printed by computes from the :ref:`TALLY package
+<PKG-TALLY>`.  Those use a callback mechanism that only work for
 regular pair-wise additive pair styles like :doc:`Lennard-Jones
 <pair_lj>`, :doc:`Morse <pair_morse>`, :doc:`Born-Meyer-Huggins
-<pair_born>`, and similar.  Making these computes work for many-body
-potentials will require to implement similar callbacks suitable for such
-potentials, which has not been done (and may be difficult to do in a
-generic fashion).  Whether this warning indicates that contributions to
+<pair_born>`, and similar.  Such required callbacks have not been
+implemented for many-body potentials so one would have to implement them
+to add compatiability with these computes (which may be difficult to do in
+a generic fashion).  Whether this warning indicates that contributions to
 the computed properties are missing depends on the groups used.  At any
 rate, careful testing of the results is advised when this warning
 appears.
@@ -918,7 +916,7 @@ the documentation carefully.
 XXX command before simulation box is defined
 --------------------------------------------
 
-This error happens, when trying to excute a LAMMPS command that requires
+This error occurs when trying to excute a LAMMPS command that requires
 information about the system dimensions, or the number atom, bond,
 angle, dihedral, or improper types, or the number of atoms or similar
 data that is only available *after* the simulation box has been created.
@@ -930,8 +928,8 @@ created <hint12>` for additional information.
 XXX command after simulation box is defined
 --------------------------------------------
 
-This error happens, when trying to excute a LAMMPS command that that
-changes a global setting that will be locked in when the simulation box
+This error occurs when trying to excute a LAMMPS command that
+changes a global setting that is locked in when the simulation box
 is created (for instance defining the :doc:`atom style <atom_style>`,
 :doc:`dimension <dimension>`, :doc:`newton <newton>`, or :doc:`units
 <units>` setting).  These settings may only be changed *before* the

@@ -223,7 +223,7 @@ This translation uses `Pandoc <https://pandoc.org>`_ instead of Sphinx
 and thus all special Sphinx features (cross-references, advanced tables,
 embedding of Python docstrings or doxygen documentation, and so on) will
 not render correctly.  Most embedded math should render correctly.  This
-is a **very fast** way to check the syntaxs and layout of documentation
+is a **very fast** way to check the syntaxes and layout of documentation
 as HTML while writing the documentation.
 
 To translate **all** manual pages, you can type ``make fasthtml`` at the
@@ -236,7 +236,7 @@ directly translate only individual pages: e.g. to translate only the
 
 After writing the documentation is completed, you will still need
 to verify with ``make html`` and ``make pdf`` that it translates
-correctly in the actual translations used for download and online
+correctly in the actual translations used for downloaded and online
 documentation.
 
 Tests for consistency, completeness, and other known issues
