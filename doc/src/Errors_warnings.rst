@@ -609,7 +609,7 @@ Please also see the page with :doc:`Error messages <Errors_messages>`
    assumed to also be for all atoms.  Thus the pressure printed by thermo
    could be inaccurate.
 
-*The fix ave/spatial command has been replaced by the more flexible fix ave/chunk and compute chunk/atom commands -- fix ave/spatial will be removed*The minimizer does not re-orient dipoles when using fix efield*
+*The minimizer does not re-orient dipoles when using fix efield*
    This means that only the atom coordinates will be minimized,
    not the orientation of the dipoles.
 
