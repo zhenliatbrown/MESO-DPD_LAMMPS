@@ -11,7 +11,13 @@ results in an undesired displacement of those atoms, since the image
 flags indicate how many times the box length in x-, y-, or z-direction
 needs to be added or subtracted to get the "unwrapped" coordinates.
 
-Below is a suggested workflow that can be applied to the :doc:`Rhodo
+.. figure:: JPG/rhodo-both.jpg
+   :figwidth: 80%
+   :figclass: align-center
+
+   Snapshots of the bulk Rhodopsin system (right) and the slab geometry (left)
+
+Below is a suggested workflow that can be applied to the :doc:`Rhodopsin
 benchmark input <Speed_bench>`.  The modifications to the ``in.rhodo``
 input file are discussed below.  The first lines up to and including the
 :doc:`read_data command <read_data>` remain unchanged.  Then we insert
