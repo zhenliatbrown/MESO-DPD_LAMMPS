@@ -45,7 +45,7 @@ void ChangeBox::command(int narg, char **arg)
   int i;
 
   if (domain->box_exist == 0)
-    error->all(FLERR,"Change_box command before simulation box is defined");
+    error->all(FLERR,"Change_box command before simulation box is defined" + utils::errorurl(33));
   if (narg < 2) utils::missing_cmd_args(FLERR, "change_box", error);
 
   if (comm->me == 0) utils::logmesg(lmp,"Changing box ...\n");

@@ -912,3 +912,29 @@ typically happens when there are multiple fix commands that advance atom
 positions with overlapping groups.  Also, for some fix styles it is not
 immediately obvious that they include time integration.  Please check
 the documentation carefully.
+
+.. _err0033:
+
+XXX command before simulation box is defined
+--------------------------------------------
+
+This error happens, when trying to excute a LAMMPS command that requires
+information about the system dimensions, or the number atom, bond,
+angle, dihedral, or improper types, or the number of atoms or similar
+data that is only available *after* the simulation box has been created.
+See the paragraph on :ref:`errors before or after the simulation box is
+created <hint12>` for additional information.
+
+.. _err0034:
+
+XXX command after simulation box is defined
+--------------------------------------------
+
+This error happens, when trying to excute a LAMMPS command that that
+changes a global setting that will be locked in when the simulation box
+is created (for instance defining the :doc:`atom style <atom_style>`,
+:doc:`dimension <dimension>`, :doc:`newton <newton>`, or :doc:`units
+<units>` setting).  These settings may only be changed *before* the
+simulation box has been created.  See the paragraph on :ref:`errors
+before or after the simulation box is created <hint12>` for additional
+information.
