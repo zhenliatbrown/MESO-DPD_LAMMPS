@@ -1,6 +1,6 @@
-======================================
-Convert a bulk system to a slab system
-======================================
+===========================
+Convert bulk system to slab
+===========================
 
 A regularly encountered simulation problem is how to convert a bulk
 system that has been run for a while to equilibrate into a slab system
@@ -43,10 +43,10 @@ above and below the system:
    read_dump      rhodo-unwrap.lammpstrj 0 x y z box no replace yes
    kspace_modify  slab 3.0
 
-Specifically, the :doc:`variable delta <variable>` (set to :math:`10
-\AA`) represents a distance that determines the amount of vacuum added:
-we add twice its value in each direction to the z-dimension; thus in
-total :math:`40 \AA` get added.  The :doc:`reset_atoms image all
+Specifically, the :doc:`variable delta <variable>` (set to 10.0)
+represents a distance that determines the amount of vacuum added: we add
+twice its value in each direction to the z-dimension; thus in total
+:math:`40 \AA` get added.  The :doc:`reset_atoms image all
 <reset_atoms>` command shall reset any image flags to become either 0 or
 :math:`\pm 1` and thus have the minimum distance from the center of the
 simulation box, but the correct relative distance for bonded atoms.
