@@ -89,7 +89,7 @@ static void ptr_argument_warning()
 
 [[noreturn]] static void lammps_throw_error(const std::string &fname, const std::string &mesg)
 {
-  throw LAMMPSException("ERROR in library function " + fname + "(): " + mesg + "\n");
+  throw LAMMPSException("ERROR in " + fname + "(): " + mesg + "\n");
   exit(1);
 }
 
@@ -130,7 +130,7 @@ template <typename... ARgs>
    END_CAPTURE
 ------------------------------------------------------------------------- */
 
-#define BEGIN_CAPTURE \
+#define BEGIN_CAPTURE        \
   Error *error = lmp->error; \
   try
 
@@ -327,7 +327,8 @@ multiple LAMMPS instances concurrently or sequentially.  See
 void lammps_close(void *handle)
 {
   auto lmp = (LAMMPS *) handle;
-  delete lmp;
+  // only delete if not already deleted
+  if (lmp && lmp->comm) delete lmp;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -7200,6 +7201,35 @@ int lammps_has_error(void *handle)
 
 /* ---------------------------------------------------------------------- */
 
+/** Enable or disable direct printing of error messages
+
+\verbatim embed:rst
+
+.. versionadded:: TBD
+
+This function can be used to stop LAMMPS from printing error messages
+*before* LAMMPS throws a :ref:`C++ exception <exceptions>`.  This is so
+it may be left to the code calling the library interface whether to
+check for them, and retrieve and print error messages using the library
+interface functions :cpp:func:`lammps_has_error` and
+:cpp:func:`lammps_get_last_error_message`.
+
+\endverbatim
+ *
+ * \param handle   pointer to a previously created LAMMPS instance cast to ``void *`` or NULL
+ * \param flag     enable (not 0) or disable (0) printing error messages before throwing exception
+ */
+void lammps_set_show_error(void *handle, const int flag)
+{
+  if (handle) {
+    LAMMPS *lmp = (LAMMPS *) handle;
+    Error *error = lmp->error;
+    error->set_show_error(flag);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
 /** Copy the last error message into the provided buffer
 
 \verbatim embed:rst
@@ -7287,5 +7317,5 @@ int lammps_python_api_version() {
 }
 
 // Local Variables:
-// fill-column: 80
+// fill-column: 99
 // End:
