@@ -79,6 +79,38 @@ static void ptr_argument_warning()
   ptr_argument_flag = 0;
 }
 
+// for throwing exceptions from within the library interface; similar to Error::all()
+// instead of qualifying it with source file and line, we use the (library) function name
+// __func__ is supposed to be portable for compilers also supporting C99: MSVC, GCC, Clang.
+#if defined(FNERR)
+#undef FNERR
+#endif
+#define FNERR __func__
+
+[[noreturn]] static void lammps_throw_error(const std::string &fname, const std::string &mesg)
+{
+  throw LAMMPSException("ERROR in library function " + fname + "(): " + mesg + "\n");
+  exit(1);
+}
+
+[[noreturn]] static void _lammps_throw_error(const std::string &fname, fmt::string_view format,
+                                      fmt::format_args args)
+{
+  try {
+    lammps_throw_error(fname, fmt::vformat(format, args));
+  } catch (fmt::format_error &e) {
+    lammps_throw_error(fname, e.what());
+  }
+  exit(1); // to trick "smart" compilers into believing this does not return
+}
+
+template <typename... ARgs>
+[[noreturn]] static void lammps_throw_error(const std::string &fname,
+                                            const std::string &format, ARgs &&...args)
+{
+  _lammps_throw_error(fname, format, fmt::make_format_args(args...));
+}
+
 // ----------------------------------------------------------------------
 // utility macros
 // ----------------------------------------------------------------------
@@ -2362,17 +2394,19 @@ void *lammps_extract_compute(void *handle, const char *id, int style, int type)
   BEGIN_CAPTURE
   {
     auto compute = lmp->modify->get_compute_by_id(id);
-    if (!compute) return nullptr;
+    if (!compute) lammps_throw_error(FNERR, "Compute {} does not exist", id);
 
     if (style == LMP_STYLE_GLOBAL) {
       if (type == LMP_TYPE_SCALAR) {
-        if (!compute->scalar_flag) return nullptr;
+        if (!compute->scalar_flag)
+          lammps_throw_error(FNERR, "Compute {} does not compute global scalar", id);
         if (compute->invoked_scalar != lmp->update->ntimestep)
           compute->compute_scalar();
         return (void *) &compute->scalar;
       }
       if ((type == LMP_TYPE_VECTOR) || (type == LMP_SIZE_VECTOR)) {
-        if (!compute->vector_flag) return nullptr;
+        if (!compute->vector_flag)
+          lammps_throw_error(FNERR, "Compute {} does not compute global vector", id);
         if (compute->invoked_vector != lmp->update->ntimestep)
           compute->compute_vector();
         if (type == LMP_TYPE_VECTOR)
@@ -2381,7 +2415,8 @@ void *lammps_extract_compute(void *handle, const char *id, int style, int type)
           return (void *) &compute->size_vector;
       }
       if ((type == LMP_TYPE_ARRAY) || (type == LMP_SIZE_ROWS) || (type == LMP_SIZE_COLS)) {
-        if (!compute->array_flag) return nullptr;
+        if (!compute->array_flag)
+          lammps_throw_error(FNERR, "Compute {} does not compute global array", id);
         if (compute->invoked_array != lmp->update->ntimestep)
           compute->compute_array();
         if (type == LMP_TYPE_ARRAY)
@@ -2550,33 +2585,38 @@ void *lammps_extract_fix(void *handle, const char *id, int style, int type,
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) return nullptr;
+    if (!fix) lammps_throw_error(FNERR, "Fix {} does not exist", id);
 
     if (style == LMP_STYLE_GLOBAL) {
       if (type == LMP_TYPE_SCALAR) {
-        if (!fix->scalar_flag) return nullptr;
+        if (!fix->scalar_flag)
+          lammps_throw_error(FNERR, "Fix {} does not compute global scalar", id);
         auto dptr = (double *) malloc(sizeof(double));
         *dptr = fix->compute_scalar();
         return (void *) dptr;
       }
       if (type == LMP_TYPE_VECTOR) {
-        if (!fix->vector_flag) return nullptr;
+        if (!fix->vector_flag)
+          lammps_throw_error(FNERR, "Fix {} does not compute global vector", id);
         auto dptr = (double *) malloc(sizeof(double));
         *dptr = fix->compute_vector(nrow);
         return (void *) dptr;
       }
       if (type == LMP_TYPE_ARRAY) {
-        if (!fix->array_flag) return nullptr;
+        if (!fix->array_flag)
+          lammps_throw_error(FNERR, "Fix {} does not compute global array", id);
         auto dptr = (double *) malloc(sizeof(double));
         *dptr = fix->compute_array(nrow,ncol);
         return (void *) dptr;
       }
       if (type == LMP_SIZE_VECTOR) {
-        if (!fix->vector_flag) return nullptr;
+        if (!fix->vector_flag);
+          lammps_throw_error(FNERR, "Fix {} does not compute global vector", id);
         return (void *) &fix->size_vector;
       }
       if ((type == LMP_SIZE_ROWS) || (type == LMP_SIZE_COLS)) {
-        if (!fix->array_flag) return nullptr;
+        if (!fix->array_flag)
+          lammps_throw_error(FNERR, "Fix {} does not compute global array", id);
         if (type == LMP_SIZE_ROWS)
           return (void *) &fix->size_array_rows;
         else
@@ -2585,14 +2625,16 @@ void *lammps_extract_fix(void *handle, const char *id, int style, int type,
     }
 
     if (style == LMP_STYLE_ATOM) {
-      if (!fix->peratom_flag) return nullptr;
+      if (!fix->peratom_flag)
+        lammps_throw_error(FNERR, "Fix {} does not compute per-atom vector or array", id);
       if (type == LMP_TYPE_VECTOR) return (void *) fix->vector_atom;
       if (type == LMP_TYPE_ARRAY) return (void *) fix->array_atom;
       if (type == LMP_SIZE_COLS) return (void *) &fix->size_peratom_cols;
     }
 
     if (style == LMP_STYLE_LOCAL) {
-      if (!fix->local_flag) return nullptr;
+      if (!fix->local_flag)
+        lammps_throw_error(FNERR, "Fix {} does not compute local vector or array", id);
       if (type == LMP_TYPE_SCALAR) return (void *) &fix->size_local_rows;
       if (type == LMP_TYPE_VECTOR) return (void *) fix->vector_local;
       if (type == LMP_TYPE_ARRAY) return (void *) fix->array_local;
