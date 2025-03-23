@@ -272,11 +272,7 @@ void utils::print(FILE *fp, const std::string &mesg)
 
 void utils::fmtargs_print(FILE *fp, fmt::string_view format, fmt::format_args args)
 {
-  try {
-    print(fp, fmt::vformat(format, args));
-  } catch (fmt::format_error &) {
-    ; // do nothing
-  }
+  print(fp, fmt::vformat(format, args));
 }
 
 std::string utils::errorurl(int errorcode)
