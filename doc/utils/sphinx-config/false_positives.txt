@@ -856,6 +856,7 @@ DNi
 Dobnikar
 Dobson
 docenv
+docstrings
 Dodds
 dodgerblue
 dof
@@ -3261,6 +3262,7 @@ resquared
 REsquared
 restartfile
 restartinfo
+reStructuredText
 Restrepo
 rethrowing
 Revenga
