@@ -2430,7 +2430,8 @@ void *lammps_extract_compute(void *handle, const char *id, int style, int type)
     }
 
     if (style == LMP_STYLE_ATOM) {
-      if (!compute->peratom_flag) return nullptr;
+      if (!compute->peratom_flag)
+        lammps_throw_error(FNERR, "Compute {} does not compute per-atom vector or array", id);
       if (compute->invoked_peratom != lmp->update->ntimestep)
         compute->compute_peratom();
       if (type == LMP_TYPE_VECTOR) return (void *) compute->vector_atom;
@@ -2439,7 +2440,8 @@ void *lammps_extract_compute(void *handle, const char *id, int style, int type)
     }
 
     if (style == LMP_STYLE_LOCAL) {
-      if (!compute->local_flag) return nullptr;
+      if (!compute->local_flag)
+        lammps_throw_error(FNERR, "Compute {} does not compute vector or array", id);
       if (compute->invoked_local != lmp->update->ntimestep)
         compute->compute_local();
       if (type == LMP_TYPE_SCALAR) return (void *) &compute->size_local_rows;  /* for backward compatibility */
