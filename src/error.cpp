@@ -320,7 +320,7 @@ void Error::set_last_error(const char *msg, ErrorType type)
 
 int Error::set_show_error(const int flag)
 {
-  int oldflag = show_error
+  int oldflag = showerror;
   showerror = flag;
   return oldflag;
 }
