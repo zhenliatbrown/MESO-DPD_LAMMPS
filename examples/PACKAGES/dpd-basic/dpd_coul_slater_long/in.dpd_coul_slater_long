@@ -30,10 +30,15 @@ comm_modify vel yes # store info of ghost atoms btw processors
 # Define pair style and coefficients
 pair_style dpd/coul/slater/long ${T} ${cut_DPD} ${seed} ${lambda} ${cut_coul}
 
-read_data data.dpd_coul_slater_long
-
 # Enable long range electrostatics solver
 kspace_style    pppm       1e-04
+
+
+read_data data.dpd_coul_slater_long
+
+pair_coeff * * 78.0 4.5
+pair_coeff    2*3     2*3 78.0 4.5 yes
+
 
 # Construct neighbors every steps
 neighbor 1.0 bin
