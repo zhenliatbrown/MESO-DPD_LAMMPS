@@ -2124,6 +2124,25 @@ class lammps(object):
 
   # -------------------------------------------------------------------------
 
+  def set_show_error(self, flag):
+    """ Enable or disable direct printing of error messages in C++ code
+
+    .. versionadded:: TBD
+
+    This function allows to enable or disable printing of error message directly in
+    the C++ code.  Disabling the printing avoids printing error messages twice when
+    detecting and re-throwing them in Python code.
+
+    This is a wrapper around the :cpp:func:`lammps_set_show_error`
+    function of the library interface.
+
+    :param flag: enable (1) or disable (0) printing of error message
+    :type flag: int
+    """
+    self.lib.lammps_set_show_error(self.lmp, flag)
+
+  # -------------------------------------------------------------------------
+
   def force_timeout(self):
     """ Trigger an immediate timeout, i.e. a "soft stop" of a run.
 
