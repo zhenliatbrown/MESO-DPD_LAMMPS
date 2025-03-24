@@ -348,6 +348,7 @@ class lammps(object):
     self.lib.lammps_get_last_error_message.argtypes = [c_void_p, c_char_p, c_int]
     self.lib.lammps_get_last_error_message.restype = c_int
     self.lib.lammps_set_show_error.argtypes = [c_void_p, c_int]
+    self.lib.lammps_set_show_error.restype = c_int
 
     self.lib.lammps_extract_global.argtypes = [c_void_p, c_char_p]
     self.lib.lammps_extract_global_datatype.argtypes = [c_void_p, c_char_p]
@@ -2139,6 +2140,8 @@ class lammps(object):
 
     :param flag: enable (1) or disable (0) printing of error message
     :type flag: int
+    :return: previous setting of the flag
+    :rtype: int
     """
     self.lib.lammps_set_show_error(self.lmp, flag)
 

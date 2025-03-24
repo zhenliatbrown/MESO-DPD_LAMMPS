@@ -7342,17 +7342,21 @@ This function can be used to stop LAMMPS from printing error messages
 it may be left to the code calling the library interface whether to
 check for them, and retrieve and print error messages using the library
 interface functions :cpp:func:`lammps_has_error` and
-:cpp:func:`lammps_get_last_error_message`.
+:cpp:func:`lammps_get_last_error_message`.  The function returns the
+previous setting so that one can easily override the setting
+temporarily and restore it afterwards.
 
 \endverbatim
  *
  * \param handle   pointer to a previously created LAMMPS instance cast to ``void *`` or NULL
  * \param flag     enable (not 0) or disable (0) printing error messages before throwing exception
+ * \return  previous setting of the flag
  */
-void lammps_set_show_error(void *handle, const int flag)
+int lammps_set_show_error(void *handle, const int flag)
 {
   LAMMPS *lmp = (LAMMPS *) handle;
-  if (lmp && lmp->error) lmp->error->set_show_error(flag);
+  if (lmp && lmp->error) return lmp->error->set_show_error(flag);
+  return 1; // default value
 }
 
 /* ---------------------------------------------------------------------- */

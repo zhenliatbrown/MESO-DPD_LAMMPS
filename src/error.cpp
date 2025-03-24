@@ -315,9 +315,12 @@ void Error::set_last_error(const char *msg, ErrorType type)
 /* ----------------------------------------------------------------------
    enable or disable printing error messages. for use with library interface.
    if flag = 0 only last error message and type are updated.
+   returns the previous setting.
 ------------------------------------------------------------------------- */
 
-void Error::set_show_error(const int flag)
+int Error::set_show_error(const int flag)
 {
+  int oldflag = show_error
   showerror = flag;
+  return oldflag;
 }
