@@ -6051,17 +6051,22 @@ int lammps_find_compute_neighlist(void *handle, const char *id, int reqid) {
   }
   if (!id) return -1;
 
-  auto compute = lmp->modify->get_compute_by_id(id);
-  if (!compute) lmp->error->all(FLERR, Error::NOLASTLINE,
-                                "{}(): Compute {} does not exist", FNERR, id);
+  BEGIN_CAPTURE
+  {
+    auto compute = lmp->modify->get_compute_by_id(id);
+    if (!compute) lmp->error->all(FLERR, Error::NOLASTLINE,
+                                  "{}(): Compute {} does not exist", FNERR, id);
 
-  // find neigh list
-  for (int i = 0; i < lmp->neighbor->nlist; i++) {
-    NeighList *list = lmp->neighbor->lists[i];
-    if ((list->requestor_type == NeighList::COMPUTE)
-         && (compute == list->requestor)
-         && (list->id == reqid) ) return i;
+    // find neigh list
+    for (int i = 0; i < lmp->neighbor->nlist; i++) {
+      NeighList *list = lmp->neighbor->lists[i];
+      if ((list->requestor_type == NeighList::COMPUTE)
+          && (compute == list->requestor)
+          && (list->id == reqid) ) return i;
+    }
   }
+  END_CAPTURE
+
   return -1;
 }
 
