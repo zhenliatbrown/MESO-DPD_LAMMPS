@@ -2184,6 +2184,7 @@ void *lammps_extract_pair(void * handle, const char *name)
     lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
     return nullptr;
   }
+  if (!name) return nullptr;
 
   int dim = -1;
   return lmp->force->pair->extract(name, dim);
@@ -2217,6 +2218,8 @@ int lammps_map_atom(void *handle, const void *id)
     lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
     return -1;
   }
+  if (!id) return -1;
+
   auto tag = (const tagint *) id;
   if (lmp->atom->map_style > Atom::MAP_NONE)
     return lmp->atom->map(*tag);
@@ -6042,12 +6045,19 @@ int lammps_find_fix_neighlist(void *handle, const char *id, int reqid) {
 
 int lammps_find_compute_neighlist(void *handle, const char *id, int reqid) {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->neighbor || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return -1;
+  }
+  if (!id) return -1;
+
   auto compute = lmp->modify->get_compute_by_id(id);
-  if (!compute) return -1;
+  if (!compute) lmp->error->all(FLERR, Error::NOLASTLINE,
+                                "{}(): Compute {} does not exist", FNERR, id);
 
   // find neigh list
   for (int i = 0; i < lmp->neighbor->nlist; i++) {
-    NeighList * list = lmp->neighbor->lists[i];
+    NeighList *list = lmp->neighbor->lists[i];
     if ((list->requestor_type == NeighList::COMPUTE)
          && (compute == list->requestor)
          && (list->id == reqid) ) return i;
@@ -6066,13 +6076,17 @@ int lammps_find_compute_neighlist(void *handle, const char *id, int reqid) {
  */
 int lammps_neighlist_num_elements(void *handle, int idx) {
   auto   lmp = (LAMMPS *) handle;
-  Neighbor * neighbor = lmp->neighbor;
+  if (!lmp || !lmp->error || !lmp->neighbor) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  Neighbor *neighbor = lmp->neighbor;
 
   if (idx < 0 || idx >= neighbor->nlist) {
     return -1;
   }
 
-  NeighList * list = neighbor->lists[idx];
+  NeighList *list = neighbor->lists[idx];
   return list->inum;
 }
 
@@ -6091,8 +6105,14 @@ int lammps_neighlist_num_elements(void *handle, int idx) {
 
 void lammps_neighlist_element_neighbors(void *handle, int idx, int element, int *iatom,
                                         int *numneigh, int **neighbors) {
-  auto   lmp = (LAMMPS *) handle;
-  Neighbor * neighbor = lmp->neighbor;
+  auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->neighbor) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!iatom || !numneigh || !neighbors) return;
+
+  Neighbor *neighbor = lmp->neighbor;
   *iatom = -1;
   *numneigh = 0;
   *neighbors = nullptr;
@@ -6101,7 +6121,7 @@ void lammps_neighlist_element_neighbors(void *handle, int idx, int element, int 
     return;
   }
 
-  NeighList * list = neighbor->lists[idx];
+  NeighList *list = neighbor->lists[idx];
 
   if (element < 0 || element >= list->inum) {
     return;
@@ -6136,6 +6156,11 @@ growing with every new LAMMPS release.
 int lammps_version(void *handle)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+
   return lmp->num_ver;
 }
 
@@ -6162,7 +6187,8 @@ string is typically a few hundred bytes long.
 
 void lammps_get_os_info(char *buffer, int buf_size)
 {
-  if (buf_size <=0) return;
+  if (!buffer || (buf_size <=0)) return;
+
   buffer[0] = buffer[buf_size-1] = '\0';
   std::string txt = platform::os_info() + "\n";
   txt += platform::compiler_info();
@@ -6329,6 +6355,7 @@ specific :doc:`LAMMPS package <Packages>` provided as argument.
  * \return 1 if included, 0 if not.
  */
 int lammps_config_has_package(const char *name) {
+  if (!name) return 0;
   return Info::has_package(name) ? 1 : 0;
 }
 
@@ -6369,6 +6396,8 @@ the function returns 0 and *buffer* is set to an empty string, otherwise 1;
  * \return 1 if successful, otherwise 0
  */
 int lammps_config_package_name(int idx, char *buffer, int buf_size) {
+  if (!buffer) return 0;
+
   int maxidx = lammps_config_package_count();
   if ((idx < 0) || (idx >= maxidx)) {
       buffer[0] = '\0';
@@ -6450,7 +6479,8 @@ string can be several kilobytes long, if multiple devices are present.
 
 void lammps_get_gpu_device_info(char *buffer, int buf_size)
 {
-  if (buf_size <= 0) return;
+  if (!buffer || (buf_size <= 0)) return;
+
   buffer[0] = buffer[buf_size-1] = '\0';
   std::string devinfo = Info::get_gpu_device_info();
   strncpy(buffer, devinfo.c_str(), buf_size-1);
@@ -6475,6 +6505,12 @@ Valid categories are: *atom*\ , *integrate*\ , *minimize*\ ,
  */
 int lammps_has_style(void *handle, const char *category, const char *name) {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  if (!category || !name) return 0;
+
   Info info(lmp);
   return info.has_style(category, name) ? 1 : 0;
 }
@@ -6496,6 +6532,12 @@ categories.
  */
 int lammps_style_count(void *handle, const char *category) {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  if (!category) return 0;
+
   Info info(lmp);
   return info.get_available_styles(category).size();
 }
@@ -6521,6 +6563,12 @@ int lammps_style_count(void *handle, const char *category) {
  */
 int lammps_style_name(void *handle, const char *category, int idx, char *buffer, int buf_size) {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  if (!category || !buffer) return 0;
+
   Info info(lmp);
   auto styles = info.get_available_styles(category);
 
@@ -6554,6 +6602,12 @@ the given *name* exists.  Valid categories are: *compute*\ , *dump*\ ,
  */
 int lammps_has_id(void *handle, const char *category, const char *name) {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify || !lmp->output || !lmp->group || !lmp->atom
+      || !lmp->domain || !lmp->input || !lmp->input->variable) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  if (!category || !name) return 0;
 
   if (strcmp(category,"compute") == 0) {
     if (lmp->modify->get_compute_by_id(name)) return 1;
@@ -6594,6 +6648,13 @@ categories.
  */
 int lammps_id_count(void *handle, const char *category) {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify || !lmp->output || !lmp->group || !lmp->atom
+      || !lmp->domain || !lmp->input || !lmp->input->variable) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  if (!category) return 0;
+
   if (strcmp(category,"compute") == 0) {
     return lmp->modify->get_compute_list().size();
   } else if (strcmp(category,"dump") == 0) {
@@ -6638,7 +6699,12 @@ set to an empty string, otherwise 1.
  */
 int lammps_id_name(void *handle, const char *category, int idx, char *buffer, int buf_size) {
   auto lmp = (LAMMPS *) handle;
-  if (idx < 0) return 0;
+  if (!lmp || !lmp->error || !lmp->modify || !lmp->output || !lmp->group || !lmp->atom
+      || !lmp->domain || !lmp->input || !lmp->input->variable) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
+  if (!buffer || !category || (idx < 0)) return 0;
 
   if (strcmp(category,"compute") == 0) {
     auto icompute = lmp->modify->get_compute_by_index(idx);
@@ -6733,12 +6799,13 @@ set to an empty string, otherwise 1.
 int lammps_plugin_name(int idx, char *stylebuf, char *namebuf, int buf_size)
 {
 #if defined(LMP_PLUGIN)
+  if (!stylebuf || !namebuf) return 0;
   stylebuf[0] = namebuf[0] = '\0';
 
   const lammpsplugin_t *plugin = plugin_get_info(idx);
   if (plugin) {
-    strncpy(stylebuf,plugin->style,buf_size);
-    strncpy(namebuf,plugin->name,buf_size);
+    strncpy(stylebuf, plugin->style, buf_size);
+    strncpy(namebuf, plugin->name, buf_size);
     return 1;
   }
 #endif
@@ -6857,20 +6924,28 @@ external code.
  * \param  funcptr  pointer to callback function
  * \param  ptr      pointer to object in calling code, passed to callback function as first argument */
 
-void lammps_set_fix_external_callback(void *handle, const char *id, FixExternalFnPtr funcptr, void *ptr)
+void lammps_set_fix_external_callback(void *handle, const char *id, FixExternalFnPtr funcptr,
+                                      void *ptr)
 {
   auto lmp = (LAMMPS *) handle;
-  auto  callback = (FixExternal::FnPtr) funcptr;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id || !ptr) return;
+
+  auto callback = (FixExternal::FnPtr) funcptr;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Cannot find fix with ID '{}'!", id);
-
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style 'external'", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
     auto fext = dynamic_cast<FixExternal *>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} is not of style external", FNERR, id);
+
     fext->set_callback(callback, ptr);
   }
   END_CAPTURE
@@ -6921,15 +6996,22 @@ external code.
 double **lammps_fix_external_get_force(void *handle, const char *id)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return nullptr;
+  }
+  if (!id) return nullptr;
+
   double **fexternal = nullptr;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
     if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} is not of style external", FNERR, id);
 
     int tmp;
     fexternal = (double **)fix->extract("fexternal",tmp);
@@ -6969,16 +7051,22 @@ external code.
 void lammps_fix_external_set_energy_global(void *handle, const char *id, double eng)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id) return;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
-
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
     auto fext = dynamic_cast<FixExternal*>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "Fix {} is not of style external", FNERR, id);
+
     fext->set_energy_global(eng);
   }
   END_CAPTURE
@@ -7017,16 +7105,22 @@ external code.
 void lammps_fix_external_set_virial_global(void *handle, const char *id, double *virial)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id || !virial) return;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+    auto fext = dynamic_cast<FixExternal*>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} is not of style external", FNERR, id);
 
-    auto  fext = dynamic_cast<FixExternal*>(fix);
     fext->set_virial_global(virial);
   }
   END_CAPTURE
@@ -7065,16 +7159,22 @@ external code.
 void lammps_fix_external_set_energy_peratom(void *handle, const char *id, double *eng)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id || !eng) return;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
-
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
     auto fext = dynamic_cast<FixExternal*>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "Fix {} is not of style external", FNERR, id);
+
     fext->set_energy_peratom(eng);
   }
   END_CAPTURE
@@ -7116,16 +7216,22 @@ external code.
 void lammps_fix_external_set_virial_peratom(void *handle, const char *id, double **virial)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id || !virial) return;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+    auto fext = dynamic_cast<FixExternal*>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} is not of style external", FNERR, id);
 
-    auto  fext = dynamic_cast<FixExternal*>(fix);
     fext->set_virial_peratom(virial);
   }
   END_CAPTURE
@@ -7160,16 +7266,22 @@ external code.
 void lammps_fix_external_set_vector_length(void *handle, const char *id, int len)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id) return;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
-
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
     auto fext = dynamic_cast<FixExternal*>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} is not of style external", FNERR, id);
+
     fext->set_vector_length(len);
   }
   END_CAPTURE
@@ -7214,16 +7326,22 @@ external code.
 void lammps_fix_external_set_vector(void *handle, const char *id, int idx, double val)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
+  if (!id) return;
 
   BEGIN_CAPTURE
   {
     auto fix = lmp->modify->get_fix_by_id(id);
-    if (!fix) lmp->error->all(FLERR,"Can not find fix with ID '{}'!", id);
+    if (!fix)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
 
-    if (strcmp("external",fix->style) != 0)
-      lmp->error->all(FLERR,"Fix '{}' is not of style external!", id);
+    auto fext = dynamic_cast<FixExternal*>(fix);
+    if (!fext || (strcmp("external",fix->style) != 0))
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} is not of style external", FNERR, id);
 
-    auto  fext = dynamic_cast<FixExternal*>(fix);
     fext->set_vector(idx, val);
   }
   END_CAPTURE
