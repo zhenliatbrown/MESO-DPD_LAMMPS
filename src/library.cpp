@@ -5613,7 +5613,7 @@ be {1, 100, 57}.
      loop over Ndata, if I own atom ID, set its values from data
 ------------------------------------------------------------------------- */
 
-void lammps_scatter_subset(void *handle, const char *name,int type, int count, int ndata,
+void lammps_scatter_subset(void *handle, const char *name, int type, int count, int ndata,
                            int *ids, void *data)
 {
   auto lmp = (LAMMPS *) handle;
@@ -5864,26 +5864,21 @@ int lammps_create_atoms(void *handle, int n, const tagint *id, const int *type,
                         int bexpand)
 {
   auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->domain || !lmp->atom) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return -1;
+  }
+  if (!type || !x) return -1;
   bigint natoms_prev = lmp->atom->natoms;
 
   BEGIN_CAPTURE
   {
     // error if box does not exist or tags not defined
-
-    int flag = 0;
-    std::string msg("Failure in lammps_create_atoms(): ");
     if (lmp->domain->box_exist == 0) {
-      flag = 1;
-      msg += "trying to create atoms before before simulation box is defined";
-    }
-    if (lmp->atom->tag_enable == 0) {
-      flag = 1;
-      msg += "must have atom IDs to use this function";
-    }
-
-    if (flag) {
-      lmp->error->all(FLERR, msg);
-      return -1;
+      lmp->error->all(FLERR, Error::NOLASTLINE,
+                      "{}(): Cannot create atoms before before simulation box is defined", FNERR);
+    } else if (lmp->atom->tag_enable == 0) {
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Must have atom IDs to create atoms", FNERR);
     }
 
     // loop over all N atoms on all MPI ranks
@@ -5986,17 +5981,27 @@ int lammps_create_atoms(void *handle, int n, const tagint *id, const int *type,
 
 int lammps_find_pair_neighlist(void *handle, const char *style, int exact, int nsub, int reqid) {
   auto lmp = (LAMMPS *) handle;
-  Pair *pair = lmp->force->pair_match(style, exact, nsub);
+  if (!lmp || !lmp->error || !lmp->neighbor || !lmp->force) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return -1;
+  }
+  if (!style) return -1;
 
-  if (pair != nullptr) {
-    // find neigh list
-    for (int i = 0; i < lmp->neighbor->nlist; i++) {
-      NeighList *list = lmp->neighbor->lists[i];
-      if ((list->requestor_type == NeighList::PAIR)
-           && (pair == list->requestor)
-           && (list->id == reqid) ) return i;
+  BEGIN_CAPTURE
+  {
+    auto *pair = lmp->force->pair_match(style, exact, nsub);
+    if (!pair) {
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Pair style {} does not exist", FNERR, style);
+    } else {
+      // find neigh list
+      for (int i = 0; i < lmp->neighbor->nlist; i++) {
+        NeighList *list = lmp->neighbor->lists[i];
+        if ((list->requestor_type == NeighList::PAIR) && (pair == list->requestor)
+            && (list->id == reqid) ) return i;
+      }
     }
   }
+  END_CAPTURE
   return -1;
 }
 
@@ -6016,16 +6021,27 @@ int lammps_find_pair_neighlist(void *handle, const char *style, int exact, int n
 
 int lammps_find_fix_neighlist(void *handle, const char *id, int reqid) {
   auto lmp = (LAMMPS *) handle;
-  auto fix = lmp->modify->get_fix_by_id(id);
-  if (!fix) return -1;
-
-  // find neigh list
-  for (int i = 0; i < lmp->neighbor->nlist; i++) {
-    NeighList *list = lmp->neighbor->lists[i];
-    if ((list->requestor_type == NeighList::FIX)
-         && (fix == list->requestor)
-         && (list->id == reqid) ) return i;
+  if (!lmp || !lmp->error || !lmp->neighbor || !lmp->modify) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return -1;
   }
+  if (!id) return -1;
+
+  BEGIN_CAPTURE
+  {
+    auto fix = lmp->modify->get_fix_by_id(id);
+    if (!fix) {
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Fix {} does not exist", FNERR, id);
+    } else {
+      // find neigh list
+      for (int i = 0; i < lmp->neighbor->nlist; i++) {
+        NeighList *list = lmp->neighbor->lists[i];
+        if ((list->requestor_type == NeighList::FIX) && (fix == list->requestor)
+            && (list->id == reqid) ) return i;
+      }
+    }
+  }
+  END_CAPTURE
   return -1;
 }
 
@@ -6054,15 +6070,15 @@ int lammps_find_compute_neighlist(void *handle, const char *id, int reqid) {
   BEGIN_CAPTURE
   {
     auto compute = lmp->modify->get_compute_by_id(id);
-    if (!compute) lmp->error->all(FLERR, Error::NOLASTLINE,
-                                  "{}(): Compute {} does not exist", FNERR, id);
-
-    // find neigh list
-    for (int i = 0; i < lmp->neighbor->nlist; i++) {
-      NeighList *list = lmp->neighbor->lists[i];
-      if ((list->requestor_type == NeighList::COMPUTE)
-          && (compute == list->requestor)
-          && (list->id == reqid) ) return i;
+    if (!compute) {
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Compute {} does not exist", FNERR, id);
+    } else {
+      // find neigh list
+      for (int i = 0; i < lmp->neighbor->nlist; i++) {
+        NeighList *list = lmp->neighbor->lists[i];
+        if ((list->requestor_type == NeighList::COMPUTE) && (compute == list->requestor)
+            && (list->id == reqid) ) return i;
+      }
     }
   }
   END_CAPTURE
@@ -7364,7 +7380,7 @@ and logfile pointers to simplify capturing output from LAMMPS library calls.
  * \param  handle    pointer to a previously created LAMMPS instance cast to ``void *``.
  */
 void lammps_flush_buffers(void *handle) {
-  utils::flush_buffers((LAMMPS *) handle);
+  if (handle) utils::flush_buffers((LAMMPS *) handle);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -7384,7 +7400,7 @@ leaks.
 
 void lammps_free(void *ptr)
 {
-  free(ptr);
+  if (ptr) free(ptr);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -7400,6 +7416,10 @@ void lammps_free(void *ptr)
 int lammps_is_running(void *handle)
 {
   auto   lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->update) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return 0;
+  }
   return lmp->update->whichflag;
 }
 
@@ -7412,7 +7432,11 @@ int lammps_is_running(void *handle)
 
 void lammps_force_timeout(void *handle)
 {
-  auto   lmp = (LAMMPS *) handle;
+  auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->error || !lmp->timer) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return;
+  }
   return lmp->timer->force_timeout();
 }
 
