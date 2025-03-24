@@ -1433,13 +1433,7 @@ internally by the :doc:`Fortran interface <Fortran>` and are not likely to be us
 
 int lammps_extract_setting(void *handle, const char *keyword)
 {
-  auto lmp = (LAMMPS *) handle;
-  if (!lmp || !lmp->domain || !lmp->force || !lmp->comm || !lmp->universe || !lmp->atom) {
-    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
-    return -1;
-  }
-
-// This can be customized by adding keywords and documenting them in the section above.
+  // This can be customized by adding keywords and documenting them in the section above.
   if (strcmp(keyword,"bigint") == 0) return sizeof(bigint);
   if (strcmp(keyword,"tagint") == 0) return sizeof(tagint);
   if (strcmp(keyword,"imageint") == 0) return sizeof(imageint);
@@ -1448,6 +1442,12 @@ int lammps_extract_setting(void *handle, const char *keyword)
   if (strcmp(keyword,"IMGBITS") == 0) return IMGBITS;
   if (strcmp(keyword,"IMG2BITS") == 0) return IMG2BITS;
   if (strcmp(keyword,"IMGMAX") == 0) return IMGMAX;
+
+  auto lmp = (LAMMPS *) handle;
+  if (!lmp || !lmp->domain || !lmp->force || !lmp->comm || !lmp->universe || !lmp->atom) {
+    lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
+    return -1;
+  }
 
   if (strcmp(keyword,"dimension") == 0) return lmp->domain->dimension;
   if (strcmp(keyword,"box_exist") == 0) return lmp->domain->box_exist;
@@ -2816,7 +2816,7 @@ a char pointer and it should **not** be deallocated. Example:
 void *lammps_extract_variable(void *handle, const char *name, const char *group)
 {
   auto lmp = (LAMMPS *) handle;
-  if (!lmp || !lmp->error || !lmp->input || !lmp->input->variable) {
+  if (!lmp || !lmp->error || !lmp->input || !lmp->input->variable || !lmp->group) {
     lammps_last_global_errormessage = fmt::format("ERROR: {}(): Invalid LAMMPS handle\n", FNERR);
     return nullptr;
   }
@@ -2824,7 +2824,8 @@ void *lammps_extract_variable(void *handle, const char *name, const char *group)
   BEGIN_CAPTURE
   {
     int ivar = lmp->input->variable->find(name);
-    if (ivar < 0) return nullptr;
+    if (ivar < 0)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Variable {} does not exist", FNERR, name);
 
     if (lmp->input->variable->equalstyle(ivar)) {
       auto dptr = (double *) malloc(sizeof(double));
@@ -2833,7 +2834,8 @@ void *lammps_extract_variable(void *handle, const char *name, const char *group)
     } else if (lmp->input->variable->atomstyle(ivar)) {
       if (group == nullptr) group = (char *)"all";
       int igroup = lmp->group->find(group);
-      if (igroup < 0) return nullptr;
+      if (igroup < 0)
+        lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Group {} does not exist", FNERR, group);
       int nlocal = lmp->atom->nlocal;
       auto vector = (double *) malloc(nlocal*sizeof(double));
       lmp->input->variable->compute_atom(ivar,igroup,vector,1,0);
@@ -2887,7 +2889,8 @@ int lammps_extract_variable_datatype(void *handle, const char *name)
   BEGIN_CAPTURE
   {
     int ivar = lmp->input->variable->find(name);
-    if (ivar < 0) return -1;
+    if (ivar < 0)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Variable {} does not exist", FNERR, name);
 
     if (lmp->input->variable->equalstyle(ivar))
       return LMP_VAR_EQUAL;
@@ -3018,7 +3021,9 @@ int lammps_set_internal_variable(void *handle, const char *name, double value)
   BEGIN_CAPTURE
   {
     int ivar = lmp->input->variable->find(name);
-    if (ivar < 0) return -1;
+    if (ivar < 0)
+      lmp->error->all(FLERR, Error::NOLASTLINE, "{}(): Variable {} does not exist", FNERR, name);
+
     if (lmp->input->variable->internalstyle(ivar)) {
         lmp->input->variable->internal_set(ivar, value);
         return 0;
@@ -3264,8 +3269,7 @@ void lammps_gather_atoms(void *handle, const char *name, int type, int count, vo
   BEGIN_CAPTURE
   {
 #if defined(LAMMPS_BIGBIG)
-    lmp->error->all(FLERR,"Library function lammps_gather_atoms() "
-                    "is not compatible with -DLAMMPS_BIGBIG");
+    lmp->error->all(FLERR, "{}() is not compatible with -DLAMMPS_BIGBIG", FNERR);
 #else
     int i,j,offset;
 
@@ -3277,7 +3281,7 @@ void lammps_gather_atoms(void *handle, const char *name, int type, int count, vo
       flag = 1;
     if (lmp->atom->natoms > MAXSMALLINT) flag = 1;
     if (flag) {
-      lmp->error->all(FLERR,"lammps_gather_atoms(): Atom-IDs must exist and be consecutive");
+      lmp->error->all(FLERR, "{}(): Atom-IDs must exist and be consecutive", FNERR);
       return;
     }
 
@@ -3285,7 +3289,7 @@ void lammps_gather_atoms(void *handle, const char *name, int type, int count, vo
 
     void *vptr = lmp->atom->extract(name);
     if (vptr == nullptr) {
-      lmp->error->all(FLERR, "lammps_gather_atoms(): unknown property {}", name);
+      lmp->error->all(FLERR, "{}(): unknown property {}", FNERR, name);
       return;
     }
 
@@ -3360,7 +3364,7 @@ void lammps_gather_atoms(void *handle, const char *name, int type, int count, vo
       MPI_Allreduce(copy,data,count*natoms,MPI_DOUBLE,MPI_SUM,lmp->world);
       lmp->memory->destroy(copy);
     } else {
-      lmp->error->all(FLERR,"lammps_gather_atoms(): unsupported data type");
+      lmp->error->all(FLERR,"{}(): unsupported data type: {}", FNERR, type);
       return;
     }
 #endif
@@ -3430,7 +3434,7 @@ void lammps_gather_atoms_concat(void *handle, const char *name, int type,
   BEGIN_CAPTURE
   {
 #if defined(LAMMPS_BIGBIG)
-    lmp->error->all(FLERR,"{}() is not compatible with -DLAMMPS_BIGBIG", FNERR);
+    lmp->error->all(FLERR, "{}() is not compatible with -DLAMMPS_BIGBIG", FNERR);
 #else
     int i,offset;
 
@@ -3441,7 +3445,7 @@ void lammps_gather_atoms_concat(void *handle, const char *name, int type,
     if (lmp->atom->tag_enable == 0) flag = 1;
     if (lmp->atom->natoms > MAXSMALLINT) flag = 1;
     if (flag) {
-      lmp->error->all(FLERR,"lammps_gather_atoms_concat(): Atom-IDs must exist");
+      lmp->error->all(FLERR, "{}(): Atom-IDs must exist", FNERR);
       return;
     }
 
@@ -7347,11 +7351,8 @@ interface functions :cpp:func:`lammps_has_error` and
  */
 void lammps_set_show_error(void *handle, const int flag)
 {
-  if (handle) {
-    LAMMPS *lmp = (LAMMPS *) handle;
-    Error *error = lmp->error;
-    error->set_show_error(flag);
-  }
+  LAMMPS *lmp = (LAMMPS *) handle;
+  if (lmp && lmp->error) lmp->error->set_show_error(flag);
 }
 
 /* ---------------------------------------------------------------------- */
