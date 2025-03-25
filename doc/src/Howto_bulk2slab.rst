@@ -4,34 +4,51 @@ Convert bulk system to slab
 
 A regularly encountered simulation problem is how to convert a bulk
 system that has been run for a while to equilibrate into a slab system
-with some vacuum space.  The challenge here is that one cannot just
-change the box dimensions with the :doc:`change_box command
-<change_box>` or edit the box boundaries in a data file because some
-atoms will have non-zero image flags from diffusing around.  Changing
-the box dimensions results in an undesired displacement of those atoms,
-since the image flags indicate how many times the box length in x-, y-,
-or z-direction needs to be added or subtracted to get the "unwrapped"
-coordinates.  By changing the box dimension this distance is changed and
-thus those atoms move unphysically relative to their neighbors with zero
-image flags.  Setting image flags forcibly to zero creates problems because
-that could break apart molecules by have one atom of a bond on the top
-of the system and the other at the bottom.
+with some vacuum space and free surfaces.  The challenge here is that
+one cannot just change the box dimensions with the :doc:`change_box
+command <change_box>` or edit the box boundaries in a data file because
+some atoms will have non-zero image flags from diffusing around.
+
+Changing the box dimensions results in an undesired displacement of
+those atoms, since the image flags indicate how many times the box
+length in x-, y-, or z-direction needs to be added or subtracted to get
+the "unwrapped" coordinates.  By changing the box dimension this
+distance is changed and thus those atoms move unphysically relative to
+their neighbors with zero image flags.  Setting image flags forcibly to
+zero creates problems because that could break apart molecules by having
+one atom of a bond on the top of the system and the other at the bottom.
 
 .. _bulk2slab:
 .. figure:: JPG/rhodo-both.jpg
    :figwidth: 80%
    :figclass: align-center
 
-   Snapshots of the bulk Rhodopsin system (right) and the slab geometry (left)
+   Snapshots of the bulk Rhodopsin in lipid layer and water system (right)
+   and the generated slab geometry (left)
+
+.. admonition:: Disclaimer
+   :class: note
+
+   The following workflow will work for many bulk systems, but not all.
+   Some systems cannot be converted (e.g. polymers with bonds to the
+   same molecule across periodic boundaries, sometimes called "infinite
+   polymers").  The amount of vacuum that needs to be added depends on
+   the length of the molecules where the system is split (the example
+   here splits where there is water with short molecules).  In some
+   cases, the system may need to be re-centered in the box first using
+   the :doc:`displace_atoms command <displace_atoms>`.  Also, the time
+   spent on strong thermalization and equilibration will depend on the
+   specific system and its thermodynamic conditions.
 
 Below is a suggested workflow using the :doc:`Rhodopsin benchmark input
-<Speed_bench>` for demonstration.  The figure shows the state before on
-the left (with unwrapped atoms that have diffused out of the box) and
-after on the right (with the vacuum added above and below).  The process
-is done by modifying the ``in.rhodo`` input file.  The first lines up to
-and including the :doc:`read_data command <read_data>` remain unchanged.
-Then we insert the following lines to add vacuum to the z direction
-above and below the system:
+<Speed_bench>` for demonstration.  The figure shows the state *before*
+the procedure on the left (with unwrapped atoms that have diffused out
+of the box) and *after* on the right (with the vacuum added above and
+below).  The procedure is implemented by modifying a copy of the
+``in.rhodo`` input file.  The first lines up to and including the
+:doc:`read_data command <read_data>` remain unchanged.  Then we insert
+the following lines to add vacuum to the z direction above and below the
+system:
 
 .. code-block:: LAMMPS
 
@@ -79,10 +96,10 @@ Next we replace the :doc:`fix npt command <fix_nh>` with:
    fix            2 nvt temp 300.0 300.0 10.0
 
 We now have an open system and thus the adjustment of the cell in
-z-direction is no longer required.  Since splitting of the bulk where
-the vacuum is inserted, creates surface atoms with high potential
-energy, we reduce the thermostat time constant from 100.0 to 10.0 to
-remove excess kinetic energy resulting from that change faster.
+z-direction is no longer required.  Since splitting the bulk water
+region where the vacuum is inserted, creates surface atoms with high
+potential energy, we reduce the thermostat time constant from 100.0 to
+10.0 to remove excess kinetic energy resulting from that change faster.
 
 Also the high potential energy of the surface atoms can cause that some
 of them are ejected from the slab.  In order to suppress that, we add
@@ -113,6 +130,11 @@ interaction.  This way only atoms that move beyond the min/max values in
 z-direction will experience a restoring force, nudging them back to the
 slab.  The force constant of :math:`10.0 \frac{\mathrm{kcal/mol}}{\AA}`
 was determined empirically.
+
+Adding these "restoring" soft walls assist in making the free surfaces
+above and below the slab flat, instead of having rugged or ondulated
+surfaces.  The impact of the walls can be changed by adjusting the force
+constant, cutoff, and position of the wall.
 
 Finally, we replace the :doc:`run 100 <run>` of the original input with:
 
