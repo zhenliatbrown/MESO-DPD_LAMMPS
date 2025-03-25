@@ -2543,23 +2543,52 @@ Since individual fixes may provide multiple kinds of data, it is
 required to set style and type flags representing what specific data is
 desired.  This also determines to what kind of pointer the returned
 pointer needs to be cast to access the data correctly.  The function
-returns ``NULL`` if the fix ID is not found or the requested data is not
-available.
+set the error status and returns ``NULL`` if the fix ID is not found
+or the requested data is not available.
 
-.. note::
+.. admonition:: Accessing global data
+   :class: warning
 
-   When requesting global data, the fix data can only be accessed one
-   item at a time without access to the pointer itself.  Thus this
-   function will allocate storage for a single double value, copy the
-   returned value to it, and returns a pointer to the location of the
-   copy.  Therefore the allocated storage needs to be freed after its
-   use to avoid a memory leak. Example:
+   When requesting **global** data, the fix data can internally only be
+   accessed one item at a time without access to the underlying pointer
+   itself (it may also be computed on-the-fly).  Thus this function
+   allocates temporary storage for the requested data, copy the the data to it, and return a pointer to the location
+   of the copy.  Therefore the allocated storage needs to be freed
+   with :cpp:func:`lammps_free` after its use to avoid a memory leak. Example:
 
    .. code-block:: c
 
-      double *dptr = (double *) lammps_extract_fix(handle, name,
-                                LMP_STYLE_GLOBAL, LMP_TYPE_VECTOR, 0, 0);
+      double *dptr = (double *) lammps_extract_fix(handle, name, LMP_STYLE_GLOBAL, LMP_TYPE_VECTOR, 0, 0);
       double value = *dptr;
+      lammps_free((void *)dptr);
+
+.. admonition:: Requesting rows, columns, or the entire global array
+   :class: Hint
+
+   In order to avoid the inefficient allocation and deallocation of
+   temporary storage for single values, this functions accepts special
+   values of -1 for the nrow and ncol arguments. For the negative
+   values, the entire row, or column, or full array is copied to a
+   (flat) block of storage and its pointer returned.  This still is a
+   copy and needs to be deallocated with :cpp:func:`lammps_free` as
+   indicated in the note above.  In case of requesting the whole array,
+   the data is returned column by column, i.e. as d(c\_0,r\_0),
+   d(c\_0,r\_1), ... d(c\_0, c\_nrow-1), d(c\_1,r\_0), d(c\_1,r\_1),
+   ... d(c\_ncol-1, r\_nrow-1) for a total of nrow \* ncol elements.
+   Example use:
+
+   .. code-block:: c
+
+      int nrows = *(int *) lammps_extract_fix(handle, name, LMP_STYLE_GLOBAL, LMP_SIZE_ROWS, 0,0);
+      int ncols = *(int *) lammps_extract_fix(handle, name, LMP_STYLE_GLOBAL, LMP_SIZE_COLS, 0,0);
+      double *dptr = (double *) lammps_extract_fix(handle, name, LMP_STYLE_GLOBAL, LMP_TYPE_ARRAY, -1, -1);
+      printf("values[%d][%d] = {\n", ncols, nrows);
+      for (int j = 0; j < ncols; ++j) {
+        printf(" { ");
+        for (int i = 0; i < nrows; ++i) printf("%g, ", dvalue[j * nrows + i]);
+        printf("},\n");
+      }
+      printf("};\n");
       lammps_free((void *)dptr);
 
 The following table lists the available options.
@@ -2636,8 +2665,9 @@ The following table lists the available options.
 
 .. note::
 
-   LAMMPS cannot easily check if it is valid to access the data, so it
-   may fail with an error.  The caller has to avoid such an error.
+   LAMMPS cannot easily check if it is valid to access the data, so it may
+   fail with an error and return a NULL pointer.  The caller has to avoid
+   such an error.
 
 \endverbatim
  *
@@ -2647,13 +2677,12 @@ The following table lists the available options.
                    (global, per-atom, or local)
  * \param  type    constant indicating type of data (scalar, vector,
                    or array) or size of rows or columns
- * \param  nrow    row index (only used for global vectors and arrays)
- * \param  ncol    column index (only used for global arrays)
+ * \param  nrow    row index (only used for global vectors and arrays), zero-based
+ * \param  ncol    column index (only used for global arrays), zero-based
  * \return         pointer (cast to ``void *``) to the location of the
  *                 requested data or ``NULL`` if not found. */
 
-void *lammps_extract_fix(void *handle, const char *id, int style, int type,
-                         int nrow, int ncol)
+void *lammps_extract_fix(void *handle, const char *id, int style, int type, int nrow, int ncol)
 {
   auto *lmp = (LAMMPS *) handle;
   if (!lmp || !lmp->error || !lmp->modify) {
@@ -2672,7 +2701,7 @@ void *lammps_extract_fix(void *handle, const char *id, int style, int type,
         if (!fix->scalar_flag)
           lmp->error->all(FLERR, Error::NOLASTLINE,
                           "{}(): Fix {} does not compute global scalar", FNERR, id);
-        auto dptr = (double *) malloc(sizeof(double));
+        auto *dptr = (double *) malloc(sizeof(double));
         *dptr = fix->compute_scalar();
         return (void *) dptr;
       }
@@ -2680,17 +2709,52 @@ void *lammps_extract_fix(void *handle, const char *id, int style, int type,
         if (!fix->vector_flag)
           lmp->error->all(FLERR, Error::NOLASTLINE,
                           "{}(): Fix {} does not compute global vector", FNERR, id);
-        auto dptr = (double *) malloc(sizeof(double));
-        *dptr = fix->compute_vector(nrow);
-        return (void *) dptr;
+        int veclen = fix->size_vector;
+        if (nrow >= veclen)
+          lmp->error->all(FLERR, Error::NOLASTLINE,
+                          "{}(): Fix {} vector accessed out-of-range", FNERR, id);
+        if (nrow < 0) {
+          auto *dptr = (double *) malloc(sizeof(double) * veclen);
+          for (int i = 0; i < veclen; ++i) dptr[i] = fix->compute_vector(i);
+          return (void *) dptr;
+        } else {
+          auto *dptr = (double *) malloc(sizeof(double));
+          *dptr = fix->compute_vector(nrow);
+          return (void *) dptr;
+        }
       }
       if (type == LMP_TYPE_ARRAY) {
         if (!fix->array_flag)
           lmp->error->all(FLERR, Error::NOLASTLINE,
                           "{}(): Fix {} does not compute global array", FNERR, id);
-        auto dptr = (double *) malloc(sizeof(double));
-        *dptr = fix->compute_array(nrow,ncol);
-        return (void *) dptr;
+        int array_rows = fix->size_array_rows;
+        int array_cols = fix->size_array_cols;
+        if ((nrow >= array_rows) || (ncol >= array_cols))
+          lmp->error->all(FLERR, Error::NOLASTLINE,
+                          "{}(): Fix {} array accessed out-of-range", FNERR, id);
+        if ((nrow < 0) && (ncol < 0)) { // whole array as flat array
+          auto *dptr = (double *) malloc(sizeof(double) * array_rows * array_cols);
+          for (int j = 0; j < array_cols; ++j) {
+            for (int i = 0; i < array_rows; ++i) {
+              dptr[array_rows * j + i] = fix->compute_array(i, j);
+            }
+          }
+          return (void *) dptr;
+        } else if (ncol < 0) { // only one row
+          int array_cols = fix->size_array_cols;
+          auto *dptr = (double *) malloc(sizeof(double) * array_cols);
+          for (int i = 0; i < array_cols; ++i) dptr[i] = fix->compute_array(nrow, i);
+          return (void *) dptr;
+        } else if (nrow < 0) { // only one column
+          int array_rows = fix->size_array_rows;
+          auto *dptr = (double *) malloc(sizeof(double) * array_rows);
+          for (int i = 0; i < array_rows; ++i) dptr[i] = fix->compute_array(i, ncol);
+          return (void *) dptr;
+        } else {
+          auto *dptr = (double *) malloc(sizeof(double));
+          *dptr = fix->compute_array(nrow, ncol);
+          return (void *) dptr;
+        }
       }
       if (type == LMP_SIZE_VECTOR) {
         if (!fix->vector_flag)
