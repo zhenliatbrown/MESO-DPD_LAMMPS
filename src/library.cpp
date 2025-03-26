@@ -4652,8 +4652,8 @@ void lammps_gather(void *handle, const char *name, int type, int count, void *da
         lmp->error->all(FLERR, Error::NOLASTLINE,
                         "{}(): Fix {} does not compute {} per-atom vector", FNERR, count, fixid);
       if (lmp->update->ntimestep % fix->peratom_freq)
-        lmp->error->all(FLERR, Error::NOLASTLINE, "{}: Fix {} not computed at compatible time",
-                        FNERR, fixid);
+        lmp->error->all(FLERR, Error::NOLASTLINE, "{}: Fix {} not computed at compatible time{}",
+                        FNERR, fixid, utils::errorurl(7));
 
       if (count==1) vptr = (void *) fix->vector_atom;
       else vptr = (void *) fix->array_atom;
@@ -4909,8 +4909,8 @@ void lammps_gather_concat(void *handle, const char *name, int type, int count, v
         lmp->error->all(FLERR, Error::NOLASTLINE,
                         "{}(): Fix {} does not compute {} per-atom vector", FNERR, count, fixid);
       if (lmp->update->ntimestep % fix->peratom_freq)
-        lmp->error->all(FLERR, Error::NOLASTLINE, "{}: Fix {} not computed at compatible time",
-                        FNERR, fixid);
+        lmp->error->all(FLERR, Error::NOLASTLINE, "{}: Fix {} not computed at compatible time{}",
+                        FNERR, fixid, utils::errorurl(7));
 
       if (count==1) vptr = (void *) fix->vector_atom;
       else vptr = (void *) fix->array_atom;
@@ -5181,8 +5181,8 @@ void lammps_gather_subset(void *handle, const char *name, int type, int count, i
         lmp->error->all(FLERR, Error::NOLASTLINE,
                         "{}(): Fix {} does not compute {} per-atom vector", FNERR, count, fixid);
       if (lmp->update->ntimestep % fix->peratom_freq)
-        lmp->error->all(FLERR, Error::NOLASTLINE, "{}: Fix {} not computed at compatible time",
-                        FNERR, fixid);
+        lmp->error->all(FLERR, Error::NOLASTLINE, "{}: Fix {} not computed at compatible time{}",
+                        FNERR, fixid, utils::errorurl(7));
 
       if (count==1) vptr = (void *) fix->vector_atom;
       else vptr = (void *) fix->array_atom;
